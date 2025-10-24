@@ -27,12 +27,13 @@ jobs:
           repository: lasp/adamant
           path: adamant
 
-      - name: Clone adamant repository
+      - name: Check out fp32-fsw-xmera code
         uses: actions/checkout@v4
         with:
           set-safe-directory: true
-          repository: lasp/fp32-fsw-xmera
+          repository: dinkelk/fp32-fsw-xmera
           path: fp32-fsw-xmera
+          ref: cmake-update
 
       - name: Clone Eigen 3.4.1 from GitLab
         run: |

@@ -26,8 +26,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           set-safe-directory: true
-          repository: lasp/fp32-fsw-xmera
+          repository: dinkelk/fp32-fsw-xmera
           path: fp32-fsw-xmera
+          ref: cmake-update
       - name: Clone adamant repository
         uses: actions/checkout@v4
         with:
