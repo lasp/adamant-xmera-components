@@ -1,0 +1,18 @@
+---
+#  /*! @brief Structure used to define the output definition for attitude guidance*/
+#  typedef struct {
+#      float timeTag;         //!< [s]   Current vehicle time-tag associated with measurements*/
+#      float sigma_BN[3];     //!<       Current spacecraft attitude (MRPs) of body relative to inertial */
+#      float omega_BN_B[3];   //!< [r/s] Current spacecraft angular velocity vector of body frame B relative to inertial frame N, in B frame components
+#      float vehSunPntBdy[3]; //!<       Current sun pointing vector in body frame
+#  }NavAttMsgPayload;
+fields:
+  - name: Time_Tag
+    type: Short_Float
+    format: F32
+  - name: Sigma_BN
+    type: Packed_F32x3.T
+  - name: Omega_BN_B
+    type: Packed_F32x3.T
+  - name: Veh_Sun_Pnt_Bdy
+    type: Packed_F32x3.T

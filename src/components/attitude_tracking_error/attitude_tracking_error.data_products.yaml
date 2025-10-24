@@ -1,0 +1,5 @@
+---
+description: Data products for the Attitude Tracking Error component.
+data_products:
+  - name: Attitude_Guidance
+    type: Att_Guid.T
