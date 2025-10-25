@@ -1,5 +1,11 @@
 name: Run All Unit Tests with Coverage (ARM64)
 on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
   release:
     types: [published]
   workflow_dispatch:
