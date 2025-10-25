@@ -1,0 +1,50 @@
+-- Include aunit in compilation:
+with "aunit.gpr";
+
+project linux_coverage extends all "a_linux_debug_base.gpr" is
+
+   -----------------------------------------------
+   -- These lines of code must be included at the
+   -- top of every Adamant based .gpr file. They
+   -- are used to connect the Adamant build system
+   -- to GPRBuild.
+   -----------------------------------------------
+   for Source_Dirs use a_adamant.SOURCE_DIRS;
+   for Excluded_Source_Files use a_adamant.EXCLUDED_SOURCE_FILES;
+   for Object_Dir use a_adamant.OBJECT_DIR;
+   for Exec_Dir use a_adamant.EXEC_DIR;
+
+   --
+   -- This GPR file is the same as linux_test.gpr but adds
+   -- support for coverage analysis with gcov. See:
+   -- https://gcc.gnu.org/onlinedocs/gcc-4.9.4/gnat_ugn_unw/Quick-startup-guide.html#Quick-startup-guide
+   --
+   package Compiler is
+      -- Add preprocessor definitions and configuration pragma switches:
+      for Switches ("Ada") use a_linux_debug_base.Compiler'Switches ("Ada") &
+         -- gcov instrumentation flags
+         ("-fprofile-arcs", "-ftest-coverage");
+
+      -- Add path to freestanding eigen:
+      for Switches ("C++") use a_linux_debug_base.Compiler'Switches ("C++") &
+         ("-I" & a_adamant.ADAMANT_DIR & "/../eigen") &
+         -- gcov instrumentation flags
+         ("-fprofile-arcs", "-ftest-coverage");
+
+      for Switches ("C") use a_linux_debug_base.Compiler'Switches ("C") &
+         -- gcov instrumentation flags
+         ("-fprofile-arcs", "-ftest-coverage");
+      for Switches ("Asm_Cpp") use a_linux_debug_base.Compiler'Switches ("Asm_Cpp");
+   end Compiler;
+
+   package Linker is
+      for Switches ("Ada") use a_adamant.Linker'Switches ("Ada") &
+         -- link against algorithms archive
+         ("-L" & Project'Project_Dir & "../../../../fp32-fsw-xmera/build/linux-gcc-debug/lib") &
+         ("-lstdc++") &
+         ("-lgncAlgorithms") &
+         -- gcov linker flags
+         ("-fprofile-arcs");
+   end Linker;
+
+end linux_coverage;

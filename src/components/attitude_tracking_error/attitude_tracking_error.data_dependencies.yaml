@@ -1,0 +1,7 @@
+---
+description: Data dependencies for the Attitude Tracking Error component.
+data_dependencies:
+  - name: Attitude_Reference
+    type: Att_Ref.T
+  - name: Navigation_Attitude
+    type: Nav_Att.T

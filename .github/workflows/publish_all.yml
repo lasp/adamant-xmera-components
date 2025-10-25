@@ -1,0 +1,43 @@
+name: Build All Documentation
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+jobs:
+  compile_job:
+    name: publish_all
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/lasp/adamant:0.1
+      options: --user root
+    steps:
+      - run: echo "Starting job triggered by a ${{ github.event_name }} event on a ${{ runner.os }} server hosted by GitHub."
+      - run: echo "Checking out ${{ github.repository }} on branch ${{ github.ref }}."
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          set-safe-directory: true
+          path: adamant-xmera-components
+      - name: Check out fp32-fsw-xmera code
+        uses: actions/checkout@v4
+        with:
+          set-safe-directory: true
+          repository: lasp/fp32-fsw-xmera
+          path: fp32-fsw-xmera
+      - name: Clone adamant repository
+        uses: actions/checkout@v4
+        with:
+          set-safe-directory: true
+          repository: lasp/adamant
+          path: adamant
+      - name: Clone Eigen 3.4.1 from GitLab
+        run: |
+          git clone --depth 1 --branch 3.4.1 https://gitlab.com/libeigen/eigen.git eigen
+      - name: Build all documentation
+        run: bash adamant-xmera-components/env/github_run.sh "redo adamant-xmera-components/publish"
+      - run: echo "Finished with status - ${{ job.status }}."
+        if: always()
