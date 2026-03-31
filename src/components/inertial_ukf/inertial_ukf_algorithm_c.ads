@@ -6,7 +6,7 @@ pragma Warnings (Off, "-gnatwu");
 with Interfaces.C; use Interfaces; use Interfaces.C;
 with Gyro_Input.C;
 with Inertial_Filter_Output.C;
-with Nav_Att_Output.C;
+with Nav_Att.C;
 with Rw_Array_Config_Input.C;
 with Rw_Speeds_Input.C;
 with St_Att_Input.C;
@@ -16,7 +16,7 @@ package Inertial_UKF_Algorithm_C is
 
    --* Combined output of the inertial UKF algorithm update step.
    type Inertial_UKF_Output is record
-      Nav_Att : aliased Nav_Att_Output.C.U_C;
+      Nav_Att_Est : aliased Nav_Att.C.U_C;
       Filter  : aliased Inertial_Filter_Output.C.U_C;
    end record
    with Convention => C_Pass_By_Copy;

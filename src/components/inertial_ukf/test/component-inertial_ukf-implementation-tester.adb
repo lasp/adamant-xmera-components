@@ -158,7 +158,7 @@ package body Component.Inertial_Ukf.Implementation.Tester is
    --    Data products for the Inertial UKF component.
    -- Navigation attitude estimate (time tag, MRP body-to-inertial, angular rate, sun
    -- vector).
-   overriding procedure Nav_Att_Estimate (Self : in out Instance; Arg : in Nav_Att_Output.T) is
+   overriding procedure Nav_Att_Estimate (Self : in out Instance; Arg : in Nav_Att.T) is
    begin
       -- Push the argument onto the test history for looking at later:
       Self.Nav_Att_Estimate_History.Push (Arg);

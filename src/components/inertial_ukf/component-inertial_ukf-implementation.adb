@@ -10,7 +10,7 @@ with Rw_Speeds_Input;
 with Rw_Speeds_Input.C;
 with Rw_Array_Config_Input.C;
 with Vehicle_Config_Input.C;
-with Nav_Att_Output.C;
+with Nav_Att.C;
 with Inertial_Filter_Output.C;
 with Inertial_UKF_Algorithm_C; use Inertial_UKF_Algorithm_C;
 with Algorithm_Wrapper_Util;
@@ -92,7 +92,7 @@ package body Component.Inertial_Ukf.Implementation is
             -- Publish navigation attitude estimate:
             Self.Data_Product_T_Send (Self.Data_Products.Nav_Att_Estimate (
                Arg.Time,
-               Nav_Att_Output.C.Pack (Output.Nav_Att)
+               Nav_Att.C.Pack (Output.Nav_Att_Est)
             ));
 
             -- Publish filter diagnostic data:
