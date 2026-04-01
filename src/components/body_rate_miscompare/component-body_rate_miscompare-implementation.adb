@@ -35,7 +35,7 @@ package body Component.Body_Rate_Miscompare.Implementation is
       use Algorithm_Wrapper_Util;
 
       -- Grab data dependencies:
-      Imu_Body : Imu_Sensor_Body.T;
+      Imu_Body : Packed_F32x3_Record.T;
       Imu_Body_Status : constant Data_Dependency_Status.E :=
          Self.Get_Imu_Body (Value => Imu_Body, Stale_Reference => Arg.Time);
       St_Body : St_Att.T;
@@ -50,7 +50,7 @@ package body Component.Body_Rate_Miscompare.Implementation is
       then
          -- Call algorithm with angular velocity vectors:
          declare
-            Imu_Omega : constant Packed_F32x3_Record.C.U_C := (Value => Packed_F32x3.C.Unpack (Imu_Body.Ang_Vel_Body));
+            Imu_Omega : constant Packed_F32x3_Record.C.U_C := (Value => Packed_F32x3.C.Unpack (Imu_Body.Value));
             St_Omega : constant Packed_F32x3_Record.C.U_C := (Value => Packed_F32x3.C.Unpack (St_Body.Omega_Bn_B));
 
             Output : constant Body_Rate_Miscompare_Output_C := Update (

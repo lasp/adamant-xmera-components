@@ -69,12 +69,9 @@ package body Body_Rate_Miscompare_Tests.Implementation is
       ];
    begin
       for I in Test_Cases'Range loop
-         -- Set IMU sensor body data dependency
+         -- Set IMU angular velocity data dependency
          T.Imu_Body := (
-            Dv_Frame_Body => [0.0, 0.0, 0.0],
-            Accel_Body => [0.0, 0.0, 0.0],
-            Dr_Frame_Body => [0.0, 0.0, 0.0],
-            Ang_Vel_Body => Test_Cases (I).Imu_Angular_Velocity
+            Value => Test_Cases (I).Imu_Angular_Velocity
          );
 
          -- Set star tracker attitude data dependency

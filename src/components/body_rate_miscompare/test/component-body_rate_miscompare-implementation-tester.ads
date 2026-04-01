@@ -11,7 +11,7 @@ with Data_Product.Representation;
 with Data_Product;
 with Nav_Att.Representation;
 with Body_Rate_Fault.Representation;
-with Imu_Sensor_Body;
+with Packed_F32x3_Record;
 with St_Att;
 
 -- Compares IMU and star tracker body rates and falls back to IMU solution if they
@@ -41,7 +41,7 @@ package Component.Body_Rate_Miscompare.Implementation.Tester is
       -- Data dependency return values. These can be set during unit test
       -- and will be returned to the component when a data dependency call
       -- is made.
-      Imu_Body : Imu_Sensor_Body.T;
+      Imu_Body : Packed_F32x3_Record.T;
       Star_Tracker_Attitude : St_Att.T;
       -- The return status for the data dependency fetch. This can be set
       -- during unit test to return something other than Success.

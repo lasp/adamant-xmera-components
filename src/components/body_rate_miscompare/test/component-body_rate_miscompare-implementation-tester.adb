@@ -75,7 +75,7 @@ package body Component.Body_Rate_Miscompare.Implementation.Tester is
       if Length_To_Return = 0 then
          case Arg.Id is
             -- Length for Imu_Body:
-            when 0 => Length_To_Return := Imu_Sensor_Body.Size_In_Bytes;
+            when 0 => Length_To_Return := Packed_F32x3_Record.Size_In_Bytes;
             -- Length for Star_Tracker_Attitude:
             when 1 => Length_To_Return := St_Att.Size_In_Bytes;
             -- If ID can not be found, then return ID out of range error.
@@ -96,8 +96,8 @@ package body Component.Body_Rate_Miscompare.Implementation.Tester is
          case Arg.Id is
             -- Length for Imu_Body:
             when 0 =>
-               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Imu_Sensor_Body.Size_In_Bytes - 1) :=
-                  Imu_Sensor_Body.Serialization.To_Byte_Array (Self.Imu_Body);
+               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Packed_F32x3_Record.Size_In_Bytes - 1) :=
+                  Packed_F32x3_Record.Serialization.To_Byte_Array (Self.Imu_Body);
             -- Length for Star_Tracker_Attitude:
             when 1 =>
                Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + St_Att.Size_In_Bytes - 1) :=
