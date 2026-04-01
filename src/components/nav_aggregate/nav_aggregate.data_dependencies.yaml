@@ -14,14 +14,14 @@ data_dependencies:
     type: Nav_Att.T
     description: Attitude navigation message source 3
   - name: Trans_Msg_0
-    type: Nav_Trans.T
-    description: Translational navigation message source 0
+    type: Ephemeris.T
+    description: Ephemeris source 0 (position and velocity extracted for translational navigation)
   - name: Trans_Msg_1
-    type: Nav_Trans.T
-    description: Translational navigation message source 1
+    type: Ephemeris.T
+    description: Ephemeris source 1 (position and velocity extracted for translational navigation)
   - name: Trans_Msg_2
-    type: Nav_Trans.T
-    description: Translational navigation message source 2
+    type: Ephemeris.T
+    description: Ephemeris source 2 (position and velocity extracted for translational navigation)
   - name: Trans_Msg_3
-    type: Nav_Trans.T
-    description: Translational navigation message source 3
+    type: Ephemeris.T
+    description: Ephemeris source 3 (position and velocity extracted for translational navigation)

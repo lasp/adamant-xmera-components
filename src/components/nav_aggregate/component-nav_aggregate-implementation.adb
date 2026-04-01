@@ -4,6 +4,8 @@
 
 with Nav_Att.C;
 with Nav_Trans.C;
+with Ephemeris;
+with Ephemeris.C;
 with Algorithm_Wrapper_Util;
 
 package body Component.Nav_Aggregate.Implementation is
@@ -81,15 +83,15 @@ package body Component.Nav_Aggregate.Implementation is
       Att_Msg_3 : Nav_Att.T := Nav_Att.Serialization.From_Byte_Array ([others => 0]);
       Att_Msg_3_Status : Data_Dependency_Status.E := Success;
 
-      -- Translation messages (will be populated based on Trans_Msg_Count)
+      -- Translation messages (Ephemeris deps, converted to Nav_Trans for C algorithm)
       -- Initialized to zero for safety in case not fetched
-      Trans_Msg_0 : Nav_Trans.T := Nav_Trans.Serialization.From_Byte_Array ([others => 0]);
+      Trans_Msg_0 : Ephemeris.T := Ephemeris.Serialization.From_Byte_Array ([others => 0]);
       Trans_Msg_0_Status : Data_Dependency_Status.E := Success;
-      Trans_Msg_1 : Nav_Trans.T := Nav_Trans.Serialization.From_Byte_Array ([others => 0]);
+      Trans_Msg_1 : Ephemeris.T := Ephemeris.Serialization.From_Byte_Array ([others => 0]);
       Trans_Msg_1_Status : Data_Dependency_Status.E := Success;
-      Trans_Msg_2 : Nav_Trans.T := Nav_Trans.Serialization.From_Byte_Array ([others => 0]);
+      Trans_Msg_2 : Ephemeris.T := Ephemeris.Serialization.From_Byte_Array ([others => 0]);
       Trans_Msg_2_Status : Data_Dependency_Status.E := Success;
-      Trans_Msg_3 : Nav_Trans.T := Nav_Trans.Serialization.From_Byte_Array ([others => 0]);
+      Trans_Msg_3 : Ephemeris.T := Ephemeris.Serialization.From_Byte_Array ([others => 0]);
       Trans_Msg_3_Status : Data_Dependency_Status.E := Success;
 
    begin
@@ -139,17 +141,27 @@ package body Component.Nav_Aggregate.Implementation is
             Att_2_C : constant Nav_Att.C.U_C := Nav_Att.C.To_C (Nav_Att.Unpack (Att_Msg_2));
             Att_3_C : constant Nav_Att.C.U_C := Nav_Att.C.To_C (Nav_Att.Unpack (Att_Msg_3));
 
-            -- Convert Ada types to C types for translation messages
-            Trans_0_C : constant Nav_Trans.C.U_C := Nav_Trans.C.To_C (Nav_Trans.Unpack (Trans_Msg_0));
-            Trans_1_C : constant Nav_Trans.C.U_C := Nav_Trans.C.To_C (Nav_Trans.Unpack (Trans_Msg_1));
-            Trans_2_C : constant Nav_Trans.C.U_C := Nav_Trans.C.To_C (Nav_Trans.Unpack (Trans_Msg_2));
-            Trans_3_C : constant Nav_Trans.C.U_C := Nav_Trans.C.To_C (Nav_Trans.Unpack (Trans_Msg_3));
+            -- Convert Ephemeris deps to Nav_Trans C types for the algorithm:
+            function Eph_To_Trans_C (Eph : in Ephemeris.T) return Nav_Trans.C.U_C is
+               Eph_C : constant Ephemeris.C.U_C := Ephemeris.C.To_C (Ephemeris.Unpack (Eph));
+            begin
+               return (Time_Tag => Eph_C.Time_Tag,
+                       R_Bn_N => Eph_C.R_Bdy_Zero_N,
+                       V_Bn_N => Eph_C.V_Bdy_Zero_N,
+                       Vehaccumdv => [others => 0.0]);
+            end Eph_To_Trans_C;
+
+            Trans_0_C : constant Nav_Trans.C.U_C := Eph_To_Trans_C (Trans_Msg_0);
+            Trans_1_C : constant Nav_Trans.C.U_C := Eph_To_Trans_C (Trans_Msg_1);
+            Trans_2_C : constant Nav_Trans.C.U_C := Eph_To_Trans_C (Trans_Msg_2);
+            Trans_3_C : constant Nav_Trans.C.U_C := Eph_To_Trans_C (Trans_Msg_3);
 
             -- Zero-initialized C values for padding unused array entries
             Zero_Att_C : constant Nav_Att.C.U_C := Nav_Att.C.To_C (Nav_Att.Unpack (
                Nav_Att.Serialization.From_Byte_Array ([others => 0])));
-            Zero_Trans_C : constant Nav_Trans.C.U_C := Nav_Trans.C.To_C (Nav_Trans.Unpack (
-               Nav_Trans.Serialization.From_Byte_Array ([others => 0])));
+            Zero_Trans_C : constant Nav_Trans.C.U_C := (Time_Tag => 0.0,
+               R_Bn_N => [others => 0.0], V_Bn_N => [others => 0.0],
+               Vehaccumdv => [others => 0.0]);
 
             -- Create C arrays sized to match MAX_AGG_NAV_MSG (10).
             -- The C shim reads all MAX_AGG_NAV_MSG entries during conversion,
