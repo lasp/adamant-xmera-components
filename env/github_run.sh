@@ -2,8 +2,9 @@
 
 this_dir=`dirname "$0"`
 
-# Install cmake and compile fp32-fsw-xmera algorithms
-sudo apt-get -y install cmake
+# DROP: Install cmake and compile fp32-fsw-xmera algorithms
+sudo apt-get -y update && sudo apt-get -y install cmake
+hash -r  # refresh PATH cache so cmake is found
 cd $this_dir/../../fp32-fsw-xmera
 ./build.sh linux-gcc-debug
 cd - >/dev/null

@@ -28,7 +28,7 @@ jobs:
           set-safe-directory: true
           repository: lasp/fp32-fsw-xmera
           path: fp32-fsw-xmera
-          ref: develop
+          ref: cae2940cfecd10e732f9fb449ddeab445839da4d  # DROP: pin to fp32-fsw-xmera commit with ephemNavConverter removal + namespace changes
       - name: Clone adamant repository
         uses: actions/checkout@v4
         with:
