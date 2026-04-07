@@ -5,5 +5,5 @@ data_dependencies:
     type: Packed_F32x3_Record.T
     description: Fault-excluded averaged angular velocity in body frame from majority vote
   - name: Star_Tracker_Attitude
-    type: St_Att.T
-    description: Star tracker attitude measurement including body rates
+    type: St_Att_Input.T
+    description: Star tracker attitude measurement (time tag, MRP, angular velocity)

@@ -81,12 +81,12 @@ package body Inertial_Ukf_Tests.Implementation is
       begin
          -- Set data dependency values using packed record aggregates directly.
          T.Star_Tracker_Att := (
-            Time_Tag        => Long_Float (Time_Tag_In),
-            Sigma_Bn        => Expected_Sigma,
-            Omega_Bn_B      => Expected_Omega,
-            Veh_Sun_Pnt_Bdy => Zero_Vec);
-         T.Gyro_Measurement := (Gyro_B => Zero_Vec);
-         T.Rw_Speeds        := (Wheel_Speeds => [0.0, 0.0, 0.0, 0.0]);
+            Time_Tag      => Short_Float (Time_Tag_In),
+            Mrp_Bdy_Inrtl => Expected_Sigma,
+            Omega_Bn_B    => Expected_Omega
+         );
+         T.Gyro_Measurement := (Value => Zero_Vec);
+         T.Rw_Speeds := (Rwa_1 => 0.0, Rwa_2 => 0.0, Rwa_3 => 0.0, Rwa_4 => 0.0);
 
          -- Trigger component execution.
          T.Tick_T_Send ((Time => T.System_Time, Count => 0));
@@ -123,10 +123,10 @@ package body Inertial_Ukf_Tests.Implementation is
          Filter_Out : Inertial_Filter_Output.T;
       begin
          T.Star_Tracker_Att := (
-            Time_Tag        => 0.0,
-            Sigma_Bn        => Zero_Vec,
-            Omega_Bn_B      => Zero_Vec,
-            Veh_Sun_Pnt_Bdy => Zero_Vec);
+            Time_Tag      => 0.0,
+            Mrp_Bdy_Inrtl => Zero_Vec,
+            Omega_Bn_B    => Zero_Vec
+         );
 
          T.Tick_T_Send ((Time => T.System_Time, Count => 0));
 

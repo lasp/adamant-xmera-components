@@ -2,11 +2,11 @@
 description: Data dependencies for the Inertial UKF component.
 data_dependencies:
   - name: Star_Tracker_Att
-    type: Nav_Att.T
-    description: Star tracker attitude measurement (time tag, MRP body-to-inertial, angular rate)
+    type: St_Att_Input.T
+    description: Star tracker attitude measurement (time tag, MRP, angular velocity)
   - name: Gyro_Measurement
-    type: Gyro_Input.T
-    description: Gyro angular rate measurement in body frame
+    type: Packed_F32x3_Record.T
+    description: Voted angular velocity in body frame from majority vote
   - name: Rw_Speeds
-    type: Rw_Speeds_Input.T
-    description: Reaction wheel spin rates
+    type: Rwa_Speeds.T
+    description: Reaction wheel spin rates from RWA interface

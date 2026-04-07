@@ -4,9 +4,10 @@
 
 with Nav_Att;
 with St_Att_Input.C;
-with Gyro_Input;
+with St_Att_Input;
+with Packed_F32x3.C;
 with Gyro_Input.C;
-with Rw_Speeds_Input;
+with Rwa_Speeds;
 with Rw_Speeds_Input.C;
 with Rw_Array_Config_Input.C;
 with Vehicle_Config_Input.C;
@@ -37,15 +38,15 @@ package body Component.Inertial_Ukf.Implementation is
       use Algorithm_Wrapper_Util;
 
       -- Fetch data dependencies:
-      St_Tracker_Att : Nav_Att.T;
+      St_Tracker_Att : St_Att_Input.T;
       St_Tracker_Att_Status : constant Data_Dependency_Status.E :=
          Self.Get_Star_Tracker_Att (Value => St_Tracker_Att, Stale_Reference => Arg.Time);
 
-      Gyro_Meas : Gyro_Input.T;
+      Gyro_Meas : Packed_F32x3_Record.T;
       Gyro_Meas_Status : constant Data_Dependency_Status.E :=
          Self.Get_Gyro_Measurement (Value => Gyro_Meas, Stale_Reference => Arg.Time);
 
-      Rw_Speeds_Dep : Rw_Speeds_Input.T;
+      Rw_Speeds_Dep : Rwa_Speeds.T;
       Rw_Speeds_Status : constant Data_Dependency_Status.E :=
          Self.Get_Rw_Speeds (Value => Rw_Speeds_Dep, Stale_Reference => Arg.Time);
    begin
@@ -57,22 +58,20 @@ package body Component.Inertial_Ukf.Implementation is
          Is_Dep_Status_Success (Rw_Speeds_Status)
       then
          declare
-            -- Convert star tracker attitude from Nav_Att.T to St_Att_Input.C.U_C.
-            -- Nav_Att has an extra vehSunPntBdy field not needed by the algorithm.
-            Nav_Att_U : constant Nav_Att.U := Nav_Att.Unpack (St_Tracker_Att);
-            St_Att_C : aliased St_Att_Input.C.U_C := St_Att_Input.C.To_C ((
-               Time_Tag      => Short_Float (Nav_Att_U.Time_Tag),
-               Mrp_Bdy_Inrtl => Nav_Att_U.Sigma_Bn,
-               Omega_Bn_B    => Nav_Att_U.Omega_Bn_B
-            ));
+            -- Convert star tracker attitude to C type:
+            St_Att_C : aliased St_Att_Input.C.U_C :=
+               St_Att_Input.C.To_C (St_Att_Input.Unpack (St_Tracker_Att));
 
-            -- Convert gyro measurement:
-            Gyro_C : aliased Gyro_Input.C.U_C :=
-               Gyro_Input.C.To_C (Gyro_Input.Unpack (Gyro_Meas));
+            -- Convert gyro measurement from voted angular velocity:
+            Gyro_C : aliased Gyro_Input.C.U_C := (
+               Gyro_B => Packed_F32x3.C.Unpack (Gyro_Meas.Value)
+            );
 
-            -- Convert reaction wheel speeds:
-            Rw_C : aliased Rw_Speeds_Input.C.U_C :=
-               Rw_Speeds_Input.C.To_C (Rw_Speeds_Input.Unpack (Rw_Speeds_Dep));
+            -- Convert reaction wheel speeds from Rwa_Speeds:
+            Rw_C : aliased Rw_Speeds_Input.C.U_C := (
+               Wheel_Speeds => [Rw_Speeds_Dep.Rwa_1, Rw_Speeds_Dep.Rwa_2,
+                                 Rw_Speeds_Dep.Rwa_3, Rw_Speeds_Dep.Rwa_4]
+            );
 
             -- Convert parameters to C types:
             Rw_Config_C : aliased Rw_Array_Config_Input.C.U_C :=

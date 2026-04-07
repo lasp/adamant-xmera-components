@@ -38,7 +38,7 @@ package body Component.Body_Rate_Miscompare.Implementation is
       Imu_Body : Packed_F32x3_Record.T;
       Imu_Body_Status : constant Data_Dependency_Status.E :=
          Self.Get_Imu_Body (Value => Imu_Body, Stale_Reference => Arg.Time);
-      St_Body : St_Att.T;
+      St_Body : St_Att_Input.T;
       St_Body_Status : constant Data_Dependency_Status.E :=
          Self.Get_Star_Tracker_Attitude (Value => St_Body, Stale_Reference => Arg.Time);
    begin

@@ -1,0 +1,19 @@
+---
+description: Reaction Wheel Assembly (RWA) wheel speeds in rad/s.
+fields:
+  - name: Rwa_1
+    description: Wheel speed of RWA 1 in rad/s.
+    type: Short_Float
+    format: F32
+  - name: Rwa_2
+    description: Wheel speed of RWA 2 in rad/s.
+    type: Short_Float
+    format: F32
+  - name: Rwa_3
+    description: Wheel speed of RWA 3 in rad/s.
+    type: Short_Float
+    format: F32
+  - name: Rwa_4
+    description: Wheel speed of RWA 4 in rad/s.
+    type: Short_Float
+    format: F32

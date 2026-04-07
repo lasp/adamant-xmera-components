@@ -78,8 +78,7 @@ package body Body_Rate_Miscompare_Tests.Implementation is
          T.Star_Tracker_Attitude := (
             Time_Tag => 0.0,
             Mrp_Bdy_Inrtl => [0.0, 0.0, 0.0],
-            Omega_Bn_B => Test_Cases (I).St_Angular_Velocity,
-            Dcm_Cb => [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+            Omega_Bn_B => Test_Cases (I).St_Angular_Velocity
          );
 
          -- Call algorithm:

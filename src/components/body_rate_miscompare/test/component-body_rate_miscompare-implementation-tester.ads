@@ -12,7 +12,7 @@ with Data_Product;
 with Nav_Att.Representation;
 with Body_Rate_Fault.Representation;
 with Packed_F32x3_Record;
-with St_Att;
+with St_Att_Input;
 
 -- Compares IMU and star tracker body rates and falls back to IMU solution if they
 -- disagree.
@@ -42,7 +42,7 @@ package Component.Body_Rate_Miscompare.Implementation.Tester is
       -- and will be returned to the component when a data dependency call
       -- is made.
       Imu_Body : Packed_F32x3_Record.T;
-      Star_Tracker_Attitude : St_Att.T;
+      Star_Tracker_Attitude : St_Att_Input.T;
       -- The return status for the data dependency fetch. This can be set
       -- during unit test to return something other than Success.
       Data_Dependency_Return_Status_Override : Data_Product_Enums.Fetch_Status.E := Data_Product_Enums.Fetch_Status.Success;
