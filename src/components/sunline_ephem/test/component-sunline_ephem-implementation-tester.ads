@@ -11,7 +11,6 @@ with Data_Product.Representation;
 with Data_Product;
 with Nav_Att.Representation;
 with Ephemeris;
-with Nav_Trans;
 with Nav_Att;
 
 -- Sunline ephemeris algorithm computes the direction to the sun in the spacecraft
@@ -40,7 +39,7 @@ package Component.Sunline_Ephem.Implementation.Tester is
       -- and will be returned to the component when a data dependency call
       -- is made.
       Sun_Ephemeris : Ephemeris.T;
-      Spacecraft_Position : Nav_Trans.T;
+      Spacecraft_Position : Ephemeris.T;
       Spacecraft_Attitude : Nav_Att.T;
       -- The return status for the data dependency fetch. This can be set
       -- during unit test to return something other than Success.

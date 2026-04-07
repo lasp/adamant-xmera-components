@@ -91,13 +91,13 @@ package body Component.Nav_Aggregate.Implementation.Tester is
             -- Length for Att_Msg_3:
             when 3 => Length_To_Return := Nav_Att.Size_In_Bytes;
             -- Length for Trans_Msg_0:
-            when 4 => Length_To_Return := Nav_Trans.Size_In_Bytes;
+            when 4 => Length_To_Return := Ephemeris.Size_In_Bytes;
             -- Length for Trans_Msg_1:
-            when 5 => Length_To_Return := Nav_Trans.Size_In_Bytes;
+            when 5 => Length_To_Return := Ephemeris.Size_In_Bytes;
             -- Length for Trans_Msg_2:
-            when 6 => Length_To_Return := Nav_Trans.Size_In_Bytes;
+            when 6 => Length_To_Return := Ephemeris.Size_In_Bytes;
             -- Length for Trans_Msg_3:
-            when 7 => Length_To_Return := Nav_Trans.Size_In_Bytes;
+            when 7 => Length_To_Return := Ephemeris.Size_In_Bytes;
             -- If ID can not be found, then return ID out of range error.
             when others =>
                if Return_Status = Data_Product_Enums.Fetch_Status.Success then
@@ -132,20 +132,20 @@ package body Component.Nav_Aggregate.Implementation.Tester is
                   Nav_Att.Serialization.To_Byte_Array (Self.Att_Msg_3);
             -- Length for Trans_Msg_0:
             when 4 =>
-               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Nav_Trans.Size_In_Bytes - 1) :=
-                  Nav_Trans.Serialization.To_Byte_Array (Self.Trans_Msg_0);
+               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Ephemeris.Size_In_Bytes - 1) :=
+                  Ephemeris.Serialization.To_Byte_Array (Self.Trans_Msg_0);
             -- Length for Trans_Msg_1:
             when 5 =>
-               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Nav_Trans.Size_In_Bytes - 1) :=
-                  Nav_Trans.Serialization.To_Byte_Array (Self.Trans_Msg_1);
+               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Ephemeris.Size_In_Bytes - 1) :=
+                  Ephemeris.Serialization.To_Byte_Array (Self.Trans_Msg_1);
             -- Length for Trans_Msg_2:
             when 6 =>
-               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Nav_Trans.Size_In_Bytes - 1) :=
-                  Nav_Trans.Serialization.To_Byte_Array (Self.Trans_Msg_2);
+               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Ephemeris.Size_In_Bytes - 1) :=
+                  Ephemeris.Serialization.To_Byte_Array (Self.Trans_Msg_2);
             -- Length for Trans_Msg_3:
             when 7 =>
-               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Nav_Trans.Size_In_Bytes - 1) :=
-                  Nav_Trans.Serialization.To_Byte_Array (Self.Trans_Msg_3);
+               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Ephemeris.Size_In_Bytes - 1) :=
+                  Ephemeris.Serialization.To_Byte_Array (Self.Trans_Msg_3);
             -- Do not fill. The ID is not recognized.
             when others =>
                Return_Status := Data_Product_Enums.Fetch_Status.Id_Out_Of_Range;

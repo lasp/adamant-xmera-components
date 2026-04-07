@@ -9,6 +9,7 @@ with Packed_F64x3;
 with Packed_F64x3.Assertion; use Packed_F64x3.Assertion;
 with Nav_Att;
 with Nav_Trans;
+with Ephemeris;
 
 package body Nav_Aggregate_Tests.Implementation is
 
@@ -60,20 +61,22 @@ package body Nav_Aggregate_Tests.Implementation is
          Veh_Sun_Pnt_Bdy => [-0.2, 0.2, 0.2]
       );
 
-      -- navTrans1: timeTag=11.1, r=[1000.0, 100.0, -1000.0], v=[1., 1., -1.], dv=[-10.1, 10.1, 10.1]
-      Trans_Msg_0 : constant Nav_Trans.T := (
-         Time_Tag => 11.1,
-         R_Bn_N => [1000.0, 100.0, -1000.0],
-         V_Bn_N => [1.0, 1.0, -1.0],
-         Vehaccumdv => [-10.1, 10.1, 10.1]
+      -- Ephemeris1: timeTag=11.1, r=[1000.0, 100.0, -1000.0], v=[1., 1., -1.]
+      Trans_Msg_0 : constant Ephemeris.T := (
+         R_Bdy_Zero_N => [1000.0, 100.0, -1000.0],
+         V_Bdy_Zero_N => [1.0, 1.0, -1.0],
+         Sigma_Bn => [0.0, 0.0, 0.0],
+         Omega_Bn_B => [0.0, 0.0, 0.0],
+         Time_Tag => 11.1
       );
 
-      -- navTrans2: timeTag=22.2, r=[2000.0, 200.0, -2000.0], v=[2., 2., -2.], dv=[-20.2, 20.2, 20.2]
-      Trans_Msg_1 : constant Nav_Trans.T := (
-         Time_Tag => 22.2,
-         R_Bn_N => [2000.0, 200.0, -2000.0],
-         V_Bn_N => [2.0, 2.0, -2.0],
-         Vehaccumdv => [-20.2, 20.2, 20.2]
+      -- Ephemeris2: timeTag=22.2, r=[2000.0, 200.0, -2000.0], v=[2., 2., -2.]
+      Trans_Msg_1 : constant Ephemeris.T := (
+         R_Bdy_Zero_N => [2000.0, 200.0, -2000.0],
+         V_Bdy_Zero_N => [2.0, 2.0, -2.0],
+         Sigma_Bn => [0.0, 0.0, 0.0],
+         Omega_Bn_B => [0.0, 0.0, 0.0],
+         Time_Tag => 22.2
       );
 
    begin
@@ -133,8 +136,8 @@ package body Nav_Aggregate_Tests.Implementation is
          Packed_F64x3_Assert.Eq (Output.R_Bn_N, [2000.0, 200.0, -2000.0], Epsilon => 0.1);
          -- Velocity from message 1
          Packed_F64x3_Assert.Eq (Output.V_Bn_N, [2.0, 2.0, -2.0], Epsilon => 0.0001);
-         -- Accumulated DV from message 1
-         Packed_F32x3_Assert.Eq (Output.Vehaccumdv, [-20.2, 20.2, 20.2], Epsilon => 0.1);
+         -- Accumulated DV zeroed by Ephemeris-to-Nav_Trans conversion
+         Packed_F32x3_Assert.Eq (Output.Vehaccumdv, [0.0, 0.0, 0.0], Epsilon => 0.0001);
       end;
 
       -- Destroy before next test
@@ -197,7 +200,7 @@ package body Nav_Aggregate_Tests.Implementation is
          -- Velocity from message 0
          Packed_F64x3_Assert.Eq (Output.V_Bn_N, [1.0, 1.0, -1.0], Epsilon => 0.0001);
          -- Accumulated DV from message 0
-         Packed_F32x3_Assert.Eq (Output.Vehaccumdv, [-10.1, 10.1, 10.1], Epsilon => 0.1);
+         Packed_F32x3_Assert.Eq (Output.Vehaccumdv, [0.0, 0.0, 0.0], Epsilon => 0.0001);
       end;
 
       -- Destroy before next test
@@ -300,7 +303,7 @@ package body Nav_Aggregate_Tests.Implementation is
          pragma Assert (abs (Output.Time_Tag - 22.2) < 0.01);
          Packed_F64x3_Assert.Eq (Output.R_Bn_N, [2000.0, 200.0, -2000.0], Epsilon => 0.1);
          Packed_F64x3_Assert.Eq (Output.V_Bn_N, [2.0, 2.0, -2.0], Epsilon => 0.0001);
-         Packed_F32x3_Assert.Eq (Output.Vehaccumdv, [-20.2, 20.2, 20.2], Epsilon => 0.1);
+         Packed_F32x3_Assert.Eq (Output.Vehaccumdv, [0.0, 0.0, 0.0], Epsilon => 0.0001);
       end;
 
    end Test;

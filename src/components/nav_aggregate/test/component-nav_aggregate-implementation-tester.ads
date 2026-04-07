@@ -12,7 +12,7 @@ with Data_Product;
 with Nav_Att.Representation;
 with Nav_Trans.Representation;
 with Nav_Att;
-with Nav_Trans;
+with Ephemeris;
 
 -- Navigation aggregation algorithm combines multiple navigation message sources
 -- into single aggregated attitude and translational navigation messages.
@@ -45,10 +45,10 @@ package Component.Nav_Aggregate.Implementation.Tester is
       Att_Msg_1 : Nav_Att.T;
       Att_Msg_2 : Nav_Att.T;
       Att_Msg_3 : Nav_Att.T;
-      Trans_Msg_0 : Nav_Trans.T;
-      Trans_Msg_1 : Nav_Trans.T;
-      Trans_Msg_2 : Nav_Trans.T;
-      Trans_Msg_3 : Nav_Trans.T;
+      Trans_Msg_0 : Ephemeris.T;
+      Trans_Msg_1 : Ephemeris.T;
+      Trans_Msg_2 : Ephemeris.T;
+      Trans_Msg_3 : Ephemeris.T;
       -- The return status for the data dependency fetch. This can be set
       -- during unit test to return something other than Success.
       Data_Dependency_Return_Status_Override : Data_Product_Enums.Fetch_Status.E := Data_Product_Enums.Fetch_Status.Success;

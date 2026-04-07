@@ -71,12 +71,13 @@ package body Sunline_Ephem_Tests.Implementation is
             Time_Tag => 0.0
          );
 
-         -- Set spacecraft position to test vector
+         -- Set spacecraft position to test vector (Ephemeris type, wrapper converts to Nav_Trans)
          T.Spacecraft_Position := (
-            Time_Tag => 0.0,
-            R_Bn_N => Test_Cases (I).Sc_Position,
-            V_Bn_N => [0.0, 0.0, 0.0],
-            Vehaccumdv => [0.0, 0.0, 0.0]
+            R_Bdy_Zero_N => Test_Cases (I).Sc_Position,
+            V_Bdy_Zero_N => [0.0, 0.0, 0.0],
+            Sigma_Bn => [0.0, 0.0, 0.0],
+            Omega_Bn_B => [0.0, 0.0, 0.0],
+            Time_Tag => 0.0
          );
 
          -- Set spacecraft attitude to identity (no rotation)
