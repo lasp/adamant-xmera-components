@@ -1,0 +1,13 @@
+---
+#  typedef struct {
+#      double position[3]; /*!< [m] Position vector */
+#      double velocity[3]; /*!< [m/s] Velocity vector */
+#  } CartesianState_c;
+description: Cartesian state containing position and velocity vectors.
+fields:
+  - name: Position
+    type: Packed_F64x3.T
+    description: "[m] Position vector"
+  - name: Velocity
+    type: Packed_F64x3.T
+    description: "[m/s] Velocity vector"
