@@ -4,9 +4,6 @@ data_dependencies:
   - name: Star_Tracker_Att
     type: St_Att_Input.T
     description: Star tracker attitude measurement (time tag, MRP, angular velocity)
-  - name: Gyro_Measurement
-    type: Packed_F32x3_Record.T
-    description: Voted angular velocity in body frame from majority vote
   - name: Rw_Speeds
     type: Rwa_Speeds.T
     description: Reaction wheel spin rates from RWA interface

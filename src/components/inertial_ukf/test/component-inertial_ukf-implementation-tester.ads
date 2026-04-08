@@ -12,7 +12,6 @@ with Data_Product;
 with Nav_Att.Representation;
 with Inertial_Filter_Output.Representation;
 with St_Att_Input;
-with Packed_F32x3_Record;
 with Rwa_Speeds;
 
 -- Inertial UKF algorithm computes the navigation attitude estimate from star
@@ -43,7 +42,6 @@ package Component.Inertial_Ukf.Implementation.Tester is
       -- and will be returned to the component when a data dependency call
       -- is made.
       Star_Tracker_Att : St_Att_Input.T;
-      Gyro_Measurement : Packed_F32x3_Record.T;
       Rw_Speeds : Rwa_Speeds.T;
       -- The return status for the data dependency fetch. This can be set
       -- during unit test to return something other than Success.

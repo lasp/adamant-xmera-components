@@ -85,7 +85,6 @@ package body Inertial_Ukf_Tests.Implementation is
             Mrp_Bdy_Inrtl => Expected_Sigma,
             Omega_Bn_B    => Expected_Omega
          );
-         T.Gyro_Measurement := (Value => Zero_Vec);
          T.Rw_Speeds := (Rwa_1 => 0.0, Rwa_2 => 0.0, Rwa_3 => 0.0, Rwa_4 => 0.0);
 
          -- Trigger component execution.

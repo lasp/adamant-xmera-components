@@ -5,7 +5,6 @@
 with Nav_Att;
 with St_Att_Input.C;
 with St_Att_Input;
-with Packed_F32x3.C;
 with Gyro_Input.C;
 with Rwa_Speeds;
 with Rw_Speeds_Input.C;
@@ -42,10 +41,6 @@ package body Component.Inertial_Ukf.Implementation is
       St_Tracker_Att_Status : constant Data_Dependency_Status.E :=
          Self.Get_Star_Tracker_Att (Value => St_Tracker_Att, Stale_Reference => Arg.Time);
 
-      Gyro_Meas : Packed_F32x3_Record.T;
-      Gyro_Meas_Status : constant Data_Dependency_Status.E :=
-         Self.Get_Gyro_Measurement (Value => Gyro_Meas, Stale_Reference => Arg.Time);
-
       Rw_Speeds_Dep : Rwa_Speeds.T;
       Rw_Speeds_Status : constant Data_Dependency_Status.E :=
          Self.Get_Rw_Speeds (Value => Rw_Speeds_Dep, Stale_Reference => Arg.Time);
@@ -54,7 +49,6 @@ package body Component.Inertial_Ukf.Implementation is
       Self.Update_Parameters;
 
       if Is_Dep_Status_Success (St_Tracker_Att_Status) and then
-         Is_Dep_Status_Success (Gyro_Meas_Status) and then
          Is_Dep_Status_Success (Rw_Speeds_Status)
       then
          declare
@@ -62,9 +56,9 @@ package body Component.Inertial_Ukf.Implementation is
             St_Att_C : aliased St_Att_Input.C.U_C :=
                St_Att_Input.C.To_C (St_Att_Input.Unpack (St_Tracker_Att));
 
-            -- Convert gyro measurement from voted angular velocity:
+            -- Hard-code gyro measurement to zero (gyro dependency removed):
             Gyro_C : aliased Gyro_Input.C.U_C := (
-               Gyro_B => Packed_F32x3.C.Unpack (Gyro_Meas.Value)
+               Gyro_B => [0.0, 0.0, 0.0]
             );
 
             -- Convert reaction wheel speeds from Rwa_Speeds:

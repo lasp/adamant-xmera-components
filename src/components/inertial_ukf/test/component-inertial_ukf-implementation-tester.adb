@@ -61,10 +61,8 @@ package body Component.Inertial_Ukf.Implementation.Tester is
          case Arg.Id is
             -- ID for Star_Tracker_Att:
             when 0 => Id_To_Return := 0;
-            -- ID for Gyro_Measurement:
-            when 1 => Id_To_Return := 1;
             -- ID for Rw_Speeds:
-            when 2 => Id_To_Return := 2;
+            when 1 => Id_To_Return := 1;
             -- If ID can not be found, then return ID out of range error.
             when others =>
                if Return_Status = Data_Product_Enums.Fetch_Status.Success then
@@ -78,10 +76,8 @@ package body Component.Inertial_Ukf.Implementation.Tester is
          case Arg.Id is
             -- Length for Star_Tracker_Att:
             when 0 => Length_To_Return := St_Att_Input.Size_In_Bytes;
-            -- Length for Gyro_Measurement:
-            when 1 => Length_To_Return := Packed_F32x3_Record.Size_In_Bytes;
             -- Length for Rw_Speeds:
-            when 2 => Length_To_Return := Rwa_Speeds.Size_In_Bytes;
+            when 1 => Length_To_Return := Rwa_Speeds.Size_In_Bytes;
             -- If ID can not be found, then return ID out of range error.
             when others =>
                if Return_Status = Data_Product_Enums.Fetch_Status.Success then
@@ -98,16 +94,12 @@ package body Component.Inertial_Ukf.Implementation.Tester is
       -- Fill the data product buffer:
       if Return_Status = Data_Product_Enums.Fetch_Status.Success then
          case Arg.Id is
-            -- Length for Star_Tracker_Att:
+            -- Data for Star_Tracker_Att:
             when 0 =>
                Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + St_Att_Input.Size_In_Bytes - 1) :=
                   St_Att_Input.Serialization.To_Byte_Array (Self.Star_Tracker_Att);
-            -- Length for Gyro_Measurement:
+            -- Data for Rw_Speeds:
             when 1 =>
-               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Packed_F32x3_Record.Size_In_Bytes - 1) :=
-                  Packed_F32x3_Record.Serialization.To_Byte_Array (Self.Gyro_Measurement);
-            -- Length for Rw_Speeds:
-            when 2 =>
                Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Rwa_Speeds.Size_In_Bytes - 1) :=
                   Rwa_Speeds.Serialization.To_Byte_Array (Self.Rw_Speeds);
             -- Do not fill. The ID is not recognized.
