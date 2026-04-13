@@ -6,7 +6,6 @@ with Thr_Force_Cmd;
 with Thr_On_Time_Cmd;
 with Thr_Firing_Remainder_Force_Cmd.C;
 with Thr_Firing_Remainder_On_Time_Cmd.C;
-with Algorithm_Wrapper_Util;
 
 package body Component.Thr_Firing_Remainder.Implementation is
 
@@ -44,47 +43,50 @@ package body Component.Thr_Firing_Remainder.Implementation is
    overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
       use Data_Product_Enums;
       use Data_Product_Enums.Data_Dependency_Status;
-      use Algorithm_Wrapper_Util;
 
       -- Grab data dependencies:
+      --
+      -- Data_Dependency_Status.E can be Success, Not_Available, Error, or Stale.
+      -- All return values besides Success indicate that this component is not
+      -- wired up correctly in the algorithm execution order and received errant,
+      -- stale, or no data. This should never happen, so we assert.
       Force_Dep : Thr_Force_Cmd.T;
       Force_Status : constant Data_Dependency_Status.E :=
          Self.Get_Thruster_Force_Cmd (Value => Force_Dep, Stale_Reference => Arg.Time);
+      pragma Assert (Force_Status = Success);
    begin
       -- Update the parameters:
       Self.Update_Parameters;
 
-      if Is_Dep_Status_Success (Force_Status) then
-         declare
-            -- Unpack 8-element dependency
-            Force_Dep_U : constant Thr_Force_Cmd.U := Thr_Force_Cmd.Unpack (Force_Dep);
+      declare
+         -- Unpack 8-element dependency
+         Force_Dep_U : constant Thr_Force_Cmd.U := Thr_Force_Cmd.Unpack (Force_Dep);
 
-            -- Build 36-element C input (zeroed, then copy 8 thruster values)
-            Force_36 : aliased Thr_Firing_Remainder_Force_Cmd.C.U_C := (Thr_Force => [others => 0.0]);
+         -- Build 36-element C input (zeroed, then copy 8 thruster values)
+         Force_36 : aliased Thr_Firing_Remainder_Force_Cmd.C.U_C := (Thr_Force => [others => 0.0]);
+      begin
+         for I in 0 .. Num_Thrusters - 1 loop
+            Force_36.Thr_Force (I) := Force_Dep_U.Thr_Force (I);
+         end loop;
+
+         declare
+            -- Call the C algorithm
+            On_Time_36 : constant Thr_Firing_Remainder_On_Time_Cmd.C.U_C :=
+               Update (Self.Alg, Force_36'Unchecked_Access);
+
+            -- Extract first 8 elements for output
+            On_Time_Result : Thr_On_Time_Cmd.U := (On_Time_Request => [others => 0.0]);
          begin
             for I in 0 .. Num_Thrusters - 1 loop
-               Force_36.Thr_Force (I) := Force_Dep_U.Thr_Force (I);
+               On_Time_Result.On_Time_Request (I) := On_Time_36.On_Time_Request (I);
             end loop;
 
-            declare
-               -- Call the C algorithm
-               On_Time_36 : constant Thr_Firing_Remainder_On_Time_Cmd.C.U_C :=
-                  Update (Self.Alg, Force_36'Unchecked_Access);
-
-               -- Extract first 8 elements for output
-               On_Time_Result : Thr_On_Time_Cmd.U := (On_Time_Request => [others => 0.0]);
-            begin
-               for I in 0 .. Num_Thrusters - 1 loop
-                  On_Time_Result.On_Time_Request (I) := On_Time_36.On_Time_Request (I);
-               end loop;
-
-               Self.Data_Product_T_Send (Self.Data_Products.On_Time_Cmd (
-                  Arg.Time,
-                  Thr_On_Time_Cmd.Pack (On_Time_Result)
-               ));
-            end;
+            Self.Data_Product_T_Send (Self.Data_Products.On_Time_Cmd (
+               Arg.Time,
+               Thr_On_Time_Cmd.Pack (On_Time_Result)
+            ));
          end;
-      end if;
+      end;
    end Tick_T_Recv_Sync;
 
    -- The parameter update connector.
