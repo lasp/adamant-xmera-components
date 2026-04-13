@@ -5,7 +5,6 @@
 with Packed_F32x3_X3_Record.C;
 with Packed_F32x3.C;
 with Mimu_Majority_Vote_Output.C;
-with Algorithm_Wrapper_Util;
 
 package body Component.Mimu_Majority_Vote.Implementation is
 
@@ -36,60 +35,57 @@ package body Component.Mimu_Majority_Vote.Implementation is
    overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
       use Data_Product_Enums;
       use Data_Product_Enums.Data_Dependency_Status;
-      use Algorithm_Wrapper_Util;
 
       -- Grab data dependencies for the 3 active IMU body data inputs:
+      --
+      -- Data_Dependency_Status.E can be Success, Not_Available, Error, or Stale.
+      -- All return values besides Success indicate that this component is not
+      -- wired up correctly in the algorithm execution order and received errant,
+      -- stale, or no data. This should never happen, so we assert.
       Imu_1_T : Averaged_Imu_Data.T;
       Imu_1_Status : constant Data_Dependency_Status.E :=
          Self.Get_Imu_1_Body (Value => Imu_1_T, Stale_Reference => Arg.Time);
+      pragma Assert (Imu_1_Status = Success);
       Imu_2_T : Averaged_Imu_Data.T;
       Imu_2_Status : constant Data_Dependency_Status.E :=
          Self.Get_Imu_2_Body (Value => Imu_2_T, Stale_Reference => Arg.Time);
+      pragma Assert (Imu_2_Status = Success);
       Imu_3_T : Averaged_Imu_Data.T;
       Imu_3_Status : constant Data_Dependency_Status.E :=
          Self.Get_Imu_3_Body (Value => Imu_3_T, Stale_Reference => Arg.Time);
+      pragma Assert (Imu_3_Status = Success);
    begin
       -- Update the parameters:
       Self.Update_Parameters;
 
-      -- Check all dependencies are available. If any IMU data is stale,
-      -- skip the update entirely — no output is produced this tick.
-      -- TODO: Verify stale data policy with algorithm owner. If the
-      -- algorithm can tolerate stale inputs, consider always calling
-      -- Update and asserting statuses instead.
-      if Is_Dep_Status_Success (Imu_1_Status) and then
-         Is_Dep_Status_Success (Imu_2_Status) and then
-         Is_Dep_Status_Success (Imu_3_Status)
-      then
-         declare
-            -- Extract angular velocity from each IMU and build C input record:
-            Imu_Inputs : constant Packed_F32x3_X3_Record.C.U_C := (Vec => [
-               (Value => Packed_F32x3.C.Unpack (Imu_1_T.Ang_Vel_Body)),
-               (Value => Packed_F32x3.C.Unpack (Imu_2_T.Ang_Vel_Body)),
-               (Value => Packed_F32x3.C.Unpack (Imu_3_T.Ang_Vel_Body))
-            ]);
+      declare
+         -- Extract angular velocity from each IMU and build C input record:
+         Imu_Inputs : constant Packed_F32x3_X3_Record.C.U_C := (Vec => [
+            (Value => Packed_F32x3.C.Unpack (Imu_1_T.Ang_Vel_Body)),
+            (Value => Packed_F32x3.C.Unpack (Imu_2_T.Ang_Vel_Body)),
+            (Value => Packed_F32x3.C.Unpack (Imu_3_T.Ang_Vel_Body))
+         ]);
 
-            -- Call the C algorithm:
-            Result : constant Mimu_Majority_Vote_Output.C.U_C := Update (
-               Self.Alg,
-               Imu_Inputs     => Imu_Inputs
-            );
-            Packed_Result : constant Mimu_Majority_Vote_Output.T :=
-               Mimu_Majority_Vote_Output.Pack (Mimu_Majority_Vote_Output.C.To_Ada (Result));
-         begin
-            -- Publish full result with fault status:
-            Self.Data_Product_T_Send (Self.Data_Products.Majority_Vote_Result (
-               Arg.Time,
-               Packed_Result
-            ));
+         -- Call the C algorithm:
+         Result : constant Mimu_Majority_Vote_Output.C.U_C := Update (
+            Self.Alg,
+            Imu_Inputs     => Imu_Inputs
+         );
+         Packed_Result : constant Mimu_Majority_Vote_Output.T :=
+            Mimu_Majority_Vote_Output.Pack (Mimu_Majority_Vote_Output.C.To_Ada (Result));
+      begin
+         -- Publish full result with fault status:
+         Self.Data_Product_T_Send (Self.Data_Products.Majority_Vote_Result (
+            Arg.Time,
+            Packed_Result
+         ));
 
-            -- Publish fault-excluded averaged angular velocity:
-            Self.Data_Product_T_Send (Self.Data_Products.Voted_Ang_Vel_Body (
-               Arg.Time,
-               (Value => Packed_Result.Avg_Ang_Vel_Body)
-            ));
-         end;
-      end if;
+         -- Publish fault-excluded averaged angular velocity:
+         Self.Data_Product_T_Send (Self.Data_Products.Voted_Ang_Vel_Body (
+            Arg.Time,
+            (Value => Packed_Result.Avg_Ang_Vel_Body)
+         ));
+      end;
    end Tick_T_Recv_Sync;
 
    -- The parameter update connector.
