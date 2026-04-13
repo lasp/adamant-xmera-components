@@ -6,7 +6,6 @@ with Nav_Att.C;
 with Att_Ref.C;
 with Att_Guid.C;
 with Packed_F32x3_Record.C;
-with Algorithm_Wrapper_Util;
 
 package body Component.Attitude_Tracking_Error.Implementation is
 
@@ -41,38 +40,36 @@ package body Component.Attitude_Tracking_Error.Implementation is
       use Nav_Att.C;
       use Data_Product_Enums;
       use Data_Product_Enums.Data_Dependency_Status;
-      use Algorithm_Wrapper_Util;
 
       -- Grab data dependencies:
+      --
+      -- Data_Dependency_Status.E can be Success, Not_Available, Error, or Stale.
+      -- All return values besides Success indicate that this component is not
+      -- wired up correctly in the algorithm execution order and received errant,
+      -- stale, or no data. This should never happen, so we assert.
       Ref : Att_Ref.T;
       Ref_Status : constant Data_Dependency_Status.E :=
          Self.Get_Attitude_Reference (Value => Ref, Stale_Reference => Arg.Time);
+      pragma Assert (Ref_Status = Success);
       Nav : Nav_Att.T;
       Nav_Status : constant Data_Dependency_Status.E :=
          Self.Get_Navigation_Attitude (Value => Nav, Stale_Reference => Arg.Time);
+      pragma Assert (Nav_Status = Success);
+
+      -- Convert to C types and call algorithm:
+      Ref_C : aliased Att_Ref.C.U_C := Att_Ref.C.To_C (Att_Ref.Unpack (Ref));
+      Nav_C : aliased Nav_Att.C.U_C := Nav_Att.C.To_C (Nav_Att.Unpack (Nav));
+      Guid : constant Att_Guid.C.U_C := Update (
+         Self.Alg,
+         Att_Ref_In => Ref_C'Unchecked_Access,
+         Att_Nav_In => Nav_C'Unchecked_Access
+      );
    begin
-      if Is_Dep_Status_Success (Ref_Status) and then
-         Is_Dep_Status_Success (Nav_Status)
-      then
-         -- Call algorithm:
-         declare
-            Ref_C : aliased Att_Ref.C.U_C := Att_Ref.C.To_C (Att_Ref.Unpack (Ref));
-            Nav_C : aliased Nav_Att.C.U_C := Nav_Att.C.To_C (Nav_Att.Unpack (Nav));
-            Guid : constant Att_Guid.C.U_C := Update (
-               Self.Alg,
-               Att_Ref_In => Ref_C'Unchecked_Access,
-               Att_Nav_In => Nav_C'Unchecked_Access
-            );
-         begin
-            -- Send out data product:
-            Self.Data_Product_T_Send (Self.Data_Products.Attitude_Guidance (
-               Arg.Time,
-               Att_Guid.Pack (Att_Guid.C.To_Ada (Guid))
-            ));
-         end;
-      else
-         null; -- TODO, assert, throw event?
-      end if;
+      -- Send out data product:
+      Self.Data_Product_T_Send (Self.Data_Products.Attitude_Guidance (
+         Arg.Time,
+         Att_Guid.Pack (Att_Guid.C.To_Ada (Guid))
+      ));
    end Tick_T_Recv_Sync;
 
    -----------------------------------------------
