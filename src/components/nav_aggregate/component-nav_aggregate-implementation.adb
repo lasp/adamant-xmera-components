@@ -6,7 +6,6 @@ with Nav_Att.C;
 with Nav_Trans.C;
 with Ephemeris;
 with Ephemeris.C;
-with Algorithm_Wrapper_Util;
 
 package body Component.Nav_Aggregate.Implementation is
 
@@ -70,10 +69,14 @@ package body Component.Nav_Aggregate.Implementation is
    overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
       use Data_Product_Enums;
       use Data_Product_Enums.Data_Dependency_Status;
-      use Algorithm_Wrapper_Util;
 
       -- Attitude messages (will be populated based on Att_Msg_Count)
       -- Initialized to zero for safety in case not fetched
+      --
+      -- Data_Dependency_Status.E can be Success, Not_Available, Error, or Stale.
+      -- All return values besides Success indicate that this component is not
+      -- wired up correctly in the algorithm execution order and received errant,
+      -- stale, or no data. This should never happen, so we assert after each fetch.
       Att_Msg_0 : Nav_Att.T := Nav_Att.Serialization.From_Byte_Array ([others => 0]);
       Att_Msg_0_Status : Data_Dependency_Status.E := Success;
       Att_Msg_1 : Nav_Att.T := Nav_Att.Serialization.From_Byte_Array ([others => 0]);
@@ -98,101 +101,98 @@ package body Component.Nav_Aggregate.Implementation is
       -- Fetch attitude messages based on configured count
       if Self.Att_Msg_Count >= 1 then
          Att_Msg_0_Status := Self.Get_Att_Msg_0 (Value => Att_Msg_0, Stale_Reference => Arg.Time);
+         pragma Assert (Att_Msg_0_Status = Success);
       end if;
       if Self.Att_Msg_Count >= 2 then
          Att_Msg_1_Status := Self.Get_Att_Msg_1 (Value => Att_Msg_1, Stale_Reference => Arg.Time);
+         pragma Assert (Att_Msg_1_Status = Success);
       end if;
       if Self.Att_Msg_Count >= 3 then
          Att_Msg_2_Status := Self.Get_Att_Msg_2 (Value => Att_Msg_2, Stale_Reference => Arg.Time);
+         pragma Assert (Att_Msg_2_Status = Success);
       end if;
       if Self.Att_Msg_Count >= 4 then
          Att_Msg_3_Status := Self.Get_Att_Msg_3 (Value => Att_Msg_3, Stale_Reference => Arg.Time);
+         pragma Assert (Att_Msg_3_Status = Success);
       end if;
 
       -- Fetch translation messages based on configured count
       if Self.Trans_Msg_Count >= 1 then
          Trans_Msg_0_Status := Self.Get_Trans_Msg_0 (Value => Trans_Msg_0, Stale_Reference => Arg.Time);
+         pragma Assert (Trans_Msg_0_Status = Success);
       end if;
       if Self.Trans_Msg_Count >= 2 then
          Trans_Msg_1_Status := Self.Get_Trans_Msg_1 (Value => Trans_Msg_1, Stale_Reference => Arg.Time);
+         pragma Assert (Trans_Msg_1_Status = Success);
       end if;
       if Self.Trans_Msg_Count >= 3 then
          Trans_Msg_2_Status := Self.Get_Trans_Msg_2 (Value => Trans_Msg_2, Stale_Reference => Arg.Time);
+         pragma Assert (Trans_Msg_2_Status = Success);
       end if;
       if Self.Trans_Msg_Count >= 4 then
          Trans_Msg_3_Status := Self.Get_Trans_Msg_3 (Value => Trans_Msg_3, Stale_Reference => Arg.Time);
+         pragma Assert (Trans_Msg_3_Status = Success);
       end if;
 
-      -- Check that all fetched dependencies are available
-      if Is_Dep_Status_Success (Att_Msg_0_Status) and then
-         Is_Dep_Status_Success (Att_Msg_1_Status) and then
-         Is_Dep_Status_Success (Att_Msg_2_Status) and then
-         Is_Dep_Status_Success (Att_Msg_3_Status) and then
-         Is_Dep_Status_Success (Trans_Msg_0_Status) and then
-         Is_Dep_Status_Success (Trans_Msg_1_Status) and then
-         Is_Dep_Status_Success (Trans_Msg_2_Status) and then
-         Is_Dep_Status_Success (Trans_Msg_3_Status)
-      then
-         -- All fetched dependencies available, call the algorithm
-         declare
-            -- Convert Ada types to C types for attitude messages
-            Att_0_C : constant Nav_Att.C.U_C := Nav_Att.C.To_C (Nav_Att.Unpack (Att_Msg_0));
-            Att_1_C : constant Nav_Att.C.U_C := Nav_Att.C.To_C (Nav_Att.Unpack (Att_Msg_1));
-            Att_2_C : constant Nav_Att.C.U_C := Nav_Att.C.To_C (Nav_Att.Unpack (Att_Msg_2));
-            Att_3_C : constant Nav_Att.C.U_C := Nav_Att.C.To_C (Nav_Att.Unpack (Att_Msg_3));
+      -- All fetched dependencies available, call the algorithm
+      declare
+         -- Convert Ada types to C types for attitude messages
+         Att_0_C : constant Nav_Att.C.U_C := Nav_Att.C.To_C (Nav_Att.Unpack (Att_Msg_0));
+         Att_1_C : constant Nav_Att.C.U_C := Nav_Att.C.To_C (Nav_Att.Unpack (Att_Msg_1));
+         Att_2_C : constant Nav_Att.C.U_C := Nav_Att.C.To_C (Nav_Att.Unpack (Att_Msg_2));
+         Att_3_C : constant Nav_Att.C.U_C := Nav_Att.C.To_C (Nav_Att.Unpack (Att_Msg_3));
 
-            -- Convert Ephemeris deps to Nav_Trans C types for the algorithm:
-            function Eph_To_Trans_C (Eph : in Ephemeris.T) return Nav_Trans.C.U_C is
-               Eph_C : constant Ephemeris.C.U_C := Ephemeris.C.To_C (Ephemeris.Unpack (Eph));
-            begin
-               return (Time_Tag => Eph_C.Time_Tag,
-                       R_Bn_N => Eph_C.R_Bdy_Zero_N,
-                       V_Bn_N => Eph_C.V_Bdy_Zero_N,
-                       Vehaccumdv => [others => 0.0]);
-            end Eph_To_Trans_C;
-
-            Trans_0_C : constant Nav_Trans.C.U_C := Eph_To_Trans_C (Trans_Msg_0);
-            Trans_1_C : constant Nav_Trans.C.U_C := Eph_To_Trans_C (Trans_Msg_1);
-            Trans_2_C : constant Nav_Trans.C.U_C := Eph_To_Trans_C (Trans_Msg_2);
-            Trans_3_C : constant Nav_Trans.C.U_C := Eph_To_Trans_C (Trans_Msg_3);
-
-            -- Zero-initialized C values for padding unused array entries
-            Zero_Att_C : constant Nav_Att.C.U_C := Nav_Att.C.To_C (Nav_Att.Unpack (
-               Nav_Att.Serialization.From_Byte_Array ([others => 0])));
-            Zero_Trans_C : constant Nav_Trans.C.U_C := (Time_Tag => 0.0,
-               R_Bn_N => [others => 0.0], V_Bn_N => [others => 0.0],
-               Vehaccumdv => [others => 0.0]);
-
-            -- Create C arrays sized to match MAX_AGG_NAV_MSG (10).
-            -- The C shim reads all MAX_AGG_NAV_MSG entries during conversion,
-            -- so the arrays must be fully sized to avoid a buffer overread.
-            -- Entries beyond index 3 are zero-initialized.
-            type Att_Array is array (0 .. MAX_AGG_NAV_MSG - 1) of aliased Nav_Att.C.U_C;
-            type Trans_Array is array (0 .. MAX_AGG_NAV_MSG - 1) of aliased Nav_Trans.C.U_C;
-
-            Att_Msgs : Att_Array := [0 => Att_0_C, 1 => Att_1_C, 2 => Att_2_C, 3 => Att_3_C, others => Zero_Att_C];
-            Trans_Msgs : Trans_Array := [0 => Trans_0_C, 1 => Trans_1_C, 2 => Trans_2_C, 3 => Trans_3_C, others => Zero_Trans_C];
-
-            -- Call the C algorithm
-            Output : constant Aggregate_Output := Update (
-               Self.Alg,
-               Att_Msgs_Payloads => Att_Msgs (0)'Unchecked_Access,
-               Trans_Msgs_Payloads => Trans_Msgs (0)'Unchecked_Access
-            );
+         -- Convert Ephemeris deps to Nav_Trans C types for the algorithm:
+         function Eph_To_Trans_C (Eph : in Ephemeris.T) return Nav_Trans.C.U_C is
+            Eph_C : constant Ephemeris.C.U_C := Ephemeris.C.To_C (Ephemeris.Unpack (Eph));
          begin
-            -- Send out aggregated attitude data product
-            Self.Data_Product_T_Send (Self.Data_Products.Aggregated_Nav_Att (
-               Arg.Time,
-               Nav_Att.Pack (Nav_Att.C.To_Ada (Output.Nav_Att_Out))
-            ));
+            return (Time_Tag => Eph_C.Time_Tag,
+                    R_Bn_N => Eph_C.R_Bdy_Zero_N,
+                    V_Bn_N => Eph_C.V_Bdy_Zero_N,
+                    Vehaccumdv => [others => 0.0]);
+         end Eph_To_Trans_C;
 
-            -- Send out aggregated translation data product
-            Self.Data_Product_T_Send (Self.Data_Products.Aggregated_Nav_Trans (
-               Arg.Time,
-               Nav_Trans.Pack (Nav_Trans.C.To_Ada (Output.Nav_Trans_Out))
-            ));
-         end;
-      end if;
+         Trans_0_C : constant Nav_Trans.C.U_C := Eph_To_Trans_C (Trans_Msg_0);
+         Trans_1_C : constant Nav_Trans.C.U_C := Eph_To_Trans_C (Trans_Msg_1);
+         Trans_2_C : constant Nav_Trans.C.U_C := Eph_To_Trans_C (Trans_Msg_2);
+         Trans_3_C : constant Nav_Trans.C.U_C := Eph_To_Trans_C (Trans_Msg_3);
+
+         -- Zero-initialized C values for padding unused array entries
+         Zero_Att_C : constant Nav_Att.C.U_C := Nav_Att.C.To_C (Nav_Att.Unpack (
+            Nav_Att.Serialization.From_Byte_Array ([others => 0])));
+         Zero_Trans_C : constant Nav_Trans.C.U_C := (Time_Tag => 0.0,
+            R_Bn_N => [others => 0.0], V_Bn_N => [others => 0.0],
+            Vehaccumdv => [others => 0.0]);
+
+         -- Create C arrays sized to match MAX_AGG_NAV_MSG (10).
+         -- The C shim reads all MAX_AGG_NAV_MSG entries during conversion,
+         -- so the arrays must be fully sized to avoid a buffer overread.
+         -- Entries beyond index 3 are zero-initialized.
+         type Att_Array is array (0 .. MAX_AGG_NAV_MSG - 1) of aliased Nav_Att.C.U_C;
+         type Trans_Array is array (0 .. MAX_AGG_NAV_MSG - 1) of aliased Nav_Trans.C.U_C;
+
+         Att_Msgs : Att_Array := [0 => Att_0_C, 1 => Att_1_C, 2 => Att_2_C, 3 => Att_3_C, others => Zero_Att_C];
+         Trans_Msgs : Trans_Array := [0 => Trans_0_C, 1 => Trans_1_C, 2 => Trans_2_C, 3 => Trans_3_C, others => Zero_Trans_C];
+
+         -- Call the C algorithm
+         Output : constant Aggregate_Output := Update (
+            Self.Alg,
+            Att_Msgs_Payloads => Att_Msgs (0)'Unchecked_Access,
+            Trans_Msgs_Payloads => Trans_Msgs (0)'Unchecked_Access
+         );
+      begin
+         -- Send out aggregated attitude data product
+         Self.Data_Product_T_Send (Self.Data_Products.Aggregated_Nav_Att (
+            Arg.Time,
+            Nav_Att.Pack (Nav_Att.C.To_Ada (Output.Nav_Att_Out))
+         ));
+
+         -- Send out aggregated translation data product
+         Self.Data_Product_T_Send (Self.Data_Products.Aggregated_Nav_Trans (
+            Arg.Time,
+            Nav_Trans.Pack (Nav_Trans.C.To_Ada (Output.Nav_Trans_Out))
+         ));
+      end;
    end Tick_T_Recv_Sync;
 
    -----------------------------------------------
