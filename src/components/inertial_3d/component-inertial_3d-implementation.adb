@@ -5,7 +5,6 @@
 with Att_Ref.C;
 with Packed_F32x3_Record;
 with Packed_F32x3_Record.C;
-with Algorithm_Wrapper_Util;
 
 package body Component.Inertial_3d.Implementation is
 
@@ -32,28 +31,32 @@ package body Component.Inertial_3d.Implementation is
    overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
       use Data_Product_Enums;
       use Data_Product_Enums.Data_Dependency_Status;
-      use Algorithm_Wrapper_Util;
 
+      -- Grab data dependencies:
+      --
+      -- Data_Dependency_Status.E can be Success, Not_Available, Error, or Stale.
+      -- All return values besides Success indicate that this component is not
+      -- wired up correctly in the algorithm execution order and received errant,
+      -- stale, or no data. This should never happen, so we assert.
       Sigma : Packed_F32x3_Record.T;
       Sigma_Status : constant Data_Dependency_Status.E :=
          Self.Get_Sigma_Reference (Value => Sigma, Stale_Reference => Arg.Time);
+      pragma Assert (Sigma_Status = Success);
    begin
-      if Is_Dep_Status_Success (Sigma_Status) then
-         Set_Sigma_Rn (
-            Self.Alg,
-            Packed_F32x3_Record.C.To_C (Packed_F32x3_Record.Unpack (Sigma))
-         );
+      Set_Sigma_Rn (
+         Self.Alg,
+         Packed_F32x3_Record.C.To_C (Packed_F32x3_Record.Unpack (Sigma))
+      );
 
-         declare
-            Attitude_Reference_C : constant Att_Ref.C.U_C := Update (Self.Alg);
-         begin
-            -- Send out data product:
-            Self.Data_Product_T_Send (Self.Data_Products.Attitude_Reference (
-               Arg.Time,
-               Att_Ref.Pack (Att_Ref.C.To_Ada (Attitude_Reference_C))
-            ));
-         end;
-      end if;
+      declare
+         Attitude_Reference_C : constant Att_Ref.C.U_C := Update (Self.Alg);
+      begin
+         -- Send out data product:
+         Self.Data_Product_T_Send (Self.Data_Products.Attitude_Reference (
+            Arg.Time,
+            Att_Ref.Pack (Att_Ref.C.To_Ada (Attitude_Reference_C))
+         ));
+      end;
    end Tick_T_Recv_Sync;
 
    -----------------------------------------------
