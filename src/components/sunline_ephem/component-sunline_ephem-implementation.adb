@@ -6,7 +6,6 @@ with Nav_Att.C;
 with Nav_Trans.C;
 with Ephemeris;
 with Ephemeris.C;
-with Algorithm_Wrapper_Util;
 
 package body Component.Sunline_Ephem.Implementation is
 
@@ -33,48 +32,50 @@ package body Component.Sunline_Ephem.Implementation is
    overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
       use Data_Product_Enums;
       use Data_Product_Enums.Data_Dependency_Status;
-      use Algorithm_Wrapper_Util;
 
       -- Grab data dependencies:
+      --
+      -- Data_Dependency_Status.E can be Success, Not_Available, Error, or Stale.
+      -- All return values besides Success indicate that this component is not
+      -- wired up correctly in the algorithm execution order and received errant,
+      -- stale, or no data. This should never happen, so we assert.
       Sun_Eph : Ephemeris.T;
       Sun_Eph_Status : constant Data_Dependency_Status.E :=
          Self.Get_Sun_Ephemeris (Value => Sun_Eph, Stale_Reference => Arg.Time);
+      pragma Assert (Sun_Eph_Status = Success);
       Sc_Pos_Eph : Ephemeris.T;
       Sc_Pos_Status : constant Data_Dependency_Status.E :=
          Self.Get_Spacecraft_Position (Value => Sc_Pos_Eph, Stale_Reference => Arg.Time);
+      pragma Assert (Sc_Pos_Status = Success);
       Sc_Att : Nav_Att.T;
       Sc_Att_Status : constant Data_Dependency_Status.E :=
          Self.Get_Spacecraft_Attitude (Value => Sc_Att, Stale_Reference => Arg.Time);
+      pragma Assert (Sc_Att_Status = Success);
+
+      -- Convert to C types:
+      Sun_Eph_C : aliased Ephemeris.C.U_C := Ephemeris.C.To_C (Ephemeris.Unpack (Sun_Eph));
+      -- Convert Ephemeris to Nav_Trans for the C algorithm:
+      Sc_Pos_Eph_C : constant Ephemeris.C.U_C := Ephemeris.C.To_C (Ephemeris.Unpack (Sc_Pos_Eph));
+      Sc_Pos_C : aliased Nav_Trans.C.U_C := (
+         Time_Tag => Sc_Pos_Eph_C.Time_Tag,
+         R_Bn_N => Sc_Pos_Eph_C.R_Bdy_Zero_N,
+         V_Bn_N => Sc_Pos_Eph_C.V_Bdy_Zero_N,
+         Vehaccumdv => [others => 0.0]);
+      Sc_Att_C : aliased Nav_Att.C.U_C := Nav_Att.C.To_C (Nav_Att.Unpack (Sc_Att));
+
+      -- Call algorithm update.
+      Sunline : constant Nav_Att.C.U_C := Update (
+         Self.Alg,
+         Sun_Pos => Sun_Eph_C'Unchecked_Access,
+         Sc_Pos => Sc_Pos_C'Unchecked_Access,
+         Sc_Att => Sc_Att_C'Unchecked_Access
+      );
    begin
-      if Is_Dep_Status_Success (Sun_Eph_Status) and then
-         Is_Dep_Status_Success (Sc_Pos_Status) and then
-         Is_Dep_Status_Success (Sc_Att_Status)
-      then
-         -- Call algorithm:
-         declare
-            Sun_Eph_C : aliased Ephemeris.C.U_C := Ephemeris.C.To_C (Ephemeris.Unpack (Sun_Eph));
-            -- Convert Ephemeris to Nav_Trans for the C algorithm:
-            Sc_Pos_Eph_C : constant Ephemeris.C.U_C := Ephemeris.C.To_C (Ephemeris.Unpack (Sc_Pos_Eph));
-            Sc_Pos_C : aliased Nav_Trans.C.U_C := (
-               Time_Tag => Sc_Pos_Eph_C.Time_Tag,
-               R_Bn_N => Sc_Pos_Eph_C.R_Bdy_Zero_N,
-               V_Bn_N => Sc_Pos_Eph_C.V_Bdy_Zero_N,
-               Vehaccumdv => [others => 0.0]);
-            Sc_Att_C : aliased Nav_Att.C.U_C := Nav_Att.C.To_C (Nav_Att.Unpack (Sc_Att));
-            Sunline : constant Nav_Att.C.U_C := Update (
-               Self.Alg,
-               Sun_Pos => Sun_Eph_C'Unchecked_Access,
-               Sc_Pos => Sc_Pos_C'Unchecked_Access,
-               Sc_Att => Sc_Att_C'Unchecked_Access
-            );
-         begin
-            -- Send out data product:
-            Self.Data_Product_T_Send (Self.Data_Products.Sunline_Body_Frame (
-               Arg.Time,
-               Nav_Att.Pack (Nav_Att.C.To_Ada (Sunline))
-            ));
-         end;
-      end if;
+      -- Send out data product:
+      Self.Data_Product_T_Send (Self.Data_Products.Sunline_Body_Frame (
+         Arg.Time,
+         Nav_Att.Pack (Nav_Att.C.To_Ada (Sunline))
+      ));
    end Tick_T_Recv_Sync;
 
    -----------------------------------------------
