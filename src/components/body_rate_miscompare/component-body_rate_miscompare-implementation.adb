@@ -5,7 +5,6 @@
 with Packed_F32x3.C;
 with Packed_F32x3_Record.C;
 with Interfaces.C;
-with Algorithm_Wrapper_Util;
 
 package body Component.Body_Rate_Miscompare.Implementation is
 
@@ -32,48 +31,50 @@ package body Component.Body_Rate_Miscompare.Implementation is
    overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
       use Data_Product_Enums;
       use Data_Product_Enums.Data_Dependency_Status;
-      use Algorithm_Wrapper_Util;
 
       -- Grab data dependencies:
+      --
+      -- Data_Dependency_Status.E can be Success, Not_Available, Error, or Stale.
+      -- All return values besides Success indicate that this component is not
+      -- wired up correctly in the algorithm execution order and received errant,
+      -- stale, or no data. This should never happen, so we assert.
       Imu_Body : Packed_F32x3_Record.T;
       Imu_Body_Status : constant Data_Dependency_Status.E :=
          Self.Get_Imu_Body (Value => Imu_Body, Stale_Reference => Arg.Time);
+      pragma Assert (Imu_Body_Status = Success);
       St_Body : St_Att_Input.T;
       St_Body_Status : constant Data_Dependency_Status.E :=
          Self.Get_Star_Tracker_Attitude (Value => St_Body, Stale_Reference => Arg.Time);
+      pragma Assert (St_Body_Status = Success);
    begin
       -- Update the parameters:
       Self.Update_Parameters;
 
-      if Is_Dep_Status_Success (Imu_Body_Status) and then
-         Is_Dep_Status_Success (St_Body_Status)
-      then
-         -- Call algorithm with angular velocity vectors:
-         declare
-            Imu_Omega : constant Packed_F32x3_Record.C.U_C := (Value => Packed_F32x3.C.Unpack (Imu_Body.Value));
-            St_Omega : constant Packed_F32x3_Record.C.U_C := (Value => Packed_F32x3.C.Unpack (St_Body.Omega_Bn_B));
+      -- Call algorithm with angular velocity vectors:
+      declare
+         Imu_Omega : constant Packed_F32x3_Record.C.U_C := (Value => Packed_F32x3.C.Unpack (Imu_Body.Value));
+         St_Omega : constant Packed_F32x3_Record.C.U_C := (Value => Packed_F32x3.C.Unpack (St_Body.Omega_Bn_B));
 
-            Output : constant Body_Rate_Miscompare_Output_C := Update (
-               Self.Alg,
-               Imu_Omega => Imu_Omega,
-               St_Omega  => St_Omega
-            );
-         begin
-            -- Send out body rate data product:
-            Self.Data_Product_T_Send (Self.Data_Products.Body_Rate (
-               Arg.Time,
-               (Time_Tag => 0.0,
-                Sigma_Bn => [0.0, 0.0, 0.0],
-                Omega_Bn_B => Packed_F32x3.C.Pack (Output.Omega_Bn_B.Value),
-                Veh_Sun_Pnt_Bdy => [0.0, 0.0, 0.0])
-            ));
-            -- Send out body rate fault data product:
-            Self.Data_Product_T_Send (Self.Data_Products.Rate_Fault_Status (
-               Arg.Time,
-               (Fault_Detected => Interfaces.C."/=" (Output.Body_Rate_Fault_Detected, 0))
-            ));
-         end;
-      end if;
+         Output : constant Body_Rate_Miscompare_Output_C := Update (
+            Self.Alg,
+            Imu_Omega => Imu_Omega,
+            St_Omega  => St_Omega
+         );
+      begin
+         -- Send out body rate data product:
+         Self.Data_Product_T_Send (Self.Data_Products.Body_Rate (
+            Arg.Time,
+            (Time_Tag => 0.0,
+             Sigma_Bn => [0.0, 0.0, 0.0],
+             Omega_Bn_B => Packed_F32x3.C.Pack (Output.Omega_Bn_B.Value),
+             Veh_Sun_Pnt_Bdy => [0.0, 0.0, 0.0])
+         ));
+         -- Send out body rate fault data product:
+         Self.Data_Product_T_Send (Self.Data_Products.Rate_Fault_Status (
+            Arg.Time,
+            (Fault_Detected => Interfaces.C."/=" (Output.Body_Rate_Fault_Detected, 0))
+         ));
+      end;
    end Tick_T_Recv_Sync;
 
    -- The parameter update connector.
