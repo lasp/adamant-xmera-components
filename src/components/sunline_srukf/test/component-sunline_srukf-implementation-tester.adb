@@ -55,6 +55,10 @@ package body Component.Sunline_Srukf.Implementation.Tester is
          case Arg.Id is
             -- ID for Spacecraft_Attitude:
             when 0 => Id_To_Return := 0;
+            -- ID for Css_Cos_Values_A:
+            when 1 => Id_To_Return := 1;
+            -- ID for Css_Cos_Values_B:
+            when 2 => Id_To_Return := 2;
             -- If ID can not be found, then return ID out of range error.
             when others =>
                if Return_Status = Data_Product_Enums.Fetch_Status.Success then
@@ -68,6 +72,10 @@ package body Component.Sunline_Srukf.Implementation.Tester is
          case Arg.Id is
             -- Length for Spacecraft_Attitude:
             when 0 => Length_To_Return := Nav_Att.Size_In_Bytes;
+            -- Length for Css_Cos_Values_A:
+            when 1 => Length_To_Return := Packed_F32x8.Size_In_Bytes;
+            -- Length for Css_Cos_Values_B:
+            when 2 => Length_To_Return := Packed_F32x8.Size_In_Bytes;
             -- If ID can not be found, then return ID out of range error.
             when others =>
                if Return_Status = Data_Product_Enums.Fetch_Status.Success then
@@ -88,6 +96,14 @@ package body Component.Sunline_Srukf.Implementation.Tester is
             when 0 =>
                Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Nav_Att.Size_In_Bytes - 1) :=
                   Nav_Att.Serialization.To_Byte_Array (Self.Spacecraft_Attitude);
+            -- Length for Css_Cos_Values_A:
+            when 1 =>
+               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Packed_F32x8.Size_In_Bytes - 1) :=
+                  Packed_F32x8.Serialization.To_Byte_Array (Self.Css_Cos_Values_A);
+            -- Length for Css_Cos_Values_B:
+            when 2 =>
+               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Packed_F32x8.Size_In_Bytes - 1) :=
+                  Packed_F32x8.Serialization.To_Byte_Array (Self.Css_Cos_Values_B);
             -- Do not fill. The ID is not recognized.
             when others =>
                Return_Status := Data_Product_Enums.Fetch_Status.Id_Out_Of_Range;

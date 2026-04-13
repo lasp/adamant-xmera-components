@@ -4,3 +4,9 @@ data_dependencies:
   - name: Spacecraft_Attitude
     type: Nav_Att.T
     description: Spacecraft attitude navigation state (sigma_BN, omega_BN_B, vehSunPntBdy, timeTag)
+  - name: Css_Cos_Values_A
+    type: Packed_F32x8.T
+    description: Coarse sun sensor A cosine measurements (pre-converted from ADC by an upstream producer).
+  - name: Css_Cos_Values_B
+    type: Packed_F32x8.T
+    description: Coarse sun sensor B cosine measurements (pre-converted from ADC by an upstream producer). Fetched but not currently forwarded to the algorithm.
