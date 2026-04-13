@@ -7,7 +7,6 @@ with Nav_Att.C;
 with Att_Guid.C;
 with Principal_Inertias.C;
 with Slew_Properties.C;
-with Algorithm_Wrapper_Util;
 
 package body Component.Sun_Search.Implementation is
 
@@ -37,38 +36,41 @@ package body Component.Sun_Search.Implementation is
    overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
       use Data_Product_Enums;
       use Data_Product_Enums.Data_Dependency_Status;
-      use Algorithm_Wrapper_Util;
 
       -- Grab data dependencies:
+      --
+      -- Data_Dependency_Status.E can be Success, Not_Available, Error, or Stale.
+      -- All return values besides Success indicate that this component is not
+      -- wired up correctly in the algorithm execution order and received errant,
+      -- stale, or no data. This should never happen, so we assert.
       Sc_Att : Nav_Att.T;
       Sc_Att_Status : constant Data_Dependency_Status.E :=
          Self.Get_Spacecraft_Attitude (Value => Sc_Att, Stale_Reference => Arg.Time);
+      pragma Assert (Sc_Att_Status = Success);
    begin
       -- Update the parameters:
       Self.Update_Parameters;
 
-      if Is_Dep_Status_Success (Sc_Att_Status) then
-         -- Call algorithm:
-         declare
-            -- Convert Ada types to C types:
-            Sc_Att_C : aliased Nav_Att.C.U_C := Nav_Att.C.To_C (Nav_Att.Unpack (Sc_Att));
+      -- Call algorithm:
+      declare
+         -- Convert Ada types to C types:
+         Sc_Att_C : aliased Nav_Att.C.U_C := Nav_Att.C.To_C (Nav_Att.Unpack (Sc_Att));
 
-            -- Call the C algorithm:
-            Att_Guid_Output : constant Att_Guid.C.U_C := Update (
-               Self.Alg,
-               Current_Sim_Nanos =>
-                 Interfaces.Unsigned_64 (Arg.Time.Seconds) * Nanoseconds_Per_Second +
-                 Interfaces.Unsigned_64 (Arg.Time.Subseconds) * Nanoseconds_Per_Second / Subsecond_Divisor,
-               Nav_Att_In => Sc_Att_C'Unchecked_Access
-            );
-         begin
-            -- Send out data product:
-            Self.Data_Product_T_Send (Self.Data_Products.Attitude_Guidance (
-               Arg.Time,
-               Att_Guid.Pack (Att_Guid.C.To_Ada (Att_Guid_Output))
-            ));
-         end;
-      end if;
+         -- Call the C algorithm:
+         Att_Guid_Output : constant Att_Guid.C.U_C := Update (
+            Self.Alg,
+            Current_Sim_Nanos =>
+              Interfaces.Unsigned_64 (Arg.Time.Seconds) * Nanoseconds_Per_Second +
+              Interfaces.Unsigned_64 (Arg.Time.Subseconds) * Nanoseconds_Per_Second / Subsecond_Divisor,
+            Nav_Att_In => Sc_Att_C'Unchecked_Access
+         );
+      begin
+         -- Send out data product:
+         Self.Data_Product_T_Send (Self.Data_Products.Attitude_Guidance (
+            Arg.Time,
+            Att_Guid.Pack (Att_Guid.C.To_Ada (Att_Guid_Output))
+         ));
+      end;
    end Tick_T_Recv_Sync;
 
    -- The parameter update connector.
