@@ -77,7 +77,9 @@ package body Component.Average_Mimu_Data.Implementation is
       declare
          -- Build 120-element InputPktsData_c from pre-converted buffer.
          -- Zero-initialized so unused slots have measTime=0, which the
-         -- time-window filter excludes.
+         -- time-window filter excludes. If no new MIMU raw packets were
+         -- received, then we pass all zeros to the algorithm which will
+         -- result in a zeroed result.
          Input : aliased Input_Pkts_Data_C := (
             Meas_Time => [others => 0],
             Gyro_P    => [others => [others => 0.0]],
