@@ -6,7 +6,6 @@ with Att_Guid.C;
 with Vehicle_Config.C;
 with Packed_F32x3_Record.C;
 with Packed_F32x9.C;
-with Algorithm_Wrapper_Util;
 
 package body Component.Rate_Control.Implementation is
 
@@ -33,38 +32,41 @@ package body Component.Rate_Control.Implementation is
    overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
       use Data_Product_Enums;
       use Data_Product_Enums.Data_Dependency_Status;
-      use Algorithm_Wrapper_Util;
 
       -- TODO what about Set_Known_Torque_Pnt_B_B? Assuming that we are not using this for now.
       -- Need to ask Patrick.
 
       -- Grab data dependencies:
+      --
+      -- Data_Dependency_Status.E can be Success, Not_Available, Error, or Stale.
+      -- All return values besides Success indicate that this component is not
+      -- wired up correctly in the algorithm execution order and received errant,
+      -- stale, or no data. This should never happen, so we assert.
       Att_Guid_Dep : Att_Guid.T;
       Att_Guid_Status : constant Data_Dependency_Status.E :=
          Self.Get_Attitude_Guidance (Value => Att_Guid_Dep, Stale_Reference => Arg.Time);
+      pragma Assert (Att_Guid_Status = Success);
    begin
       -- Update the parameters:
       Self.Update_Parameters;
 
-      if Is_Dep_Status_Success (Att_Guid_Status) then
-         -- Call algorithm:
-         declare
-            -- Convert Ada types to C types:
-            Att_Guid_C : aliased Att_Guid.C.U_C := Att_Guid.C.To_C (Att_Guid.Unpack (Att_Guid_Dep));
+      -- Call algorithm:
+      declare
+         -- Convert Ada types to C types:
+         Att_Guid_C : aliased Att_Guid.C.U_C := Att_Guid.C.To_C (Att_Guid.Unpack (Att_Guid_Dep));
 
-            -- Call the C algorithm:
-            Torque_Cmd : constant Packed_F32x3_Record.C.U_C := Update (
-               Self.Alg,
-               Att_Guid_In => Att_Guid_C'Unchecked_Access
-            );
-         begin
-            -- Send out data product:
-            Self.Data_Product_T_Send (Self.Data_Products.Torque_Command (
-               Arg.Time,
-               Packed_F32x3_Record.Pack (Packed_F32x3_Record.C.To_Ada (Torque_Cmd))
-            ));
-         end;
-      end if;
+         -- Call the C algorithm:
+         Torque_Cmd : constant Packed_F32x3_Record.C.U_C := Update (
+            Self.Alg,
+            Att_Guid_In => Att_Guid_C'Unchecked_Access
+         );
+      begin
+         -- Send out data product:
+         Self.Data_Product_T_Send (Self.Data_Products.Torque_Command (
+            Arg.Time,
+            Packed_F32x3_Record.Pack (Packed_F32x3_Record.C.To_Ada (Torque_Cmd))
+         ));
+      end;
    end Tick_T_Recv_Sync;
 
    -- The parameter update connector.
