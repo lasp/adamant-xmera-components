@@ -1,0 +1,6 @@
+---
+description: Data dependencies for the Css Comm component.
+data_dependencies:
+  - name: Css_Sensor_Input
+    type: Css_Sensor_Values.T
+    description: Raw CSS sensor values from the constellation of coarse sun sensors
