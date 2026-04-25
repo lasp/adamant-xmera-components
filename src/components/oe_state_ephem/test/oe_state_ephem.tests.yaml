@@ -1,0 +1,5 @@
+---
+description: This is a unit test suite for the OE State Ephem component
+tests:
+  - name: Test
+    description: Placeholder; replaced in subsequent commits.
