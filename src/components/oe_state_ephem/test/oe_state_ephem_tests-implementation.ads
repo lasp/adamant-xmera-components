@@ -17,6 +17,9 @@ private
    -- Zero coefficients and zero gravitational parameter must produce zero Cartesian state.
    overriding procedure Test_Zero_Inputs (Self : in out Instance);
 
+   -- Single-arc Chebyshev expansion at the arc midpoint reconstructs a known circular equatorial orbit within 0.1 percent.
+   overriding procedure Test_Cheby_Fit (Self : in out Instance);
+
    -- Test data and state:
    type Instance is new Oe_State_Ephem_Tests.Base_Instance with record
       null;
