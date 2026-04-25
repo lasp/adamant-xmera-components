@@ -1,5 +1,5 @@
 ---
 description: This is a unit test suite for the OE State Ephem component
 tests:
-  - name: Test
-    description: Placeholder; replaced in subsequent commits.
+  - name: Test_Zero_Inputs
+    description: Zero coefficients and zero gravitational parameter must produce zero Cartesian state.

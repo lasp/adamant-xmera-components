@@ -14,8 +14,8 @@ private
    overriding procedure Set_Up_Test (Self : in out Instance);
    overriding procedure Tear_Down_Test (Self : in out Instance);
 
-   -- Placeholder; replaced in subsequent commits.
-   overriding procedure Test (Self : in out Instance);
+   -- Zero coefficients and zero gravitational parameter must produce zero Cartesian state.
+   overriding procedure Test_Zero_Inputs (Self : in out Instance);
 
    -- Test data and state:
    type Instance is new Oe_State_Ephem_Tests.Base_Instance with record
