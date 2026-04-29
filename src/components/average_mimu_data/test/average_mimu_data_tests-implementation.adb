@@ -238,10 +238,21 @@ package body Average_Mimu_Data_Tests.Implementation is
       end;
 
       -----------------------------------------------------------------------
-      -- Test Case 5: Tick with no buffered data produces no output.
+      -- Test Case 5: Tick with no buffered data publishes a zero result.
+      -- The wrapper always publishes Imu_Body_Data so downstream consumers
+      -- see Success on every tick; with no Mimu_Raw_Packet buffered, the
+      -- algorithm runs on all-zero input and produces a zeroed output.
       -----------------------------------------------------------------------
       T.Tick_T_Send (((0, 0), 0));
-      Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, 4);
+      Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, 5);
+      Natural_Assert.Eq (T.Imu_Body_Data_History.Get_Count, 5);
+
+      declare
+         Output : constant Averaged_Imu_Data.T := T.Imu_Body_Data_History.Get (5);
+      begin
+         Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [0.0, 0.0, 0.0], Epsilon => 0.0001);
+         Packed_F32x3_Assert.Eq (Output.Accel_Body, [0.0, 0.0, 0.0], Epsilon => 0.0001);
+      end;
 
       -----------------------------------------------------------------------
       -- Test Case 6: Multi-packet buffering - two packets before one tick.
@@ -262,11 +273,11 @@ package body Average_Mimu_Data_Tests.Implementation is
       T.Mimu_Raw_Packet_T_Send (Uniform_Raw_Packet);
       T.Tick_T_Send (((0, 0), 0));
 
-      Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, 5);
-      Natural_Assert.Eq (T.Imu_Body_Data_History.Get_Count, 5);
+      Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, 6);
+      Natural_Assert.Eq (T.Imu_Body_Data_History.Get_Count, 6);
 
       declare
-         Output : constant Averaged_Imu_Data.T := T.Imu_Body_Data_History.Get (5);
+         Output : constant Averaged_Imu_Data.T := T.Imu_Body_Data_History.Get (6);
       begin
          Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [G1, G2, G3], Epsilon => 0.0001);
          Packed_F32x3_Assert.Eq (Output.Accel_Body, [A4, A5, A6], Epsilon => 0.0001);
@@ -293,11 +304,11 @@ package body Average_Mimu_Data_Tests.Implementation is
 
       -- Tick still processes the 4 buffered packets:
       T.Tick_T_Send (((0, 0), 0));
-      Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, 6);
-      Natural_Assert.Eq (T.Imu_Body_Data_History.Get_Count, 6);
+      Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, 7);
+      Natural_Assert.Eq (T.Imu_Body_Data_History.Get_Count, 7);
 
       declare
-         Output : constant Averaged_Imu_Data.T := T.Imu_Body_Data_History.Get (6);
+         Output : constant Averaged_Imu_Data.T := T.Imu_Body_Data_History.Get (7);
       begin
          Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [G1, G2, G3], Epsilon => 0.0001);
          Packed_F32x3_Assert.Eq (Output.Accel_Body, [A4, A5, A6], Epsilon => 0.0001);
