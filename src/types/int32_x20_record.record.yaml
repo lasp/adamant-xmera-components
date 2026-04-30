@@ -1,0 +1,6 @@
+---
+description: Record wrapping a 20-element Int32 array. Maps to the C shim's IntArray20_c bounded-array struct.
+fields:
+  - name: Id
+    type: Int32_X20.T
+    description: 20 SPICE IDs, one per configured body (zero-padded after the configured count).

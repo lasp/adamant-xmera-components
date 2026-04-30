@@ -1,0 +1,36 @@
+---
+#  typedef struct {
+#      int bodySpiceId;
+#      int originalCentralBodyId;
+#      int isMoon;
+#      double input_r[3];
+#      double input_v[3];
+#      double output_r[3];
+#      double output_v[3];
+#  } BodyEphemerisPayload_c;
+description: One body's ephemeris payload as exchanged with the EphemeridesRecenterAlgorithm C shim.
+fields:
+  - name: Body_Spice_Id
+    type: Interfaces.Integer_32
+    format: I32
+    description: SPICE ID of the body
+  - name: Original_Central_Body_Id
+    type: Interfaces.Integer_32
+    format: I32
+    description: SPICE ID of the body's original central body
+  - name: Is_Moon
+    type: Interfaces.Integer_32
+    format: I32
+    description: 1 if this body is a moon of another listed body, else 0
+  - name: Input_R
+    type: Packed_F64x3.T
+    description: "[m] Input position in the original central body frame"
+  - name: Input_V
+    type: Packed_F64x3.T
+    description: "[m/s] Input velocity in the original central body frame"
+  - name: Output_R
+    type: Packed_F64x3.T
+    description: "[m] Output position in the new central body frame"
+  - name: Output_V
+    type: Packed_F64x3.T
+    description: "[m/s] Output velocity in the new central body frame"
