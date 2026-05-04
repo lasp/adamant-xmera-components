@@ -48,7 +48,7 @@ package body Component.Body_Rate_Miscompare.Implementation is
       Imu_Body_Status : constant Data_Dependency_Status.E :=
          Self.Get_Imu_Body (Value => Imu_Body, Stale_Reference => Arg.Time);
       pragma Assert (Imu_Body_Status = Success);
-      St_Body : St_Att_Input.T;
+      St_Body : St_Att.T;
       St_Body_Status : constant Data_Dependency_Status.E :=
          Self.Get_Star_Tracker_Attitude (Value => St_Body, Stale_Reference => Arg.Time);
       pragma Assert (St_Body_Status = Success);

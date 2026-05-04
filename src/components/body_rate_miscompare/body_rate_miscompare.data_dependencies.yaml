@@ -5,5 +5,5 @@ data_dependencies:
     type: Mimu_Majority_Vote_Output.T
     description: Majority vote output containing averaged angular velocity and fault status
   - name: Star_Tracker_Attitude
-    type: St_Att_Input.T
+    type: St_Att.T
     description: Star tracker attitude measurement (time tag, MRP, angular velocity)

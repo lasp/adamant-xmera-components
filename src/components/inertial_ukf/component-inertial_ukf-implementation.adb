@@ -3,8 +3,9 @@
 --------------------------------------------------------------------------------
 
 with Nav_Att;
+with St_Att;
 with St_Att_Input.C;
-with St_Att_Input;
+with Packed_F32x3;
 with Gyro_Input.C;
 with Rwa_Speeds;
 with Rw_Speeds_Input.C;
@@ -40,7 +41,7 @@ package body Component.Inertial_Ukf.Implementation is
       -- All return values besides Success indicate that this component is not
       -- wired up correctly in the algorithm execution order and received errant,
       -- stale, or no data. This should never happen, so we assert.
-      St_Tracker_Att : St_Att_Input.T;
+      St_Tracker_Att : St_Att.T;
       St_Tracker_Att_Status : constant Data_Dependency_Status.E :=
          Self.Get_Star_Tracker_Att (Value => St_Tracker_Att, Stale_Reference => Arg.Time);
       pragma Assert (St_Tracker_Att_Status = Success);
@@ -54,9 +55,14 @@ package body Component.Inertial_Ukf.Implementation is
       Self.Update_Parameters;
 
       declare
-         -- Convert star tracker attitude to C type:
+         -- Convert star tracker attitude to the C struct expected by the algorithm.
+         -- The C side uses F32 seconds; the data dep carries U64 nanoseconds.
          St_Att_C : aliased St_Att_Input.C.U_C :=
-            St_Att_Input.C.To_C (St_Att_Input.Unpack (St_Tracker_Att));
+            St_Att_Input.C.To_C ((
+               Time_Tag      => Short_Float (Long_Float (St_Tracker_Att.Time_Tag) * 1.0E-9),
+               Mrp_Bdy_Inrtl => Packed_F32x3.Unpack (St_Tracker_Att.Mrp_Bdy_Inrtl),
+               Omega_Bn_B    => Packed_F32x3.Unpack (St_Tracker_Att.Omega_Bn_B)
+            ));
 
          -- Hard-code gyro measurement to zero (gyro dependency removed):
          Gyro_C : aliased Gyro_Input.C.U_C := (
