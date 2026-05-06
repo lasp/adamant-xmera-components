@@ -1,0 +1,5 @@
+---
+description: Packed 11-element vector of 64-bit floats. Used for Chebyshev polynomial coefficients sized to MAX_NUM_CHEBY_POLYS.
+type: Long_Float
+format: F64
+length: 11

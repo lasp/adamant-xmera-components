@@ -4,7 +4,7 @@
 
 with Css_Sensor_Values.C;
 with Cheby_Polynomials.C;
-with Packed_F64x10.C;
+with Packed_F64x11.C;
 
 package body Component.Css_Comm.Implementation is
 
@@ -74,7 +74,7 @@ package body Component.Css_Comm.Implementation is
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
       -- Construct Chebyshev polynomials C type from parameter:
       Cheby_Poly_C : aliased Cheby_Polynomials.C.U_C := (
-         Data => Packed_F64x10.C.To_C (Self.Cheby_Polynomials)
+         Data => Packed_F64x11.C.To_C (Self.Cheby_Polynomials)
       );
    begin
       Set_Num_Sensors (Self.Alg, Self.Num_Sensors.Value);

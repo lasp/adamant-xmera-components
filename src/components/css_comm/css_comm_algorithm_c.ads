@@ -13,7 +13,7 @@ package Css_Comm_Algorithm_C is
    MAX_NUM_CSS_SENSORS : constant := 16;
 
    -- MAX_NUM_CHEBY_POLYS must match the #define in cssCommTypes.h
-   MAX_NUM_CHEBY_POLYS : constant := 10;
+   MAX_NUM_CHEBY_POLYS : constant := 11;
 
    --* Opaque handle for a CssCommAlgorithm instance.
    type Css_Comm_Algorithm is limited private;

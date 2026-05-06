@@ -15,6 +15,6 @@ parameters:
     default: "(Value => 11)"
   - name: Cheby_Polynomials
     description: "[-] Chebyshev polynomials to fit output to cosine"
-    type: Packed_F64x10.T
-    default: "[-4.477073e+04, +8.366206e+04, -6.813298e+04, +4.812602e+04, -2.922453e+04, +1.504304e+04, 
+    type: Packed_F64x11.T
+    default: "[-4.477073e+04, +8.366206e+04, -6.813298e+04, +4.812602e+04, -2.922453e+04, +1.504304e+04,
                -6.422252e+03, +2.197417e+03, -5.688830e+02, +9.984400e+01, -8.999793e+00]"

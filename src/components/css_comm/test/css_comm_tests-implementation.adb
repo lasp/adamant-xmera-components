@@ -4,7 +4,7 @@
 
 with Basic_Assertions; use Basic_Assertions;
 with Packed_F64x16.Assertion; use Packed_F64x16.Assertion;
-with Packed_F64x10;
+with Packed_F64x11;
 with Packed_U32;
 with Packed_F64;
 with Css_Sensor_Values;
@@ -47,7 +47,7 @@ package body Css_Comm_Tests.Implementation is
       Num_Sensors_Val : constant Packed_U32.T := (Value => 5);
       Max_Sensor_Val : constant Packed_F64.T := (Value => 100.0);
       Cheby_Count_Val : constant Packed_U32.T := (Value => 3);
-      Cheby_Poly_Val : constant Packed_F64x10.T := [others => 0.0];
+      Cheby_Poly_Val : constant Packed_F64x11.T := [others => 0.0];
 
       -- Input: [50.0, 0.0, 100.0, -10.0, 110.0, rest zeros]
       -- Expected output: [0.5, 0.0, 1.0, 0.0, 1.0, rest zeros]

@@ -8,4 +8,4 @@
 description: Bounded array of Chebyshev polynomial coefficients. Maps to ChebyPolynomials_c in the C shim.
 fields:
   - name: Data
-    type: Packed_F64x10.T
+    type: Packed_F64x11.T
