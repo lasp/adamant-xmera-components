@@ -2,10 +2,11 @@
 -- Rate_Control Component Implementation Body
 --------------------------------------------------------------------------------
 
-with Att_Guid.C;
-with Vehicle_Config.C;
+with Packed_F32x3.C;
+with Packed_F32x3_Record;
 with Packed_F32x3_Record.C;
 with Packed_F32x9.C;
+with Packed_F32x9_Record.C;
 
 package body Component.Rate_Control.Implementation is
 
@@ -33,9 +34,6 @@ package body Component.Rate_Control.Implementation is
       use Data_Product_Enums;
       use Data_Product_Enums.Data_Dependency_Status;
 
-      -- TODO what about Set_Known_Torque_Pnt_B_B? Assuming that we are not using this for now.
-      -- Need to ask Patrick.
-
       -- Grab data dependencies:
       --
       -- Data_Dependency_Status.E can be Success, Not_Available, Error, or Stale.
@@ -52,13 +50,22 @@ package body Component.Rate_Control.Implementation is
 
       -- Call algorithm:
       declare
-         -- Convert Ada types to C types:
-         Att_Guid_C : aliased Att_Guid.C.U_C := Att_Guid.C.To_C (Att_Guid.Unpack (Att_Guid_Dep));
+         -- Wrap the two Att_Guid fields the algorithm uses (omega_BR_B,
+         -- domega_RN_B) in C-pass-by-copy records that map to Vector3f_c on
+         -- the C++ side. The remaining Att_Guid fields are unused by the
+         -- current algorithm.
+         Omega_BR_B_C : aliased Packed_F32x3_Record.C.U_C :=
+            (Value => Packed_F32x3.C.To_C (Packed_F32x3.Unpack (Att_Guid_Dep.Omega_Br_B)));
+         Domega_RN_B_C : aliased Packed_F32x3_Record.C.U_C :=
+            (Value => Packed_F32x3.C.To_C (Packed_F32x3.Unpack (Att_Guid_Dep.Domega_Rn_B)));
 
-         -- Call the C algorithm:
+         -- Call the C algorithm. Vector3f_c is returned by value into the
+         -- Packed_F32x3_Record.C.U_C record; both are 3 contiguous floats
+         -- with the same C_Pass_By_Copy ABI.
          Torque_Cmd : constant Packed_F32x3_Record.C.U_C := Update (
             Self.Alg,
-            Att_Guid_In => Att_Guid_C'Unchecked_Access
+            Omega_BR_B  => Omega_BR_B_C'Unchecked_Access,
+            Domega_RN_B => Domega_RN_B_C'Unchecked_Access
          );
       begin
          -- Send out data product:
@@ -87,18 +94,14 @@ package body Component.Rate_Control.Implementation is
    --
    -- In this case we need update the inertia and the P gain if they changed.
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
-      -- Construct vehicle config from spacecraft inertia parameter:
-      Vehicle_Config_C : aliased Vehicle_Config.C.U_C := (
-         Iscpnt_B_B => Packed_F32x9.C.To_C (Self.Spacecraft_Inertia),
-         Co_M_B => [0.0, 0.0, 0.0],  -- Not used by algorithm
-         Mass_Sc => 0.0,  -- Not used by algorithm
-         Current_Adcsstate => 0  -- Not used by algorithm
-      );
+      -- Wrap the inertia parameter in a C-pass-by-copy record that maps to
+      -- Matrix3f_c on the C++ side. Layout is row-major; the algorithm rejects
+      -- non-symmetric inertias so row/column-major are equivalent.
+      Inertia_C : aliased Packed_F32x9_Record.C.U_C :=
+         (Value => Packed_F32x9.C.To_C (Self.Spacecraft_Inertia));
    begin
       -- Set spacecraft inertia and gain before each update:
-      Set_Spacecraft_Inertia (Self.Alg, Vehicle_Config_C'Unchecked_Access);
-      -- ^ TODO this seems unideal. WHy are we taking a vehicle config type here? we should be taking
-      -- the inertia tensor instead. This type of conversion should be done at the interface level.
+      Set_Spacecraft_Inertia (Self.Alg, Inertia_C'Unchecked_Access);
       Set_Derivative_Gain_P (Self.Alg, Self.Derivative_Gain_P.Value);
    end Update_Parameters_Action;
 
