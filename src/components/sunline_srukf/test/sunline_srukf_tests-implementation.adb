@@ -92,6 +92,12 @@ package body Sunline_Srukf_Tests.Implementation is
          )
       ];
    begin
+      -- Provide a defined CSS input. The current sunline_srukf algorithm
+      -- copies attitude fields straight through (Cos_Values are not yet
+      -- consumed), but the wrapper now down-casts each F64 cosine to F32
+      -- and any uninitialized bit pattern would raise Constraint_Error.
+      T.Css_Sensor_Input := (Data => [others => 0.0]);
+
       -- Run each test case
       for I in Test_Cases'Range loop
          -- Set data dependency via tester
