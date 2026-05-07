@@ -4,9 +4,8 @@ pragma Style_Checks (Off);
 pragma Warnings (Off, "-gnatwu");
 
 with Interfaces.C; use Interfaces; use Interfaces.C;
-with Att_Guid.C;
-with Vehicle_Config.C;
 with Packed_F32x3_Record.C;
+with Packed_F32x9_Record.C;
 
 package Rate_Control_Algorithm_C is
 
@@ -28,24 +27,35 @@ package Rate_Control_Algorithm_C is
           Convention   => C,
           External_Name => "RateControlAlgorithm_destroy";
 
-   --* @brief Compute control torque from attitude guidance.
-   --* @param Self         The algorithm instance.
-   --* @param Att_Guid_In  Pointer to attitude guidance message payload.
-   --* @return Command torque message.
+   --* @brief Compute control torque.
+   --* The two reference parameters bind to the C shim's `const Vector3f_c&`
+   --* arguments (a C++ reference is a pointer at the SysV-AMD64 ABI level).
+   --* The return is by value: the shim hands back a Vector3f_c POD struct,
+   --* which matches Adamant's `Packed_F32x3_Record.C.U_C` (`C_Pass_By_Copy`).
+   --* @param Self          The algorithm instance.
+   --* @param Omega_BR_B    [rad/s] Body-relative angular velocity in body frame.
+   --* @param Domega_RN_B   [rad/s^2] Reference frame angular accel in body frame.
+   --* @return Command torque about point B [Nm].
    function Update
      (Self        : Rate_Control_Algorithm_Access;
-      Att_Guid_In : Att_Guid.C.U_C_Access)
+      Omega_BR_B  : access constant Packed_F32x3_Record.C.U_C;
+      Domega_RN_B : access constant Packed_F32x3_Record.C.U_C)
      return Packed_F32x3_Record.C.U_C
      with Import       => True,
           Convention   => C,
           External_Name => "RateControlAlgorithm_update";
 
-   --* @brief Set spacecraft inertia from vehicle configuration.
-   --* @param Self              The algorithm instance.
-   --* @param Vehicle_Config_In Pointer to vehicle config message payload.
+   --* @brief Set spacecraft inertia.
+   --* The reference parameter binds to `const Matrix3f_c&` on the C++ side.
+   --* The C shim's `Matrix3f_c` lays out 9 floats as a `[3][3]` array, which
+   --* is byte-identical to `Packed_F32x9_Record.C.U_C` (9 contiguous floats,
+   --* row-major). The algorithm enforces symmetry, so any layout convention
+   --* mismatch is moot for valid inertia tensors.
+   --* @param Self                The algorithm instance.
+   --* @param Spacecraft_Inertia  [kg m^2] 3x3 inertia tensor (row-major).
    procedure Set_Spacecraft_Inertia
-     (Self              : Rate_Control_Algorithm_Access;
-      Vehicle_Config_In : Vehicle_Config.C.U_C_Access)
+     (Self                : Rate_Control_Algorithm_Access;
+      Spacecraft_Inertia  : access constant Packed_F32x9_Record.C.U_C)
      with Import       => True,
           Convention   => C,
           External_Name => "RateControlAlgorithm_setSpacecraftInertia";
@@ -65,7 +75,7 @@ package Rate_Control_Algorithm_C is
    --* @return [N*m*s] The current derivative gain.
    function Get_Derivative_Gain_P
      (Self : Rate_Control_Algorithm_Access)
-     return Short_Float 
+     return Short_Float
      with Import       => True,
           Convention   => C,
           External_Name => "RateControlAlgorithm_getDerivativeGainP";
@@ -74,7 +84,7 @@ package Rate_Control_Algorithm_C is
    --* @param Self                  The algorithm instance.
    --* @param Known_Torque_Pnt_B_B  [N*m] Known external torque in body frame.
    procedure Set_Known_Torque_Pnt_B_B
-     (Self                  : Rate_Control_Algorithm_Access;
+     (Self                 : Rate_Control_Algorithm_Access;
       Known_Torque_Pnt_B_B : Packed_F32x3_Record.C.U_C)
      with Import       => True,
           Convention   => C,

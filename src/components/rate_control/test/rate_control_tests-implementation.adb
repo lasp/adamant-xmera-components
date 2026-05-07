@@ -66,9 +66,14 @@ package body Rate_Control_Tests.Implementation is
          Domega_Rn_B => [0.0002, 0.0003, 0.0001]
       );
 
-      -- Expected torque without external torque
-      -- Computed from Python test: findTrueTorques with knownTorque = [0,0,0]
-      Expected_Torque_No_Ext : constant Packed_F32x3.T := [-1.39, 3.79, -1.39];
+      -- Expected torque without external torque, computed from the current
+      -- algorithm: Lr = -P*omega_BR_B + I*domega_RN_B - knownTorquePntB_B
+      -- with knownTorquePntB_B = [0,0,0] (default).
+      --   -P*omega_BR_B  = -150 * [0.010, -0.020, 0.015]    = [-1.5, 3.0, -2.25]
+      --   I*domega_RN_B  = diag([1000,800,800])*[2e-4,3e-4,1e-4]
+      --                                                     = [0.2, 0.24, 0.08]
+      --   Lr             =                                    [-1.3, 3.24, -2.17]
+      Expected_Torque_No_Ext : constant Packed_F32x3.T := [-1.3, 3.24, -2.17];
 
       Output : Packed_F32x3_Record.T;
    begin
