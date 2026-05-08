@@ -1,0 +1,11 @@
+---
+#  /**
+#   * @brief Bounded array of Chebyshev polynomial coefficients.
+#   */
+#  typedef struct {
+#      double data[MAX_NUM_CHEBY_POLYS];
+#  } ChebyPolynomials_c;
+description: Bounded array of Chebyshev polynomial coefficients. Maps to ChebyPolynomials_c in the C shim.
+fields:
+  - name: Data
+    type: Packed_F64x11.T

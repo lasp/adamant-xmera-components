@@ -1,0 +1,5 @@
+---
+description: Unit tests for the Css Comm component
+tests:
+  - name: Test_Zero_Cheby_Is_Identity
+    description: With zero Chebyshev coefficients, output equals input/maxSensorValue clamped to [0, 1].

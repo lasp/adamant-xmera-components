@@ -1,0 +1,6 @@
+---
+description: Data products for the Css Comm component.
+data_products:
+  - name: Css_Sensor_Output
+    type: Css_Sensor_Values.T
+    description: Corrected CSS sensor values after Chebyshev polynomial fitting
