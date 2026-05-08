@@ -8,6 +8,7 @@ with Printable_History;
 with Data_Product_Return.Representation;
 with Data_Product_Fetch.Representation;
 with Data_Product.Representation;
+with Css_Array_Adc_8;
 with Css_Sensor_Values;
 with Data_Product;
 with Css_Sensor_Values.Representation;
@@ -35,7 +36,7 @@ package Component.Css_Comm.Implementation.Tester is
       -- Data product histories:
       Css_Sensor_Output_History : Css_Sensor_Output_History_Package.Instance;
       -- Data dependency return values:
-      Css_Sensor_Input : Css_Sensor_Values.T;
+      Css_Sensor_Input : Css_Array_Adc_8.T;
       -- Data dependency fetch overrides:
       Data_Dependency_Return_Status_Override : Data_Product_Enums.Fetch_Status.E := Data_Product_Enums.Fetch_Status.Success;
       Data_Dependency_Return_Id_Override : Data_Product_Types.Data_Product_Id := 0;

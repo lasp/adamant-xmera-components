@@ -1,0 +1,4 @@
+---
+fields:
+  - name: Adc_Value
+    type: Css_Adc_U16_8.T

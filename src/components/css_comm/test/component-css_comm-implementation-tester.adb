@@ -62,7 +62,7 @@ package body Component.Css_Comm.Implementation.Tester is
       -- Determine return data product length:
       if Length_To_Return = 0 then
          case Arg.Id is
-            when 0 => Length_To_Return := Css_Sensor_Values.Size_In_Bytes;
+            when 0 => Length_To_Return := Css_Array_Adc_8.Size_In_Bytes;
             when others =>
                if Return_Status = Data_Product_Enums.Fetch_Status.Success then
                   Return_Status := Data_Product_Enums.Fetch_Status.Id_Out_Of_Range;
@@ -79,8 +79,8 @@ package body Component.Css_Comm.Implementation.Tester is
       if Return_Status = Data_Product_Enums.Fetch_Status.Success then
          case Arg.Id is
             when 0 =>
-               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Css_Sensor_Values.Size_In_Bytes - 1) :=
-                  Css_Sensor_Values.Serialization.To_Byte_Array (Self.Css_Sensor_Input);
+               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Css_Array_Adc_8.Size_In_Bytes - 1) :=
+                  Css_Array_Adc_8.Serialization.To_Byte_Array (Self.Css_Sensor_Input);
             when others =>
                Return_Status := Data_Product_Enums.Fetch_Status.Id_Out_Of_Range;
          end case;

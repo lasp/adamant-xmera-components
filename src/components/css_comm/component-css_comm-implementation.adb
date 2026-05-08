@@ -2,6 +2,7 @@
 -- Css_Comm Component Implementation Body
 --------------------------------------------------------------------------------
 
+with Css_Sensor_Values;
 with Css_Sensor_Values.C;
 with Cheby_Polynomials.C;
 with Packed_F64x11.C;
@@ -32,31 +33,51 @@ package body Component.Css_Comm.Implementation is
       use Data_Product_Enums;
       use Data_Product_Enums.Data_Dependency_Status;
 
-      -- Grab data dependencies:
-      Css_Input : Css_Sensor_Values.T;
+      -- Grab data dependencies: raw ADC counts from the DAS-extracted CSS
+      -- sensor product.
+      Css_Adc_Input : Css_Array_Adc_8.T;
       Css_Input_Status : constant Data_Dependency_Status.E :=
-         Self.Get_Css_Sensor_Input (Value => Css_Input, Stale_Reference => Arg.Time);
+         Self.Get_Css_Sensor_Input (Value => Css_Adc_Input, Stale_Reference => Arg.Time);
       pragma Assert (Css_Input_Status = Success);
    begin
       -- Update the parameters:
       Self.Update_Parameters;
 
-      -- Call algorithm:
+      -- Convert ADC counts to cosine values per the css_wls_estimator pattern:
+      -- divide each U16 ADC value by Max_Sensor_Value and clamp to <= 1.0
+      -- (lower bound is implicit since ADC is unsigned). The result is packed
+      -- into a Css_Sensor_Values.T with the first 8 elements taken from the
+      -- ADC source and the remaining elements zero-padded up to the
+      -- C algorithm's MAX_NUM_CSS_SENSORS bound.
       declare
-         -- Convert Ada types to C types:
-         Css_Input_C : aliased Css_Sensor_Values.C.U_C := Css_Sensor_Values.C.To_C (Css_Sensor_Values.Unpack (Css_Input));
-
-         -- Call the C algorithm:
-         Css_Output : constant Css_Sensor_Values.C.U_C := Update (
-            Self.Alg,
-            Input_Values => Css_Input_C'Unchecked_Access
-         );
+         Max_Value : constant Long_Float := Long_Float (Self.Max_Sensor_Value.Value);
+         Cosines : Css_Sensor_Values.T := (Data => [others => 0.0]);
       begin
-         -- Send out data product:
-         Self.Data_Product_T_Send (Self.Data_Products.Css_Sensor_Output (
-            Arg.Time,
-            Css_Sensor_Values.Pack (Css_Sensor_Values.C.To_Ada (Css_Output))
-         ));
+         for I in Css_Adc_Input.Adc_Value'Range loop
+            declare
+               Cos_Value : Long_Float :=
+                  Long_Float (Css_Adc_Input.Adc_Value (I)) / Max_Value;
+            begin
+               if Cos_Value > 1.0 then
+                  Cos_Value := 1.0;
+               end if;
+               Cosines.Data (Cosines.Data'First + Natural (I - Css_Adc_Input.Adc_Value'First)) := Cos_Value;
+            end;
+         end loop;
+
+         -- Call algorithm with the converted cosine values:
+         declare
+            Css_Input_C : aliased Css_Sensor_Values.C.U_C := Css_Sensor_Values.C.To_C (Css_Sensor_Values.Unpack (Cosines));
+            Css_Output : constant Css_Sensor_Values.C.U_C := Update (
+               Self.Alg,
+               Input_Values => Css_Input_C'Unchecked_Access
+            );
+         begin
+            Self.Data_Product_T_Send (Self.Data_Products.Css_Sensor_Output (
+               Arg.Time,
+               Css_Sensor_Values.Pack (Css_Sensor_Values.C.To_Ada (Css_Output))
+            ));
+         end;
       end;
    end Tick_T_Recv_Sync;
 
@@ -78,7 +99,12 @@ package body Component.Css_Comm.Implementation is
       );
    begin
       Set_Num_Sensors (Self.Alg, Self.Num_Sensors.Value);
-      Set_Max_Sensor_Value (Self.Alg, Long_Float (Self.Max_Sensor_Value.Value));
+      -- Max_Sensor_Value is consumed by the Ada-side ADC->cosine conversion in
+      -- Tick_T_Recv_Sync (matching the css_wls_estimator pattern). The C
+      -- algorithm performs its own divide-by-max as part of the Chebyshev
+      -- correction; pin it to 1.0 so the C divide is a no-op and the
+      -- Ada-side conversion is the single source of truth for ADC scaling.
+      Set_Max_Sensor_Value (Self.Alg, 1.0);
       Set_Cheby_Count (Self.Alg, Self.Cheby_Count.Value);
       Set_Cheby_Polynomials (Self.Alg, Cheby_Poly_C'Unchecked_Access);
    end Update_Parameters_Action;

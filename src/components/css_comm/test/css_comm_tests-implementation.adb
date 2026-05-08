@@ -7,6 +7,7 @@ with Packed_F64x16.Assertion; use Packed_F64x16.Assertion;
 with Packed_F64x11;
 with Packed_U32;
 with Packed_F64;
+with Css_Array_Adc_8;
 with Css_Sensor_Values;
 with Css_Comm_Parameters;
 with Parameter_Enums.Assertion;
@@ -38,7 +39,10 @@ package body Css_Comm_Tests.Implementation is
 
    -- Adapted from C++ test ZeroChebyIsIdentity:
    -- With all zero Chebyshev coefficients, the output equals
-   -- input/maxSensorValue clamped to [0, 1].
+   -- ADC_count/Max_Sensor_Value clamped to <= 1.0 (lower bound is implicit
+   -- since ADC counts are unsigned). The Ada wrapper performs the divide and
+   -- upper clamp; the C algorithm is configured with Max_Sensor_Value=1.0 so
+   -- its internal divide is a no-op.
    overriding procedure Test_Zero_Cheby_Is_Identity (Self : in out Instance) is
       T : Component.Css_Comm.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Css_Comm_Parameters.Instance;
@@ -49,11 +53,15 @@ package body Css_Comm_Tests.Implementation is
       Cheby_Count_Val : constant Packed_U32.T := (Value => 3);
       Cheby_Poly_Val : constant Packed_F64x11.T := [others => 0.0];
 
-      -- Input: [50.0, 0.0, 100.0, -10.0, 110.0, rest zeros]
-      -- Expected output: [0.5, 0.0, 1.0, 0.0, 1.0, rest zeros]
-      -- Rationale: output = clamp(input/maxSensor + 0, 0, 1) since cheby = 0
-      Input_Data : constant Css_Sensor_Values.T := (
-         Data => [50.0, 0.0, 100.0, -10.0, 110.0, others => 0.0]
+      -- Input ADC counts: [50, 0, 100, 0, 110, 0, 0, 0]
+      -- (ADC is unsigned, so the legacy negative-input case is not
+      -- representable here; replaced with 0.)
+      -- Expected output (16 elements, last 8 are zero-padding to
+      -- MAX_NUM_CSS_SENSORS): [0.5, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, ...]
+      -- Rationale: ada_cosine = clamp(adc/100, <= 1.0); cheby = 0 so the C
+      -- algorithm passes the value through unchanged.
+      Input_Data : constant Css_Array_Adc_8.T := (
+         Adc_Value => [50, 0, 100, 0, 110, 0, 0, 0]
       );
       Expected_Output : constant Packed_F64x16.T :=
          [0.5, 0.0, 1.0, 0.0, 1.0, others => 0.0];

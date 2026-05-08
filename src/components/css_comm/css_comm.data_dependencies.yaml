@@ -2,5 +2,5 @@
 description: Data dependencies for the Css Comm component.
 data_dependencies:
   - name: Css_Sensor_Input
-    type: Css_Sensor_Values.T
-    description: Raw CSS sensor values from the constellation of coarse sun sensors
+    type: Css_Array_Adc_8.T
+    description: Raw CSS ADC counts from the constellation of coarse sun sensors. Converted to cosine values inside the component before being passed to the C algorithm.
