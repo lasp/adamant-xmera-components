@@ -1,0 +1,5 @@
+---
+description: This is a unit test suite for the Ephemerides Recenter component
+tests:
+  - name: Test
+    description: Run the algorithm to ensure integration is sound.

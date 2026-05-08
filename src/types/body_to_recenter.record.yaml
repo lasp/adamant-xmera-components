@@ -1,0 +1,15 @@
+---
+#  typedef struct {
+#      int bodySpiceId;
+#      int originalCentralBodyId;
+#  } BodyToRecenter;
+description: Identifies a celestial body to be re-centered and the SPICE ID of the body its input ephemeris is currently expressed about.
+fields:
+  - name: Body_Spice_Id
+    type: Interfaces.Integer_32
+    format: I32
+    description: SPICE ID of the body
+  - name: Original_Central_Body_Id
+    type: Interfaces.Integer_32
+    format: I32
+    description: SPICE ID of the body's original central body

@@ -1,0 +1,5 @@
+---
+description: Array of 20 32-bit signed integers, sized to MAX_NUM_CHANGE_BODIES.
+type: Interfaces.Integer_32
+format: I32
+length: 20

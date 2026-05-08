@@ -1,0 +1,6 @@
+---
+description: Record wrapping a 20-element Body_Ephemeris_Payload array. Maps to the C shim's BodyEphemerisPayloadArray20_c bounded-array struct.
+fields:
+  - name: Bodies
+    type: Body_Ephemeris_Payload_X20.T
+    description: 20 body ephemeris payloads, one per configured body.

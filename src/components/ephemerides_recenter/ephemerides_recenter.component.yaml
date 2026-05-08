@@ -1,0 +1,50 @@
+---
+description: Ephemerides recenter component re-expresses up to four body ephemerides about a new central body. Wraps the EphemeridesRecenterAlgorithm C++ algorithm via its C shim.
+execution: passive
+init:
+  description: Initializes the ephemerides recenter algorithm with the new and previous central body SPICE IDs and the configured body list.
+  parameters:
+    - name: New_Zero_Base_Id
+      type: Interfaces.Integer_32
+      description: SPICE ID of the new central body about which all output ephemerides are expressed.
+    - name: Previous_Common_Zero_Base_Id
+      type: Interfaces.Integer_32
+      description: SPICE ID of the previous common central body shared by every primary input ephemeris.
+    - name: Body_Count
+      type: Interfaces.Unsigned_32
+      description: Number of configured bodies, in the range 1 .. 4.
+    - name: Body_0_Spice_Id
+      type: Interfaces.Integer_32
+      description: SPICE ID of body 0 (only used when Body_Count >= 1).
+    - name: Body_0_Original_Central_Body_Id
+      type: Interfaces.Integer_32
+      description: SPICE ID of body 0's original central body (only used when Body_Count >= 1).
+    - name: Body_1_Spice_Id
+      type: Interfaces.Integer_32
+      description: SPICE ID of body 1 (only used when Body_Count >= 2).
+    - name: Body_1_Original_Central_Body_Id
+      type: Interfaces.Integer_32
+      description: SPICE ID of body 1's original central body (only used when Body_Count >= 2).
+    - name: Body_2_Spice_Id
+      type: Interfaces.Integer_32
+      description: SPICE ID of body 2 (only used when Body_Count >= 3).
+    - name: Body_2_Original_Central_Body_Id
+      type: Interfaces.Integer_32
+      description: SPICE ID of body 2's original central body (only used when Body_Count >= 3).
+    - name: Body_3_Spice_Id
+      type: Interfaces.Integer_32
+      description: SPICE ID of body 3 (only used when Body_Count >= 4).
+    - name: Body_3_Original_Central_Body_Id
+      type: Interfaces.Integer_32
+      description: SPICE ID of body 3's original central body (only used when Body_Count >= 4).
+connectors:
+  - description: Run the algorithm up to the current time.
+    type: Tick.T
+    kind: recv_sync
+  - description: Fetch a data product item from the database.
+    type: Data_Product_Fetch.T
+    return_type: Data_Product_Return.T
+    kind: request
+  - description: The data product invoker connector
+    type: Data_Product.T
+    kind: send

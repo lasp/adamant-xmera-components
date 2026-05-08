@@ -1,0 +1,4 @@
+---
+description: Array of 20 Body_Ephemeris_Payload elements, sized to MAX_NUM_CHANGE_BODIES.
+type: Body_Ephemeris_Payload.T
+length: 20
