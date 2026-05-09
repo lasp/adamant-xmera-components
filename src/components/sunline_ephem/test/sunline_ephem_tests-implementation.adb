@@ -71,13 +71,12 @@ package body Sunline_Ephem_Tests.Implementation is
             Time_Tag => 0.0
          );
 
-         -- Set spacecraft position to test vector (Ephemeris type, wrapper converts to Nav_Trans)
+         -- Set spacecraft position to test vector. Cartesian_State carries
+         -- only Position/Velocity; the wrapper supplies Time_Tag from the
+         -- tick time when constructing Nav_Trans for the C algorithm.
          T.Spacecraft_Position := (
-            R_Bdy_Zero_N => Test_Cases (I).Sc_Position,
-            V_Bdy_Zero_N => [0.0, 0.0, 0.0],
-            Sigma_Bn => [0.0, 0.0, 0.0],
-            Omega_Bn_B => [0.0, 0.0, 0.0],
-            Time_Tag => 0.0
+            Position => Test_Cases (I).Sc_Position,
+            Velocity => [0.0, 0.0, 0.0]
          );
 
          -- Set spacecraft attitude to identity (no rotation)

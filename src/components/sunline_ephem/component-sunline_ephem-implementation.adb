@@ -6,6 +6,8 @@ with Nav_Att.C;
 with Nav_Trans.C;
 with Ephemeris;
 with Ephemeris.C;
+with Cartesian_State;
+with Cartesian_State.C;
 
 package body Component.Sunline_Ephem.Implementation is
 
@@ -43,9 +45,9 @@ package body Component.Sunline_Ephem.Implementation is
       Sun_Eph_Status : constant Data_Dependency_Status.E :=
          Self.Get_Sun_Ephemeris (Value => Sun_Eph, Stale_Reference => Arg.Time);
       pragma Assert (Sun_Eph_Status = Success);
-      Sc_Pos_Eph : Ephemeris.T;
+      Sc_Pos : Cartesian_State.T;
       Sc_Pos_Status : constant Data_Dependency_Status.E :=
-         Self.Get_Spacecraft_Position (Value => Sc_Pos_Eph, Stale_Reference => Arg.Time);
+         Self.Get_Spacecraft_Position (Value => Sc_Pos, Stale_Reference => Arg.Time);
       pragma Assert (Sc_Pos_Status = Success);
       Sc_Att : Nav_Att.T;
       Sc_Att_Status : constant Data_Dependency_Status.E :=
@@ -54,12 +56,13 @@ package body Component.Sunline_Ephem.Implementation is
 
       -- Convert to C types:
       Sun_Eph_C : aliased Ephemeris.C.U_C := Ephemeris.C.To_C (Ephemeris.Unpack (Sun_Eph));
-      -- Convert Ephemeris to Nav_Trans for the C algorithm:
-      Sc_Pos_Eph_C : constant Ephemeris.C.U_C := Ephemeris.C.To_C (Ephemeris.Unpack (Sc_Pos_Eph));
+      -- Lift Cartesian_State to Nav_Trans for the C algorithm. Time_Tag is
+      -- the current tick time (Cartesian_State has no Time_Tag of its own).
+      Sc_Pos_C_Cartesian : constant Cartesian_State.C.U_C := Cartesian_State.C.To_C (Cartesian_State.Unpack (Sc_Pos));
       Sc_Pos_C : aliased Nav_Trans.C.U_C := (
-         Time_Tag => Sc_Pos_Eph_C.Time_Tag,
-         R_Bn_N => Sc_Pos_Eph_C.R_Bdy_Zero_N,
-         V_Bn_N => Sc_Pos_Eph_C.V_Bdy_Zero_N,
+         Time_Tag => Long_Float (Arg.Time.Seconds) + Long_Float (Arg.Time.Subseconds) / 65536.0,
+         R_Bn_N => Sc_Pos_C_Cartesian.Position,
+         V_Bn_N => Sc_Pos_C_Cartesian.Velocity,
          Vehaccumdv => [others => 0.0]);
       Sc_Att_C : aliased Nav_Att.C.U_C := Nav_Att.C.To_C (Nav_Att.Unpack (Sc_Att));
 
