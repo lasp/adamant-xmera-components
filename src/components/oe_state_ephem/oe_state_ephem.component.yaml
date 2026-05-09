@@ -1,0 +1,19 @@
+---
+description: Orbital element state ephemeris algorithm computes spacecraft position and velocity using Chebyshev polynomial fits of classical orbital elements.
+execution: passive
+init:
+  description: Initializes the OE state ephemeris algorithm.
+connectors:
+  - description: Run the algorithm up to the current time.
+    type: Tick.T
+    kind: recv_sync
+  - description: Fetch a data product item from the database.
+    type: Data_Product_Fetch.T
+    return_type: Data_Product_Return.T
+    kind: request
+  - description: The data product invoker connector
+    type: Data_Product.T
+    kind: send
+  - description: The parameter update connector.
+    type: Parameter_Update.T
+    kind: modify

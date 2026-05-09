@@ -1,0 +1,7 @@
+---
+description: This is a unit test suite for the OE State Ephem component
+tests:
+  - name: Test_Zero_Inputs
+    description: Zero coefficients and zero gravitational parameter must produce zero Cartesian state.
+  - name: Test_Cheby_Fit
+    description: Single-arc Chebyshev expansion at the arc midpoint reconstructs a known circular equatorial orbit within 0.1 percent.

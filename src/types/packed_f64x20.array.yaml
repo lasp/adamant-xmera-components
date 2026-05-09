@@ -1,0 +1,5 @@
+---
+description: Packed 20 element vector of 64-bit floats.
+type: Long_Float
+format: F64
+length: 20
