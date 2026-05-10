@@ -4,7 +4,7 @@ parameters:
   - name: Time_Delta
     description: "[s] Allowable time difference from latest measurement for averaging window"
     type: Packed_F32.T
-    default: "(Value => 0.0)"
+    default: "(Value => 1.0)"
   - name: Dcm_Pltf_To_Bdy
     description: "[-] Direction cosine matrix from platform frame to body frame (3x3 row-major, 9 elements)"
     type: Packed_F32x9.T

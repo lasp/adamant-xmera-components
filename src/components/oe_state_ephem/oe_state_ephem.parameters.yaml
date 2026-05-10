@@ -4,4 +4,4 @@ parameters:
   - name: Central_Body_Mu
     description: "[m^3/s^2] Gravitational parameter of the central body"
     type: Packed_F64.T
-    default: "(Value => 0.0)"
+    default: "(Value => 1.32712440018e20)"
