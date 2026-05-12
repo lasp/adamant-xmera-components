@@ -28,7 +28,7 @@ jobs:
           set-safe-directory: true
           repository: lasp/fp32-fsw-xmera
           path: fp32-fsw-xmera
-          ref: develop
+          ref: fix/css-macro-count
       - name: Clone adamant repository
         uses: actions/checkout@v4
         with:
