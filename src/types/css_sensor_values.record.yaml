@@ -8,4 +8,4 @@
 description: Bounded array of CSS sensor values. Maps to CssSensorValues_c in the C shim.
 fields:
   - name: Data
-    type: Packed_F64x16.T
+    type: Packed_F64x32.T

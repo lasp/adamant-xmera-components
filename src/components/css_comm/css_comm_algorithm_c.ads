@@ -10,7 +10,7 @@ with Cheby_Polynomials.C;
 package Css_Comm_Algorithm_C is
 
    -- MAX_NUM_CSS_SENSORS must match the #define in definitions.h
-   MAX_NUM_CSS_SENSORS : constant := 16;
+   MAX_NUM_CSS_SENSORS : constant := 32;
 
    -- MAX_NUM_CHEBY_POLYS must match the #define in cssCommTypes.h
    MAX_NUM_CHEBY_POLYS : constant := 11;
