@@ -1,19 +1,44 @@
 ---
-description: Orbital element state ephemeris algorithm computes spacecraft position and velocity using Chebyshev polynomial fits of classical orbital elements.
+description: |
+  Orbital element state ephemeris algorithm. Computes spacecraft Cartesian
+  state (position and velocity) from Chebyshev polynomial fits of classical
+  orbital elements. The algorithm's configuration (central body gravitational
+  parameter and per-arc Chebyshev coefficients) is delivered as a single
+  Oe_State_Ephem_Parameter_Table payload via a Parameter_Table_Forwarder
+  upstream; the component validates the bytes, stages them on a protected
+  area, and applies them to the algorithm on the next tick.
 execution: passive
 init:
-  description: Initializes the OE state ephemeris algorithm.
+  description: |
+    Initializes the algorithm with a default parameter table. The component
+    applies the default to the C++ algorithm immediately so that ticks
+    arriving before any uploaded table is received still produce
+    deterministic output.
+  parameters:
+    - name: Default_Table
+      type: Oe_State_Ephem_Parameter_Table.T_Access
+      not_null: true
+      description: |
+        Pointer to a packed parameter table applied to the algorithm at
+        startup. The component derefs it once during Init to push values
+        into the C++ algorithm; pass-by-access avoids any large by-value
+        copy on the env task's stack at Init_Components time. Overridden
+        by any subsequent successful Set delivered via the parameter-region
+        pathway.
 connectors:
-  - description: Run the algorithm up to the current time.
+  - description: Run the algorithm up to the current time. Also drains the staged parameter table (if any) and applies it to the algorithm before evaluating.
     type: Tick.T
     kind: recv_sync
-  - description: Fetch a data product item from the database.
-    type: Data_Product_Fetch.T
-    return_type: Data_Product_Return.T
-    kind: request
-  - description: The data product invoker connector
+  - description: The data product invoker connector.
     type: Data_Product.T
     kind: send
-  - description: The parameter update connector.
-    type: Parameter_Update.T
-    kind: modify
+  - description: Inbound parameter table memory region from an upstream Parameter_Table_Forwarder; returns the operation status (Success, Parameter_Error, etc) synchronously. The forwarder has already stripped the parameter table header; the region contains only the Oe_State_Ephem_Parameter_Table payload bytes.
+    type: Parameters_Memory_Region.T
+    return_type: Parameters_Memory_Region_Release.T
+    kind: service
+  - description: Events out (parameter-table-format rejections, table-applied notifications, Get_Copy-unsupported rejections).
+    type: Event.T
+    kind: send
+  - description: System time retrieval, used to timestamp events.
+    return_type: Sys_Time.T
+    kind: get

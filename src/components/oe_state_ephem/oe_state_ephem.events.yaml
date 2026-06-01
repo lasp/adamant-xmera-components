@@ -1,0 +1,28 @@
+---
+description: Events for the OE State Ephem component.
+events:
+  - name: Invalid_Parameter_Table_Format
+    description: |
+      A parameter table was received that failed type-level validation (e.g.,
+      an out-of-range Anomaly_Type in some arc). The bytes were rejected
+      before deserialization. The Errant_Field value identifies the failing
+      field by its packed-record field index. The table was not staged or
+      applied.
+    param_type: Packed_U32.T
+  - name: Parameter_Table_Applied
+    description: A staged parameter table was drained and pushed to the C++ algorithm on this tick.
+  - name: Get_Copy_Not_Supported
+    description: |
+      A Get_Copy operation was requested on the parameters memory region
+      interface. Oe_State_Ephem does not support Get_Copy; ground must use
+      Get_Pointer for dump access. The request was rejected with
+      Parameter_Error and this event was emitted so misuse is loud in
+      telemetry.
+  - name: Validate_Not_Supported
+    description: |
+      A Validate operation was requested on the parameters memory region
+      interface. Oe_State_Ephem does not implement a separate semantic-
+      validation phase -- the forwarder has already verified length and
+      CRC at the framework level, and the Set path runs its own
+      type-level validation. The request was rejected with Parameter_
+      Error and this event was emitted so misuse is loud in telemetry.

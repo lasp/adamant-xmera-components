@@ -1,7 +1,21 @@
 ---
-description: This is a unit test suite for the OE State Ephem component
+description: This is a unit test suite for the OE State Ephem component.
 tests:
   - name: Test_Zero_Inputs
-    description: Zero coefficients and zero gravitational parameter must produce zero Cartesian state.
-  - name: Test_Cheby_Fit
-    description: Single-arc Chebyshev expansion at the arc midpoint reconstructs a known circular equatorial orbit within 0.1 percent.
+    description: Zero coefficients and zero gravitational parameter (Init default) must produce zero Cartesian state.
+  - name: Test_Cheby_Fit_Via_Set
+    description: Upload a single-arc Chebyshev fit via Set; the next tick applies it and the algorithm reconstructs a known circular equatorial orbit within 0.1 percent.
+  - name: Test_Set_Invalid_Format
+    description: A memory region with an out-of-range Anomaly_Type is rejected before deserialization; release returns Parameter_Error and an Invalid_Parameter_Table_Format event fires.
+  - name: Test_Validate_Returns_Parameter_Error
+    description: Validate is unsupported; release returns Parameter_Error and a Validate_Not_Supported event is emitted; no table is staged or applied.
+  - name: Test_Get_Pointer_Returns_Current_Table
+    description: After a successful Set and applying tick, a subsequent Get_Pointer returns a region pointing at the dump buffer containing the current algorithm state; the bytes round-trip to the uploaded table.
+  - name: Test_Get_Copy_Returns_Parameter_Error
+    description: Get_Copy is unsupported on Oe_State_Ephem; release returns Parameter_Error and a Get_Copy_Not_Supported event is emitted. Callers must use Get_Pointer.
+  - name: Test_Get_Pointer_Succeeds_While_Staged
+    description: Get_Pointer always succeeds, even while a Set is staged. The dump buffer reflects the algorithm's current state; the staged Set is preserved and applies on the next tick.
+  - name: Test_Get_Pointer_Reflects_Current_State
+    description: Dump_Buffer is overwritten on each Get_Pointer call; back-to-back calls each reflect the algorithm's current state at the time of the call.
+  - name: Test_Repeated_Set_Without_Tick
+    description: Two Set calls without an intervening tick result in only the latest table being applied on the next tick; mirrors the Generic_Staged_Variable latest-wins contract.

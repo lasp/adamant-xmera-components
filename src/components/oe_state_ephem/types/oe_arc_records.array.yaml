@@ -1,0 +1,7 @@
+---
+description: |
+  Fixed-size array of Chebyshev orbital-element arcs sized to the OE State
+  Ephem algorithm's MAX_OE_RECORDS. The component pushes all 10 slots to the
+  algorithm on Set; the algorithm reads only Number_Of_Arcs of them.
+type: Oe_Arc.T
+length: 10
