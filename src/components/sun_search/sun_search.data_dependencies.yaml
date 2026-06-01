@@ -1,6 +1,0 @@
----
-description: Data dependencies for the Sun Search component.
-data_dependencies:
-  - name: Spacecraft_Attitude
-    type: Nav_Att.T
-    description: Spacecraft attitude navigation state (MRP attitude and angular velocity)

@@ -1,6 +1,0 @@
----
-description: Data products for the Sun Search component.
-data_products:
-  - name: Attitude_Guidance
-    type: Att_Guid.T
-    description: Attitude guidance output containing reference angular velocity, body error rates, and reference acceleration.
