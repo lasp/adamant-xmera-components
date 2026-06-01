@@ -4,11 +4,9 @@
 
 with Basic_Assertions; use Basic_Assertions;
 with Interfaces;
-with Packed_F32x3;
-with Packed_F32x3.Assertion; use Packed_F32x3.Assertion;
 with Packed_F64x3;
 with Packed_F64x3.Assertion; use Packed_F64x3.Assertion;
-with Ephemeris;
+with Cartesian_State;
 
 package body Ephemerides_Recenter_Tests.Implementation is
 
@@ -64,50 +62,31 @@ package body Ephemerides_Recenter_Tests.Implementation is
    -------------------------------------------------------------------------
 
    -- Reproduces the mars_central_body case from the Python reference test.
-   -- Inputs are expressed about the Sun (the previous common base); outputs
-   -- should be relative to Mars (the new central body). Sigma_Bn, Omega_Bn_B,
-   -- and Time_Tag pass through from each input to its corresponding output.
+   -- Inputs are Cartesian states expressed about the Sun (the previous common
+   -- base); outputs should be relative to Mars (the new central body).
    overriding procedure Test (Self : in out Instance) is
       T : Component.Ephemerides_Recenter.Implementation.Tester.Instance_Access renames Self.Tester;
 
-      -- Distinct sigma/omega values per body so the pass-through behaviour is
-      -- testable (the C++ algorithm only computes r/v).
-      Sun_Eph : constant Ephemeris.T := (
-         R_Bdy_Zero_N => [0.0, 0.0, 0.0],
-         V_Bdy_Zero_N => [0.0, 0.0, 0.0],
-         Sigma_Bn     => [0.10, 0.20, 0.30],
-         Omega_Bn_B   => [0.01, 0.02, 0.03],
-         Time_Tag     => 1234.0
-      );
-      Earth_Eph : constant Ephemeris.T := (
-         R_Bdy_Zero_N => [1000.0, -200.0, 100.0],
-         V_Bdy_Zero_N => [10.0, 0.0, -8.0],
-         Sigma_Bn     => [0.11, 0.21, 0.31],
-         Omega_Bn_B   => [0.11, 0.12, 0.13],
-         Time_Tag     => 1234.0
-      );
-      Mars_Eph : constant Ephemeris.T := (
-         R_Bdy_Zero_N => [-4000.0, 3000.0, 10000.0],
-         V_Bdy_Zero_N => [-1.0, -2.0, 1.0],
-         Sigma_Bn     => [0.12, 0.22, 0.32],
-         Omega_Bn_B   => [0.21, 0.22, 0.23],
-         Time_Tag     => 1234.0
-      );
-      Moon_Eph : constant Ephemeris.T := (
-         R_Bdy_Zero_N => [-50.0, 30.0, 100.0],
-         V_Bdy_Zero_N => [-0.5, -0.2, 0.1],
-         Sigma_Bn     => [0.13, 0.23, 0.33],
-         Omega_Bn_B   => [0.31, 0.32, 0.33],
-         Time_Tag     => 1234.0
-      );
+      Sun_State : constant Cartesian_State.T := Cartesian_State.Pack (
+         (Position => [0.0, 0.0, 0.0],
+          Velocity => [0.0, 0.0, 0.0]));
+      Earth_State : constant Cartesian_State.T := Cartesian_State.Pack (
+         (Position => [1000.0, -200.0, 100.0],
+          Velocity => [10.0, 0.0, -8.0]));
+      Mars_State : constant Cartesian_State.T := Cartesian_State.Pack (
+         (Position => [-4000.0, 3000.0, 10000.0],
+          Velocity => [-1.0, -2.0, 1.0]));
+      Moon_State : constant Cartesian_State.T := Cartesian_State.Pack (
+         (Position => [-50.0, 30.0, 100.0],
+          Velocity => [-0.5, -0.2, 0.1]));
 
       Eps_Rv : constant Long_Float := 1.0e-9;
    begin
       -- Set data dependencies:
-      T.Body_0_Ephemeris := Sun_Eph;
-      T.Body_1_Ephemeris := Earth_Eph;
-      T.Body_2_Ephemeris := Mars_Eph;
-      T.Body_3_Ephemeris := Moon_Eph;
+      T.Body_0_Ephemeris := Sun_State;
+      T.Body_1_Ephemeris := Earth_State;
+      T.Body_2_Ephemeris := Mars_State;
+      T.Body_3_Ephemeris := Moon_State;
 
       -- Call algorithm:
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
@@ -120,49 +99,36 @@ package body Ephemerides_Recenter_Tests.Implementation is
       Natural_Assert.Eq (T.Body_3_Recentered_History.Get_Count, 1);
 
       -- Sun output: r = sun_r - mars_r = [4000, -3000, -10000]; v = [1, 2, -1].
-      -- Sigma/Omega/Time pass through from Sun input.
       declare
-         Output : constant Ephemeris.T := T.Body_0_Recentered_History.Get (1);
+         Output : constant Cartesian_State.T := T.Body_0_Recentered_History.Get (1);
       begin
-         Packed_F64x3_Assert.Eq (Output.R_Bdy_Zero_N, [4000.0, -3000.0, -10000.0], Epsilon => Eps_Rv);
-         Packed_F64x3_Assert.Eq (Output.V_Bdy_Zero_N, [1.0, 2.0, -1.0], Epsilon => Eps_Rv);
-         Packed_F32x3_Assert.Eq (Output.Sigma_Bn, Sun_Eph.Sigma_Bn, Epsilon => 0.0001);
-         Packed_F32x3_Assert.Eq (Output.Omega_Bn_B, Sun_Eph.Omega_Bn_B, Epsilon => 0.0001);
-         pragma Assert (Output.Time_Tag = Sun_Eph.Time_Tag);
+         Packed_F64x3_Assert.Eq (Output.Position, [4000.0, -3000.0, -10000.0], Epsilon => Eps_Rv);
+         Packed_F64x3_Assert.Eq (Output.Velocity, [1.0, 2.0, -1.0], Epsilon => Eps_Rv);
       end;
 
       -- Earth output: r = earth_r - mars_r = [5000, -3200, -9900]; v = [11, 2, -9].
       declare
-         Output : constant Ephemeris.T := T.Body_1_Recentered_History.Get (1);
+         Output : constant Cartesian_State.T := T.Body_1_Recentered_History.Get (1);
       begin
-         Packed_F64x3_Assert.Eq (Output.R_Bdy_Zero_N, [5000.0, -3200.0, -9900.0], Epsilon => Eps_Rv);
-         Packed_F64x3_Assert.Eq (Output.V_Bdy_Zero_N, [11.0, 2.0, -9.0], Epsilon => Eps_Rv);
-         Packed_F32x3_Assert.Eq (Output.Sigma_Bn, Earth_Eph.Sigma_Bn, Epsilon => 0.0001);
-         Packed_F32x3_Assert.Eq (Output.Omega_Bn_B, Earth_Eph.Omega_Bn_B, Epsilon => 0.0001);
-         pragma Assert (Output.Time_Tag = Earth_Eph.Time_Tag);
+         Packed_F64x3_Assert.Eq (Output.Position, [5000.0, -3200.0, -9900.0], Epsilon => Eps_Rv);
+         Packed_F64x3_Assert.Eq (Output.Velocity, [11.0, 2.0, -9.0], Epsilon => Eps_Rv);
       end;
 
       -- Mars output: relative to itself, so r = v = 0.
       declare
-         Output : constant Ephemeris.T := T.Body_2_Recentered_History.Get (1);
+         Output : constant Cartesian_State.T := T.Body_2_Recentered_History.Get (1);
       begin
-         Packed_F64x3_Assert.Eq (Output.R_Bdy_Zero_N, [0.0, 0.0, 0.0], Epsilon => Eps_Rv);
-         Packed_F64x3_Assert.Eq (Output.V_Bdy_Zero_N, [0.0, 0.0, 0.0], Epsilon => Eps_Rv);
-         Packed_F32x3_Assert.Eq (Output.Sigma_Bn, Mars_Eph.Sigma_Bn, Epsilon => 0.0001);
-         Packed_F32x3_Assert.Eq (Output.Omega_Bn_B, Mars_Eph.Omega_Bn_B, Epsilon => 0.0001);
-         pragma Assert (Output.Time_Tag = Mars_Eph.Time_Tag);
+         Packed_F64x3_Assert.Eq (Output.Position, [0.0, 0.0, 0.0], Epsilon => Eps_Rv);
+         Packed_F64x3_Assert.Eq (Output.Velocity, [0.0, 0.0, 0.0], Epsilon => Eps_Rv);
       end;
 
       -- Moon output: parent (Earth) is recentered relative to Mars, then the
       -- moon's own position adds back: r = (earth_r - mars_r) + moon_r.
       declare
-         Output : constant Ephemeris.T := T.Body_3_Recentered_History.Get (1);
+         Output : constant Cartesian_State.T := T.Body_3_Recentered_History.Get (1);
       begin
-         Packed_F64x3_Assert.Eq (Output.R_Bdy_Zero_N, [4950.0, -3170.0, -9800.0], Epsilon => Eps_Rv);
-         Packed_F64x3_Assert.Eq (Output.V_Bdy_Zero_N, [10.5, 1.8, -8.9], Epsilon => Eps_Rv);
-         Packed_F32x3_Assert.Eq (Output.Sigma_Bn, Moon_Eph.Sigma_Bn, Epsilon => 0.0001);
-         Packed_F32x3_Assert.Eq (Output.Omega_Bn_B, Moon_Eph.Omega_Bn_B, Epsilon => 0.0001);
-         pragma Assert (Output.Time_Tag = Moon_Eph.Time_Tag);
+         Packed_F64x3_Assert.Eq (Output.Position, [4950.0, -3170.0, -9800.0], Epsilon => Eps_Rv);
+         Packed_F64x3_Assert.Eq (Output.Velocity, [10.5, 1.8, -8.9], Epsilon => Eps_Rv);
       end;
    end Test;
 

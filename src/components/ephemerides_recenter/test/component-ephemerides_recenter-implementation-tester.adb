@@ -79,13 +79,13 @@ package body Component.Ephemerides_Recenter.Implementation.Tester is
       if Length_To_Return = 0 then
          case Arg.Id is
             -- Length for Body_0_Ephemeris:
-            when 0 => Length_To_Return := Ephemeris.Size_In_Bytes;
+            when 0 => Length_To_Return := Cartesian_State.Size_In_Bytes;
             -- Length for Body_1_Ephemeris:
-            when 1 => Length_To_Return := Ephemeris.Size_In_Bytes;
+            when 1 => Length_To_Return := Cartesian_State.Size_In_Bytes;
             -- Length for Body_2_Ephemeris:
-            when 2 => Length_To_Return := Ephemeris.Size_In_Bytes;
+            when 2 => Length_To_Return := Cartesian_State.Size_In_Bytes;
             -- Length for Body_3_Ephemeris:
-            when 3 => Length_To_Return := Ephemeris.Size_In_Bytes;
+            when 3 => Length_To_Return := Cartesian_State.Size_In_Bytes;
             -- If ID can not be found, then return ID out of range error.
             when others =>
                if Return_Status = Data_Product_Enums.Fetch_Status.Success then
@@ -104,20 +104,20 @@ package body Component.Ephemerides_Recenter.Implementation.Tester is
          case Arg.Id is
             -- Length for Body_0_Ephemeris:
             when 0 =>
-               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Ephemeris.Size_In_Bytes - 1) :=
-                  Ephemeris.Serialization.To_Byte_Array (Self.Body_0_Ephemeris);
+               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Cartesian_State.Size_In_Bytes - 1) :=
+                  Cartesian_State.Serialization.To_Byte_Array (Self.Body_0_Ephemeris);
             -- Length for Body_1_Ephemeris:
             when 1 =>
-               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Ephemeris.Size_In_Bytes - 1) :=
-                  Ephemeris.Serialization.To_Byte_Array (Self.Body_1_Ephemeris);
+               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Cartesian_State.Size_In_Bytes - 1) :=
+                  Cartesian_State.Serialization.To_Byte_Array (Self.Body_1_Ephemeris);
             -- Length for Body_2_Ephemeris:
             when 2 =>
-               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Ephemeris.Size_In_Bytes - 1) :=
-                  Ephemeris.Serialization.To_Byte_Array (Self.Body_2_Ephemeris);
+               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Cartesian_State.Size_In_Bytes - 1) :=
+                  Cartesian_State.Serialization.To_Byte_Array (Self.Body_2_Ephemeris);
             -- Length for Body_3_Ephemeris:
             when 3 =>
-               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Ephemeris.Size_In_Bytes - 1) :=
-                  Ephemeris.Serialization.To_Byte_Array (Self.Body_3_Ephemeris);
+               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Cartesian_State.Size_In_Bytes - 1) :=
+                  Cartesian_State.Serialization.To_Byte_Array (Self.Body_3_Ephemeris);
             -- Do not fill. The ID is not recognized.
             when others =>
                Return_Status := Data_Product_Enums.Fetch_Status.Id_Out_Of_Range;
@@ -164,29 +164,33 @@ package body Component.Ephemerides_Recenter.Implementation.Tester is
    -----------------------------------------------
    -- Description:
    --    Data products for the Ephemerides Recenter component.
-   -- Body 0 ephemeris re-expressed about the new central body.
-   overriding procedure Body_0_Recentered (Self : in out Instance; Arg : in Ephemeris.T) is
+   -- Body 0 Cartesian state (position and velocity) re-expressed about the new
+   -- central body.
+   overriding procedure Body_0_Recentered (Self : in out Instance; Arg : in Cartesian_State.T) is
    begin
       -- Push the argument onto the test history for looking at later:
       Self.Body_0_Recentered_History.Push (Arg);
    end Body_0_Recentered;
 
-   -- Body 1 ephemeris re-expressed about the new central body.
-   overriding procedure Body_1_Recentered (Self : in out Instance; Arg : in Ephemeris.T) is
+   -- Body 1 Cartesian state (position and velocity) re-expressed about the new
+   -- central body.
+   overriding procedure Body_1_Recentered (Self : in out Instance; Arg : in Cartesian_State.T) is
    begin
       -- Push the argument onto the test history for looking at later:
       Self.Body_1_Recentered_History.Push (Arg);
    end Body_1_Recentered;
 
-   -- Body 2 ephemeris re-expressed about the new central body.
-   overriding procedure Body_2_Recentered (Self : in out Instance; Arg : in Ephemeris.T) is
+   -- Body 2 Cartesian state (position and velocity) re-expressed about the new
+   -- central body.
+   overriding procedure Body_2_Recentered (Self : in out Instance; Arg : in Cartesian_State.T) is
    begin
       -- Push the argument onto the test history for looking at later:
       Self.Body_2_Recentered_History.Push (Arg);
    end Body_2_Recentered;
 
-   -- Body 3 ephemeris re-expressed about the new central body.
-   overriding procedure Body_3_Recentered (Self : in out Instance; Arg : in Ephemeris.T) is
+   -- Body 3 Cartesian state (position and velocity) re-expressed about the new
+   -- central body.
+   overriding procedure Body_3_Recentered (Self : in out Instance; Arg : in Cartesian_State.T) is
    begin
       -- Push the argument onto the test history for looking at later:
       Self.Body_3_Recentered_History.Push (Arg);

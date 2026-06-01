@@ -2,14 +2,14 @@
 description: Data products for the Ephemerides Recenter component.
 data_products:
   - name: Body_0_Recentered
-    type: Ephemeris.T
-    description: Body 0 ephemeris re-expressed about the new central body.
+    type: Cartesian_State.T
+    description: Body 0 Cartesian state (position and velocity) re-expressed about the new central body.
   - name: Body_1_Recentered
-    type: Ephemeris.T
-    description: Body 1 ephemeris re-expressed about the new central body.
+    type: Cartesian_State.T
+    description: Body 1 Cartesian state (position and velocity) re-expressed about the new central body.
   - name: Body_2_Recentered
-    type: Ephemeris.T
-    description: Body 2 ephemeris re-expressed about the new central body.
+    type: Cartesian_State.T
+    description: Body 2 Cartesian state (position and velocity) re-expressed about the new central body.
   - name: Body_3_Recentered
-    type: Ephemeris.T
-    description: Body 3 ephemeris re-expressed about the new central body.
+    type: Cartesian_State.T
+    description: Body 3 Cartesian state (position and velocity) re-expressed about the new central body.
