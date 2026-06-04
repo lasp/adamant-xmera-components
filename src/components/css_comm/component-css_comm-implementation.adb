@@ -30,15 +30,19 @@ package body Component.Css_Comm.Implementation is
    ---------------------------------------
    -- Run the algorithm up to the current time.
    overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
-      use Data_Product_Enums;
       use Data_Product_Enums.Data_Dependency_Status;
 
-      -- Grab data dependencies: raw ADC counts from the DAS-extracted CSS
-      -- sensor product.
+      -- We assume the CSS sensor data dependency is available at startup, so a
+      -- fetch returns Success or Stale. Stale values are acceptable: we process
+      -- the last received ADC counts regardless of staleness (the value is
+      -- populated on Stale). Not_Available (no value was ever made available) and
+      -- Error (ID/length mismatch) indicate an assembly/configuration defect, so
+      -- we assert. (Error additionally trips Invalid_Data_Dependency below before
+      -- returning.)
       Css_Adc_Input : Css_Array_Adc_8.T;
-      Css_Input_Status : constant Data_Dependency_Status.E :=
+      Css_Input_Status : constant Data_Product_Enums.Data_Dependency_Status.E :=
          Self.Get_Css_Sensor_Input (Value => Css_Adc_Input, Stale_Reference => Arg.Time);
-      pragma Assert (Css_Input_Status = Success);
+      pragma Assert (Css_Input_Status = Success or else Css_Input_Status = Stale);
    begin
       -- Update the parameters:
       Self.Update_Parameters;
