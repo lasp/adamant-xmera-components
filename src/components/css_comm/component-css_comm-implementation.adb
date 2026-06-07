@@ -33,12 +33,12 @@ package body Component.Css_Comm.Implementation is
       use Data_Product_Enums.Data_Dependency_Status;
 
       -- We assume the CSS sensor data dependency is available at startup, so a
-      -- fetch returns Success or Stale. Stale values are acceptable: we process
-      -- the last received ADC counts regardless of staleness (the value is
-      -- populated on Stale). Not_Available (no value was ever made available) and
-      -- Error (ID/length mismatch) indicate an assembly/configuration defect, so
-      -- we assert. (Error additionally trips Invalid_Data_Dependency below before
-      -- returning.)
+      -- fetch returns Success or Stale. On Stale the last received value may be
+      -- arbitrarily old, so we zero the ADC input below rather than feed a stale
+      -- reading to the algorithm. Not_Available (no value was ever made available)
+      -- and Error (ID/length mismatch) indicate an assembly/configuration defect,
+      -- so we assert. (Error additionally trips Invalid_Data_Dependency below
+      -- before returning.)
       Css_Adc_Input : Css_Array_Adc_8.T;
       Css_Input_Status : constant Data_Product_Enums.Data_Dependency_Status.E :=
          Self.Get_Css_Sensor_Input (Value => Css_Adc_Input, Stale_Reference => Arg.Time);
@@ -46,6 +46,12 @@ package body Component.Css_Comm.Implementation is
    begin
       -- Update the parameters:
       Self.Update_Parameters;
+
+      -- If the data dependency is stale, zero the ADC input so the algorithm
+      -- processes zeros rather than an arbitrarily old reading.
+      if Css_Input_Status = Stale then
+         Css_Adc_Input := (Adc_Value => [others => 0]);
+      end if;
 
       -- Convert ADC counts to cosine values per the css_wls_estimator pattern:
       -- divide each U16 ADC value by Max_Sensor_Value and clamp to <= 1.0
