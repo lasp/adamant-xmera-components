@@ -2,14 +2,14 @@
 description: Data dependencies for the Ephemerides Recenter component.
 data_dependencies:
   - name: Body_0_Ephemeris
-    type: Ephemeris.T
-    description: Input ephemeris for body 0, expressed about the previous common central body.
+    type: Cartesian_State.T
+    description: Input Cartesian state (position and velocity) for body 0, expressed about the previous common central body.
   - name: Body_1_Ephemeris
-    type: Ephemeris.T
-    description: Input ephemeris for body 1, expressed about the previous common central body.
+    type: Cartesian_State.T
+    description: Input Cartesian state (position and velocity) for body 1, expressed about the previous common central body.
   - name: Body_2_Ephemeris
-    type: Ephemeris.T
-    description: Input ephemeris for body 2, expressed about the previous common central body.
+    type: Cartesian_State.T
+    description: Input Cartesian state (position and velocity) for body 2, expressed about the previous common central body.
   - name: Body_3_Ephemeris
-    type: Ephemeris.T
-    description: Input ephemeris for body 3, expressed about the previous common central body.
+    type: Cartesian_State.T
+    description: Input Cartesian state (position and velocity) for body 3, expressed about the previous common central body.

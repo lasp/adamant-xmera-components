@@ -1,0 +1,40 @@
+---
+description: |
+  One Chebyshev orbital-element arc: time window plus polynomial coefficients
+  for the six classical orbital elements. The OE State Ephem algorithm holds
+  a fixed-size array of these arcs (Oe_Arc_Records.T) and evaluates the
+  appropriate one for the current vehicle time.
+fields:
+  - name: Number_Of_Coefficients
+    description: Number of valid Chebyshev coefficients in each of the six coefficient arrays below.
+    type: Packed_U32.T
+  - name: Middle_Time
+    description: "[s] Ephemeris time (TDB) at the midpoint of the arc."
+    type: Long_Float
+    format: F64
+  - name: Radius_Time
+    description: "[s] Half-width of the arc time window. The arc is valid for Middle_Time +/- Radius_Time."
+    type: Long_Float
+    format: F64
+  - name: Anomaly_Flag
+    description: Indicates whether the True_Anomaly coefficients represent true anomaly or mean anomaly.
+    type: Oe_State_Ephem_Enums.Anomaly_Type.E
+    format: E8
+  - name: Radius_Periapsis
+    description: Chebyshev coefficients for radius at periapsis.
+    type: Oe_Coefficients.T
+  - name: Eccentricity
+    description: Chebyshev coefficients for eccentricity.
+    type: Oe_Coefficients.T
+  - name: Inclination
+    description: Chebyshev coefficients for inclination.
+    type: Oe_Coefficients.T
+  - name: Arg_Periapsis
+    description: Chebyshev coefficients for argument of periapsis.
+    type: Oe_Coefficients.T
+  - name: Raan
+    description: Chebyshev coefficients for right ascension of the ascending node.
+    type: Oe_Coefficients.T
+  - name: True_Anomaly
+    description: Chebyshev coefficients for the anomaly angle (interpretation governed by Anomaly_Flag).
+    type: Oe_Coefficients.T

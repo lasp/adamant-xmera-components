@@ -75,13 +75,17 @@ package body Inertial_Ukf_Tests.Implementation is
       declare
          Expected_Sigma  : constant Packed_F32x3.T := [0.1, -0.2, 0.3];
          Expected_Omega  : constant Packed_F32x3.T := [0.01, -0.02, 0.03];
-         Time_Tag_In     : constant Short_Float     := 1.5;
+         -- Input time tag is U64 nanoseconds; the impl converts to F32 seconds
+         -- before the C call, so the published Nav_Att/Filter time tag is in
+         -- seconds (1.5 s == 1_500_000_000 ns).
+         Time_Tag_In_Ns  : constant Unsigned_64 := 1_500_000_000;
+         Expected_Time_Tag_Sec : constant Long_Float := 1.5;
          Nav_Out         : Nav_Att.T;
          Filter_Out      : Inertial_Filter_Output.T;
       begin
          -- Set data dependency values using packed record aggregates directly.
          T.Star_Tracker_Att := (
-            Time_Tag      => Time_Tag_In,
+            Time_Tag      => Time_Tag_In_Ns,
             Mrp_Bdy_Inrtl => Expected_Sigma,
             Omega_Bn_B    => Expected_Omega
          );
@@ -95,11 +99,11 @@ package body Inertial_Ukf_Tests.Implementation is
          Natural_Assert.Eq (T.Nav_Att_Estimate_History.Get_Count, 1);
          Natural_Assert.Eq (T.Filter_Data_History.Get_Count, 1);
 
-         -- Verify Nav_Att_Estimate: time tag promoted float->double, sigma and
-         -- omega passed through unchanged, sun-pointing vector remains zero.
+         -- Verify Nav_Att_Estimate: time tag in seconds (ns->F32 sec->F64 sec),
+         -- sigma and omega passed through unchanged, sun-pointing vector zero.
          Nav_Out := T.Nav_Att_Estimate_History.Get (1);
          Long_Float_Assert.Eq (
-            Nav_Out.Time_Tag, Long_Float (Time_Tag_In), Epsilon => Epsilon);
+            Nav_Out.Time_Tag, Expected_Time_Tag_Sec, Epsilon => Epsilon);
          Packed_F32x3_Assert.Eq (Nav_Out.Sigma_Bn, Expected_Sigma, Epsilon => Epsilon);
          Packed_F32x3_Assert.Eq (Nav_Out.Omega_Bn_B, Expected_Omega, Epsilon => Epsilon);
          Packed_F32x3_Assert.Eq (Nav_Out.Veh_Sun_Pnt_Bdy, Zero_Vec, Epsilon => Epsilon);
@@ -108,7 +112,7 @@ package body Inertial_Ukf_Tests.Implementation is
          -- in the pass-through implementation).
          Filter_Out := T.Filter_Data_History.Get (1);
          Long_Float_Assert.Eq (
-            Filter_Out.Time_Tag, Long_Float (Time_Tag_In), Epsilon => Epsilon);
+            Filter_Out.Time_Tag, Expected_Time_Tag_Sec, Epsilon => Epsilon);
          Assert (Filter_Out.Num_Obs = Integer_32 (0),
                  "Filter Num_Obs should be zero in pass-through mode");
       end;
@@ -122,7 +126,7 @@ package body Inertial_Ukf_Tests.Implementation is
          Filter_Out : Inertial_Filter_Output.T;
       begin
          T.Star_Tracker_Att := (
-            Time_Tag      => 0.0,
+            Time_Tag      => 0,
             Mrp_Bdy_Inrtl => Zero_Vec,
             Omega_Bn_B    => Zero_Vec
          );

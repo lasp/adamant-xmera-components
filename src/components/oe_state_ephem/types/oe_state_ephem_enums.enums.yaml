@@ -1,0 +1,15 @@
+---
+description: Enumerations used by the OE State Ephem component's parameter table.
+enums:
+  - name: Anomaly_Type
+    description: |
+      Indicates whether the anomaly angle coefficients in an arc represent
+      true anomaly or mean anomaly. Mirrors the C++ AnomalyType enum in
+      fp32-fsw-xmera/algorithms/oeStateEphem/oeStateEphemTypes.h.
+    literals:
+      - name: True_Anomaly
+        value: 0
+        description: Coefficients fit true anomaly.
+      - name: Mean_Anomaly
+        value: 1
+        description: Coefficients fit mean anomaly.

@@ -2,11 +2,11 @@
 description: Data dependencies for the Sunline Ephem component.
 data_dependencies:
   - name: Sun_Ephemeris
-    type: Ephemeris.T
-    description: Sun ephemeris state (position and velocity)
+    type: Cartesian_State.T
+    description: Sun Cartesian state (position and velocity). Only position is used by the algorithm.
   - name: Spacecraft_Position
-    type: Ephemeris.T
-    description: Spacecraft ephemeris (position and velocity extracted for translational navigation)
+    type: Cartesian_State.T
+    description: Spacecraft Cartesian state (position and velocity)
   - name: Spacecraft_Attitude
     type: Nav_Att.T
     description: Spacecraft attitude navigation state

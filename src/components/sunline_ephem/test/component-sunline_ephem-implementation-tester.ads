@@ -10,7 +10,7 @@ with Data_Product_Fetch.Representation;
 with Data_Product.Representation;
 with Data_Product;
 with Nav_Att.Representation;
-with Ephemeris;
+with Cartesian_State;
 with Nav_Att;
 
 -- Sunline ephemeris algorithm computes the direction to the sun in the spacecraft
@@ -38,8 +38,8 @@ package Component.Sunline_Ephem.Implementation.Tester is
       -- Data dependency return values. These can be set during unit test
       -- and will be returned to the component when a data dependency call
       -- is made.
-      Sun_Ephemeris : Ephemeris.T;
-      Spacecraft_Position : Ephemeris.T;
+      Sun_Ephemeris : Cartesian_State.T;
+      Spacecraft_Position : Cartesian_State.T;
       Spacecraft_Attitude : Nav_Att.T;
       -- The return status for the data dependency fetch. This can be set
       -- during unit test to return something other than Success.
@@ -53,7 +53,7 @@ package Component.Sunline_Ephem.Implementation.Tester is
       -- value of this variable is returned.
       Data_Dependency_Return_Length_Override : Data_Product_Types.Data_Product_Buffer_Length_Type := 0;
       -- The timestamp to return with the data dependency. If this is set to (0, 0) then
-      -- the system_Time (above) is returned, otherwise, the value of this variable is returned.
+      -- the System_Time (above) is returned, otherwise, the value of this variable is returned.
       Data_Dependency_Timestamp_Override : Sys_Time.T := (0, 0);
    end record;
    type Instance_Access is access all Instance;

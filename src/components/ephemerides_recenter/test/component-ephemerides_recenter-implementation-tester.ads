@@ -8,9 +8,9 @@ with Printable_History;
 with Data_Product_Return.Representation;
 with Data_Product_Fetch.Representation;
 with Data_Product.Representation;
-with Ephemeris;
+with Cartesian_State;
 with Data_Product;
-with Ephemeris.Representation;
+with Cartesian_State.Representation;
 
 -- Ephemerides recenter component re-expresses up to four body ephemerides about a
 -- new central body. Wraps the EphemeridesRecenterAlgorithm C++ algorithm via its
@@ -24,10 +24,10 @@ package Component.Ephemerides_Recenter.Implementation.Tester is
    package Data_Product_T_Recv_Sync_History_Package is new Printable_History (Data_Product.T, Data_Product.Representation.Image);
 
    -- Data product history packages:
-   package Body_0_Recentered_History_Package is new Printable_History (Ephemeris.T, Ephemeris.Representation.Image);
-   package Body_1_Recentered_History_Package is new Printable_History (Ephemeris.T, Ephemeris.Representation.Image);
-   package Body_2_Recentered_History_Package is new Printable_History (Ephemeris.T, Ephemeris.Representation.Image);
-   package Body_3_Recentered_History_Package is new Printable_History (Ephemeris.T, Ephemeris.Representation.Image);
+   package Body_0_Recentered_History_Package is new Printable_History (Cartesian_State.T, Cartesian_State.Representation.Image);
+   package Body_1_Recentered_History_Package is new Printable_History (Cartesian_State.T, Cartesian_State.Representation.Image);
+   package Body_2_Recentered_History_Package is new Printable_History (Cartesian_State.T, Cartesian_State.Representation.Image);
+   package Body_3_Recentered_History_Package is new Printable_History (Cartesian_State.T, Cartesian_State.Representation.Image);
 
    -- Component class instance:
    type Instance is new Component.Ephemerides_Recenter_Reciprocal.Base_Instance with record
@@ -44,10 +44,10 @@ package Component.Ephemerides_Recenter.Implementation.Tester is
       -- Data dependency return values. These can be set during unit test
       -- and will be returned to the component when a data dependency call
       -- is made.
-      Body_0_Ephemeris : Ephemeris.T;
-      Body_1_Ephemeris : Ephemeris.T;
-      Body_2_Ephemeris : Ephemeris.T;
-      Body_3_Ephemeris : Ephemeris.T;
+      Body_0_Ephemeris : Cartesian_State.T;
+      Body_1_Ephemeris : Cartesian_State.T;
+      Body_2_Ephemeris : Cartesian_State.T;
+      Body_3_Ephemeris : Cartesian_State.T;
       -- The return status for the data dependency fetch. This can be set
       -- during unit test to return something other than Success.
       Data_Dependency_Return_Status_Override : Data_Product_Enums.Fetch_Status.E := Data_Product_Enums.Fetch_Status.Success;
@@ -89,13 +89,17 @@ package Component.Ephemerides_Recenter.Implementation.Tester is
    -----------------------------------------------
    -- Description:
    --    Data products for the Ephemerides Recenter component.
-   -- Body 0 ephemeris re-expressed about the new central body.
-   overriding procedure Body_0_Recentered (Self : in out Instance; Arg : in Ephemeris.T);
-   -- Body 1 ephemeris re-expressed about the new central body.
-   overriding procedure Body_1_Recentered (Self : in out Instance; Arg : in Ephemeris.T);
-   -- Body 2 ephemeris re-expressed about the new central body.
-   overriding procedure Body_2_Recentered (Self : in out Instance; Arg : in Ephemeris.T);
-   -- Body 3 ephemeris re-expressed about the new central body.
-   overriding procedure Body_3_Recentered (Self : in out Instance; Arg : in Ephemeris.T);
+   -- Body 0 Cartesian state (position and velocity) re-expressed about the new
+   -- central body.
+   overriding procedure Body_0_Recentered (Self : in out Instance; Arg : in Cartesian_State.T);
+   -- Body 1 Cartesian state (position and velocity) re-expressed about the new
+   -- central body.
+   overriding procedure Body_1_Recentered (Self : in out Instance; Arg : in Cartesian_State.T);
+   -- Body 2 Cartesian state (position and velocity) re-expressed about the new
+   -- central body.
+   overriding procedure Body_2_Recentered (Self : in out Instance; Arg : in Cartesian_State.T);
+   -- Body 3 Cartesian state (position and velocity) re-expressed about the new
+   -- central body.
+   overriding procedure Body_3_Recentered (Self : in out Instance; Arg : in Cartesian_State.T);
 
 end Component.Ephemerides_Recenter.Implementation.Tester;

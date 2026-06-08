@@ -33,14 +33,23 @@ package body Component.Convert_St_Platform_To_Body.Implementation is
    ---------------------------------------
    -- Run the algorithm up to the current time.
    overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
-      -- Star-tracker solutions update slowly relative to the tick rate, so stale values
-      -- are acceptable and the fetch statuses are deliberately ignored.
+      use Data_Product_Enums.Data_Dependency_Status;
+
+      -- We assume both star-tracker data dependencies are available at startup, so
+      -- a fetch returns Success or Stale. Star-tracker solutions update slowly
+      -- relative to the tick rate, so stale values are acceptable: we process the
+      -- last received solution regardless of staleness (the value is populated on
+      -- Stale). Not_Available (no value was ever made available) and Error
+      -- (ID/length mismatch) indicate an assembly/configuration defect, so we
+      -- assert.
       Platform_Attitude_Dep : St_Platform_Attitude.T;
-      Ignore_Platform_Attitude_Status : constant Data_Product_Enums.Data_Dependency_Status.E :=
+      Platform_Attitude_Status : constant Data_Product_Enums.Data_Dependency_Status.E :=
          Self.Get_Platform_Attitude (Value => Platform_Attitude_Dep, Stale_Reference => Arg.Time);
       Platform_Angular_Velocity_Dep : St_Platform_Angular_Velocity.T;
-      Ignore_Platform_Angular_Velocity_Status : constant Data_Product_Enums.Data_Dependency_Status.E :=
+      Platform_Angular_Velocity_Status : constant Data_Product_Enums.Data_Dependency_Status.E :=
          Self.Get_Platform_Angular_Velocity (Value => Platform_Angular_Velocity_Dep, Stale_Reference => Arg.Time);
+      pragma Assert (Platform_Attitude_Status = Success or else Platform_Attitude_Status = Stale);
+      pragma Assert (Platform_Angular_Velocity_Status = Success or else Platform_Angular_Velocity_Status = Stale);
 
       -- Convert Ada types to C types:
       Platform_Attitude_C : aliased St_Platform_Attitude.C.U_C :=

@@ -65,50 +65,45 @@ package body Component.Average_Mimu_Data.Implementation is
    end Mimu_Raw_Packet_T_Recv_Sync;
 
    -- Tick that triggers the averaging algorithm over buffered samples and publishes
-   -- the result.
+   -- the result. Always publishes Imu_Body_Data with a current timestamp so
+   -- downstream consumers see Success on every tick: zeros when no Mimu_Raw_Packet
+   -- has been buffered, the averaged result otherwise.
    overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
       Ignore : Tick.T renames Arg;
+
+      -- Build 120-element InputPktsData_c from pre-converted buffer.
+      -- Zero-initialized so unused slots have measTime=0, which the
+      -- time-window filter excludes. If no new MIMU raw packets were
+      -- received, then we pass all zeros to the algorithm which will
+      -- result in a zeroed result.
+      Input : aliased Input_Pkts_Data_C := (
+         Meas_Time => [others => 0],
+         Gyro_P    => [others => [others => 0.0]],
+         Accel_P   => [others => [others => 0.0]]
+      );
    begin
-      -- Nothing to process if no packets have been buffered:
-      if Self.Packet_Count = 0 then
-         return;
-      end if;
+      -- Copy pre-converted samples into the algorithm input buffer:
+      for Pdx in Self.Buffer'First .. Self.Buffer'First + Self.Packet_Count - 1 loop
+         for Idx in Self.Buffer (Pdx).Meas_Time'Range loop
+            declare
+               Flat_Idx : constant Natural :=
+                  (Pdx - Self.Buffer'First) * Samples_Per_Packet + (Idx - Self.Buffer (Pdx).Meas_Time'First);
+            begin
+               Input.Meas_Time (Flat_Idx) := Self.Buffer (Pdx).Meas_Time (Idx);
+               Input.Gyro_P (Flat_Idx) := Self.Buffer (Pdx).Gyro_P (Idx);
+               Input.Accel_P (Flat_Idx) := Self.Buffer (Pdx).Accel_P (Idx);
+            end;
+         end loop;
+      end loop;
 
       declare
-         -- Build 120-element InputPktsData_c from pre-converted buffer.
-         -- Zero-initialized so unused slots have measTime=0, which the
-         -- time-window filter excludes. If no new MIMU raw packets were
-         -- received, then we pass all zeros to the algorithm which will
-         -- result in a zeroed result.
-         Input : aliased Input_Pkts_Data_C := (
-            Meas_Time => [others => 0],
-            Gyro_P    => [others => [others => 0.0]],
-            Accel_P   => [others => [others => 0.0]]
-         );
+         Output : constant Averaged_Imu_Data.C.U_C :=
+            Update (Self.Alg, Input'Unchecked_Access);
       begin
-         -- Copy pre-converted samples into the algorithm input buffer:
-         for Pdx in Self.Buffer'First .. Self.Buffer'First + Self.Packet_Count - 1 loop
-            for Idx in Self.Buffer (Pdx).Meas_Time'Range loop
-               declare
-                  Flat_Idx : constant Natural :=
-                     (Pdx - Self.Buffer'First) * Samples_Per_Packet + (Idx - Self.Buffer (Pdx).Meas_Time'First);
-               begin
-                  Input.Meas_Time (Flat_Idx) := Self.Buffer (Pdx).Meas_Time (Idx);
-                  Input.Gyro_P (Flat_Idx) := Self.Buffer (Pdx).Gyro_P (Idx);
-                  Input.Accel_P (Flat_Idx) := Self.Buffer (Pdx).Accel_P (Idx);
-               end;
-            end loop;
-         end loop;
-
-         declare
-            Output : constant Averaged_Imu_Data.C.U_C :=
-               Update (Self.Alg, Input'Unchecked_Access);
-         begin
-            Self.Data_Product_T_Send (Self.Data_Products.Imu_Body_Data (
-               Self.Sys_Time_T_Get,
-               Averaged_Imu_Data.C.Pack (Output)
-            ));
-         end;
+         Self.Data_Product_T_Send (Self.Data_Products.Imu_Body_Data (
+            Self.Sys_Time_T_Get,
+            Averaged_Imu_Data.C.Pack (Output)
+         ));
       end;
 
       -- Reset buffer for next cycle:

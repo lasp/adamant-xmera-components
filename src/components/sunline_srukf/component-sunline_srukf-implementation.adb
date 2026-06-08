@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 
 with Nav_Att.C;
-with Packed_F32x8;
+with Css_Sensor_Values;
 with Sunline_Srukf_Input.C;
 with Sunline_Srukf_Output.C;
 with Sunline_Srukf_Algorithm_C; use Sunline_Srukf_Algorithm_C;
@@ -40,42 +40,43 @@ package body Component.Sunline_Srukf.Implementation is
          Self.Get_Spacecraft_Attitude (Value => Sc_Att, Stale_Reference => Arg.Time);
       pragma Assert (Sc_Att_Status = Success);
 
-      -- Coarse sun sensor cosine measurements (already converted upstream):
-      Css_Cos_A : Packed_F32x8.T;
-      Css_Cos_A_Status : constant Data_Dependency_Status.E :=
-         Self.Get_Css_Cos_Values_A (Value => Css_Cos_A, Stale_Reference => Arg.Time);
-      pragma Assert (Css_Cos_A_Status = Success);
-
-      -- TODO: Css_Cos_Values_B is fetched but not yet forwarded to the
-      -- algorithm. The A/B selection/merge policy will be added once the
-      -- sunline SRuKF algorithm grows a CSS configuration interface.
-      Css_Cos_B : Packed_F32x8.T;
-      Css_Cos_B_Status : constant Data_Dependency_Status.E :=
-         Self.Get_Css_Cos_Values_B (Value => Css_Cos_B, Stale_Reference => Arg.Time);
-      pragma Assert (Css_Cos_B_Status = Success);
-      pragma Unreferenced (Css_Cos_B);
+      -- Coarse sun sensor cosine measurements (pre-converted from ADC by
+      -- css_comm). Css_Sensor_Values.T's Data field is 16 F64 elements,
+      -- corresponding to MAX_NUM_CSS_SENSORS in the C-side definitions.
+      Css_Input : Css_Sensor_Values.T;
+      Css_Input_Status : constant Data_Dependency_Status.E :=
+         Self.Get_Css_Sensor_Input (Value => Css_Input, Stale_Reference => Arg.Time);
+      pragma Assert (Css_Input_Status = Success);
 
       -- Convert to C types:
       Sc_Att_C : constant Nav_Att.C.U_C := Nav_Att.C.To_C (Nav_Att.Unpack (Sc_Att));
 
-      -- Build algorithm input from nav att and CSS cosine data. The first
-      -- 8 entries of Cos_Values hold the A-side CSS measurements; remaining
-      -- entries are zero.
+      -- Build algorithm input from nav att and CSS cosine data. The C
+      -- algorithm's Cos_Values is Packed_F32x32; cast each F64 cosine down
+      -- to Short_Float and zero-pad the trailing entries past Css_Input.
       Input_C : aliased Sunline_Srukf_Input.C.U_C := (
          Time_Tag        => Sc_Att_C.Time_Tag,
          Sigma_Bn        => Sc_Att_C.Sigma_Bn,
          Omega_Bn_B      => Sc_Att_C.Omega_Bn_B,
          Veh_Sun_Pnt_Bdy => Sc_Att_C.Veh_Sun_Pnt_Bdy,
-         N_Css           => Css_Cos_A'Length,
+         N_Css           => Css_Input.Data'Length,
          Cos_Values      => [
-            0 => Css_Cos_A (0),
-            1 => Css_Cos_A (1),
-            2 => Css_Cos_A (2),
-            3 => Css_Cos_A (3),
-            4 => Css_Cos_A (4),
-            5 => Css_Cos_A (5),
-            6 => Css_Cos_A (6),
-            7 => Css_Cos_A (7),
+            0  => Short_Float (Css_Input.Data (Css_Input.Data'First + 0)),
+            1  => Short_Float (Css_Input.Data (Css_Input.Data'First + 1)),
+            2  => Short_Float (Css_Input.Data (Css_Input.Data'First + 2)),
+            3  => Short_Float (Css_Input.Data (Css_Input.Data'First + 3)),
+            4  => Short_Float (Css_Input.Data (Css_Input.Data'First + 4)),
+            5  => Short_Float (Css_Input.Data (Css_Input.Data'First + 5)),
+            6  => Short_Float (Css_Input.Data (Css_Input.Data'First + 6)),
+            7  => Short_Float (Css_Input.Data (Css_Input.Data'First + 7)),
+            8  => Short_Float (Css_Input.Data (Css_Input.Data'First + 8)),
+            9  => Short_Float (Css_Input.Data (Css_Input.Data'First + 9)),
+            10 => Short_Float (Css_Input.Data (Css_Input.Data'First + 10)),
+            11 => Short_Float (Css_Input.Data (Css_Input.Data'First + 11)),
+            12 => Short_Float (Css_Input.Data (Css_Input.Data'First + 12)),
+            13 => Short_Float (Css_Input.Data (Css_Input.Data'First + 13)),
+            14 => Short_Float (Css_Input.Data (Css_Input.Data'First + 14)),
+            15 => Short_Float (Css_Input.Data (Css_Input.Data'First + 15)),
             others => 0.0
          ]
       );

@@ -2,7 +2,7 @@
 description: Data dependencies for the Inertial UKF component.
 data_dependencies:
   - name: Star_Tracker_Att
-    type: St_Att_Input.T
+    type: St_Att.T
     description: Star tracker attitude measurement (time tag, MRP, angular velocity)
   - name: Rw_Speeds
     type: Rwa_Speeds.T

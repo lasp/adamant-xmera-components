@@ -1,6 +1,0 @@
----
-description: Data dependencies for the OE State Ephem component.
-data_dependencies:
-  - name: Clock_Correlation
-    type: Tdb_Vehicle_Clock_Correlation.T
-    description: TDB vehicle clock correlation for converting vehicle time to ephemeris time

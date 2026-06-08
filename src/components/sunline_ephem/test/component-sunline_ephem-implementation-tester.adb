@@ -71,9 +71,9 @@ package body Component.Sunline_Ephem.Implementation.Tester is
       if Length_To_Return = 0 then
          case Arg.Id is
             -- Length for Sun_Ephemeris:
-            when 0 => Length_To_Return := Ephemeris.Size_In_Bytes;
+            when 0 => Length_To_Return := Cartesian_State.Size_In_Bytes;
             -- Length for Spacecraft_Position:
-            when 1 => Length_To_Return := Ephemeris.Size_In_Bytes;
+            when 1 => Length_To_Return := Cartesian_State.Size_In_Bytes;
             -- Length for Spacecraft_Attitude:
             when 2 => Length_To_Return := Nav_Att.Size_In_Bytes;
             -- If ID can not be found, then return ID out of range error.
@@ -94,12 +94,12 @@ package body Component.Sunline_Ephem.Implementation.Tester is
          case Arg.Id is
             -- Length for Sun_Ephemeris:
             when 0 =>
-               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Ephemeris.Size_In_Bytes - 1) :=
-                  Ephemeris.Serialization.To_Byte_Array (Self.Sun_Ephemeris);
+               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Cartesian_State.Size_In_Bytes - 1) :=
+                  Cartesian_State.Serialization.To_Byte_Array (Self.Sun_Ephemeris);
             -- Length for Spacecraft_Position:
             when 1 =>
-               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Ephemeris.Size_In_Bytes - 1) :=
-                  Ephemeris.Serialization.To_Byte_Array (Self.Spacecraft_Position);
+               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Cartesian_State.Size_In_Bytes - 1) :=
+                  Cartesian_State.Serialization.To_Byte_Array (Self.Spacecraft_Position);
             -- Length for Spacecraft_Attitude:
             when 2 =>
                Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Nav_Att.Size_In_Bytes - 1) :=
