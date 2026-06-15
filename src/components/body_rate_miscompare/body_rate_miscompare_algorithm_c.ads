@@ -2,6 +2,10 @@ pragma Ada_2012;
 
 pragma Style_Checks (Off);
 pragma Warnings (Off, "-gnatwu");
+-- Boolean is used at the C boundary to match the shim's C99 bool (_Bool):
+-- 1-byte, 0/1 representation, interoperable under Convention => C. Suppress
+-- the -gnatwx advisory about using a C "char"-style type for the mapping.
+pragma Warnings (Off, "-gnatwx");
 
 with Interfaces.C; use Interfaces; use Interfaces.C;
 with Packed_F32x3_Record.C;
@@ -68,6 +72,54 @@ package Body_Rate_Miscompare_Algorithm_C is
           Convention   => C,
           External_Name => "BodyRateMiscompareAlgorithm_getBodyRateThreshold";
 
+   --* @brief Reset the persistence counter to zero.
+   --* @param Self  The algorithm instance.
+   procedure Reset
+     (Self : Body_Rate_Miscompare_Algorithm_Access)
+     with Import       => True,
+          Convention   => C,
+          External_Name => "BodyRateMiscompareAlgorithm_reset";
+
+   --* @brief Set the fault persistence limit.
+   --* @param Self  The algorithm instance.
+   --* @param Value Number of consecutive update calls needed to trigger the fault.
+   procedure Set_Fault_Persistence_Limit
+     (Self  : Body_Rate_Miscompare_Algorithm_Access;
+      Value : Unsigned_32)
+     with Import       => True,
+          Convention   => C,
+          External_Name => "BodyRateMiscompareAlgorithm_setFaultPersistenceLimit";
+
+   --* @brief Get the current fault persistence limit.
+   --* @param Self  The algorithm instance.
+   --* @return The current fault persistence limit.
+   function Get_Fault_Persistence_Limit
+     (Self : Body_Rate_Miscompare_Algorithm_Access)
+     return Unsigned_32
+     with Import       => True,
+          Convention   => C,
+          External_Name => "BodyRateMiscompareAlgorithm_getFaultPersistenceLimit";
+
+   --* @brief Set the useImuRates flag.
+   --* @param Self  The algorithm instance.
+   --* @param Value If True, always output IMU rates regardless of miscompare.
+   procedure Set_Use_Imu_Rates
+     (Self  : Body_Rate_Miscompare_Algorithm_Access;
+      Value : Boolean)
+     with Import       => True,
+          Convention   => C,
+          External_Name => "BodyRateMiscompareAlgorithm_setUseImuRates";
+
+   --* @brief Get the current useImuRates flag.
+   --* @param Self  The algorithm instance.
+   --* @return The current useImuRates flag (True if IMU rates are forced).
+   function Get_Use_Imu_Rates
+     (Self : Body_Rate_Miscompare_Algorithm_Access)
+     return Boolean
+     with Import       => True,
+          Convention   => C,
+          External_Name => "BodyRateMiscompareAlgorithm_getUseImuRates";
+
 private
 
    -- Private representation: opaque null record
@@ -77,3 +129,4 @@ end Body_Rate_Miscompare_Algorithm_C;
 
 pragma Style_Checks (On);
 pragma Warnings (On, "-gnatwu");
+pragma Warnings (On, "-gnatwx");
