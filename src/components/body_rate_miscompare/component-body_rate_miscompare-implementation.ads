@@ -46,12 +46,33 @@ private
    overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T);
    -- The parameter update connector.
    overriding procedure Parameter_Update_T_Modify (Self : in out Instance; Arg : in out Parameter_Update.T);
+   -- Reset the algorithm's fault persistence state. Called on GNC state change.
+   overriding procedure Reset_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T);
+   -- This is the command receive connector.
+   overriding procedure Command_T_Recv_Sync (Self : in out Instance; Arg : in Command.T);
 
    ---------------------------------------
    -- Invoker connector primitives:
    ---------------------------------------
    -- This procedure is called when a Data_Product_T_Send message is dropped due to a full queue.
    overriding procedure Data_Product_T_Send_Dropped (Self : in out Instance; Arg : in Data_Product.T) is null;
+   -- This procedure is called when a Command_Response_T_Send message is dropped due to a full queue.
+   overriding procedure Command_Response_T_Send_Dropped (Self : in out Instance; Arg : in Command_Response.T) is null;
+   -- This procedure is called when a Event_T_Send message is dropped due to a full queue.
+   overriding procedure Event_T_Send_Dropped (Self : in out Instance; Arg : in Event.T) is null;
+
+   -----------------------------------------------
+   -- Command handler primitives:
+   -----------------------------------------------
+   -- Description:
+   --    Commands for the Body Rate Miscompare component.
+   -- Force the algorithm to always output IMU rates (Value => True) or resume normal
+   -- miscompare logic (Value => False). Drives the algorithm's setUseImuRates, which
+   -- also clears a latched fault when set False.
+   overriding function Use_Imu_Rates (Self : in out Instance; Arg : in Packed_Boolean.T) return Command_Execution_Status.E;
+
+   -- Invalid command handler. This procedure is called when a command's arguments are found to be invalid:
+   overriding procedure Invalid_Command (Self : in out Instance; Cmd : in Command.T; Errant_Field_Number : in Unsigned_32; Errant_Field : in Basic_Types.Poly_Type);
 
    -----------------------------------------------
    -- Parameter primitives:
@@ -75,7 +96,8 @@ private
    -- to be implemented here.
    overriding function Validate_Parameters (
       Self : in out Instance;
-      Body_Rate_Threshold : in Packed_F32.U
+      Body_Rate_Threshold : in Packed_F32.U;
+      Fault_Persistence_Limit : in Packed_U32.U
    ) return Parameter_Validation_Status.E is (Parameter_Validation_Status.Valid);
 
    -----------------------------------------------

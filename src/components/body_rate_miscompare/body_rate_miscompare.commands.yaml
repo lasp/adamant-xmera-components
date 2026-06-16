@@ -1,0 +1,6 @@
+---
+description: Commands for the Body Rate Miscompare component.
+commands:
+  - name: Use_Imu_Rates
+    description: "Force the algorithm to always output IMU rates (Value => True) or resume normal miscompare logic (Value => False). Drives the algorithm's setUseImuRates, which also clears a latched fault when set False."
+    arg_type: Packed_Boolean.T

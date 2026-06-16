@@ -1,0 +1,9 @@
+---
+description: Events for the Body Rate Miscompare component.
+events:
+  - name: Use_Imu_Rates_Set
+    description: The use IMU rates override was set via command.
+    param_type: Packed_Boolean.T
+  - name: Invalid_Command_Received
+    description: A command was received with invalid arguments.
+    param_type: Invalid_Command_Info.T

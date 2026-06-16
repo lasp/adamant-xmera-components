@@ -5,3 +5,7 @@ parameters:
     description: "[rad/s] Threshold for body rate disagreement between IMU and star tracker"
     type: Packed_F32.T
     default: "(Value => 1.0)"
+  - name: Fault_Persistence_Limit
+    description: "[-] Number of consecutive update calls with body rate disagreement required to trigger the fault. Must be positive."
+    type: Packed_U32.T
+    default: "(Value => 1)"
