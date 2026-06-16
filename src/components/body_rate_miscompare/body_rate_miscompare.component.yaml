@@ -17,3 +17,19 @@ connectors:
   - description: The parameter update connector.
     type: Parameter_Update.T
     kind: modify
+  - description: Reset the algorithm's fault persistence state. Called on GNC state change.
+    name: Reset_Tick_T_Recv_Sync
+    type: Tick.T
+    kind: recv_sync
+  - description: This is the command receive connector.
+    type: Command.T
+    kind: recv_sync
+  - description: This connector is used to register and respond to the component's commands.
+    type: Command_Response.T
+    kind: send
+  - description: Events are sent out of this connector.
+    type: Event.T
+    kind: send
+  - description: The system time is retrieved via this connector.
+    return_type: Sys_Time.T
+    kind: get

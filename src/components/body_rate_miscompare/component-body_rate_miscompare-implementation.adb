@@ -91,6 +91,50 @@ package body Component.Body_Rate_Miscompare.Implementation is
       Self.Process_Parameter_Update (Arg);
    end Parameter_Update_T_Modify;
 
+   -- Reset the algorithm's fault persistence state. Called on GNC state change.
+   overriding procedure Reset_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
+      Ignore : Tick.T renames Arg;
+   begin
+      -- Clear the algorithm's fault persistence counter so rate disagreement must
+      -- re-accumulate from zero after a state change.
+      Reset (Self.Alg);
+   end Reset_Tick_T_Recv_Sync;
+
+   -- This is the command receive connector.
+   overriding procedure Command_T_Recv_Sync (Self : in out Instance; Arg : in Command.T) is
+      -- Execute the command:
+      Stat : constant Command_Response_Status.E := Self.Execute_Command (Arg);
+   begin
+      -- Send the return status:
+      Self.Command_Response_T_Send_If_Connected ((Source_Id => Arg.Header.Source_Id, Registration_Id => Self.Command_Reg_Id, Command_Id => Arg.Header.Id, Status => Stat));
+   end Command_T_Recv_Sync;
+
+   -----------------------------------------------
+   -- Command handler primitives:
+   -----------------------------------------------
+   -- Force the algorithm to always output IMU rates (Value => True) or resume normal
+   -- miscompare logic (Value => False). Drives the algorithm's setUseImuRates, which
+   -- also clears a latched fault when set False.
+   overriding function Use_Imu_Rates (Self : in out Instance; Arg : in Packed_Boolean.T) return Command_Execution_Status.E is
+      use Command_Execution_Status;
+   begin
+      -- Push the override into the C algorithm:
+      Set_Use_Imu_Rates (Self.Alg, Arg.Value);
+      -- Report the new setting:
+      Self.Event_T_Send_If_Connected (Self.Events.Use_Imu_Rates_Set (Self.Sys_Time_T_Get, Arg));
+      return Success;
+   end Use_Imu_Rates;
+
+   -- Invalid command handler. This procedure is called when a command's arguments are found to be invalid:
+   overriding procedure Invalid_Command (Self : in out Instance; Cmd : in Command.T; Errant_Field_Number : in Unsigned_32; Errant_Field : in Basic_Types.Poly_Type) is
+   begin
+      -- A malformed command can arrive from the ground, so report it rather than assert:
+      Self.Event_T_Send_If_Connected (Self.Events.Invalid_Command_Received (
+         Self.Sys_Time_T_Get,
+         (Id => Cmd.Header.Id, Errant_Field_Number => Errant_Field_Number, Errant_Field => Errant_Field)
+      ));
+   end Invalid_Command;
+
    -----------------------------------------------
    -- Parameter handlers:
    -----------------------------------------------

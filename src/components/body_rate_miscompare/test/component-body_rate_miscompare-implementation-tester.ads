@@ -8,11 +8,17 @@ with Printable_History;
 with Data_Product_Return.Representation;
 with Data_Product_Fetch.Representation;
 with Data_Product.Representation;
+with Command_Response.Representation;
+with Event.Representation;
+with Sys_Time.Representation;
 with Data_Product;
 with Nav_Att.Representation;
 with Body_Rate_Fault.Representation;
 with Mimu_Majority_Vote_Output;
 with St_Att;
+with Event;
+with Packed_Boolean.Representation;
+with Invalid_Command_Info.Representation;
 
 -- Compares IMU and star tracker body rates and falls back to IMU solution if they
 -- disagree.
@@ -23,6 +29,13 @@ package Component.Body_Rate_Miscompare.Implementation.Tester is
    package Data_Product_Fetch_T_Service_History_Package is new Printable_History (Data_Product_Fetch.T, Data_Product_Fetch.Representation.Image);
    package Data_Product_Fetch_T_Service_Return_History_Package is new Printable_History (Data_Product_Return.T, Data_Product_Return.Representation.Image);
    package Data_Product_T_Recv_Sync_History_Package is new Printable_History (Data_Product.T, Data_Product.Representation.Image);
+   package Command_Response_T_Recv_Sync_History_Package is new Printable_History (Command_Response.T, Command_Response.Representation.Image);
+   package Event_T_Recv_Sync_History_Package is new Printable_History (Event.T, Event.Representation.Image);
+   package Sys_Time_T_Return_History_Package is new Printable_History (Sys_Time.T, Sys_Time.Representation.Image);
+
+   -- Event history packages:
+   package Use_Imu_Rates_Set_History_Package is new Printable_History (Packed_Boolean.T, Packed_Boolean.Representation.Image);
+   package Invalid_Command_Received_History_Package is new Printable_History (Invalid_Command_Info.T, Invalid_Command_Info.Representation.Image);
 
    -- Data product history packages:
    package Body_Rate_History_Package is new Printable_History (Nav_Att.T, Nav_Att.Representation.Image);
@@ -35,6 +48,12 @@ package Component.Body_Rate_Miscompare.Implementation.Tester is
       -- Connector histories:
       Data_Product_Fetch_T_Service_History : Data_Product_Fetch_T_Service_History_Package.Instance;
       Data_Product_T_Recv_Sync_History : Data_Product_T_Recv_Sync_History_Package.Instance;
+      Command_Response_T_Recv_Sync_History : Command_Response_T_Recv_Sync_History_Package.Instance;
+      Event_T_Recv_Sync_History : Event_T_Recv_Sync_History_Package.Instance;
+      Sys_Time_T_Return_History : Sys_Time_T_Return_History_Package.Instance;
+      -- Event histories:
+      Use_Imu_Rates_Set_History : Use_Imu_Rates_Set_History_Package.Instance;
+      Invalid_Command_Received_History : Invalid_Command_Received_History_Package.Instance;
       -- Data product histories:
       Body_Rate_History : Body_Rate_History_Package.Instance;
       Rate_Fault_Status_History : Rate_Fault_Status_History_Package.Instance;
@@ -78,6 +97,22 @@ package Component.Body_Rate_Miscompare.Implementation.Tester is
    overriding function Data_Product_Fetch_T_Service (Self : in out Instance; Arg : in Data_Product_Fetch.T) return Data_Product_Return.T;
    -- The data product invoker connector
    overriding procedure Data_Product_T_Recv_Sync (Self : in out Instance; Arg : in Data_Product.T);
+   -- This connector is used to register and respond to the component's commands.
+   overriding procedure Command_Response_T_Recv_Sync (Self : in out Instance; Arg : in Command_Response.T);
+   -- Events are sent out of this connector.
+   overriding procedure Event_T_Recv_Sync (Self : in out Instance; Arg : in Event.T);
+   -- The system time is retrieved via this connector.
+   overriding function Sys_Time_T_Return (Self : in out Instance) return Sys_Time.T;
+
+   -----------------------------------------------
+   -- Event handler primitive:
+   -----------------------------------------------
+   -- Description:
+   --    Events for the Body Rate Miscompare component.
+   -- The use IMU rates override was set via command.
+   overriding procedure Use_Imu_Rates_Set (Self : in out Instance; Arg : in Packed_Boolean.T);
+   -- A command was received with invalid arguments.
+   overriding procedure Invalid_Command_Received (Self : in out Instance; Arg : in Invalid_Command_Info.T);
 
    -----------------------------------------------
    -- Data product handler primitives:
