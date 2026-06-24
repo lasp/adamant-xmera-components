@@ -49,6 +49,24 @@ package body Average_Mimu_Data_Tests.Implementation is
          )]
       ));
 
+   -- Non-uniform packet with negative values: first 5 samples negative, last 5
+   -- positive, designed so the 10-sample average is exactly [GyroA,GyroB,GyroC]/[AccelA,AccelB,AccelC].
+   Mixed_Packet : constant Mimu_Raw_Packet.T := (
+      Timestamp => (Seconds => 1, Subseconds => 0),
+      Samples => [
+         0 .. 4 => (
+            Merged_Gyro_Rates => (X_Measurement => -1_000_000, Y_Measurement => -2_000_000, Z_Measurement => -3_000_000),
+            Merged_Accelerations => (X_Measurement => -4_000_000, Y_Measurement => -5_000_000, Z_Measurement => -6_000_000),
+            Merge_Info => 0
+         ),
+         5 .. 9 => (
+            Merged_Gyro_Rates => (X_Measurement => 3_000_000, Y_Measurement => 6_000_000, Z_Measurement => 9_000_000),
+            Merged_Accelerations => (X_Measurement => 12_000_000, Y_Measurement => 15_000_000, Z_Measurement => 18_000_000),
+            Merge_Info => 0
+         )
+      ]
+   );
+
    -- Stage identity DCM plus the given gyro/accel windows and apply them.
    procedure Apply_Standard_Params (
       T : Tester_Ref;
@@ -155,5 +173,25 @@ package body Average_Mimu_Data_Tests.Implementation is
          Packed_F32x3_Assert.Eq (Output.Accel_Body, [-AccelB, AccelA, AccelC], Epsilon => 0.0001);
       end;
    end Test_Dcm_Rotation;
+
+   -- Non-uniform data with negative values, identity DCM. Tests signed
+   -- Integer_32-to-float conversion and averaging across mixed signs.
+   overriding procedure Test_Mixed_Signs (Self : in out Instance) is
+      T : Tester_Ref renames Self.Tester;
+   begin
+      Apply_Standard_Params (T, Gyro_Window => 1.0, Accel_Window => 1.0);
+
+      T.Mimu_Raw_Packet_T_Send (Mixed_Packet);
+      T.Tick_T_Send (((0, 0), 0));
+
+      Natural_Assert.Eq (T.Imu_Body_Data_History.Get_Count, 1);
+
+      declare
+         Output : constant Averaged_Imu_Data.T := T.Imu_Body_Data_History.Get (1);
+      begin
+         Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [GyroA, GyroB, GyroC], Epsilon => 0.0001);
+         Packed_F32x3_Assert.Eq (Output.Accel_Body, [AccelA, AccelB, AccelC], Epsilon => 0.0001);
+      end;
+   end Test_Mixed_Signs;
 
 end Average_Mimu_Data_Tests.Implementation;

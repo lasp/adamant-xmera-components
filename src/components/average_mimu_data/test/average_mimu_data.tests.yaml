@@ -5,3 +5,5 @@ tests:
     description: Identity DCM and uniform data - output equals scaled input.
   - name: Test_Dcm_Rotation
     description: 90-degree Z-rotation DCM transforms the averaged result into the body frame.
+  - name: Test_Mixed_Signs
+    description: Non-uniform data with negative values averages correctly across signs.
