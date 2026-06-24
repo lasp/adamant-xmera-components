@@ -7,3 +7,5 @@ tests:
     description: 90-degree Z-rotation DCM transforms the averaged result into the body frame.
   - name: Test_Mixed_Signs
     description: Non-uniform data with negative values averages correctly across signs.
+  - name: Test_Time_Filtering
+    description: Per-sample time windowing excludes samples older than the averaging window.

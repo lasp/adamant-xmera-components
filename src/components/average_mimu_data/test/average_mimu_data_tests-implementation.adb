@@ -67,6 +67,26 @@ package body Average_Mimu_Data_Tests.Implementation is
       ]
    );
 
+   -- Time-filtered packet: bogus values in samples 0-4, known values in 5-9.
+   -- Per-sample times are first-sample-time + I*10ms; maxTimeTag = base + 90ms.
+   -- With a 45 ms window, sample I is kept when (9-I)*10ms <= 45ms, i.e. I in 5..9.
+   -- Average of samples 5-9: gyro=[GyroA,GyroB,GyroC], accel=[AccelA,AccelB,AccelC].
+   Filtered_Packet : constant Mimu_Raw_Packet.T := (
+      Timestamp => (Seconds => 1, Subseconds => 0),
+      Samples => [
+         0 .. 4 => (
+            Merged_Gyro_Rates => (X_Measurement => 99_000_000, Y_Measurement => 99_000_000, Z_Measurement => 99_000_000),
+            Merged_Accelerations => (X_Measurement => 99_000_000, Y_Measurement => 99_000_000, Z_Measurement => 99_000_000),
+            Merge_Info => 0
+         ),
+         5 .. 9 => (
+            Merged_Gyro_Rates => (X_Measurement => 1_000_000, Y_Measurement => 2_000_000, Z_Measurement => 3_000_000),
+            Merged_Accelerations => (X_Measurement => 4_000_000, Y_Measurement => 5_000_000, Z_Measurement => 6_000_000),
+            Merge_Info => 0
+         )
+      ]
+   );
+
    -- Stage identity DCM plus the given gyro/accel windows and apply them.
    procedure Apply_Standard_Params (
       T : Tester_Ref;
@@ -193,5 +213,25 @@ package body Average_Mimu_Data_Tests.Implementation is
          Packed_F32x3_Assert.Eq (Output.Accel_Body, [AccelA, AccelB, AccelC], Epsilon => 0.0001);
       end;
    end Test_Mixed_Signs;
+
+   -- Per-sample time windowing: a 45 ms window over a single 10-sample packet
+   -- keeps only samples 5-9 (older samples 0-4 are excluded).
+   overriding procedure Test_Time_Filtering (Self : in out Instance) is
+      T : Tester_Ref renames Self.Tester;
+   begin
+      Apply_Standard_Params (T, Gyro_Window => 0.045, Accel_Window => 0.045);
+
+      T.Mimu_Raw_Packet_T_Send (Filtered_Packet);
+      T.Tick_T_Send (((0, 0), 0));
+
+      Natural_Assert.Eq (T.Imu_Body_Data_History.Get_Count, 1);
+
+      declare
+         Output : constant Averaged_Imu_Data.T := T.Imu_Body_Data_History.Get (1);
+      begin
+         Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [GyroA, GyroB, GyroC], Epsilon => 0.0001);
+         Packed_F32x3_Assert.Eq (Output.Accel_Body, [AccelA, AccelB, AccelC], Epsilon => 0.0001);
+      end;
+   end Test_Time_Filtering;
 
 end Average_Mimu_Data_Tests.Implementation;
