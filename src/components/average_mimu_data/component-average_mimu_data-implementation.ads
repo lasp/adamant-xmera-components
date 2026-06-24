@@ -25,11 +25,11 @@ package Component.Average_Mimu_Data.Implementation is
 
 private
 
-   -- Maximum number of packets to buffer between ticks:
-   Max_Buffered_Packets : constant := 4;
+   -- Maximum number of packets to buffer between ticks (matches the C ring size):
+   Max_Buffered_Packets : constant := Average_Mimu_Data_Algorithm_C.Max_Mimu_Pkt;
 
-   -- Number of raw samples per packet:
-   Samples_Per_Packet : constant := 10;
+   -- Number of raw samples per packet (matches the C per-packet sample count):
+   Samples_Per_Packet : constant := Average_Mimu_Data_Algorithm_C.Max_Mimu_Samples_Per_Pkt;
 
    -- ICD conversion factors (mission-stable, not parameterized):
    -- gyro [rad/s/count] = 4000 / 2^31-1 * pi/180
@@ -38,11 +38,12 @@ private
    Accel_Scale : constant Short_Float := 7.4505806e-08;
 
    -- Pre-converted sample data for a single packet (10 samples deep):
-   type Packet_Meas_Time_Array is array (0 .. Samples_Per_Packet - 1) of Interfaces.Unsigned_64;
    type Packet_Vector3f_Array is array (0 .. Samples_Per_Packet - 1) of Packed_F32x3.C.U_C;
 
    type Converted_Packet_Data is record
-      Meas_Time : Packet_Meas_Time_Array;
+      -- First-sample time of the packet [ns]; per-sample times are derived
+      -- inside the algorithm from this plus the device sample period.
+      Meas_Time : Interfaces.Unsigned_64;
       Gyro_P    : Packet_Vector3f_Array;
       Accel_P   : Packet_Vector3f_Array;
    end record;
@@ -54,7 +55,7 @@ private
       Alg : Average_Mimu_Data_Algorithm_Access := null;
       -- Pre-converted sample buffer, populated on recv, consumed on tick:
       Buffer : Converted_Buffer_Array := [others => (
-         Meas_Time => [others => 0],
+         Meas_Time => 0,
          Gyro_P    => [others => [others => 0.0]],
          Accel_P   => [others => [others => 0.0]]
       )];
