@@ -22,6 +22,8 @@ private
    overriding procedure Test_Mixed_Signs (Self : in out Instance);
    -- Per-sample time windowing excludes samples older than the averaging window.
    overriding procedure Test_Time_Filtering (Self : in out Instance);
+   -- A tick with nothing buffered still publishes a zero result.
+   overriding procedure Test_Empty_Buffer (Self : in out Instance);
 
    -- Test data and state:
    type Instance is new Average_Mimu_Data_Tests.Base_Instance with record

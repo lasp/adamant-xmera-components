@@ -9,3 +9,5 @@ tests:
     description: Non-uniform data with negative values averages correctly across signs.
   - name: Test_Time_Filtering
     description: Per-sample time windowing excludes samples older than the averaging window.
+  - name: Test_Empty_Buffer
+    description: A tick with nothing buffered still publishes a zero result.
