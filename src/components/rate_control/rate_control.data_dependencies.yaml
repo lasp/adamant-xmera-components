@@ -1,6 +1,0 @@
----
-description: Data dependencies for the Rate Control component.
-data_dependencies:
-  - name: Attitude_Guidance
-    type: Att_Guid.T
-    description: Attitude guidance message with attitude and rate errors

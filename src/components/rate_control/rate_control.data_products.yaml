@@ -1,6 +1,0 @@
----
-description: Data products for the Rate Control component.
-data_products:
-  - name: Torque_Command
-    type: Packed_F32x3_Record.T
-    description: Command torque vector in body frame components.
