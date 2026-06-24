@@ -2,6 +2,4 @@
 description: This is a unit test suite for the Average Mimu Data component
 tests:
   - name: Test
-    description: Run algorithm to ensure integration is sound.
-  - name: Test_Invalid_Parameter
-    description: Test that an invalid parameter throws the appropriate event.
+    description: Placeholder test, replaced by per-scenario cases in following commits.

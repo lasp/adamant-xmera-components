@@ -14,10 +14,8 @@ private
    overriding procedure Set_Up_Test (Self : in out Instance);
    overriding procedure Tear_Down_Test (Self : in out Instance);
 
-   -- Run algorithm to ensure integration is sound.
+   -- Placeholder test, replaced by per-scenario cases in following commits.
    overriding procedure Test (Self : in out Instance);
-   -- Test that an invalid parameter throws the appropriate event.
-   overriding procedure Test_Invalid_Parameter (Self : in out Instance);
 
    -- Test data and state:
    type Instance is new Average_Mimu_Data_Tests.Base_Instance with record
