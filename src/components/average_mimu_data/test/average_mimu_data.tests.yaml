@@ -15,3 +15,5 @@ tests:
     description: Multiple packets buffered before one tick are all averaged together.
   - name: Test_Buffer_Overflow
     description: A packet beyond the buffer capacity triggers the overflow event and is dropped.
+  - name: Test_Invalid_Parameter
+    description: Test that an invalid parameter throws the appropriate event and out-of-range windows are rejected.

@@ -8,10 +8,12 @@ with Basic_Assertions; use Basic_Assertions;
 with Mimu_Raw_Packet;
 with Averaged_Imu_Data;
 with Packed_F32x3.Assertion; use Packed_F32x3.Assertion;
+with Parameter;
 with Average_Mimu_Data_Parameters;
 with Parameter_Enums.Assertion;
 use Parameter_Enums.Parameter_Update_Status;
 use Parameter_Enums.Assertion;
+with Invalid_Parameter_Info.Assertion; use Invalid_Parameter_Info.Assertion;
 
 package body Average_Mimu_Data_Tests.Implementation is
 
@@ -312,5 +314,46 @@ package body Average_Mimu_Data_Tests.Implementation is
          Packed_F32x3_Assert.Eq (Output.Accel_Body, [AccelA, AccelB, AccelC], Epsilon => 0.0001);
       end;
    end Test_Buffer_Overflow;
+
+   -- Test that an invalid parameter throws the appropriate event, and that an
+   -- averaging window outside [0.0, 2.0] s is rejected by Validate_Parameters.
+   overriding procedure Test_Invalid_Parameter (Self : in out Instance) is
+      T : Tester_Ref renames Self.Tester;
+      Param : Parameter.T := T.Parameters.Gyro_Time_Delta ((Value => 1.0));
+   begin
+      -- Make the parameter invalid by modifying its length.
+      Param.Header.Buffer_Length := 0;
+
+      -- Send bad parameter and expect bad response:
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Param), Length_Error);
+
+      -- Make sure the invalid parameter event was thrown:
+      Natural_Assert.Eq (T.Event_T_Recv_Sync_History.Get_Count, 1);
+      Natural_Assert.Eq (T.Invalid_Parameter_Received_History.Get_Count, 1);
+      Invalid_Parameter_Info_Assert.Eq (T.Invalid_Parameter_Received_History.Get (1), (
+         Id => T.Parameters.Get_Gyro_Time_Delta_Id,
+         Errant_Field_Number => Interfaces.Unsigned_32'Last,
+         Errant_Field => [0, 0, 0, 0, 0, 0, 0, 0]
+      ));
+
+      -- Test with invalid id:
+      Param.Header.Id := 1_001;
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Param), Id_Error);
+
+      Natural_Assert.Eq (T.Event_T_Recv_Sync_History.Get_Count, 2);
+      Natural_Assert.Eq (T.Invalid_Parameter_Received_History.Get_Count, 2);
+
+      -- An averaging window above the 2.0 s cap is rejected on validation:
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
+         T.Parameters.Gyro_Time_Delta ((Value => 3.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- Windows within [0.0, 2.0] s validate successfully:
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
+         T.Parameters.Gyro_Time_Delta ((Value => 2.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
+         T.Parameters.Accel_Time_Delta ((Value => 0.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
+   end Test_Invalid_Parameter;
 
 end Average_Mimu_Data_Tests.Implementation;

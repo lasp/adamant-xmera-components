@@ -28,6 +28,8 @@ private
    overriding procedure Test_Multi_Packet (Self : in out Instance);
    -- A packet beyond the buffer capacity triggers the overflow event and is dropped.
    overriding procedure Test_Buffer_Overflow (Self : in out Instance);
+   -- Test that an invalid parameter throws the appropriate event and out-of-range windows are rejected.
+   overriding procedure Test_Invalid_Parameter (Self : in out Instance);
 
    -- Test data and state:
    type Instance is new Average_Mimu_Data_Tests.Base_Instance with record
