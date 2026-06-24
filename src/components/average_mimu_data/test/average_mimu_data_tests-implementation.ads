@@ -16,6 +16,8 @@ private
 
    -- Identity DCM and uniform data - output equals scaled input.
    overriding procedure Test_Identity_Dcm (Self : in out Instance);
+   -- 90-degree Z-rotation DCM transforms the averaged result into the body frame.
+   overriding procedure Test_Dcm_Rotation (Self : in out Instance);
 
    -- Test data and state:
    type Instance is new Average_Mimu_Data_Tests.Base_Instance with record

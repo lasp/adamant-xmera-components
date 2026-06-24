@@ -124,4 +124,36 @@ package body Average_Mimu_Data_Tests.Implementation is
       end;
    end Test_Identity_Dcm;
 
+   -- 90-degree Z-rotation DCM = [0, -1, 0; 1, 0, 0; 0, 0, 1]
+   --   DCM * [GyroA,GyroB,GyroC] = [-GyroB, GyroA, GyroC]
+   --   DCM * [AccelA,AccelB,AccelC] = [-AccelB, AccelA, AccelC]
+   overriding procedure Test_Dcm_Rotation (Self : in out Instance) is
+      T : Tester_Ref renames Self.Tester;
+      Params : Average_Mimu_Data_Parameters.Instance;
+   begin
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
+         Params.Gyro_Time_Delta ((Value => 1.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
+         Params.Accel_Time_Delta ((Value => 1.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
+         Params.Dcm_Pltf_To_Bdy ([
+            0.0, -1.0, 0.0,
+            1.0,  0.0, 0.0,
+            0.0,  0.0, 1.0
+         ])), Success);
+      Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+
+      T.Mimu_Raw_Packet_T_Send (Uniform_Packet (1, 0));
+      T.Tick_T_Send (((0, 0), 0));
+
+      Natural_Assert.Eq (T.Imu_Body_Data_History.Get_Count, 1);
+
+      declare
+         Output : constant Averaged_Imu_Data.T := T.Imu_Body_Data_History.Get (1);
+      begin
+         Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [-GyroB, GyroA, GyroC], Epsilon => 0.0001);
+         Packed_F32x3_Assert.Eq (Output.Accel_Body, [-AccelB, AccelA, AccelC], Epsilon => 0.0001);
+      end;
+   end Test_Dcm_Rotation;
+
 end Average_Mimu_Data_Tests.Implementation;

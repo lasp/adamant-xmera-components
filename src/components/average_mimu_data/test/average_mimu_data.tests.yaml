@@ -3,3 +3,5 @@ description: This is a unit test suite for the Average Mimu Data component
 tests:
   - name: Test_Identity_Dcm
     description: Identity DCM and uniform data - output equals scaled input.
+  - name: Test_Dcm_Rotation
+    description: 90-degree Z-rotation DCM transforms the averaged result into the body frame.
