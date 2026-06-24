@@ -26,6 +26,8 @@ private
    overriding procedure Test_Empty_Buffer (Self : in out Instance);
    -- Multiple packets buffered before one tick are all averaged together.
    overriding procedure Test_Multi_Packet (Self : in out Instance);
+   -- A packet beyond the buffer capacity triggers the overflow event and is dropped.
+   overriding procedure Test_Buffer_Overflow (Self : in out Instance);
 
    -- Test data and state:
    type Instance is new Average_Mimu_Data_Tests.Base_Instance with record

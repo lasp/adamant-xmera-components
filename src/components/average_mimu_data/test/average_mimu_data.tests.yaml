@@ -13,3 +13,5 @@ tests:
     description: A tick with nothing buffered still publishes a zero result.
   - name: Test_Multi_Packet
     description: Multiple packets buffered before one tick are all averaged together.
+  - name: Test_Buffer_Overflow
+    description: A packet beyond the buffer capacity triggers the overflow event and is dropped.

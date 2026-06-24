@@ -280,4 +280,37 @@ package body Average_Mimu_Data_Tests.Implementation is
       end;
    end Test_Multi_Packet;
 
+   -- Send 5 packets (buffer holds 4); the 5th triggers the overflow event and
+   -- is dropped. The tick still processes the 4 buffered packets.
+   overriding procedure Test_Buffer_Overflow (Self : in out Instance) is
+      T : Tester_Ref renames Self.Tester;
+   begin
+      Apply_Standard_Params (T, Gyro_Window => 1.0, Accel_Window => 1.0);
+
+      Natural_Assert.Eq (T.Packet_Buffer_Overflow_History.Get_Count, 0);
+
+      T.Mimu_Raw_Packet_T_Send (Uniform_Packet (1, 0 * Pkt_Subsec_Step));
+      T.Mimu_Raw_Packet_T_Send (Uniform_Packet (1, 1 * Pkt_Subsec_Step));
+      T.Mimu_Raw_Packet_T_Send (Uniform_Packet (1, 2 * Pkt_Subsec_Step));
+      T.Mimu_Raw_Packet_T_Send (Uniform_Packet (1, 3 * Pkt_Subsec_Step));
+
+      -- Buffer is now full (4/4), no overflow yet:
+      Natural_Assert.Eq (T.Packet_Buffer_Overflow_History.Get_Count, 0);
+
+      -- 5th packet should trigger the overflow event:
+      T.Mimu_Raw_Packet_T_Send (Uniform_Packet (1, 4 * Pkt_Subsec_Step));
+      Natural_Assert.Eq (T.Packet_Buffer_Overflow_History.Get_Count, 1);
+
+      -- Tick still processes the 4 buffered packets:
+      T.Tick_T_Send (((0, 0), 0));
+      Natural_Assert.Eq (T.Imu_Body_Data_History.Get_Count, 1);
+
+      declare
+         Output : constant Averaged_Imu_Data.T := T.Imu_Body_Data_History.Get (1);
+      begin
+         Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [GyroA, GyroB, GyroC], Epsilon => 0.0001);
+         Packed_F32x3_Assert.Eq (Output.Accel_Body, [AccelA, AccelB, AccelC], Epsilon => 0.0001);
+      end;
+   end Test_Buffer_Overflow;
+
 end Average_Mimu_Data_Tests.Implementation;
