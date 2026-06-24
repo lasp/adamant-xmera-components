@@ -33,6 +33,11 @@ package body Average_Mimu_Data_Tests.Implementation is
    AccelB : constant Short_Float := 5_000_000.0 * Accel_Scale;
    AccelC : constant Short_Float := 6_000_000.0 * Accel_Scale;
 
+   -- Roughly 100 ms expressed in Sys_Time subseconds (1/65536 s). Used to space
+   -- consecutive packets so each packet's first-sample time is strictly
+   -- increasing, which the (stateful) algorithm requires to ingest them.
+   Pkt_Subsec_Step : constant Interfaces.Unsigned_16 := 6_554;
+
    -------------------------------------------------------------------------
    -- Helpers:
    -------------------------------------------------------------------------
@@ -252,5 +257,27 @@ package body Average_Mimu_Data_Tests.Implementation is
          Packed_F32x3_Assert.Eq (Output.Accel_Body, [0.0, 0.0, 0.0], Epsilon => 0.0001);
       end;
    end Test_Empty_Buffer;
+
+   -- Two packets buffered before one tick. Both carry identical uniform data
+   -- but strictly-increasing timestamps, so both are ingested and the 20
+   -- samples average to the same uniform result.
+   overriding procedure Test_Multi_Packet (Self : in out Instance) is
+      T : Tester_Ref renames Self.Tester;
+   begin
+      Apply_Standard_Params (T, Gyro_Window => 1.0, Accel_Window => 1.0);
+
+      T.Mimu_Raw_Packet_T_Send (Uniform_Packet (1, 0));
+      T.Mimu_Raw_Packet_T_Send (Uniform_Packet (1, Pkt_Subsec_Step));
+      T.Tick_T_Send (((0, 0), 0));
+
+      Natural_Assert.Eq (T.Imu_Body_Data_History.Get_Count, 1);
+
+      declare
+         Output : constant Averaged_Imu_Data.T := T.Imu_Body_Data_History.Get (1);
+      begin
+         Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [GyroA, GyroB, GyroC], Epsilon => 0.0001);
+         Packed_F32x3_Assert.Eq (Output.Accel_Body, [AccelA, AccelB, AccelC], Epsilon => 0.0001);
+      end;
+   end Test_Multi_Packet;
 
 end Average_Mimu_Data_Tests.Implementation;

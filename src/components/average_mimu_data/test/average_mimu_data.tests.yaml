@@ -11,3 +11,5 @@ tests:
     description: Per-sample time windowing excludes samples older than the averaging window.
   - name: Test_Empty_Buffer
     description: A tick with nothing buffered still publishes a zero result.
+  - name: Test_Multi_Packet
+    description: Multiple packets buffered before one tick are all averaged together.
