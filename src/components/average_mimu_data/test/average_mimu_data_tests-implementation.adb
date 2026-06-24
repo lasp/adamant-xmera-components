@@ -60,15 +60,15 @@ package body Average_Mimu_Data_Tests.Implementation is
       Accel_Scale : constant Short_Float := 160.0 / 2_147_483_647.0;
 
       -- Expected physical-unit values for raw dn = 1M .. 6M:
-      G1 : constant Short_Float := 1_000_000.0 * Gyro_Scale;
-      G2 : constant Short_Float := 2_000_000.0 * Gyro_Scale;
-      G3 : constant Short_Float := 3_000_000.0 * Gyro_Scale;
-      A4 : constant Short_Float := 4_000_000.0 * Accel_Scale;
-      A5 : constant Short_Float := 5_000_000.0 * Accel_Scale;
-      A6 : constant Short_Float := 6_000_000.0 * Accel_Scale;
+      GyroA : constant Short_Float := 1_000_000.0 * Gyro_Scale;
+      GyroB : constant Short_Float := 2_000_000.0 * Gyro_Scale;
+      GyroC : constant Short_Float := 3_000_000.0 * Gyro_Scale;
+      AccelA : constant Short_Float := 4_000_000.0 * Accel_Scale;
+      AccelB : constant Short_Float := 5_000_000.0 * Accel_Scale;
+      AccelC : constant Short_Float := 6_000_000.0 * Accel_Scale;
 
       -- Uniform raw packet: all 10 samples have the same integer values.
-      -- ICD scale: 1_000_000 -> G1, 2_000_000 -> G2, etc.
+      -- ICD scale: 1_000_000 -> GyroA, 2_000_000 -> GyroB, etc.
       -- Timestamp Seconds=1 so the 10 samples have measTime ~1s.
       -- The C shim zero-fills the remaining internal buffer slots (measTime=0)
       -- with age ~1.09s, which is excluded by timeDelta=1.0.
@@ -85,9 +85,9 @@ package body Average_Mimu_Data_Tests.Implementation is
       -- last 5 positive. Tests signed Integer_32-to-float conversion and
       -- averaging across mixed signs.
       -- After ICD scale:
-      --   first 5 gyro = [-G1, -G2, -G3], accel = [-A4, -A5, -A6]
-      --   last 5 gyro = [3*G1, 3*G2, 3*G3], accel = [3*A4, 3*A5, 3*A6]
-      -- Average of 10: gyro = [G1, G2, G3], accel = [A4, A5, A6]
+      --   first 5 gyro = [-GyroA, -GyroB, -GyroC], accel = [-AccelA, -AccelB, -AccelC]
+      --   last 5 gyro = [3*GyroA, 3*GyroB, 3*GyroC], accel = [3*AccelA, 3*AccelB, 3*AccelC]
+      -- Average of 10: gyro = [GyroA, GyroB, GyroC], accel = [AccelA, AccelB, AccelC]
       Mixed_Raw_Packet : constant Mimu_Raw_Packet.T := (
          Timestamp => (Seconds => 1, Subseconds => 0),
          Samples => [
@@ -111,7 +111,7 @@ package body Average_Mimu_Data_Tests.Implementation is
       --   Sample 4: age=50ms, 0.05 < 0.045 => NO (excluded)
       --   Sample 5: age=40ms, 0.04 < 0.045 => YES (included)
       --   Only samples 5-9 pass the time filter.
-      -- Average of samples 5-9: gyro=[G1,G2,G3], accel=[A4,A5,A6]
+      -- Average of samples 5-9: gyro=[GyroA,GyroB,GyroC], accel=[AccelA,AccelB,AccelC]
       Filtered_Raw_Packet : constant Mimu_Raw_Packet.T := (
          Timestamp => (Seconds => 1, Subseconds => 0),
          Samples => [
@@ -160,15 +160,15 @@ package body Average_Mimu_Data_Tests.Implementation is
       declare
          Output : constant Averaged_Imu_Data.T := T.Imu_Body_Data_History.Get (1);
       begin
-         Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [G1, G2, G3], Epsilon => 0.0001);
-         Packed_F32x3_Assert.Eq (Output.Accel_Body, [A4, A5, A6], Epsilon => 0.0001);
+         Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [GyroA, GyroB, GyroC], Epsilon => 0.0001);
+         Packed_F32x3_Assert.Eq (Output.Accel_Body, [AccelA, AccelB, AccelC], Epsilon => 0.0001);
       end;
 
       -----------------------------------------------------------------------
       -- Test Case 2: 90-degree Z rotation DCM
       -- DCM = [0, -1, 0; 1, 0, 0; 0, 0, 1]
-      -- DCM * [G1,G2,G3] = [-G2, G1, G3]
-      -- DCM * [A4,A5,A6] = [-A5, A4, A6]
+      -- DCM * [GyroA,GyroB,GyroC] = [-GyroB, GyroA, GyroC]
+      -- DCM * [AccelA,AccelB,AccelC] = [-AccelB, AccelA, AccelC]
       -----------------------------------------------------------------------
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
          Params.Dcm_Pltf_To_Bdy ([
@@ -187,8 +187,8 @@ package body Average_Mimu_Data_Tests.Implementation is
       declare
          Output : constant Averaged_Imu_Data.T := T.Imu_Body_Data_History.Get (2);
       begin
-         Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [-G2, G1, G3], Epsilon => 0.0001);
-         Packed_F32x3_Assert.Eq (Output.Accel_Body, [-A5, A4, A6], Epsilon => 0.0001);
+         Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [-GyroB, GyroA, GyroC], Epsilon => 0.0001);
+         Packed_F32x3_Assert.Eq (Output.Accel_Body, [-AccelB, AccelA, AccelC], Epsilon => 0.0001);
       end;
 
       -----------------------------------------------------------------------
@@ -212,8 +212,8 @@ package body Average_Mimu_Data_Tests.Implementation is
       declare
          Output : constant Averaged_Imu_Data.T := T.Imu_Body_Data_History.Get (3);
       begin
-         Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [G1, G2, G3], Epsilon => 0.0001);
-         Packed_F32x3_Assert.Eq (Output.Accel_Body, [A4, A5, A6], Epsilon => 0.0001);
+         Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [GyroA, GyroB, GyroC], Epsilon => 0.0001);
+         Packed_F32x3_Assert.Eq (Output.Accel_Body, [AccelA, AccelB, AccelC], Epsilon => 0.0001);
       end;
 
       -----------------------------------------------------------------------
@@ -233,8 +233,8 @@ package body Average_Mimu_Data_Tests.Implementation is
       declare
          Output : constant Averaged_Imu_Data.T := T.Imu_Body_Data_History.Get (4);
       begin
-         Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [G1, G2, G3], Epsilon => 0.0001);
-         Packed_F32x3_Assert.Eq (Output.Accel_Body, [A4, A5, A6], Epsilon => 0.0001);
+         Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [GyroA, GyroB, GyroC], Epsilon => 0.0001);
+         Packed_F32x3_Assert.Eq (Output.Accel_Body, [AccelA, AccelB, AccelC], Epsilon => 0.0001);
       end;
 
       -----------------------------------------------------------------------
@@ -279,8 +279,8 @@ package body Average_Mimu_Data_Tests.Implementation is
       declare
          Output : constant Averaged_Imu_Data.T := T.Imu_Body_Data_History.Get (6);
       begin
-         Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [G1, G2, G3], Epsilon => 0.0001);
-         Packed_F32x3_Assert.Eq (Output.Accel_Body, [A4, A5, A6], Epsilon => 0.0001);
+         Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [GyroA, GyroB, GyroC], Epsilon => 0.0001);
+         Packed_F32x3_Assert.Eq (Output.Accel_Body, [AccelA, AccelB, AccelC], Epsilon => 0.0001);
       end;
 
       -----------------------------------------------------------------------
@@ -310,8 +310,8 @@ package body Average_Mimu_Data_Tests.Implementation is
       declare
          Output : constant Averaged_Imu_Data.T := T.Imu_Body_Data_History.Get (7);
       begin
-         Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [G1, G2, G3], Epsilon => 0.0001);
-         Packed_F32x3_Assert.Eq (Output.Accel_Body, [A4, A5, A6], Epsilon => 0.0001);
+         Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [GyroA, GyroB, GyroC], Epsilon => 0.0001);
+         Packed_F32x3_Assert.Eq (Output.Accel_Body, [AccelA, AccelB, AccelC], Epsilon => 0.0001);
       end;
    end Test;
 
