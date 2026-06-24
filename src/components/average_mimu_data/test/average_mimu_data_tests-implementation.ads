@@ -14,8 +14,8 @@ private
    overriding procedure Set_Up_Test (Self : in out Instance);
    overriding procedure Tear_Down_Test (Self : in out Instance);
 
-   -- Placeholder test, replaced by per-scenario cases in following commits.
-   overriding procedure Test (Self : in out Instance);
+   -- Identity DCM and uniform data - output equals scaled input.
+   overriding procedure Test_Identity_Dcm (Self : in out Instance);
 
    -- Test data and state:
    type Instance is new Average_Mimu_Data_Tests.Base_Instance with record

@@ -1,5 +1,5 @@
 ---
 description: This is a unit test suite for the Average Mimu Data component
 tests:
-  - name: Test
-    description: Placeholder test, replaced by per-scenario cases in following commits.
+  - name: Test_Identity_Dcm
+    description: Identity DCM and uniform data - output equals scaled input.
