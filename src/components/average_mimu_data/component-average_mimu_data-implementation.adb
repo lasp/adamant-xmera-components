@@ -4,6 +4,7 @@
 
 with Averaged_Imu_Data.C;
 with Packed_F32x9.C;
+with Interfaces.C;
 
 package body Component.Average_Mimu_Data.Implementation is
 
@@ -128,11 +129,32 @@ package body Component.Average_Mimu_Data.Implementation is
    -- Apply parameter values to the C++ algorithm when parameters change.
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
    begin
-      -- Set the averaging window:
-      Set_Averaging_Window (Self.Alg, Self.Time_Delta.Value);
+      -- Set the gyro and accel averaging windows (validated to [0.0, 2.0] s):
+      Set_Gyro_Averaging_Window (Self.Alg, Interfaces.C.double (Self.Gyro_Time_Delta.Value));
+      Set_Accel_Averaging_Window (Self.Alg, Interfaces.C.double (Self.Accel_Time_Delta.Value));
       -- Set the platform-to-body DCM:
       Set_Dcm_Pltf_To_Bdy (Self.Alg, (Value => Packed_F32x9.C.To_C (Self.Dcm_Pltf_To_Bdy)));
    end Update_Parameters_Action;
+
+   -- Validate parameters before they are staged. The averaging windows must
+   -- fall within [0.0, 2.0] seconds; the C++ algorithm rejects values outside
+   -- that range, so we guard them here to avoid the cross-FFI exception.
+   overriding function Validate_Parameters (
+      Self : in out Instance;
+      Gyro_Time_Delta : in Packed_F32.U;
+      Accel_Time_Delta : in Packed_F32.U;
+      Dcm_Pltf_To_Bdy : in Packed_F32x9.U
+   ) return Parameter_Validation_Status.E is
+      pragma Unreferenced (Self, Dcm_Pltf_To_Bdy);
+      Max_Averaging_Window : constant Short_Float := 2.0;
+   begin
+      if Gyro_Time_Delta.Value < 0.0 or else Gyro_Time_Delta.Value > Max_Averaging_Window or else
+         Accel_Time_Delta.Value < 0.0 or else Accel_Time_Delta.Value > Max_Averaging_Window
+      then
+         return Parameter_Validation_Status.Invalid;
+      end if;
+      return Parameter_Validation_Status.Valid;
+   end Validate_Parameters;
 
    -- Invalid Parameter handler. This procedure is called when a parameter's type is found to be invalid:
    overriding procedure Invalid_Parameter (Self : in out Instance; Par : in Parameter.T; Errant_Field_Number : in Unsigned_32; Errant_Field : in Basic_Types.Poly_Type) is
