@@ -17,6 +17,9 @@ private
    -- Run algorithm to ensure integration is sound.
    overriding procedure Test (Self : in out Instance);
 
+   -- Verify the reset connector clears the Schmitt-trigger hysteresis state.
+   overriding procedure Test_Reset (Self : in out Instance);
+
    -- Test data and state:
    type Instance is new Thr_Firing_Schmitt_Tests.Base_Instance with record
       null;

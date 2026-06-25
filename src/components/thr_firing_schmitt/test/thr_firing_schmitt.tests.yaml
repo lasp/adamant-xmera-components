@@ -3,3 +3,5 @@ description: This is a unit test suite for the Thr Firing Schmitt component
 tests:
   - name: Test
     description: Run algorithm to ensure integration is sound.
+  - name: Test_Reset
+    description: Verify the reset connector clears the Schmitt-trigger hysteresis state.
