@@ -169,4 +169,66 @@ package body Thr_Firing_Schmitt_Tests.Implementation is
 
    end Test;
 
+   -- Verify the reset connector clears the Schmitt-trigger hysteresis state.
+   overriding procedure Test_Reset (Self : in out Instance) is
+      T : Component.Thr_Firing_Schmitt.Implementation.Tester.Instance_Access renames Self.Tester;
+      Params : Thr_Firing_Schmitt_Parameters.Instance;
+
+      -- Single thruster with maxThrust = 1.0
+      Thr_Config : aliased Thr_Firing_Schmitt_Array_Config := (
+         Num_Thrusters => 1,
+         Thrusters => [
+            0 => (R_Thrust_B => [0.0, 0.0, 0.0], T_Hat_Thrust_B => [0.0, 0.0, 1.0], Max_Thrust => 1.0),
+            others => (R_Thrust_B => [0.0, 0.0, 0.0], T_Hat_Thrust_B => [0.0, 0.0, 0.0], Max_Thrust => 0.0)
+         ]
+      );
+
+      -- Control parameters: levelOn = 0.75, levelOff = 0.25, min fire time = 0.02, period = 0.5
+      Levels : constant Levels_On_Off.T := (Level_On => 0.75, Level_Off => 0.25);
+      Min_Fire_Time : constant Packed_F32.T := (Value => 0.02);
+      Control_Period_Param : constant Packed_F32.T := (Value => 0.5);
+      Saturation_Factor : constant Packed_F32.T := (Value => 1.0);
+      On_Pulsing_Regime : constant Packed_Byte.T := (Value => 0);
+
+      Output : Thr_On_Time_Cmd.T;
+   begin
+      T.Component_Instance.Init;
+      T.Component_Instance.Set_Up;
+      T.Component_Instance.Configure_Thrusters (Thr_Config'Unchecked_Access);
+
+      -- Stage and apply parameters
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Levels (Levels)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thr_Min_Fire_Time (Min_Fire_Time)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Period (Control_Period_Param)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.On_Time_Saturation_Factor (Saturation_Factor)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thrust_Pulsing_Regime (On_Pulsing_Regime)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+
+      -- Tick 1: force=0.5 => onTime=0.25 (above min fire time), latches the
+      -- thruster's previous state to ON.
+      T.Thruster_Force_Cmd := (Thr_Force => [0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
+      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+
+      -- Tick 2: force=0.02 => onTime=0.01, level=0.5 (between levelOff and
+      -- levelOn). Because the previous state is latched ON, the Schmitt trigger
+      -- holds the thruster ON at the minimum fire time (0.02).
+      T.Thruster_Force_Cmd := (Thr_Force => [0.02, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
+      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+      Output := T.On_Time_Cmd_History.Get (2);
+      Short_Float_Assert.Eq (Output.On_Time_Request (0), 0.02, Epsilon => 0.0001);
+
+      -- Reset the algorithm's hysteresis state via the reset connector.
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
+
+      -- Tick 3: identical intermediate force=0.02. With the previous state now
+      -- cleared to OFF by the reset, the Schmitt trigger drops the thruster to
+      -- zero on-time, proving the reset took effect.
+      T.Thruster_Force_Cmd := (Thr_Force => [0.02, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
+      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+      Output := T.On_Time_Cmd_History.Get (3);
+      Short_Float_Assert.Eq (Output.On_Time_Request (0), 0.0, Epsilon => 0.0001);
+
+      -- Tear_Down_Test will handle the final Destroy
+   end Test_Reset;
+
 end Thr_Firing_Schmitt_Tests.Implementation;
