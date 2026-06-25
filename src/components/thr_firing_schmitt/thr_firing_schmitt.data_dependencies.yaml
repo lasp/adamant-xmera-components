@@ -1,0 +1,6 @@
+---
+description: Data dependencies for the Thr Firing Schmitt component.
+data_dependencies:
+  - name: Thruster_Force_Cmd
+    type: Thr_Force_Cmd.T
+    description: Thruster force command (8 thrusters)
