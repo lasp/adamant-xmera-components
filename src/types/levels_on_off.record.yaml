@@ -1,0 +1,15 @@
+---
+#  typedef struct {
+#      float levelOn;  /*!< [-] ON duty cycle fraction */
+#      float levelOff; /*!< [-] OFF duty cycle fraction */
+#  } LevelsOnOff_c;
+description: Schmitt-trigger ON and OFF duty cycle fractions.
+fields:
+  - name: Level_On
+    type: Short_Float
+    format: F32
+    description: "[-] ON duty cycle fraction"
+  - name: Level_Off
+    type: Short_Float
+    format: F32
+    description: "[-] OFF duty cycle fraction"
