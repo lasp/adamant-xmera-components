@@ -2,7 +2,15 @@
 -- Thr_Firing_Schmitt Component Implementation Body
 --------------------------------------------------------------------------------
 
+with Thr_Force_Cmd;
+with Thr_On_Time_Cmd;
+with Thr_Firing_Schmitt_Force_Cmd.C;
+with Thr_Firing_Schmitt_On_Time_Cmd.C;
+
 package body Component.Thr_Firing_Schmitt.Implementation is
+
+   -- Number of thrusters in the system (8-element data products vs 36-element C API)
+   Num_Thrusters : constant := 8;
 
    --------------------------------------------------
    -- Subprogram for implementation init method:
@@ -33,17 +41,60 @@ package body Component.Thr_Firing_Schmitt.Implementation is
    ---------------------------------------
    -- Run the algorithm up to the current time.
    overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
+      use Data_Product_Enums;
+      use Data_Product_Enums.Data_Dependency_Status;
+
+      -- Grab data dependencies:
+      --
+      -- Data_Dependency_Status.E can be Success, Not_Available, Error, or Stale.
+      -- All return values besides Success indicate that this component is not
+      -- wired up correctly in the algorithm execution order and received errant,
+      -- stale, or no data. This should never happen, so we assert.
+      Force_Dep : Thr_Force_Cmd.T;
+      Force_Status : constant Data_Dependency_Status.E :=
+         Self.Get_Thruster_Force_Cmd (Value => Force_Dep, Stale_Reference => Arg.Time);
+      pragma Assert (Force_Status = Success);
    begin
-      -- TODO statements
-      null;
+      -- Update the parameters:
+      Self.Update_Parameters;
+
+      declare
+         -- Unpack 8-element dependency
+         Force_Dep_U : constant Thr_Force_Cmd.U := Thr_Force_Cmd.Unpack (Force_Dep);
+
+         -- Build 36-element C input (zeroed, then copy 8 thruster values)
+         Force_36 : aliased Thr_Firing_Schmitt_Force_Cmd.C.U_C := (Thr_Force => [others => 0.0]);
+      begin
+         for I in 0 .. Num_Thrusters - 1 loop
+            Force_36.Thr_Force (I) := Force_Dep_U.Thr_Force (I);
+         end loop;
+
+         declare
+            -- Call the C algorithm
+            On_Time_36 : constant Thr_Firing_Schmitt_On_Time_Cmd.C.U_C :=
+               Update (Self.Alg, Force_36'Unchecked_Access);
+
+            -- Extract first 8 elements for output
+            On_Time_Result : Thr_On_Time_Cmd.U := (On_Time_Request => [others => 0.0]);
+         begin
+            for I in 0 .. Num_Thrusters - 1 loop
+               On_Time_Result.On_Time_Request (I) := On_Time_36.On_Time_Request (I);
+            end loop;
+
+            Self.Data_Product_T_Send (Self.Data_Products.On_Time_Cmd (
+               Arg.Time,
+               Thr_On_Time_Cmd.Pack (On_Time_Result)
+            ));
+         end;
+      end;
    end Tick_T_Recv_Sync;
 
    -- Reset the algorithm's Schmitt-trigger hysteresis state. Called on GNC state
    -- change.
    overriding procedure Reset_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
    begin
-      -- TODO statements
-      null;
+      -- Clear the algorithm's previous-state thruster history.
+      Reset (Self.Alg);
    end Reset_Tick_T_Recv_Sync;
 
    -- The parameter update connector.
@@ -56,6 +107,18 @@ package body Component.Thr_Firing_Schmitt.Implementation is
    -----------------------------------------------
    -- Parameter handlers:
    -----------------------------------------------
+   -- This procedure is called when the parameters of a component have been updated.
+   overriding procedure Update_Parameters_Action (Self : in out Instance) is
+   begin
+      -- Set algorithm configuration from parameters.
+      Set_Levels_On_Off (Self.Alg, Self.Levels.Level_On, Self.Levels.Level_Off);
+      Set_Thr_Min_Fire_Time (Self.Alg, Self.Thr_Min_Fire_Time.Value);
+      Set_Control_Period (Self.Alg, Self.Control_Period.Value);
+      Set_On_Time_Saturation_Factor (Self.Alg, Self.On_Time_Saturation_Factor.Value);
+      Set_Thrust_Pulsing_Regime (Self.Alg,
+         Thr_Firing_Schmitt_Pulsing_Regime'Val (Natural (Self.Thrust_Pulsing_Regime.Value)));
+   end Update_Parameters_Action;
+
    -- Invalid Parameter handler. This procedure is called when a parameter's type is found to be invalid:
    overriding procedure Invalid_Parameter (Self : in out Instance; Par : in Parameter.T; Errant_Field_Number : in Unsigned_32; Errant_Field : in Basic_Types.Poly_Type) is
       pragma Annotate (GNATSAS, Intentional, "subp always fails", "intentional assertion");
