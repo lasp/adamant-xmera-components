@@ -1,0 +1,8 @@
+---
+#  typedef struct {
+#      float thrForce[THR_FIRING_SCHMITT_MAX_THRUSTER_COUNT];  /*!< [N] array of thruster force values */
+#  } ThrusterForceCmd_c;
+fields:
+  - name: Thr_Force
+    type: Packed_F32x36.T
+    description: "[N] Thruster force values"
