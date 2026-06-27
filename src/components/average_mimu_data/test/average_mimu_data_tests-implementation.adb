@@ -425,4 +425,24 @@ package body Average_Mimu_Data_Tests.Implementation is
       end;
    end Test_Zero_Window;
 
+   -- A negative averaging window stages successfully but is rejected by
+   -- Validate_Parameters (the C++ algorithm rejects windows outside [0.0, 2.0] s,
+   -- so the component guards against negatives before they cross the FFI). Both
+   -- the gyro and accel channels are checked.
+   overriding procedure Test_Negative_Window_Rejected (Self : in out Instance) is
+      T : Tester_Ref renames Self.Tester;
+   begin
+      -- A negative gyro window is rejected:
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
+         T.Parameters.Gyro_Time_Delta ((Value => -1.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- With the gyro window valid again, a negative accel window is rejected:
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
+         T.Parameters.Gyro_Time_Delta ((Value => 1.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
+         T.Parameters.Accel_Time_Delta ((Value => -0.5))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+   end Test_Negative_Window_Rejected;
+
 end Average_Mimu_Data_Tests.Implementation;

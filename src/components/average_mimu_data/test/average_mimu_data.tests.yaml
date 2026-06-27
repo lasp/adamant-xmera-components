@@ -21,3 +21,5 @@ tests:
     description: Independent gyro and accel averaging windows select different sample sets from one packet.
   - name: Test_Zero_Window
     description: A 0.0 s averaging window keeps only the single newest sample.
+  - name: Test_Negative_Window_Rejected
+    description: A negative averaging window is rejected by validation for both the gyro and accel channels.
