@@ -32,6 +32,8 @@ private
    overriding procedure Test_Invalid_Parameter (Self : in out Instance);
    -- Independent gyro and accel averaging windows select different sample sets from one packet.
    overriding procedure Test_Asymmetric_Windows (Self : in out Instance);
+   -- A 0.0 s averaging window keeps only the single newest sample.
+   overriding procedure Test_Zero_Window (Self : in out Instance);
 
    -- Test data and state:
    type Instance is new Average_Mimu_Data_Tests.Base_Instance with record

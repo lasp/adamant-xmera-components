@@ -94,6 +94,26 @@ package body Average_Mimu_Data_Tests.Implementation is
       ]
    );
 
+   -- Packet whose newest sample (index 9) is uniquely valued: samples 0-8 carry a
+   -- large sentinel while sample 9 carries the standard 1_000_000/2_000_000/3_000_000, 4_000_000/5_000_000/6_000_000 values
+   -- (-> [GyroA,GyroB,GyroC]/[AccelA,AccelB,AccelC]). A 0.0 s window keeps only sample 9, so the result
+   -- distinguishes "newest sample only" from any multi-sample average.
+   Newest_Sample_Packet : constant Mimu_Raw_Packet.T := (
+      Timestamp => (Seconds => 1, Subseconds => 0),
+      Samples => [
+         0 .. 8 => (
+            Merged_Gyro_Rates => (X_Measurement => 50_000_000, Y_Measurement => 50_000_000, Z_Measurement => 50_000_000),
+            Merged_Accelerations => (X_Measurement => 50_000_000, Y_Measurement => 50_000_000, Z_Measurement => 50_000_000),
+            Merge_Info => 0
+         ),
+         9 => (
+            Merged_Gyro_Rates => (X_Measurement => 1_000_000, Y_Measurement => 2_000_000, Z_Measurement => 3_000_000),
+            Merged_Accelerations => (X_Measurement => 4_000_000, Y_Measurement => 5_000_000, Z_Measurement => 6_000_000),
+            Merge_Info => 0
+         )
+      ]
+   );
+
    -- Stage identity DCM plus the given gyro/accel windows and apply them.
    procedure Apply_Standard_Params (
       T : Tester_Ref;
@@ -381,5 +401,28 @@ package body Average_Mimu_Data_Tests.Implementation is
          Packed_F32x3_Assert.Eq (Output.Accel_Body, [AccelA, AccelB, AccelC], Epsilon => 0.0001);
       end;
    end Test_Asymmetric_Windows;
+
+   -- A 0.0 s averaging window keeps only the single newest sample (age 0). Using
+   -- Newest_Sample_Packet (samples 0-8 a sentinel, sample 9 the standard values)
+   -- the result is sample 9 only -> [GyroA,GyroB,GyroC]/[AccelA,AccelB,AccelC], not the sentinel an
+   -- all-sample average would produce.
+   overriding procedure Test_Zero_Window (Self : in out Instance) is
+      T : Tester_Ref renames Self.Tester;
+   begin
+      Apply_Standard_Params (T, Gyro_Window => 0.0, Accel_Window => 0.0);
+
+      T.Mimu_Raw_Packet_T_Send (Newest_Sample_Packet);
+      T.Tick_T_Send (((0, 0), 0));
+
+      Natural_Assert.Eq (T.Imu_Body_Data_History.Get_Count, 1);
+
+      declare
+         Output : constant Averaged_Imu_Data.T := T.Imu_Body_Data_History.Get (1);
+      begin
+         -- Only the newest sample survives the zero window:
+         Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [GyroA, GyroB, GyroC], Epsilon => 0.0001);
+         Packed_F32x3_Assert.Eq (Output.Accel_Body, [AccelA, AccelB, AccelC], Epsilon => 0.0001);
+      end;
+   end Test_Zero_Window;
 
 end Average_Mimu_Data_Tests.Implementation;

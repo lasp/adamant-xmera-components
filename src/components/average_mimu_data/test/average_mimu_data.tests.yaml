@@ -19,3 +19,5 @@ tests:
     description: Test that an invalid parameter throws the appropriate event and out-of-range windows are rejected.
   - name: Test_Asymmetric_Windows
     description: Independent gyro and accel averaging windows select different sample sets from one packet.
+  - name: Test_Zero_Window
+    description: A 0.0 s averaging window keeps only the single newest sample.
