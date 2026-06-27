@@ -356,4 +356,30 @@ package body Average_Mimu_Data_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
    end Test_Invalid_Parameter;
 
+   -- The gyro and accel averaging windows are applied independently: a single
+   -- packet is filtered by the gyro window for the gyro channel and by the accel
+   -- window for the accel channel. With Mixed_Packet (samples 0-4 negative,
+   -- samples 5-9 = 3x the uniform value) a tight gyro window keeps only the
+   -- newest 5 samples while a wide accel window keeps all 10.
+   overriding procedure Test_Asymmetric_Windows (Self : in out Instance) is
+      T : Tester_Ref renames Self.Tester;
+   begin
+      -- Gyro window 45 ms keeps samples 5-9; accel window 1.0 s keeps all 10:
+      Apply_Standard_Params (T, Gyro_Window => 0.045, Accel_Window => 1.0);
+
+      T.Mimu_Raw_Packet_T_Send (Mixed_Packet);
+      T.Tick_T_Send (((0, 0), 0));
+
+      Natural_Assert.Eq (T.Imu_Body_Data_History.Get_Count, 1);
+
+      declare
+         Output : constant Averaged_Imu_Data.T := T.Imu_Body_Data_History.Get (1);
+      begin
+         -- Gyro averages newest 5 samples ([3_000_000, 6_000_000, 9_000_000]) -> 3x the uniform value:
+         Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [3.0 * GyroA, 3.0 * GyroB, 3.0 * GyroC], Epsilon => 0.0001);
+         -- Accel averages all 10 samples -> the uniform value:
+         Packed_F32x3_Assert.Eq (Output.Accel_Body, [AccelA, AccelB, AccelC], Epsilon => 0.0001);
+      end;
+   end Test_Asymmetric_Windows;
+
 end Average_Mimu_Data_Tests.Implementation;

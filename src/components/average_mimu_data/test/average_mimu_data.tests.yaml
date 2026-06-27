@@ -17,3 +17,5 @@ tests:
     description: A packet beyond the buffer capacity triggers the overflow event and is dropped.
   - name: Test_Invalid_Parameter
     description: Test that an invalid parameter throws the appropriate event and out-of-range windows are rejected.
+  - name: Test_Asymmetric_Windows
+    description: Independent gyro and accel averaging windows select different sample sets from one packet.
