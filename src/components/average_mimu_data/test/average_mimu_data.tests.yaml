@@ -1,7 +1,25 @@
 ---
 description: This is a unit test suite for the Average Mimu Data component
 tests:
-  - name: Test
-    description: Run algorithm to ensure integration is sound.
+  - name: Test_Identity_Dcm
+    description: Identity DCM and uniform data - output equals scaled input.
+  - name: Test_Dcm_Rotation
+    description: 90-degree Z-rotation DCM transforms the averaged result into the body frame.
+  - name: Test_Mixed_Signs
+    description: Non-uniform data with negative values averages correctly across signs.
+  - name: Test_Time_Filtering
+    description: Per-sample time windowing excludes samples older than the averaging window.
+  - name: Test_Empty_Buffer
+    description: A tick with nothing buffered still publishes a zero result.
+  - name: Test_Multi_Packet
+    description: Multiple packets buffered before one tick are all averaged together.
+  - name: Test_Buffer_Overflow
+    description: A packet beyond the buffer capacity triggers the overflow event and is dropped.
   - name: Test_Invalid_Parameter
-    description: Test that an invalid parameter throws the appropriate event.
+    description: Test that an invalid parameter throws the appropriate event and out-of-range windows are rejected.
+  - name: Test_Asymmetric_Windows
+    description: Independent gyro and accel averaging windows select different sample sets from one packet.
+  - name: Test_Zero_Window
+    description: A 0.0 s averaging window keeps only the single newest sample.
+  - name: Test_Negative_Window_Rejected
+    description: A negative averaging window is rejected by validation for both the gyro and accel channels.

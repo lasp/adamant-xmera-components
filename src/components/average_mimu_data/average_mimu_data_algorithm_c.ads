@@ -10,42 +10,69 @@ with Averaged_Imu_Data.C;
 
 package Average_Mimu_Data_Algorithm_C is
 
-   --* TODO: This algorithm is in flux, these types will change or go away entirely
-
    --* Opaque handle for an AverageMimuDataAlgorithm instance.
    type Average_Mimu_Data_Algorithm is limited private;
    type Average_Mimu_Data_Algorithm_Access is access all Average_Mimu_Data_Algorithm;
 
-   -- MAX_BUF_PKT_C must match the #define in averageMimuDataAlgorithm_c.h:21
-   Max_Buf_Pkt : constant := 120;
+   -- Must match #defines in averageMimuDataAlgorithm_c.h
+   Max_Mimu_Pkt : constant := 4;
+   Max_Mimu_Samples_Per_Pkt : constant := 10;
 
-   --* Array of Max_Buf_Pkt Vector3f elements.
-   type Vector3f_C_Array is array (0 .. Max_Buf_Pkt - 1) of aliased Packed_F32x3.C.U_C
+   --* POD equivalent of one MIMU sample (Sample_c in C).
+   --* Layout: Vector3f_c gyro_P; Vector3f_c accel_P;
+   --* The sample carries no timestamp; per-sample times are derived inside the
+   --* algorithm from the enclosing packet's Meas_Time and the device sample period.
+   type Sample_C is record
+      Gyro_P  : aliased Packed_F32x3.C.U_C;
+      Accel_P : aliased Packed_F32x3.C.U_C;
+   end record
+      with Convention => C_Pass_By_Copy;
+
+   --* Per-packet sample array (10 samples).
+   type Sample_Array_C is array (0 .. Max_Mimu_Samples_Per_Pkt - 1) of aliased Sample_C
       with Convention => C;
 
-   --* Array of Max_Buf_Pkt timestamps.
-   type Meas_Time_Array is array (0 .. Max_Buf_Pkt - 1) of aliased Unsigned_64
+   --* POD equivalent of one MIMU packet (InputPacket_c in C).
+   --* Layout: bool isValid; uint64 measTime; Sample_c samples[MAX_MIMU_SAMPLES_PER_PKT_C];
+   --* `Is_Valid` gates the whole packet; `Meas_Time` is the first sample's time.
+   --* C99 bool is one byte (matches C.unsigned_char); GNAT inserts the pad
+   --* before the 8-aligned Meas_Time to match the C ABI.
+   type Input_Packet_C is record
+      Is_Valid  : aliased C.unsigned_char;
+      Meas_Time : aliased Unsigned_64;
+      Samples   : aliased Sample_Array_C;
+   end record
+      with Convention => C_Pass_By_Copy;
+
+   --* Outer array of packets (4 packets).
+   type Packets_Array_C is array (0 .. Max_Mimu_Pkt - 1) of aliased Input_Packet_C
       with Convention => C;
 
    --* POD input matching C InputPktsData_c.
+   --* Layout: InputPacket_c packets[MAX_MIMU_PKT_C];
    type Input_Pkts_Data_C is record
-      Meas_Time : Meas_Time_Array;
-      Gyro_P    : Vector3f_C_Array;
-      Accel_P   : Vector3f_C_Array;
+      Packets : Packets_Array_C;
    end record
       with Convention => C_Pass_By_Copy;
    type Input_Pkts_Data_C_Access is access all Input_Pkts_Data_C;
 
-   --* @brief Get the MAX_BUF_PKT constant for Ada validation.
-   --* @return The maximum buffer packet count (MAX_BUF_PKT_C).
-   function Get_Max_Buf_Pkt
+   --* @brief Get the MAX_MIMU_PKT constant for Ada validation.
+   function Get_Max_Mimu_Pkt
      return Unsigned_32
      with Import       => True,
           Convention   => C,
-          External_Name => "AverageMimuDataAlgorithm_getMaxBufPkt";
+          External_Name => "AverageMimuDataAlgorithm_getMaxMimuPkt";
 
-   -- Runtime validation: ensure Ada constant matches C definition
-   pragma Assert (Unsigned_32 (Max_Buf_Pkt) = Get_Max_Buf_Pkt);
+   --* @brief Get the MAX_MIMU_SAMPLES_PER_PKT constant for Ada validation.
+   function Get_Max_Mimu_Samples_Per_Pkt
+     return Unsigned_32
+     with Import       => True,
+          Convention   => C,
+          External_Name => "AverageMimuDataAlgorithm_getMaxMimuSamplesPerPkt";
+
+   -- Runtime validation: ensure Ada constants match C definitions
+   pragma Assert (Unsigned_32 (Max_Mimu_Pkt) = Get_Max_Mimu_Pkt);
+   pragma Assert (Unsigned_32 (Max_Mimu_Samples_Per_Pkt) = Get_Max_Mimu_Samples_Per_Pkt);
 
    --* @brief Construct a new AverageMimuDataAlgorithm.
    function Create
@@ -63,7 +90,7 @@ package Average_Mimu_Data_Algorithm_C is
 
    --* @brief Run the update step to compute averaged MIMU data.
    --* @param Self  The algorithm instance.
-   --* @param Input Pointer to input packets data (120-element buffer).
+   --* @param Input Pointer to input packets data (4-packet ring; each packet holds 10 samples).
    --* @return Averaged body-frame accel and angular velocity.
    function Update
      (Self  : Average_Mimu_Data_Algorithm_Access;
@@ -73,25 +100,45 @@ package Average_Mimu_Data_Algorithm_C is
           Convention   => C,
           External_Name => "AverageMimuDataAlgorithm_update";
 
-   --* @brief Set the averaging window duration.
+   --* @brief Set the gyro averaging window duration.
    --* @param Self   The algorithm instance.
-   --* @param Window Averaging window in seconds.
-   procedure Set_Averaging_Window
+   --* @param Window Gyro averaging window in seconds (valid range [0.0, 2.0]).
+   procedure Set_Gyro_Averaging_Window
      (Self   : Average_Mimu_Data_Algorithm_Access;
-      Window : Short_Float)
+      Window : Interfaces.C.double)
      with Import       => True,
           Convention   => C,
-          External_Name => "AverageMimuDataAlgorithm_setAveragingWindow";
+          External_Name => "AverageMimuDataAlgorithm_setGyroAveragingWindow";
 
-   --* @brief Get the current averaging window duration.
+   --* @brief Get the current gyro averaging window duration.
    --* @param Self The algorithm instance.
-   --* @return The current averaging window in seconds.
-   function Get_Averaging_Window
+   --* @return The current gyro averaging window in seconds.
+   function Get_Gyro_Averaging_Window
      (Self : Average_Mimu_Data_Algorithm_Access)
-     return Short_Float
+     return Interfaces.C.double
      with Import       => True,
           Convention   => C,
-          External_Name => "AverageMimuDataAlgorithm_getAveragingWindow";
+          External_Name => "AverageMimuDataAlgorithm_getGyroAveragingWindow";
+
+   --* @brief Set the accel averaging window duration.
+   --* @param Self   The algorithm instance.
+   --* @param Window Accel averaging window in seconds (valid range [0.0, 2.0]).
+   procedure Set_Accel_Averaging_Window
+     (Self   : Average_Mimu_Data_Algorithm_Access;
+      Window : Interfaces.C.double)
+     with Import       => True,
+          Convention   => C,
+          External_Name => "AverageMimuDataAlgorithm_setAccelAveragingWindow";
+
+   --* @brief Get the current accel averaging window duration.
+   --* @param Self The algorithm instance.
+   --* @return The current accel averaging window in seconds.
+   function Get_Accel_Averaging_Window
+     (Self : Average_Mimu_Data_Algorithm_Access)
+     return Interfaces.C.double
+     with Import       => True,
+          Convention   => C,
+          External_Name => "AverageMimuDataAlgorithm_getAccelAveragingWindow";
 
    --* @brief Set the DCM from platform frame to body frame.
    --* @param Self   The algorithm instance.

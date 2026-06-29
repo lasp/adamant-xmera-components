@@ -17,6 +17,124 @@ with Invalid_Parameter_Info.Assertion; use Invalid_Parameter_Info.Assertion;
 
 package body Average_Mimu_Data_Tests.Implementation is
 
+   -- Short name for the tester access type:
+   subtype Tester_Ref is Component.Average_Mimu_Data.Implementation.Tester.Instance_Access;
+
+   -- ICD conversion factors (must match the component spec constants):
+   --   gyro[rad/s] = dn * 4000/2^31-1 * pi/180
+   --   acc[m/s^2]  = dn * 160/2^31-1
+   Gyro_Scale : constant Short_Float :=
+      (4_000.0 / 2_147_483_647.0) * (Ada.Numerics.Pi / 180.0);
+   Accel_Scale : constant Short_Float := 160.0 / 2_147_483_647.0;
+
+   -- Expected physical-unit values for raw dn = 1M .. 6M:
+   GyroA : constant Short_Float := 1_000_000.0 * Gyro_Scale;
+   GyroB : constant Short_Float := 2_000_000.0 * Gyro_Scale;
+   GyroC : constant Short_Float := 3_000_000.0 * Gyro_Scale;
+   AccelA : constant Short_Float := 4_000_000.0 * Accel_Scale;
+   AccelB : constant Short_Float := 5_000_000.0 * Accel_Scale;
+   AccelC : constant Short_Float := 6_000_000.0 * Accel_Scale;
+
+   -- Roughly 100 ms expressed in Sys_Time subseconds (1/65536 s). Used to space
+   -- consecutive packets so each packet's first-sample time is strictly
+   -- increasing, which the (stateful) algorithm requires to ingest them.
+   Pkt_Subsec_Step : constant Interfaces.Unsigned_16 := 6_554;
+
+   -------------------------------------------------------------------------
+   -- Helpers:
+   -------------------------------------------------------------------------
+
+   -- A uniform raw packet (all 10 samples identical) at the given timestamp.
+   -- ICD scale: gyro dn 1M/2M/3M -> GyroA/GyroB/GyroC, accel dn 4M/5M/6M -> AccelA/AccelB/AccelC.
+   function Uniform_Packet (Seconds : Interfaces.Unsigned_32; Subseconds : Interfaces.Unsigned_16) return Mimu_Raw_Packet.T is
+      ((
+         Timestamp => (Seconds => Seconds, Subseconds => Subseconds),
+         Samples => [others => (
+            Merged_Gyro_Rates => (X_Measurement => 1_000_000, Y_Measurement => 2_000_000, Z_Measurement => 3_000_000),
+            Merged_Accelerations => (X_Measurement => 4_000_000, Y_Measurement => 5_000_000, Z_Measurement => 6_000_000),
+            Merge_Info => 0
+         )]
+      ));
+
+   -- Non-uniform packet with negative values: first 5 samples negative, last 5
+   -- positive, designed so the 10-sample average is exactly [GyroA,GyroB,GyroC]/[AccelA,AccelB,AccelC].
+   Mixed_Packet : constant Mimu_Raw_Packet.T := (
+      Timestamp => (Seconds => 1, Subseconds => 0),
+      Samples => [
+         0 .. 4 => (
+            Merged_Gyro_Rates => (X_Measurement => -1_000_000, Y_Measurement => -2_000_000, Z_Measurement => -3_000_000),
+            Merged_Accelerations => (X_Measurement => -4_000_000, Y_Measurement => -5_000_000, Z_Measurement => -6_000_000),
+            Merge_Info => 0
+         ),
+         5 .. 9 => (
+            Merged_Gyro_Rates => (X_Measurement => 3_000_000, Y_Measurement => 6_000_000, Z_Measurement => 9_000_000),
+            Merged_Accelerations => (X_Measurement => 12_000_000, Y_Measurement => 15_000_000, Z_Measurement => 18_000_000),
+            Merge_Info => 0
+         )
+      ]
+   );
+
+   -- Time-filtered packet: bogus values in samples 0-4, known values in 5-9.
+   -- Per-sample times are first-sample-time + I*10ms; maxTimeTag = base + 90ms.
+   -- With a 45 ms window, sample I is kept when (9-I)*10ms <= 45ms, i.e. I in 5..9.
+   -- Average of samples 5-9: gyro=[GyroA,GyroB,GyroC], accel=[AccelA,AccelB,AccelC].
+   Filtered_Packet : constant Mimu_Raw_Packet.T := (
+      Timestamp => (Seconds => 1, Subseconds => 0),
+      Samples => [
+         0 .. 4 => (
+            Merged_Gyro_Rates => (X_Measurement => 99_000_000, Y_Measurement => 99_000_000, Z_Measurement => 99_000_000),
+            Merged_Accelerations => (X_Measurement => 99_000_000, Y_Measurement => 99_000_000, Z_Measurement => 99_000_000),
+            Merge_Info => 0
+         ),
+         5 .. 9 => (
+            Merged_Gyro_Rates => (X_Measurement => 1_000_000, Y_Measurement => 2_000_000, Z_Measurement => 3_000_000),
+            Merged_Accelerations => (X_Measurement => 4_000_000, Y_Measurement => 5_000_000, Z_Measurement => 6_000_000),
+            Merge_Info => 0
+         )
+      ]
+   );
+
+   -- Packet whose newest sample (index 9) is uniquely valued: samples 0-8 carry a
+   -- large sentinel while sample 9 carries the standard 1_000_000/2_000_000/3_000_000, 4_000_000/5_000_000/6_000_000 values
+   -- (-> [GyroA,GyroB,GyroC]/[AccelA,AccelB,AccelC]). A 0.0 s window keeps only sample 9, so the result
+   -- distinguishes "newest sample only" from any multi-sample average.
+   Newest_Sample_Packet : constant Mimu_Raw_Packet.T := (
+      Timestamp => (Seconds => 1, Subseconds => 0),
+      Samples => [
+         0 .. 8 => (
+            Merged_Gyro_Rates => (X_Measurement => 50_000_000, Y_Measurement => 50_000_000, Z_Measurement => 50_000_000),
+            Merged_Accelerations => (X_Measurement => 50_000_000, Y_Measurement => 50_000_000, Z_Measurement => 50_000_000),
+            Merge_Info => 0
+         ),
+         9 => (
+            Merged_Gyro_Rates => (X_Measurement => 1_000_000, Y_Measurement => 2_000_000, Z_Measurement => 3_000_000),
+            Merged_Accelerations => (X_Measurement => 4_000_000, Y_Measurement => 5_000_000, Z_Measurement => 6_000_000),
+            Merge_Info => 0
+         )
+      ]
+   );
+
+   -- Stage identity DCM plus the given gyro/accel windows and apply them.
+   procedure Apply_Standard_Params (
+      T : Tester_Ref;
+      Gyro_Window : Short_Float;
+      Accel_Window : Short_Float)
+   is
+      Params : Average_Mimu_Data_Parameters.Instance;
+   begin
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
+         Params.Gyro_Time_Delta ((Value => Gyro_Window))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
+         Params.Accel_Time_Delta ((Value => Accel_Window))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
+         Params.Dcm_Pltf_To_Bdy ([
+            1.0, 0.0, 0.0,
+            0.0, 1.0, 0.0,
+            0.0, 0.0, 1.0
+         ])), Success);
+      Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+   end Apply_Standard_Params;
+
    -------------------------------------------------------------------------
    -- Fixtures:
    -------------------------------------------------------------------------
@@ -47,109 +165,15 @@ package body Average_Mimu_Data_Tests.Implementation is
    -- Tests:
    -------------------------------------------------------------------------
 
-   -- Run algorithm to ensure integration is sound.
-   overriding procedure Test (Self : in out Instance) is
-      T : Component.Average_Mimu_Data.Implementation.Tester.Instance_Access renames Self.Tester;
-      Params : Average_Mimu_Data_Parameters.Instance;
-
-      -- ICD conversion factors (must match spec constants):
-      -- gyro[rad/s] = dn * 4000/2^31-1 * pi/180
-      -- acc[m/s^2]  = dn * 160/2^31-1
-      Gyro_Scale : constant Short_Float :=
-         (4_000.0 / 2_147_483_647.0) * (Ada.Numerics.Pi / 180.0);
-      Accel_Scale : constant Short_Float := 160.0 / 2_147_483_647.0;
-
-      -- Expected physical-unit values for raw dn = 1M .. 6M:
-      G1 : constant Short_Float := 1_000_000.0 * Gyro_Scale;
-      G2 : constant Short_Float := 2_000_000.0 * Gyro_Scale;
-      G3 : constant Short_Float := 3_000_000.0 * Gyro_Scale;
-      A4 : constant Short_Float := 4_000_000.0 * Accel_Scale;
-      A5 : constant Short_Float := 5_000_000.0 * Accel_Scale;
-      A6 : constant Short_Float := 6_000_000.0 * Accel_Scale;
-
-      -- Uniform raw packet: all 10 samples have the same integer values.
-      -- ICD scale: 1_000_000 -> G1, 2_000_000 -> G2, etc.
-      -- Timestamp Seconds=1 so the 10 samples have measTime ~1s.
-      -- The C shim zero-fills the remaining internal buffer slots (measTime=0)
-      -- with age ~1.09s, which is excluded by timeDelta=1.0.
-      Uniform_Raw_Packet : constant Mimu_Raw_Packet.T := (
-         Timestamp => (Seconds => 1, Subseconds => 0),
-         Samples => [others => (
-            Merged_Gyro_Rates => (X_Measurement => 1_000_000, Y_Measurement => 2_000_000, Z_Measurement => 3_000_000),
-            Merged_Accelerations => (X_Measurement => 4_000_000, Y_Measurement => 5_000_000, Z_Measurement => 6_000_000),
-            Merge_Info => 0
-         )]
-      );
-
-      -- Non-uniform raw packet with negative values: first 5 samples negative,
-      -- last 5 positive. Tests signed Integer_32-to-float conversion and
-      -- averaging across mixed signs.
-      -- After ICD scale:
-      --   first 5 gyro = [-G1, -G2, -G3], accel = [-A4, -A5, -A6]
-      --   last 5 gyro = [3*G1, 3*G2, 3*G3], accel = [3*A4, 3*A5, 3*A6]
-      -- Average of 10: gyro = [G1, G2, G3], accel = [A4, A5, A6]
-      Mixed_Raw_Packet : constant Mimu_Raw_Packet.T := (
-         Timestamp => (Seconds => 1, Subseconds => 0),
-         Samples => [
-            0 .. 4 => (
-               Merged_Gyro_Rates => (X_Measurement => -1_000_000, Y_Measurement => -2_000_000, Z_Measurement => -3_000_000),
-               Merged_Accelerations => (X_Measurement => -4_000_000, Y_Measurement => -5_000_000, Z_Measurement => -6_000_000),
-               Merge_Info => 0
-            ),
-            5 .. 9 => (
-               Merged_Gyro_Rates => (X_Measurement => 3_000_000, Y_Measurement => 6_000_000, Z_Measurement => 9_000_000),
-               Merged_Accelerations => (X_Measurement => 12_000_000, Y_Measurement => 15_000_000, Z_Measurement => 18_000_000),
-               Merge_Info => 0
-            )
-         ]
-      );
-
-      -- Time-filtered raw packet: bogus values in samples 0-4, known values in 5-9.
-      -- With timeDelta=0.045 (45ms), per-sample timestamps are base + I*10ms:
-      --   maxTimeTag = base + 90ms
-      --   Sample I age = (9-I)*10ms; included when age*NANO2SEC < timeDelta.
-      --   Sample 4: age=50ms, 0.05 < 0.045 => NO (excluded)
-      --   Sample 5: age=40ms, 0.04 < 0.045 => YES (included)
-      --   Only samples 5-9 pass the time filter.
-      -- Average of samples 5-9: gyro=[G1,G2,G3], accel=[A4,A5,A6]
-      Filtered_Raw_Packet : constant Mimu_Raw_Packet.T := (
-         Timestamp => (Seconds => 1, Subseconds => 0),
-         Samples => [
-            0 .. 4 => (
-               Merged_Gyro_Rates => (X_Measurement => 99_000_000, Y_Measurement => 99_000_000, Z_Measurement => 99_000_000),
-               Merged_Accelerations => (X_Measurement => 99_000_000, Y_Measurement => 99_000_000, Z_Measurement => 99_000_000),
-               Merge_Info => 0
-            ),
-            5 .. 9 => (
-               Merged_Gyro_Rates => (X_Measurement => 1_000_000, Y_Measurement => 2_000_000, Z_Measurement => 3_000_000),
-               Merged_Accelerations => (X_Measurement => 4_000_000, Y_Measurement => 5_000_000, Z_Measurement => 6_000_000),
-               Merge_Info => 0
-            )
-         ]
-      );
+   -- Identity DCM, uniform data - output equals scaled input.
+   overriding procedure Test_Identity_Dcm (Self : in out Instance) is
+      T : Tester_Ref renames Self.Tester;
    begin
-      -----------------------------------------------------------------------
-      -- Set parameters: identity DCM, 1s time window
-      -- timeDelta=1.0 includes all 10 filled samples (age 0-90ms < 1.0s)
-      -- but excludes the 110 zero-filled slots (age ~1.09s >= 1.0s).
-      -----------------------------------------------------------------------
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
-         Params.Time_Delta ((Value => 1.0))), Success);
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
-         Params.Dcm_Pltf_To_Bdy ([
-            1.0, 0.0, 0.0,
-            0.0, 1.0, 0.0,
-            0.0, 0.0, 1.0
-         ])), Success);
-      Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      Apply_Standard_Params (T, Gyro_Window => 1.0, Accel_Window => 1.0);
 
-      -----------------------------------------------------------------------
-      -- Test Case 1: Identity DCM, uniform data - output equals scaled input
-      -- Send 1 packet (10 samples), fire tick to process.
-      -----------------------------------------------------------------------
-      T.Mimu_Raw_Packet_T_Send (Uniform_Raw_Packet);
+      T.Mimu_Raw_Packet_T_Send (Uniform_Packet (1, 0));
 
-      -- No output yet - algorithm runs on tick, not on recv:
+      -- No output yet - the algorithm runs on tick, not on recv:
       Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, 0);
 
       T.Tick_T_Send (((0, 0), 0));
@@ -160,16 +184,22 @@ package body Average_Mimu_Data_Tests.Implementation is
       declare
          Output : constant Averaged_Imu_Data.T := T.Imu_Body_Data_History.Get (1);
       begin
-         Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [G1, G2, G3], Epsilon => 0.0001);
-         Packed_F32x3_Assert.Eq (Output.Accel_Body, [A4, A5, A6], Epsilon => 0.0001);
+         Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [GyroA, GyroB, GyroC], Epsilon => 0.0001);
+         Packed_F32x3_Assert.Eq (Output.Accel_Body, [AccelA, AccelB, AccelC], Epsilon => 0.0001);
       end;
+   end Test_Identity_Dcm;
 
-      -----------------------------------------------------------------------
-      -- Test Case 2: 90-degree Z rotation DCM
-      -- DCM = [0, -1, 0; 1, 0, 0; 0, 0, 1]
-      -- DCM * [G1,G2,G3] = [-G2, G1, G3]
-      -- DCM * [A4,A5,A6] = [-A5, A4, A6]
-      -----------------------------------------------------------------------
+   -- 90-degree Z-rotation DCM = [0, -1, 0; 1, 0, 0; 0, 0, 1]
+   --   DCM * [GyroA,GyroB,GyroC] = [-GyroB, GyroA, GyroC]
+   --   DCM * [AccelA,AccelB,AccelC] = [-AccelB, AccelA, AccelC]
+   overriding procedure Test_Dcm_Rotation (Self : in out Instance) is
+      T : Tester_Ref renames Self.Tester;
+      Params : Average_Mimu_Data_Parameters.Instance;
+   begin
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
+         Params.Gyro_Time_Delta ((Value => 1.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
+         Params.Accel_Time_Delta ((Value => 1.0))), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
          Params.Dcm_Pltf_To_Bdy ([
             0.0, -1.0, 0.0,
@@ -178,147 +208,138 @@ package body Average_Mimu_Data_Tests.Implementation is
          ])), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
 
-      T.Mimu_Raw_Packet_T_Send (Uniform_Raw_Packet);
+      T.Mimu_Raw_Packet_T_Send (Uniform_Packet (1, 0));
       T.Tick_T_Send (((0, 0), 0));
 
-      Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, 2);
-      Natural_Assert.Eq (T.Imu_Body_Data_History.Get_Count, 2);
+      Natural_Assert.Eq (T.Imu_Body_Data_History.Get_Count, 1);
 
       declare
-         Output : constant Averaged_Imu_Data.T := T.Imu_Body_Data_History.Get (2);
+         Output : constant Averaged_Imu_Data.T := T.Imu_Body_Data_History.Get (1);
       begin
-         Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [-G2, G1, G3], Epsilon => 0.0001);
-         Packed_F32x3_Assert.Eq (Output.Accel_Body, [-A5, A4, A6], Epsilon => 0.0001);
+         Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [-GyroB, GyroA, GyroC], Epsilon => 0.0001);
+         Packed_F32x3_Assert.Eq (Output.Accel_Body, [-AccelB, AccelA, AccelC], Epsilon => 0.0001);
       end;
+   end Test_Dcm_Rotation;
 
-      -----------------------------------------------------------------------
-      -- Test Case 3: Non-uniform data with negative values, identity DCM
-      -- Tests signed I32-to-float conversion and averaging across mixed signs.
-      -----------------------------------------------------------------------
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
-         Params.Dcm_Pltf_To_Bdy ([
-            1.0, 0.0, 0.0,
-            0.0, 1.0, 0.0,
-            0.0, 0.0, 1.0
-         ])), Success);
-      Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+   -- Non-uniform data with negative values, identity DCM. Tests signed
+   -- Integer_32-to-float conversion and averaging across mixed signs.
+   overriding procedure Test_Mixed_Signs (Self : in out Instance) is
+      T : Tester_Ref renames Self.Tester;
+   begin
+      Apply_Standard_Params (T, Gyro_Window => 1.0, Accel_Window => 1.0);
 
-      T.Mimu_Raw_Packet_T_Send (Mixed_Raw_Packet);
+      T.Mimu_Raw_Packet_T_Send (Mixed_Packet);
       T.Tick_T_Send (((0, 0), 0));
 
-      Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, 3);
-      Natural_Assert.Eq (T.Imu_Body_Data_History.Get_Count, 3);
+      Natural_Assert.Eq (T.Imu_Body_Data_History.Get_Count, 1);
 
       declare
-         Output : constant Averaged_Imu_Data.T := T.Imu_Body_Data_History.Get (3);
+         Output : constant Averaged_Imu_Data.T := T.Imu_Body_Data_History.Get (1);
       begin
-         Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [G1, G2, G3], Epsilon => 0.0001);
-         Packed_F32x3_Assert.Eq (Output.Accel_Body, [A4, A5, A6], Epsilon => 0.0001);
+         Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [GyroA, GyroB, GyroC], Epsilon => 0.0001);
+         Packed_F32x3_Assert.Eq (Output.Accel_Body, [AccelA, AccelB, AccelC], Epsilon => 0.0001);
       end;
+   end Test_Mixed_Signs;
 
-      -----------------------------------------------------------------------
-      -- Test Case 4: Time filtering within 10-sample packet
-      -- timeDelta=0.045 (45ms) excludes samples 0-4, includes 5-9.
-      -----------------------------------------------------------------------
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
-         Params.Time_Delta ((Value => 0.045))), Success);
-      Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+   -- Per-sample time windowing: a 45 ms window over a single 10-sample packet
+   -- keeps only samples 5-9 (older samples 0-4 are excluded).
+   overriding procedure Test_Time_Filtering (Self : in out Instance) is
+      T : Tester_Ref renames Self.Tester;
+   begin
+      Apply_Standard_Params (T, Gyro_Window => 0.045, Accel_Window => 0.045);
 
-      T.Mimu_Raw_Packet_T_Send (Filtered_Raw_Packet);
+      T.Mimu_Raw_Packet_T_Send (Filtered_Packet);
       T.Tick_T_Send (((0, 0), 0));
 
-      Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, 4);
-      Natural_Assert.Eq (T.Imu_Body_Data_History.Get_Count, 4);
+      Natural_Assert.Eq (T.Imu_Body_Data_History.Get_Count, 1);
 
       declare
-         Output : constant Averaged_Imu_Data.T := T.Imu_Body_Data_History.Get (4);
+         Output : constant Averaged_Imu_Data.T := T.Imu_Body_Data_History.Get (1);
       begin
-         Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [G1, G2, G3], Epsilon => 0.0001);
-         Packed_F32x3_Assert.Eq (Output.Accel_Body, [A4, A5, A6], Epsilon => 0.0001);
+         Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [GyroA, GyroB, GyroC], Epsilon => 0.0001);
+         Packed_F32x3_Assert.Eq (Output.Accel_Body, [AccelA, AccelB, AccelC], Epsilon => 0.0001);
       end;
+   end Test_Time_Filtering;
 
-      -----------------------------------------------------------------------
-      -- Test Case 5: Tick with no buffered data publishes a zero result.
-      -- The wrapper always publishes Imu_Body_Data so downstream consumers
-      -- see Success on every tick; with no Mimu_Raw_Packet buffered, the
-      -- algorithm runs on all-zero input and produces a zeroed output.
-      -----------------------------------------------------------------------
+   -- A tick with nothing buffered still publishes a data product; with an empty
+   -- ring the algorithm returns a zero result.
+   overriding procedure Test_Empty_Buffer (Self : in out Instance) is
+      T : Tester_Ref renames Self.Tester;
+   begin
+      Apply_Standard_Params (T, Gyro_Window => 1.0, Accel_Window => 1.0);
+
       T.Tick_T_Send (((0, 0), 0));
-      Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, 5);
-      Natural_Assert.Eq (T.Imu_Body_Data_History.Get_Count, 5);
+      Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, 1);
+      Natural_Assert.Eq (T.Imu_Body_Data_History.Get_Count, 1);
 
       declare
-         Output : constant Averaged_Imu_Data.T := T.Imu_Body_Data_History.Get (5);
+         Output : constant Averaged_Imu_Data.T := T.Imu_Body_Data_History.Get (1);
       begin
          Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [0.0, 0.0, 0.0], Epsilon => 0.0001);
          Packed_F32x3_Assert.Eq (Output.Accel_Body, [0.0, 0.0, 0.0], Epsilon => 0.0001);
       end;
+   end Test_Empty_Buffer;
 
-      -----------------------------------------------------------------------
-      -- Test Case 6: Multi-packet buffering - two packets before one tick.
-      -- Both packets have the same uniform data. The algorithm receives 20
-      -- samples (all identical values) and averages to the same result.
-      -----------------------------------------------------------------------
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
-         Params.Time_Delta ((Value => 1.0))), Success);
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
-         Params.Dcm_Pltf_To_Bdy ([
-            1.0, 0.0, 0.0,
-            0.0, 1.0, 0.0,
-            0.0, 0.0, 1.0
-         ])), Success);
-      Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+   -- Two packets buffered before one tick. Both carry identical uniform data
+   -- but strictly-increasing timestamps, so both are ingested and the 20
+   -- samples average to the same uniform result.
+   overriding procedure Test_Multi_Packet (Self : in out Instance) is
+      T : Tester_Ref renames Self.Tester;
+   begin
+      Apply_Standard_Params (T, Gyro_Window => 1.0, Accel_Window => 1.0);
 
-      T.Mimu_Raw_Packet_T_Send (Uniform_Raw_Packet);
-      T.Mimu_Raw_Packet_T_Send (Uniform_Raw_Packet);
+      T.Mimu_Raw_Packet_T_Send (Uniform_Packet (1, 0));
+      T.Mimu_Raw_Packet_T_Send (Uniform_Packet (1, Pkt_Subsec_Step));
       T.Tick_T_Send (((0, 0), 0));
 
-      Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, 6);
-      Natural_Assert.Eq (T.Imu_Body_Data_History.Get_Count, 6);
+      Natural_Assert.Eq (T.Imu_Body_Data_History.Get_Count, 1);
 
       declare
-         Output : constant Averaged_Imu_Data.T := T.Imu_Body_Data_History.Get (6);
+         Output : constant Averaged_Imu_Data.T := T.Imu_Body_Data_History.Get (1);
       begin
-         Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [G1, G2, G3], Epsilon => 0.0001);
-         Packed_F32x3_Assert.Eq (Output.Accel_Body, [A4, A5, A6], Epsilon => 0.0001);
+         Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [GyroA, GyroB, GyroC], Epsilon => 0.0001);
+         Packed_F32x3_Assert.Eq (Output.Accel_Body, [AccelA, AccelB, AccelC], Epsilon => 0.0001);
       end;
+   end Test_Multi_Packet;
 
-      -----------------------------------------------------------------------
-      -- Test Case 7: Buffer overflow event
-      -- Send 5 packets (buffer holds 4), verify the 5th triggers the
-      -- Packet_Buffer_Overflow event and is dropped.
-      -----------------------------------------------------------------------
+   -- Send 5 packets (buffer holds 4); the 5th triggers the overflow event and
+   -- is dropped. The tick still processes the 4 buffered packets.
+   overriding procedure Test_Buffer_Overflow (Self : in out Instance) is
+      T : Tester_Ref renames Self.Tester;
+   begin
+      Apply_Standard_Params (T, Gyro_Window => 1.0, Accel_Window => 1.0);
+
       Natural_Assert.Eq (T.Packet_Buffer_Overflow_History.Get_Count, 0);
 
-      T.Mimu_Raw_Packet_T_Send (Uniform_Raw_Packet);
-      T.Mimu_Raw_Packet_T_Send (Uniform_Raw_Packet);
-      T.Mimu_Raw_Packet_T_Send (Uniform_Raw_Packet);
-      T.Mimu_Raw_Packet_T_Send (Uniform_Raw_Packet);
+      T.Mimu_Raw_Packet_T_Send (Uniform_Packet (1, 0 * Pkt_Subsec_Step));
+      T.Mimu_Raw_Packet_T_Send (Uniform_Packet (1, 1 * Pkt_Subsec_Step));
+      T.Mimu_Raw_Packet_T_Send (Uniform_Packet (1, 2 * Pkt_Subsec_Step));
+      T.Mimu_Raw_Packet_T_Send (Uniform_Packet (1, 3 * Pkt_Subsec_Step));
 
       -- Buffer is now full (4/4), no overflow yet:
       Natural_Assert.Eq (T.Packet_Buffer_Overflow_History.Get_Count, 0);
 
-      -- 5th packet should trigger overflow event:
-      T.Mimu_Raw_Packet_T_Send (Uniform_Raw_Packet);
+      -- 5th packet should trigger the overflow event:
+      T.Mimu_Raw_Packet_T_Send (Uniform_Packet (1, 4 * Pkt_Subsec_Step));
       Natural_Assert.Eq (T.Packet_Buffer_Overflow_History.Get_Count, 1);
 
       -- Tick still processes the 4 buffered packets:
       T.Tick_T_Send (((0, 0), 0));
-      Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, 7);
-      Natural_Assert.Eq (T.Imu_Body_Data_History.Get_Count, 7);
+      Natural_Assert.Eq (T.Imu_Body_Data_History.Get_Count, 1);
 
       declare
-         Output : constant Averaged_Imu_Data.T := T.Imu_Body_Data_History.Get (7);
+         Output : constant Averaged_Imu_Data.T := T.Imu_Body_Data_History.Get (1);
       begin
-         Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [G1, G2, G3], Epsilon => 0.0001);
-         Packed_F32x3_Assert.Eq (Output.Accel_Body, [A4, A5, A6], Epsilon => 0.0001);
+         Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [GyroA, GyroB, GyroC], Epsilon => 0.0001);
+         Packed_F32x3_Assert.Eq (Output.Accel_Body, [AccelA, AccelB, AccelC], Epsilon => 0.0001);
       end;
-   end Test;
+   end Test_Buffer_Overflow;
 
-   -- Test that an invalid parameter throws the appropriate event.
+   -- Test that an invalid parameter throws the appropriate event, and that an
+   -- averaging window outside [0.0, 2.0] s is rejected by Validate_Parameters.
    overriding procedure Test_Invalid_Parameter (Self : in out Instance) is
-      T : Component.Average_Mimu_Data.Implementation.Tester.Instance_Access renames Self.Tester;
-      Param : Parameter.T := T.Parameters.Time_Delta ((Value => 1.0));
+      T : Tester_Ref renames Self.Tester;
+      Param : Parameter.T := T.Parameters.Gyro_Time_Delta ((Value => 1.0));
    begin
       -- Make the parameter invalid by modifying its length.
       Param.Header.Buffer_Length := 0;
@@ -330,7 +351,7 @@ package body Average_Mimu_Data_Tests.Implementation is
       Natural_Assert.Eq (T.Event_T_Recv_Sync_History.Get_Count, 1);
       Natural_Assert.Eq (T.Invalid_Parameter_Received_History.Get_Count, 1);
       Invalid_Parameter_Info_Assert.Eq (T.Invalid_Parameter_Received_History.Get (1), (
-         Id => T.Parameters.Get_Time_Delta_Id,
+         Id => T.Parameters.Get_Gyro_Time_Delta_Id,
          Errant_Field_Number => Interfaces.Unsigned_32'Last,
          Errant_Field => [0, 0, 0, 0, 0, 0, 0, 0]
       ));
@@ -341,6 +362,87 @@ package body Average_Mimu_Data_Tests.Implementation is
 
       Natural_Assert.Eq (T.Event_T_Recv_Sync_History.Get_Count, 2);
       Natural_Assert.Eq (T.Invalid_Parameter_Received_History.Get_Count, 2);
+
+      -- An averaging window above the 2.0 s cap is rejected on validation:
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
+         T.Parameters.Gyro_Time_Delta ((Value => 3.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- Windows within [0.0, 2.0] s validate successfully:
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
+         T.Parameters.Gyro_Time_Delta ((Value => 2.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
+         T.Parameters.Accel_Time_Delta ((Value => 0.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
    end Test_Invalid_Parameter;
+
+   -- The gyro and accel averaging windows are applied independently: a single
+   -- packet is filtered by the gyro window for the gyro channel and by the accel
+   -- window for the accel channel. With Mixed_Packet (samples 0-4 negative,
+   -- samples 5-9 = 3x the uniform value) a tight gyro window keeps only the
+   -- newest 5 samples while a wide accel window keeps all 10.
+   overriding procedure Test_Asymmetric_Windows (Self : in out Instance) is
+      T : Tester_Ref renames Self.Tester;
+   begin
+      -- Gyro window 45 ms keeps samples 5-9; accel window 1.0 s keeps all 10:
+      Apply_Standard_Params (T, Gyro_Window => 0.045, Accel_Window => 1.0);
+
+      T.Mimu_Raw_Packet_T_Send (Mixed_Packet);
+      T.Tick_T_Send (((0, 0), 0));
+
+      Natural_Assert.Eq (T.Imu_Body_Data_History.Get_Count, 1);
+
+      declare
+         Output : constant Averaged_Imu_Data.T := T.Imu_Body_Data_History.Get (1);
+      begin
+         -- Gyro averages newest 5 samples ([3_000_000, 6_000_000, 9_000_000]) -> 3x the uniform value:
+         Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [3.0 * GyroA, 3.0 * GyroB, 3.0 * GyroC], Epsilon => 0.0001);
+         -- Accel averages all 10 samples -> the uniform value:
+         Packed_F32x3_Assert.Eq (Output.Accel_Body, [AccelA, AccelB, AccelC], Epsilon => 0.0001);
+      end;
+   end Test_Asymmetric_Windows;
+
+   -- A 0.0 s averaging window keeps only the single newest sample (age 0). Using
+   -- Newest_Sample_Packet (samples 0-8 a sentinel, sample 9 the standard values)
+   -- the result is sample 9 only -> [GyroA,GyroB,GyroC]/[AccelA,AccelB,AccelC], not the sentinel an
+   -- all-sample average would produce.
+   overriding procedure Test_Zero_Window (Self : in out Instance) is
+      T : Tester_Ref renames Self.Tester;
+   begin
+      Apply_Standard_Params (T, Gyro_Window => 0.0, Accel_Window => 0.0);
+
+      T.Mimu_Raw_Packet_T_Send (Newest_Sample_Packet);
+      T.Tick_T_Send (((0, 0), 0));
+
+      Natural_Assert.Eq (T.Imu_Body_Data_History.Get_Count, 1);
+
+      declare
+         Output : constant Averaged_Imu_Data.T := T.Imu_Body_Data_History.Get (1);
+      begin
+         -- Only the newest sample survives the zero window:
+         Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [GyroA, GyroB, GyroC], Epsilon => 0.0001);
+         Packed_F32x3_Assert.Eq (Output.Accel_Body, [AccelA, AccelB, AccelC], Epsilon => 0.0001);
+      end;
+   end Test_Zero_Window;
+
+   -- A negative averaging window stages successfully but is rejected by
+   -- Validate_Parameters (the C++ algorithm rejects windows outside [0.0, 2.0] s,
+   -- so the component guards against negatives before they cross the FFI). Both
+   -- the gyro and accel channels are checked.
+   overriding procedure Test_Negative_Window_Rejected (Self : in out Instance) is
+      T : Tester_Ref renames Self.Tester;
+   begin
+      -- A negative gyro window is rejected:
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
+         T.Parameters.Gyro_Time_Delta ((Value => -1.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- With the gyro window valid again, a negative accel window is rejected:
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
+         T.Parameters.Gyro_Time_Delta ((Value => 1.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
+         T.Parameters.Accel_Time_Delta ((Value => -0.5))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+   end Test_Negative_Window_Rejected;
 
 end Average_Mimu_Data_Tests.Implementation;

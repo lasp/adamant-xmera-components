@@ -4,11 +4,9 @@
 
 with Averaged_Imu_Data.C;
 with Packed_F32x9.C;
+with Interfaces.C;
 
 package body Component.Average_Mimu_Data.Implementation is
-
-   -- Inter-sample period in nanoseconds (10 ms):
-   Sample_Period_Ns : constant Interfaces.Unsigned_64 := 10_000_000;
 
    --------------------------------------------------
    -- Subprogram for implementation init method:
@@ -46,8 +44,11 @@ package body Component.Average_Mimu_Data.Implementation is
 
             Buffer : Converted_Packet_Data renames Self.Buffer (Self.Packet_Count);
          begin
+            -- The algorithm derives per-sample times from the packet's
+            -- first-sample time plus the device sample period, so we only
+            -- carry that one timestamp:
+            Buffer.Meas_Time := Base_Time_Ns;
             for Idx in Arg.Samples'Range loop
-               Buffer.Meas_Time (Idx) := Base_Time_Ns + Interfaces.Unsigned_64 (Idx - Arg.Samples'First) * Sample_Period_Ns;
                Buffer.Gyro_P (Idx) := [
                   Short_Float (Arg.Samples (Idx).Merged_Gyro_Rates.X_Measurement) * Gyro_Scale,
                   Short_Float (Arg.Samples (Idx).Merged_Gyro_Rates.Y_Measurement) * Gyro_Scale,
@@ -66,33 +67,36 @@ package body Component.Average_Mimu_Data.Implementation is
 
    -- Tick that triggers the averaging algorithm over buffered samples and publishes
    -- the result. Always publishes Imu_Body_Data with a current timestamp so
-   -- downstream consumers see Success on every tick: zeros when no Mimu_Raw_Packet
-   -- has been buffered, the averaged result otherwise.
+   -- downstream consumers see Success on every tick; with nothing buffered every
+   -- packet is left invalid and the algorithm returns its current rolling average.
    overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
       Ignore : Tick.T renames Arg;
 
-      -- Build 120-element InputPktsData_c from pre-converted buffer.
-      -- Zero-initialized so unused slots have measTime=0, which the
-      -- time-window filter excludes. If no new MIMU raw packets were
-      -- received, then we pass all zeros to the algorithm which will
-      -- result in a zeroed result.
+      -- Build the InputPktsData_c (4 packets, each holding 10 samples) from the
+      -- pre-converted buffer. Packets with Is_Valid = 0 are skipped by the
+      -- algorithm; we mark Is_Valid = 1 only for filled packet slots
+      -- [0 .. Packet_Count - 1].
       Input : aliased Input_Pkts_Data_C := (
-         Meas_Time => [others => 0],
-         Gyro_P    => [others => [others => 0.0]],
-         Accel_P   => [others => [others => 0.0]]
+         Packets => [others => (
+            Is_Valid  => 0,
+            Meas_Time => 0,
+            Samples   => [others => (
+               Gyro_P  => [others => 0.0],
+               Accel_P => [others => 0.0]
+            )]
+         )]
       );
    begin
-      -- Copy pre-converted samples into the algorithm input buffer:
-      for Pdx in Self.Buffer'First .. Self.Buffer'First + Self.Packet_Count - 1 loop
-         for Idx in Self.Buffer (Pdx).Meas_Time'Range loop
-            declare
-               Flat_Idx : constant Natural :=
-                  (Pdx - Self.Buffer'First) * Samples_Per_Packet + (Idx - Self.Buffer (Pdx).Meas_Time'First);
-            begin
-               Input.Meas_Time (Flat_Idx) := Self.Buffer (Pdx).Meas_Time (Idx);
-               Input.Gyro_P (Flat_Idx) := Self.Buffer (Pdx).Gyro_P (Idx);
-               Input.Accel_P (Flat_Idx) := Self.Buffer (Pdx).Accel_P (Idx);
-            end;
+      -- Copy pre-converted samples into the algorithm input buffer and flag each
+      -- filled packet as valid:
+      for Pdx in 0 .. Self.Packet_Count - 1 loop
+         Input.Packets (Pdx).Is_Valid := 1;
+         Input.Packets (Pdx).Meas_Time := Self.Buffer (Pdx).Meas_Time;
+         for Idx in 0 .. Samples_Per_Packet - 1 loop
+            Input.Packets (Pdx).Samples (Idx) := (
+               Gyro_P  => Self.Buffer (Pdx).Gyro_P (Idx),
+               Accel_P => Self.Buffer (Pdx).Accel_P (Idx)
+            );
          end loop;
       end loop;
 
@@ -125,11 +129,32 @@ package body Component.Average_Mimu_Data.Implementation is
    -- Apply parameter values to the C++ algorithm when parameters change.
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
    begin
-      -- Set the averaging window:
-      Set_Averaging_Window (Self.Alg, Self.Time_Delta.Value);
+      -- Set the gyro and accel averaging windows (validated to [0.0, 2.0] s):
+      Set_Gyro_Averaging_Window (Self.Alg, Interfaces.C.double (Self.Gyro_Time_Delta.Value));
+      Set_Accel_Averaging_Window (Self.Alg, Interfaces.C.double (Self.Accel_Time_Delta.Value));
       -- Set the platform-to-body DCM:
       Set_Dcm_Pltf_To_Bdy (Self.Alg, (Value => Packed_F32x9.C.To_C (Self.Dcm_Pltf_To_Bdy)));
    end Update_Parameters_Action;
+
+   -- Validate parameters before they are staged. The averaging windows must
+   -- fall within [0.0, 2.0] seconds; the C++ algorithm rejects values outside
+   -- that range, so we guard them here to avoid the cross-FFI exception.
+   overriding function Validate_Parameters (
+      Self : in out Instance;
+      Gyro_Time_Delta : in Packed_F32.U;
+      Accel_Time_Delta : in Packed_F32.U;
+      Dcm_Pltf_To_Bdy : in Packed_F32x9.U
+   ) return Parameter_Validation_Status.E is
+      pragma Unreferenced (Self, Dcm_Pltf_To_Bdy);
+      Max_Averaging_Window : constant Short_Float := 2.0;
+   begin
+      if Gyro_Time_Delta.Value < 0.0 or else Gyro_Time_Delta.Value > Max_Averaging_Window or else
+         Accel_Time_Delta.Value < 0.0 or else Accel_Time_Delta.Value > Max_Averaging_Window
+      then
+         return Parameter_Validation_Status.Invalid;
+      end if;
+      return Parameter_Validation_Status.Valid;
+   end Validate_Parameters;
 
    -- Invalid Parameter handler. This procedure is called when a parameter's type is found to be invalid:
    overriding procedure Invalid_Parameter (Self : in out Instance; Par : in Parameter.T; Errant_Field_Number : in Unsigned_32; Errant_Field : in Basic_Types.Poly_Type) is
