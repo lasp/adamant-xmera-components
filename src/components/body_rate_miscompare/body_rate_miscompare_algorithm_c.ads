@@ -33,9 +33,21 @@ package Body_Rate_Miscompare_Algorithm_C is
    end record
       with Convention => C_Pass_By_Copy;
 
+   --* @brief Report whether a configuration would be accepted by Create/Set_Config.
+   --* @param Config The configuration to check.
+   --* @return True if the configuration is valid. Never throws, so it can guard the
+   --* throwing Create/Set_Config from an invalid configuration.
+   function Validate_Config
+     (Config : access constant Body_Rate_Miscompare_Config_C)
+     return Boolean
+     with Import       => True,
+          Convention   => C,
+          External_Name => "BodyRateMiscompareAlgorithm_validateConfig";
+
    --* @brief Construct a new BodyRateMiscompareAlgorithm from a configuration.
    --* @param Config The configuration to apply (validated; throws on invalid input).
-   --* Validate config values before calling so an invalid config never reaches this.
+   --* Validate config values with Validate_Config before calling so an invalid config
+   --* never reaches this.
    function Create
      (Config : access constant Body_Rate_Miscompare_Config_C)
      return Body_Rate_Miscompare_Algorithm_Access

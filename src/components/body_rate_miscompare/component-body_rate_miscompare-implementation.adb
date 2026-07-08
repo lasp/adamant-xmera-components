@@ -152,11 +152,35 @@ package body Component.Body_Rate_Miscompare.Implementation is
    -- Parameter handlers:
    -----------------------------------------------
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
-      -- Rebuild the algorithm configuration from the updated parameters.
+      -- Rebuild the algorithm configuration from the updated parameters. The values
+      -- were checked by Validate_Parameters at staging, so Set_Config will not reject
+      -- them.
       Config : aliased Body_Rate_Miscompare_Config_C := Make_Config (Self);
    begin
       Set_Config (Self.Alg, Config'Access);
    end Update_Parameters_Action;
+
+   -- Validate a staged parameter set before it is applied by asking the algorithm's
+   -- own non-throwing Validate_Config predicate, so the config rules live solely in
+   -- the algorithm. Rejecting an invalid update here at staging keeps it from reaching
+   -- the throwing Create/Set_Config across the FFI boundary. Use_Imu_Rates does not
+   -- affect validity.
+   overriding function Validate_Parameters (
+      Self : in out Instance;
+      Body_Rate_Threshold : in Packed_F32.U;
+      Fault_Persistence_Limit : in Packed_U32.U
+   ) return Parameter_Validation_Status.E is
+      Config : aliased Body_Rate_Miscompare_Config_C :=
+        (Body_Rate_Threshold     => Body_Rate_Threshold.Value,
+         Fault_Persistence_Limit => Fault_Persistence_Limit.Value,
+         Use_Imu_Rates           => (if Self.Use_Imu_Rates then 1 else 0));
+   begin
+      if Validate_Config (Config'Access) then
+         return Parameter_Validation_Status.Valid;
+      else
+         return Parameter_Validation_Status.Invalid;
+      end if;
+   end Validate_Parameters;
 
    -- Description:
    --    Parameters for the Body Rate Miscompare component
