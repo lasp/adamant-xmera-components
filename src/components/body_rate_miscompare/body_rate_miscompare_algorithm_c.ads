@@ -16,6 +16,15 @@ package Body_Rate_Miscompare_Algorithm_C is
    type Body_Rate_Miscompare_Algorithm is limited private;
    type Body_Rate_Miscompare_Algorithm_Access is access all Body_Rate_Miscompare_Algorithm;
 
+   --* POD config type matching BodyRateMiscompareConfig_c in C.
+   --* Layout: float bodyRateThreshold; uint32_t faultPersistenceLimit; bool useImuRates;
+   type Body_Rate_Miscompare_Config_C is record
+      Body_Rate_Threshold     : aliased Short_Float;       --* [rad/s] disagreement threshold.
+      Fault_Persistence_Limit : aliased Unsigned_32;       --* consecutive disagreements to trigger.
+      Use_Imu_Rates           : aliased C.unsigned_char;   --* force IMU rates when non-zero (C bool, 0/1).
+   end record
+      with Convention => C_Pass_By_Copy;
+
    --* POD output type matching BodyRateMiscompareOutput_c in C.
    --* Layout: float omega_BN_B[3]; bool bodyRateFaultDetected;
    type Body_Rate_Miscompare_Output_C is record
@@ -24,8 +33,11 @@ package Body_Rate_Miscompare_Algorithm_C is
    end record
       with Convention => C_Pass_By_Copy;
 
-   --* @brief Construct a new BodyRateMiscompareAlgorithm.
+   --* @brief Construct a new BodyRateMiscompareAlgorithm from a configuration.
+   --* @param Config The configuration to apply (validated; throws on invalid input).
+   --* Validate config values before calling so an invalid config never reaches this.
    function Create
+     (Config : access constant Body_Rate_Miscompare_Config_C)
      return Body_Rate_Miscompare_Algorithm_Access
      with Import       => True,
           Convention   => C,
@@ -37,6 +49,34 @@ package Body_Rate_Miscompare_Algorithm_C is
      with Import       => True,
           Convention   => C,
           External_Name => "BodyRateMiscompareAlgorithm_destroy";
+
+   --* @brief Apply a new configuration (validated; throws on invalid input).
+   --* @param Self   The algorithm instance.
+   --* @param Config The configuration to apply.
+   --* Swaps the configured values; the latched fault state is left untouched.
+   procedure Set_Config
+     (Self   : Body_Rate_Miscompare_Algorithm_Access;
+      Config : access constant Body_Rate_Miscompare_Config_C)
+     with Import       => True,
+          Convention   => C,
+          External_Name => "BodyRateMiscompareAlgorithm_setConfig";
+
+   --* @brief Full reset: clear the persistence counter and re-arm the latched
+   --* fault from the configured Use_Imu_Rates.
+   --* @param Self The algorithm instance.
+   procedure Re_Initialize
+     (Self : Body_Rate_Miscompare_Algorithm_Access)
+     with Import       => True,
+          Convention   => C,
+          External_Name => "BodyRateMiscompareAlgorithm_reInitialize";
+
+   --* @brief Clear the persistence counter only; a latched fault is preserved.
+   --* @param Self The algorithm instance.
+   procedure Re_Initialize_Except_Persistent_States
+     (Self : Body_Rate_Miscompare_Algorithm_Access)
+     with Import       => True,
+          Convention   => C,
+          External_Name => "BodyRateMiscompareAlgorithm_reInitializeExceptPersistentStates";
 
    --* @brief Run the update step.
    --* @param Self      The algorithm instance.
@@ -51,74 +91,6 @@ package Body_Rate_Miscompare_Algorithm_C is
      with Import       => True,
           Convention   => C,
           External_Name => "BodyRateMiscompareAlgorithm_update";
-
-   --* @brief Set the body rate threshold.
-   --* @param Self  The algorithm instance.
-   --* @param Value The new body rate threshold value.
-   procedure Set_Body_Rate_Threshold
-     (Self  : Body_Rate_Miscompare_Algorithm_Access;
-      Value : Short_Float)
-     with Import       => True,
-          Convention   => C,
-          External_Name => "BodyRateMiscompareAlgorithm_setBodyRateThreshold";
-
-   --* @brief Get the current body rate threshold.
-   --* @param Self  The algorithm instance.
-   --* @return The current body rate threshold.
-   function Get_Body_Rate_Threshold
-     (Self : Body_Rate_Miscompare_Algorithm_Access)
-     return Short_Float
-     with Import       => True,
-          Convention   => C,
-          External_Name => "BodyRateMiscompareAlgorithm_getBodyRateThreshold";
-
-   --* @brief Reset the persistence counter to zero.
-   --* @param Self  The algorithm instance.
-   procedure Reset
-     (Self : Body_Rate_Miscompare_Algorithm_Access)
-     with Import       => True,
-          Convention   => C,
-          External_Name => "BodyRateMiscompareAlgorithm_reset";
-
-   --* @brief Set the fault persistence limit.
-   --* @param Self  The algorithm instance.
-   --* @param Value Number of consecutive update calls needed to trigger the fault.
-   procedure Set_Fault_Persistence_Limit
-     (Self  : Body_Rate_Miscompare_Algorithm_Access;
-      Value : Unsigned_32)
-     with Import       => True,
-          Convention   => C,
-          External_Name => "BodyRateMiscompareAlgorithm_setFaultPersistenceLimit";
-
-   --* @brief Get the current fault persistence limit.
-   --* @param Self  The algorithm instance.
-   --* @return The current fault persistence limit.
-   function Get_Fault_Persistence_Limit
-     (Self : Body_Rate_Miscompare_Algorithm_Access)
-     return Unsigned_32
-     with Import       => True,
-          Convention   => C,
-          External_Name => "BodyRateMiscompareAlgorithm_getFaultPersistenceLimit";
-
-   --* @brief Set the useImuRates flag.
-   --* @param Self  The algorithm instance.
-   --* @param Value If True, always output IMU rates regardless of miscompare.
-   procedure Set_Use_Imu_Rates
-     (Self  : Body_Rate_Miscompare_Algorithm_Access;
-      Value : Boolean)
-     with Import       => True,
-          Convention   => C,
-          External_Name => "BodyRateMiscompareAlgorithm_setUseImuRates";
-
-   --* @brief Get the current useImuRates flag.
-   --* @param Self  The algorithm instance.
-   --* @return The current useImuRates flag (True if IMU rates are forced).
-   function Get_Use_Imu_Rates
-     (Self : Body_Rate_Miscompare_Algorithm_Access)
-     return Boolean
-     with Import       => True,
-          Convention   => C,
-          External_Name => "BodyRateMiscompareAlgorithm_getUseImuRates";
 
 private
 

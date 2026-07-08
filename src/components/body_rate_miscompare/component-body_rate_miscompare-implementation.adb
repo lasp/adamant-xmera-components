@@ -8,21 +8,27 @@ with Interfaces.C;
 
 package body Component.Body_Rate_Miscompare.Implementation is
 
+   -- Build the C config POD from the current component parameters and the
+   -- Ada-side Use_Imu_Rates state. Threshold and persistence come from the
+   -- component parameters; Use_Imu_Rates has no parameter and is tracked on
+   -- the instance.
+   function Make_Config (Self : Instance) return Body_Rate_Miscompare_Config_C is
+     (Body_Rate_Threshold     => Self.Body_Rate_Threshold.Value,
+      Fault_Persistence_Limit => Self.Fault_Persistence_Limit.Value,
+      Use_Imu_Rates           => (if Self.Use_Imu_Rates then 1 else 0));
+
    --------------------------------------------------
    -- Subprogram for implementation init method:
    --------------------------------------------------
    -- Initializes the body rate miscompare algorithm.
    overriding procedure Init (Self : in out Instance) is
+      -- Build the initial configuration from the component's parameter defaults.
+      -- The defaults (threshold > 0, persistence > 0) are valid, so Create will
+      -- not reject them.
+      Config : aliased Body_Rate_Miscompare_Config_C := Make_Config (Self);
    begin
-      -- Allocate C++ class on the heap
-      Self.Alg := Create;
-
-      -- Sync the Ada-side parameter defaults into the C algorithm so its
-      -- settings match component state before the first tick. The C
-      -- constructor value-initializes the threshold to 0.0, which would
-      -- otherwise flag every non-zero rate diff as a miscompare.
-      Set_Body_Rate_Threshold (Self.Alg, Self.Body_Rate_Threshold.Value);
-      Set_Fault_Persistence_Limit (Self.Alg, Self.Fault_Persistence_Limit.Value);
+      -- Allocate the C++ algorithm on the heap with the initial configuration.
+      Self.Alg := Create (Config'Access);
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -93,8 +99,8 @@ package body Component.Body_Rate_Miscompare.Implementation is
       Ignore : Tick.T renames Arg;
    begin
       -- Clear the algorithm's fault persistence counter so rate disagreement must
-      -- re-accumulate from zero after a state change.
-      Reset (Self.Alg);
+      -- re-accumulate from zero after a state change. A latched fault is preserved.
+      Re_Initialize_Except_Persistent_States (Self.Alg);
    end Reset_Tick_T_Recv_Sync;
 
    -- This is the command receive connector.
@@ -115,8 +121,18 @@ package body Component.Body_Rate_Miscompare.Implementation is
    overriding function Use_Imu_Rates (Self : in out Instance; Arg : in Packed_Boolean.T) return Command_Execution_Status.E is
       use Command_Execution_Status;
    begin
-      -- Push the override into the C algorithm:
-      Set_Use_Imu_Rates (Self.Alg, Arg.Value);
+      -- Record the override as the Ada-side source of truth, then push it into the
+      -- C algorithm via a config swap. Threshold and persistence come from the
+      -- already-applied parameters, so the config is always valid here.
+      Self.Use_Imu_Rates := Arg.Value;
+      declare
+         Config : aliased Body_Rate_Miscompare_Config_C := Make_Config (Self);
+      begin
+         Set_Config (Self.Alg, Config'Access);
+         -- Re-seed the latched fault state from the new Use_Imu_Rates: forces IMU
+         -- rates when True, and clears a latched fault when set False.
+         Re_Initialize (Self.Alg);
+      end;
       -- Report the new setting:
       Self.Event_T_Send_If_Connected (Self.Events.Use_Imu_Rates_Set (Self.Sys_Time_T_Get, Arg));
       return Success;
@@ -136,10 +152,10 @@ package body Component.Body_Rate_Miscompare.Implementation is
    -- Parameter handlers:
    -----------------------------------------------
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
+      -- Rebuild the algorithm configuration from the updated parameters.
+      Config : aliased Body_Rate_Miscompare_Config_C := Make_Config (Self);
    begin
-      -- Set algorithm tunables when parameters update:
-      Set_Body_Rate_Threshold (Self.Alg, Self.Body_Rate_Threshold.Value);
-      Set_Fault_Persistence_Limit (Self.Alg, Self.Fault_Persistence_Limit.Value);
+      Set_Config (Self.Alg, Config'Access);
    end Update_Parameters_Action;
 
    -- Description:

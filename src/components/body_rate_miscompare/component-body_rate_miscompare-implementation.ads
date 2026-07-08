@@ -25,6 +25,10 @@ private
    -- The component class instance record:
    type Instance is new Body_Rate_Miscompare.Base_Instance with record
       Alg : Body_Rate_Miscompare_Algorithm_Access := null;
+      -- Ada-side source of truth for the algorithm's Use_Imu_Rates config field,
+      -- which has no component parameter. Set by the Use_Imu_Rates command and
+      -- folded into the config alongside the threshold/persistence parameters.
+      Use_Imu_Rates : Boolean := False;
    end record;
 
    ---------------------------------------
