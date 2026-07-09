@@ -2,7 +2,7 @@
 -- Sunline_Srukf Component Implementation Body
 --------------------------------------------------------------------------------
 
-with Nav_Att.C;
+with Packed_F32x3.C;
 with Css_Sensor_Values;
 with Sunline_Srukf_Input.C;
 with Sunline_Srukf_Output.C;
@@ -35,7 +35,11 @@ package body Component.Sunline_Srukf.Implementation is
       -- All return values besides Success indicate that this component is not
       -- wired up correctly in the algorithm execution order and received errant,
       -- stale, or no data. This should never happen, so we assert.
-      Sc_Att : Nav_Att.T;
+      -- Body angular velocity (omega_BN_B) from body_rate_miscompare. The
+      -- upstream product carries only the body rate; the SRuKF's other
+      -- attitude inputs (MRP, sun vector, time tag) are not produced upstream
+      -- and are zeroed below (preserving prior behavior).
+      Sc_Att : Packed_F32x3.T;
       Sc_Att_Status : constant Data_Dependency_Status.E :=
          Self.Get_Spacecraft_Attitude (Value => Sc_Att, Stale_Reference => Arg.Time);
       pragma Assert (Sc_Att_Status = Success);
@@ -48,17 +52,16 @@ package body Component.Sunline_Srukf.Implementation is
          Self.Get_Css_Sensor_Input (Value => Css_Input, Stale_Reference => Arg.Time);
       pragma Assert (Css_Input_Status = Success);
 
-      -- Convert to C types:
-      Sc_Att_C : constant Nav_Att.C.U_C := Nav_Att.C.To_C (Nav_Att.Unpack (Sc_Att));
-
-      -- Build algorithm input from nav att and CSS cosine data. The C
-      -- algorithm's Cos_Values is Packed_F32x32; cast each F64 cosine down
-      -- to Short_Float and zero-pad the trailing entries past Css_Input.
+      -- Build algorithm input from the body rate and CSS cosine data. Only
+      -- Omega_Bn_B is supplied upstream; Sigma_Bn, Veh_Sun_Pnt_Bdy, and
+      -- Time_Tag are zeroed (no upstream producer). The C algorithm's
+      -- Cos_Values is Packed_F32x32; cast each F64 cosine down to Short_Float
+      -- and zero-pad the trailing entries past Css_Input.
       Input_C : aliased Sunline_Srukf_Input.C.U_C := (
-         Time_Tag        => Sc_Att_C.Time_Tag,
-         Sigma_Bn        => Sc_Att_C.Sigma_Bn,
-         Omega_Bn_B      => Sc_Att_C.Omega_Bn_B,
-         Veh_Sun_Pnt_Bdy => Sc_Att_C.Veh_Sun_Pnt_Bdy,
+         Time_Tag        => 0.0,
+         Sigma_Bn        => Packed_F32x3.C.Unpack (Packed_F32x3.T'[0.0, 0.0, 0.0]),
+         Omega_Bn_B      => Packed_F32x3.C.Unpack (Sc_Att),
+         Veh_Sun_Pnt_Bdy => Packed_F32x3.C.Unpack (Packed_F32x3.T'[0.0, 0.0, 0.0]),
          N_Css           => Css_Input.Data'Length,
          Cos_Values      => [
             0  => Short_Float (Css_Input.Data (Css_Input.Data'First + 0)),

@@ -69,7 +69,7 @@ package body Component.Sunline_Srukf.Implementation.Tester is
       if Length_To_Return = 0 then
          case Arg.Id is
             -- Length for Spacecraft_Attitude:
-            when 0 => Length_To_Return := Nav_Att.Size_In_Bytes;
+            when 0 => Length_To_Return := Packed_F32x3.Size_In_Bytes;
             -- Length for Css_Sensor_Input:
             when 1 => Length_To_Return := Css_Sensor_Values.Size_In_Bytes;
             -- If ID can not be found, then return ID out of range error.
@@ -90,8 +90,8 @@ package body Component.Sunline_Srukf.Implementation.Tester is
          case Arg.Id is
             -- Length for Spacecraft_Attitude:
             when 0 =>
-               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Nav_Att.Size_In_Bytes - 1) :=
-                  Nav_Att.Serialization.To_Byte_Array (Self.Spacecraft_Attitude);
+               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Packed_F32x3.Size_In_Bytes - 1) :=
+                  Packed_F32x3.Serialization.To_Byte_Array (Self.Spacecraft_Attitude);
             -- Length for Css_Sensor_Input:
             when 1 =>
                Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Css_Sensor_Values.Size_In_Bytes - 1) :=

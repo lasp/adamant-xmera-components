@@ -10,7 +10,7 @@ with Data_Product_Fetch.Representation;
 with Data_Product.Representation;
 with Data_Product;
 with Sunline_Srukf_Output.Representation;
-with Nav_Att;
+with Packed_F32x3;
 with Css_Sensor_Values;
 
 -- Sunline SRuKF pass-through algorithm wrapping the C++ SunlineSRuKFAlgorithm.
@@ -37,7 +37,7 @@ package Component.Sunline_Srukf.Implementation.Tester is
       -- Data dependency return values. These can be set during unit test
       -- and will be returned to the component when a data dependency call
       -- is made.
-      Spacecraft_Attitude : Nav_Att.T;
+      Spacecraft_Attitude : Packed_F32x3.T;
       Css_Sensor_Input : Css_Sensor_Values.T;
       -- The return status for the data dependency fetch. This can be set
       -- during unit test to return something other than Success.
