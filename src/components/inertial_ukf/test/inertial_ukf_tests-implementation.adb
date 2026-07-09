@@ -86,7 +86,7 @@ package body Inertial_Ukf_Tests.Implementation is
          -- Set data dependency values using packed record aggregates directly.
          T.Star_Tracker_Att := (
             Time_Tag      => Time_Tag_In_Ns,
-            Mrp_Bdy_Inrtl => Expected_Sigma,
+            Sigma_Bn      => Expected_Sigma,
             Omega_Bn_B    => Expected_Omega
          );
          T.Rw_Speeds := (Rwa_1 => 0.0, Rwa_2 => 0.0, Rwa_3 => 0.0, Rwa_4 => 0.0);
@@ -127,7 +127,7 @@ package body Inertial_Ukf_Tests.Implementation is
       begin
          T.Star_Tracker_Att := (
             Time_Tag      => 0,
-            Mrp_Bdy_Inrtl => Zero_Vec,
+            Sigma_Bn      => Zero_Vec,
             Omega_Bn_B    => Zero_Vec
          );
 

@@ -3,7 +3,7 @@ description: Data products for the Inertial UKF component.
 data_products:
   - name: Nav_Att_Estimate
     type: Nav_Att.T
-    description: Navigation attitude estimate (time tag, MRP body-to-inertial, angular rate, sun vector).
+    description: Navigation attitude estimate (time tag, sigma_BN, omega_BN_B, sun vector).
   - name: Filter_Data
     type: Inertial_Filter_Output.T
     description: Inertial filter diagnostic data (time tag, number of observations).

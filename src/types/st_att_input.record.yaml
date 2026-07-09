@@ -2,7 +2,7 @@
 #  /*! @brief Abstracted star tracker measurement input. */
 #  typedef struct {
 #      float timeTag;         /*!< Time tag of star tracker measurement (s) */
-#      float MRP_BdyInrtl[3]; /*!< MRP attitude of body w.r.t. inertial frame */
+#      float sigma_BN[3]; /*!< MRP attitude of body w.r.t. inertial frame */
 #      float omega_BN_B[3];   /*!< Angular velocity of body w.r.t. inertial, body frame (rad/s) */
 #  } STAttInput_c;
 fields:
@@ -10,7 +10,7 @@ fields:
     type: Short_Float
     format: F32
     description: "[s] Time tag of star tracker measurement"
-  - name: Mrp_Bdy_Inrtl
+  - name: Sigma_Bn
     type: Packed_F32x3.T
     description: "MRP attitude of body w.r.t. inertial frame"
   - name: Omega_Bn_B

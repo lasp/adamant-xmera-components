@@ -98,7 +98,7 @@ package body Body_Rate_Miscompare_Tests.Implementation is
          -- Set star tracker attitude data dependency
          T.Star_Tracker_Attitude := (
             Time_Tag => 0,
-            Mrp_Bdy_Inrtl => [0.0, 0.0, 0.0],
+            Sigma_Bn => [0.0, 0.0, 0.0],
             Omega_Bn_B => Test_Cases (I).St_Angular_Velocity
          );
 
@@ -144,7 +144,7 @@ package body Body_Rate_Miscompare_Tests.Implementation is
    begin
       -- Provide agreeing data dependencies:
       T.Imu_Body := (Avg_Ang_Vel_Body => Imu_Rate, Fault_Detected => 0, Mimu_Index_Faulted => -1);
-      T.Star_Tracker_Attitude := (Time_Tag => 0, Mrp_Bdy_Inrtl => [0.0, 0.0, 0.0], Omega_Bn_B => St_Rate);
+      T.Star_Tracker_Attitude := (Time_Tag => 0, Sigma_Bn => [0.0, 0.0, 0.0], Omega_Bn_B => St_Rate);
 
       -- Command the override on:
       T.Command_T_Send (T.Commands.Use_Imu_Rates ((Value => True)));
@@ -212,7 +212,7 @@ package body Body_Rate_Miscompare_Tests.Implementation is
 
       -- Persistent disagreement:
       T.Imu_Body := (Avg_Ang_Vel_Body => Imu_Rate, Fault_Detected => 0, Mimu_Index_Faulted => -1);
-      T.Star_Tracker_Attitude := (Time_Tag => 0, Mrp_Bdy_Inrtl => [0.0, 0.0, 0.0], Omega_Bn_B => St_Rate);
+      T.Star_Tracker_Attitude := (Time_Tag => 0, Sigma_Bn => [0.0, 0.0, 0.0], Omega_Bn_B => St_Rate);
 
       -- Two disagreements: persistence counter reaches 2 (limit 3 not yet hit) -> no fault:
       Tick_Disagree (1, False);

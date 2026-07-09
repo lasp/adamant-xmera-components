@@ -60,7 +60,7 @@ package body Component.Inertial_Ukf.Implementation is
          St_Att_C : aliased St_Att_Input.C.U_C :=
             St_Att_Input.C.To_C ((
                Time_Tag      => Short_Float (Long_Float (St_Tracker_Att.Time_Tag) * 1.0E-9),
-               Mrp_Bdy_Inrtl => Packed_F32x3.Unpack (St_Tracker_Att.Mrp_Bdy_Inrtl),
+               Sigma_Bn => Packed_F32x3.Unpack (St_Tracker_Att.Sigma_Bn),
                Omega_Bn_B    => Packed_F32x3.Unpack (St_Tracker_Att.Omega_Bn_B)
             ));
 
