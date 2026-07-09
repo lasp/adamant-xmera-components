@@ -2,11 +2,13 @@
 -- Sunline_Ephem Component Implementation Body
 --------------------------------------------------------------------------------
 
-with Nav_Att.C;
-with Nav_Trans.C;
-with Ephemeris.C;
+with Nav_Att_Output;
+with Nav_Att_Output.C;
 with Cartesian_State;
 with Cartesian_State.C;
+with Packed_F32x3.C;
+with Packed_F32x3_Record.C;
+with Packed_F64x3_Record.C;
 
 package body Component.Sunline_Ephem.Implementation is
 
@@ -48,44 +50,36 @@ package body Component.Sunline_Ephem.Implementation is
       Sc_Pos_Status : constant Data_Dependency_Status.E :=
          Self.Get_Spacecraft_Position (Value => Sc_Pos, Stale_Reference => Arg.Time);
       pragma Assert (Sc_Pos_Status = Success);
-      Sc_Att : Nav_Att.T;
+      Sc_Att : Nav_Att_Output.T;
       Sc_Att_Status : constant Data_Dependency_Status.E :=
          Self.Get_Spacecraft_Attitude (Value => Sc_Att, Stale_Reference => Arg.Time);
       pragma Assert (Sc_Att_Status = Success);
 
-      -- Convert to C types:
-      -- The C algorithm only reads the sun's position (r_BdyZero_N). Build an
-      -- Ephemeris payload with position populated from the Cartesian state and
-      -- the unused fields zeroed.
+      -- Convert to the narrow C vectors the algorithm consumes: the sun and
+      -- spacecraft inertial positions (r_SN_N, r_BN_N) and the attitude MRP
+      -- (sigma_BN). Nothing else is needed.
       Sun_State_C : constant Cartesian_State.C.U_C := Cartesian_State.C.To_C (Cartesian_State.Unpack (Sun_State));
-      Sun_Eph_C : aliased Ephemeris.C.U_C := (
-         R_Bdy_Zero_N => Sun_State_C.Position,
-         V_Bdy_Zero_N => [others => 0.0],
-         Sigma_Bn => [others => 0.0],
-         Omega_Bn_B => [others => 0.0],
-         Time_Tag => 0.0);
-      -- Lift Cartesian_State to Nav_Trans for the C algorithm. Time_Tag is
-      -- the current tick time (Cartesian_State has no Time_Tag of its own).
       Sc_Pos_C_Cartesian : constant Cartesian_State.C.U_C := Cartesian_State.C.To_C (Cartesian_State.Unpack (Sc_Pos));
-      Sc_Pos_C : aliased Nav_Trans.C.U_C := (
-         Time_Tag => Long_Float (Arg.Time.Seconds) + Long_Float (Arg.Time.Subseconds) / 65536.0,
-         R_Bn_N => Sc_Pos_C_Cartesian.Position,
-         V_Bn_N => Sc_Pos_C_Cartesian.Velocity,
-         Vehaccumdv => [others => 0.0]);
-      Sc_Att_C : aliased Nav_Att.C.U_C := Nav_Att.C.To_C (Nav_Att.Unpack (Sc_Att));
+      Sc_Att_C : constant Nav_Att_Output.C.U_C := Nav_Att_Output.C.To_C (Nav_Att_Output.Unpack (Sc_Att));
 
-      -- Call algorithm update.
-      Sunline : constant Nav_Att.C.U_C := Update (
-         Self.Alg,
-         Sun_Pos => Sun_Eph_C'Unchecked_Access,
-         Sc_Pos => Sc_Pos_C'Unchecked_Access,
-         Sc_Att => Sc_Att_C'Unchecked_Access
-      );
+      Sun_R    : aliased Packed_F64x3_Record.C.U_C := (Value => Sun_State_C.Position);
+      Sc_R     : aliased Packed_F64x3_Record.C.U_C := (Value => Sc_Pos_C_Cartesian.Position);
+      Sigma_C  : aliased Packed_F32x3_Record.C.U_C := (Value => Sc_Att_C.Sigma_Bn);
+      Sunline  : aliased Packed_F32x3_Record.C.U_C;
    begin
+      -- Call algorithm update: all vectors passed by reference, result written
+      -- into Sunline (avoids by-value struct passing across the C boundary).
+      Update (
+         Self.Alg,
+         Sun_Pos  => Sun_R'Unchecked_Access,
+         Sc_Pos   => Sc_R'Unchecked_Access,
+         Sigma_Bn => Sigma_C'Unchecked_Access,
+         Result   => Sunline'Unchecked_Access
+      );
       -- Send out data product:
       Self.Data_Product_T_Send (Self.Data_Products.Sunline_Body_Frame (
          Arg.Time,
-         Nav_Att.Pack (Nav_Att.C.To_Ada (Sunline))
+         Packed_F32x3.C.Pack (Sunline.Value)
       ));
    end Tick_T_Recv_Sync;
 

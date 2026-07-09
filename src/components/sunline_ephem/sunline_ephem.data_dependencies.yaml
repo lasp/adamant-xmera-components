@@ -8,5 +8,5 @@ data_dependencies:
     type: Cartesian_State.T
     description: Spacecraft Cartesian state (position and velocity)
   - name: Spacecraft_Attitude
-    type: Nav_Att.T
-    description: Spacecraft attitude navigation state
+    type: Nav_Att_Output.T
+    description: Spacecraft attitude estimate (only sigma_BN is used by the algorithm)

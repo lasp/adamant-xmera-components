@@ -75,7 +75,7 @@ package body Component.Sunline_Ephem.Implementation.Tester is
             -- Length for Spacecraft_Position:
             when 1 => Length_To_Return := Cartesian_State.Size_In_Bytes;
             -- Length for Spacecraft_Attitude:
-            when 2 => Length_To_Return := Nav_Att.Size_In_Bytes;
+            when 2 => Length_To_Return := Nav_Att_Output.Size_In_Bytes;
             -- If ID can not be found, then return ID out of range error.
             when others =>
                if Return_Status = Data_Product_Enums.Fetch_Status.Success then
@@ -102,8 +102,8 @@ package body Component.Sunline_Ephem.Implementation.Tester is
                   Cartesian_State.Serialization.To_Byte_Array (Self.Spacecraft_Position);
             -- Length for Spacecraft_Attitude:
             when 2 =>
-               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Nav_Att.Size_In_Bytes - 1) :=
-                  Nav_Att.Serialization.To_Byte_Array (Self.Spacecraft_Attitude);
+               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Nav_Att_Output.Size_In_Bytes - 1) :=
+                  Nav_Att_Output.Serialization.To_Byte_Array (Self.Spacecraft_Attitude);
             -- Do not fill. The ID is not recognized.
             when others =>
                Return_Status := Data_Product_Enums.Fetch_Status.Id_Out_Of_Range;
@@ -152,7 +152,7 @@ package body Component.Sunline_Ephem.Implementation.Tester is
    --    Data products for the Sunline Ephem component.
    -- Sunline direction vector in spacecraft body frame (stored in vehSunPntBdy
    -- field).
-   overriding procedure Sunline_Body_Frame (Self : in out Instance; Arg : in Nav_Att.T) is
+   overriding procedure Sunline_Body_Frame (Self : in out Instance; Arg : in Packed_F32x3.T) is
    begin
       -- Push the argument onto the test history for looking at later:
       Self.Sunline_Body_Frame_History.Push (Arg);

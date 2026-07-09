@@ -2,5 +2,5 @@
 description: Data products for the Sunline Ephem component.
 data_products:
   - name: Sunline_Body_Frame
-    type: Nav_Att.T
-    description: Sunline direction vector in spacecraft body frame (stored in vehSunPntBdy field).
+    type: Packed_F32x3.T
+    description: Sunline direction (unit vector) in the spacecraft body frame.
