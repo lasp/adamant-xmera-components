@@ -2,7 +2,7 @@
 -- Inertial_Ukf Component Implementation Body
 --------------------------------------------------------------------------------
 
-with Nav_Att;
+with Nav_Att_Output;
 with St_Att;
 with St_Att_Input.C;
 with Packed_F32x3;
@@ -11,7 +11,7 @@ with Rwa_Speeds;
 with Rw_Speeds_Input.C;
 with Rw_Array_Config_Input.C;
 with Vehicle_Config_Input.C;
-with Nav_Att.C;
+with Nav_Att_Output.C;
 with Inertial_Filter_Output.C;
 with Inertial_UKF_Algorithm_C; use Inertial_UKF_Algorithm_C;
 
@@ -93,7 +93,7 @@ package body Component.Inertial_Ukf.Implementation is
          -- Publish navigation attitude estimate:
          Self.Data_Product_T_Send (Self.Data_Products.Nav_Att_Estimate (
             Arg.Time,
-            Nav_Att.C.Pack (Output.Nav_Att_Est)
+            Nav_Att_Output.C.Pack (Output.Nav_Att_Est)
          ));
 
          -- Publish filter diagnostic data:

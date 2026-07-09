@@ -7,7 +7,7 @@ with Basic_Assertions; use Basic_Assertions;
 with Packed_F32x3;
 with Packed_F32x3.Assertion; use Packed_F32x3.Assertion;
 with Component.Inertial_Ukf.Implementation.Tester;
-with Nav_Att;
+with Nav_Att_Output;
 with Inertial_Filter_Output;
 with Rw_Array_Config_Input;
 with Vehicle_Config_Input;
@@ -76,11 +76,11 @@ package body Inertial_Ukf_Tests.Implementation is
          Expected_Sigma  : constant Packed_F32x3.T := [0.1, -0.2, 0.3];
          Expected_Omega  : constant Packed_F32x3.T := [0.01, -0.02, 0.03];
          -- Input time tag is U64 nanoseconds; the impl converts to F32 seconds
-         -- before the C call, so the published Nav_Att/Filter time tag is in
+         -- before the C call, so the published Nav_Att_Estimate/Filter time tag is in
          -- seconds (1.5 s == 1_500_000_000 ns).
          Time_Tag_In_Ns  : constant Unsigned_64 := 1_500_000_000;
          Expected_Time_Tag_Sec : constant Long_Float := 1.5;
-         Nav_Out         : Nav_Att.T;
+         Nav_Out         : Nav_Att_Output.T;
          Filter_Out      : Inertial_Filter_Output.T;
       begin
          -- Set data dependency values using packed record aggregates directly.
@@ -122,7 +122,7 @@ package body Inertial_Ukf_Tests.Implementation is
       -----------------------------------------------------------------------
 
       declare
-         Nav_Out    : Nav_Att.T;
+         Nav_Out    : Nav_Att_Output.T;
          Filter_Out : Inertial_Filter_Output.T;
       begin
          T.Star_Tracker_Att := (

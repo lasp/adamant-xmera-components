@@ -2,7 +2,7 @@
 description: Data products for the Inertial UKF component.
 data_products:
   - name: Nav_Att_Estimate
-    type: Nav_Att.T
+    type: Nav_Att_Output.T
     description: Navigation attitude estimate (time tag, sigma_BN, omega_BN_B, sun vector).
   - name: Filter_Data
     type: Inertial_Filter_Output.T
