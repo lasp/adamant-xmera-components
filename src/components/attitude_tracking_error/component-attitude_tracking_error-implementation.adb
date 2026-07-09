@@ -43,7 +43,7 @@ package body Component.Attitude_Tracking_Error.Implementation is
       Ref_Status : constant Data_Dependency_Status.E :=
          Self.Get_Attitude_Reference (Value => Ref, Stale_Reference => Arg.Time);
       pragma Assert (Ref_Status = Success);
-      Nav : Nav_Att.T;
+      Nav : Nav_Att_Output.T;
       Nav_Status : constant Data_Dependency_Status.E :=
          Self.Get_Navigation_Attitude (Value => Nav, Stale_Reference => Arg.Time);
       pragma Assert (Nav_Status = Success);
