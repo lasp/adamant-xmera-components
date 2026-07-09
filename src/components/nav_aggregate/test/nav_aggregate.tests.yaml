@@ -1,5 +1,0 @@
----
-description: This is a unit test suite for the Nav Aggregate component
-tests:
-  - name: Test
-    description: Run algorithm to ensure integration is sound.
