@@ -68,13 +68,10 @@ package body Component.Body_Rate_Miscompare.Implementation is
             St_Omega  => St_Omega
          );
       begin
-         -- Send out body rate data product:
+         -- Send out body rate data product (omega_BN_B only):
          Self.Data_Product_T_Send (Self.Data_Products.Body_Rate (
             Arg.Time,
-            (Time_Tag => 0.0,
-             Sigma_Bn => [0.0, 0.0, 0.0],
-             Omega_Bn_B => Packed_F32x3.C.Pack (Output.Omega_Bn_B.Value),
-             Veh_Sun_Pnt_Bdy => [0.0, 0.0, 0.0])
+            Packed_F32x3.C.Pack (Output.Omega_Bn_B.Value)
          ));
          -- Send out body rate fault data product:
          Self.Data_Product_T_Send (Self.Data_Products.Rate_Fault_Status (

@@ -212,7 +212,7 @@ package body Component.Body_Rate_Miscompare.Implementation.Tester is
    --    Data products for the Body Rate Miscompare component.
    -- Selected body rate output (star tracker rate if rates agree, IMU rate if they
    -- disagree)
-   overriding procedure Body_Rate (Self : in out Instance; Arg : in Nav_Att.T) is
+   overriding procedure Body_Rate (Self : in out Instance; Arg : in Packed_F32x3.T) is
    begin
       -- Push the argument onto the test history for looking at later:
       Self.Body_Rate_History.Push (Arg);

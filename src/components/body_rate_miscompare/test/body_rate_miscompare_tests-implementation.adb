@@ -4,7 +4,6 @@
 
 with Interfaces; use Interfaces;
 with Basic_Assertions; use Basic_Assertions;
-with Nav_Att;
 with Body_Rate_Fault;
 with Packed_F32x3.Assertion; use Packed_F32x3.Assertion;
 with Body_Rate_Fault.Assertion; use Body_Rate_Fault.Assertion;
@@ -110,12 +109,12 @@ package body Body_Rate_Miscompare_Tests.Implementation is
          Natural_Assert.Eq (T.Body_Rate_History.Get_Count, I);
          Natural_Assert.Eq (T.Rate_Fault_Status_History.Get_Count, I);
 
-         -- Check body rate output
+         -- Check body rate output (Body_Rate is now the omega_BN_B vector directly)
          declare
-            Rate_Output : constant Nav_Att.T := T.Body_Rate_History.Get (I);
+            Rate_Output : constant Packed_F32x3.T := T.Body_Rate_History.Get (I);
          begin
             Packed_F32x3_Assert.Eq (
-               Rate_Output.Omega_Bn_B,
+               Rate_Output,
                Test_Cases (I).Expected_Angular_Velocity,
                Epsilon => 0.0001
             );
@@ -166,7 +165,7 @@ package body Body_Rate_Miscompare_Tests.Implementation is
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
       Natural_Assert.Eq (T.Body_Rate_History.Get_Count, 1);
       Natural_Assert.Eq (T.Rate_Fault_Status_History.Get_Count, 1);
-      Packed_F32x3_Assert.Eq (T.Body_Rate_History.Get (1).Omega_Bn_B, Imu_Rate, Epsilon => 0.0001);
+      Packed_F32x3_Assert.Eq (T.Body_Rate_History.Get (1), Imu_Rate, Epsilon => 0.0001);
       Body_Rate_Fault_Assert.Eq (T.Rate_Fault_Status_History.Get (1), (Fault_Detected => True));
 
       -- Command the override back off:
@@ -185,7 +184,7 @@ package body Body_Rate_Miscompare_Tests.Implementation is
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
       Natural_Assert.Eq (T.Body_Rate_History.Get_Count, 2);
       Natural_Assert.Eq (T.Rate_Fault_Status_History.Get_Count, 2);
-      Packed_F32x3_Assert.Eq (T.Body_Rate_History.Get (2).Omega_Bn_B, St_Rate, Epsilon => 0.0001);
+      Packed_F32x3_Assert.Eq (T.Body_Rate_History.Get (2), St_Rate, Epsilon => 0.0001);
       Body_Rate_Fault_Assert.Eq (T.Rate_Fault_Status_History.Get (2), (Fault_Detected => False));
    end Test_Use_Imu_Rates_Command;
 
