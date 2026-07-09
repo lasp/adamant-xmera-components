@@ -264,4 +264,26 @@ package body Body_Rate_Miscompare_Tests.Implementation is
       Boolean_Assert.Eq (T.Use_Imu_Rates_Set_History.Is_Empty, True);
    end Test_Invalid_Command;
 
+   -- Verify parameter validation rejects configs the algorithm would reject:
+   -- a non-positive body rate threshold or a zero fault persistence limit.
+   overriding procedure Test_Invalid_Parameter (Self : in out Instance) is
+      T : Component.Body_Rate_Miscompare.Implementation.Tester.Instance_Access renames Self.Tester;
+      Params : Body_Rate_Miscompare_Parameters.Instance;
+   begin
+      -- Staging only range-checks the type; the algorithm's finite-and-positive
+      -- rule is enforced by the component's Validate_Parameters. A non-positive
+      -- threshold stages fine but fails validation:
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Body_Rate_Threshold ((Value => 0.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- With a valid threshold restored, a zero fault persistence limit is rejected:
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Body_Rate_Threshold ((Value => 1.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Fault_Persistence_Limit ((Value => 0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- A finite positive threshold with a positive persistence limit validates:
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Fault_Persistence_Limit ((Value => 1))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
+   end Test_Invalid_Parameter;
+
 end Body_Rate_Miscompare_Tests.Implementation;

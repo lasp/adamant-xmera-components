@@ -9,3 +9,5 @@ tests:
     description: Verify the reset connector clears the algorithm's fault persistence counter.
   - name: Test_Invalid_Command
     description: Verify a malformed command is rejected and reported via the Invalid_Command_Received event.
+  - name: Test_Invalid_Parameter
+    description: Verify parameter validation rejects a non-positive threshold or zero persistence limit.

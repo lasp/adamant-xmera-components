@@ -24,6 +24,9 @@ private
    -- Verify a malformed command is rejected and reported via the
    -- Invalid_Command_Received event.
    overriding procedure Test_Invalid_Command (Self : in out Instance);
+   -- Verify parameter validation rejects a non-positive threshold or zero
+   -- persistence limit.
+   overriding procedure Test_Invalid_Parameter (Self : in out Instance);
 
    -- Test data and state:
    type Instance is new Body_Rate_Miscompare_Tests.Base_Instance with record
