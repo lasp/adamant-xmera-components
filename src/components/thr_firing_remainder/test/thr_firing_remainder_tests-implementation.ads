@@ -17,6 +17,9 @@ private
    -- Run algorithm to ensure integration is sound.
    overriding procedure Test (Self : in out Instance);
 
+   -- Verify parameter validation rejects configs the algorithm would reject.
+   overriding procedure Test_Invalid_Parameter (Self : in out Instance);
+
    -- Test data and state:
    type Instance is new Thr_Firing_Remainder_Tests.Base_Instance with record
       null;

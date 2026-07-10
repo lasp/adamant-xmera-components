@@ -3,3 +3,5 @@ description: This is a unit test suite for the Thr Firing Remainder component
 tests:
   - name: Test
     description: Run algorithm to ensure integration is sound.
+  - name: Test_Invalid_Parameter
+    description: Verify parameter validation rejects configs the algorithm would reject.
