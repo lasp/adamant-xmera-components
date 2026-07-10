@@ -12,14 +12,30 @@ package body Component.Thr_Firing_Remainder.Implementation is
    -- Number of thrusters in the system (8-element data products vs 36-element C API)
    Num_Thrusters : constant := 8;
 
+   -- Build the C config POD from the current component parameters and the
+   -- Ada-side thruster array. The control values come from the component
+   -- parameters; the thruster array is set by Configure_Thrusters and tracked
+   -- on the instance.
+   function Make_Config (Self : Instance) return Thr_Firing_Remainder_Config_C is
+     (Thruster_Array     => Self.Thruster_Array,
+      Control_Parameters =>
+        (Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time.Value,
+         Control_Period            => Self.Control_Period.Value,
+         On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor.Value,
+         Pulsing_Regime            =>
+           Thr_Firing_Remainder_Pulsing_Regime'Val (Natural (Self.Thrust_Pulsing_Regime.Value))));
+
    --------------------------------------------------
    -- Subprogram for implementation init method:
    --------------------------------------------------
    -- Initializes the thruster firing remainder algorithm.
    overriding procedure Init (Self : in out Instance) is
+      -- Build the initial configuration from the parameter defaults and the
+      -- empty (zero-thruster) array. Both are valid, so Create will not reject them.
+      Config : aliased Thr_Firing_Remainder_Config_C := Make_Config (Self);
    begin
-      -- Allocate C++ class on the heap
-      Self.Alg := Create;
+      -- Allocate the C++ algorithm on the heap with the initial configuration.
+      Self.Alg := Create (Config'Access);
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -33,7 +49,20 @@ package body Component.Thr_Firing_Remainder.Implementation is
       Config : access constant Thr_Firing_Remainder_Array_Config)
    is
    begin
-      Set_Thrusters (Self.Alg, Config);
+      -- Extract the per-thruster maximum thrust (the only field the remainder
+      -- algorithm consumes) into the Ada-side thruster array.
+      Self.Thruster_Array.Num_Thrusters := Config.Num_Thrusters;
+      Self.Thruster_Array.Max_Thrust := [others => 0.0];
+      for I in Config.Thrusters'Range loop
+         Self.Thruster_Array.Max_Thrust (I) := Config.Thrusters (I).Max_Thrust;
+      end loop;
+
+      -- Push the updated thruster array into the algorithm via a config swap.
+      declare
+         Cfg : aliased Thr_Firing_Remainder_Config_C := Make_Config (Self);
+      begin
+         Set_Config (Self.Alg, Cfg'Access);
+      end;
    end Configure_Thrusters;
 
    ---------------------------------------
@@ -101,14 +130,50 @@ package body Component.Thr_Firing_Remainder.Implementation is
    -----------------------------------------------
    -- This procedure is called when the parameters of a component have been updated.
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
+      -- Rebuild the algorithm configuration from the updated parameters. The
+      -- values were checked by Validate_Parameters at staging, so Set_Config
+      -- will not reject them.
+      Config : aliased Thr_Firing_Remainder_Config_C := Make_Config (Self);
    begin
-      -- Set algorithm configuration from parameters.
-      Set_Thr_Min_Fire_Time (Self.Alg, Self.Thr_Min_Fire_Time.Value);
-      Set_Control_Period (Self.Alg, Self.Control_Period.Value);
-      Set_On_Time_Saturation_Factor (Self.Alg, Self.On_Time_Saturation_Factor.Value);
-      Set_Thrust_Pulsing_Regime (Self.Alg,
-         Thr_Firing_Remainder_Pulsing_Regime'Val (Natural (Self.Thrust_Pulsing_Regime.Value)));
+      Set_Config (Self.Alg, Config'Access);
    end Update_Parameters_Action;
+
+   -- Validate a staged parameter set before it is applied by asking the
+   -- algorithm's own non-throwing Validate_Config predicate. The candidate config
+   -- combines the staged parameter values with the current Ada-side thruster
+   -- array, so an invalid update never reaches the throwing Create/Set_Config.
+   overriding function Validate_Parameters (
+      Self : in out Instance;
+      Thr_Min_Fire_Time : in Packed_F32.U;
+      Control_Period : in Packed_F32.U;
+      On_Time_Saturation_Factor : in Packed_F32.U;
+      Thrust_Pulsing_Regime : in Packed_Byte.U
+   ) return Parameter_Validation_Status.E is
+      -- Position of the staged pulsing regime. A byte outside the defined
+      -- enumerators is rejected up front, since converting it with 'Val would
+      -- raise Constraint_Error.
+      Regime_Pos : constant Natural := Natural (Thrust_Pulsing_Regime.Value);
+   begin
+      if Regime_Pos > Thr_Firing_Remainder_Pulsing_Regime'Pos (Thr_Firing_Remainder_Pulsing_Regime'Last) then
+         return Parameter_Validation_Status.Invalid;
+      end if;
+
+      declare
+         Config : aliased Thr_Firing_Remainder_Config_C :=
+           (Thruster_Array     => Self.Thruster_Array,
+            Control_Parameters =>
+              (Thr_Min_Fire_Time         => Thr_Min_Fire_Time.Value,
+               Control_Period            => Control_Period.Value,
+               On_Time_Saturation_Factor => On_Time_Saturation_Factor.Value,
+               Pulsing_Regime            => Thr_Firing_Remainder_Pulsing_Regime'Val (Regime_Pos)));
+      begin
+         if Validate_Config (Config'Access) then
+            return Parameter_Validation_Status.Valid;
+         else
+            return Parameter_Validation_Status.Invalid;
+         end if;
+      end;
+   end Validate_Parameters;
 
    -- Invalid Parameter handler. This procedure is called when a parameter's type is found to be invalid:
    overriding procedure Invalid_Parameter (Self : in out Instance; Par : in Parameter.T; Errant_Field_Number : in Unsigned_32; Errant_Field : in Basic_Types.Poly_Type) is

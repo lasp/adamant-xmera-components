@@ -1,18 +1,22 @@
 ---
 description: Parameters for the Thr Firing Remainder component
+# Defaults are valid placeholders so the algorithm can be constructed at Init
+# (the config validator requires positive fire time and control period, and a
+# saturation factor >= 1). They are overwritten by the real parameters before
+# use, so the exact values are not flight-critical.
 parameters:
   - name: Thr_Min_Fire_Time
     description: "[s] Minimum thruster fire time"
     type: Packed_F32.T
-    default: "(Value => 0.0)"
+    default: "(Value => 0.01)"
   - name: Control_Period
     description: "[s] Control period for thruster firing"
     type: Packed_F32.T
-    default: "(Value => 0.0)"
+    default: "(Value => 1.0)"
   - name: On_Time_Saturation_Factor
     description: "On-time saturation factor"
     type: Packed_F32.T
-    default: "(Value => 0.0)"
+    default: "(Value => 1.0)"
   - name: Thrust_Pulsing_Regime
     description: "Thrust pulsing regime (0 = on-pulsing, 1 = off-pulsing)"
     type: Packed_Byte.T
