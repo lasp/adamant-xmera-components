@@ -30,6 +30,7 @@ package Component.Oe_State_Ephem.Implementation.Tester is
 
    -- Event history packages:
    package Invalid_Parameter_Table_Format_History_Package is new Printable_History (Packed_U32.T, Packed_U32.Representation.Image);
+   package Invalid_Parameter_Table_Values_History_Package is new Printable_History (Natural, Natural'Image);
    package Parameter_Table_Applied_History_Package is new Printable_History (Natural, Natural'Image);
    package Get_Copy_Not_Supported_History_Package is new Printable_History (Natural, Natural'Image);
    package Validate_Not_Supported_History_Package is new Printable_History (Natural, Natural'Image);
@@ -47,6 +48,7 @@ package Component.Oe_State_Ephem.Implementation.Tester is
       Sys_Time_T_Return_History : Sys_Time_T_Return_History_Package.Instance;
       -- Event histories:
       Invalid_Parameter_Table_Format_History : Invalid_Parameter_Table_Format_History_Package.Instance;
+      Invalid_Parameter_Table_Values_History : Invalid_Parameter_Table_Values_History_Package.Instance;
       Parameter_Table_Applied_History : Parameter_Table_Applied_History_Package.Instance;
       Get_Copy_Not_Supported_History : Get_Copy_Not_Supported_History_Package.Instance;
       Validate_Not_Supported_History : Validate_Not_Supported_History_Package.Instance;
@@ -88,6 +90,10 @@ package Component.Oe_State_Ephem.Implementation.Tester is
    -- field by its packed-record field index. The table was not staged or
    -- applied.
    overriding procedure Invalid_Parameter_Table_Format (Self : in out Instance; Arg : in Packed_U32.T);
+   -- A parameter table with a valid byte format was received, but its values
+   -- were rejected by the algorithm's configuration validator. The table was
+   -- not staged or applied.
+   overriding procedure Invalid_Parameter_Table_Values (Self : in out Instance);
    -- A staged parameter table was drained and pushed to the C++ algorithm on this
    -- tick.
    overriding procedure Parameter_Table_Applied (Self : in out Instance);

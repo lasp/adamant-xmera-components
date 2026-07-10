@@ -9,6 +9,12 @@ events:
       field by its packed-record field index. The table was not staged or
       applied.
     param_type: Packed_U32.T
+  - name: Invalid_Parameter_Table_Values
+    description: |
+      A parameter table with a valid byte format was received, but its values
+      were rejected by the algorithm's configuration validator (e.g.,
+      Number_Of_Arcs outside [1, MAX_OE_RECORDS], or an active arc with a
+      non-positive middle or radius time). The table was not staged or applied.
   - name: Parameter_Table_Applied
     description: A staged parameter table was drained and pushed to the C++ algorithm on this tick.
   - name: Get_Copy_Not_Supported

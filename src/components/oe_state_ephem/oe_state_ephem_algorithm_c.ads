@@ -5,7 +5,6 @@ pragma Warnings (Off, "-gnatwu");
 
 with Interfaces; use Interfaces;
 with Cartesian_State.C;
-with Oe_Coefficients.C;
 
 package Oe_State_Ephem_Algorithm_C is
 
@@ -35,8 +34,62 @@ package Oe_State_Ephem_Algorithm_C is
    pragma Assert (Unsigned_32 (Max_Oe_Coeff) = Get_Max_Oe_Coeff);
    pragma Assert (Unsigned_32 (Max_Oe_Records) = Get_Max_Oe_Records);
 
-   --* @brief Construct a new OEStateEphemAlgorithm.
+   --* Anomaly-angle interpretation flag matching the C AnomalyType enum
+   --* (TRUE_ANOMALY = 0, MEAN_ANOMALY = 1). Convention => C sizes it as a C int.
+   type Anomaly_Type_C is (True_Anomaly, Mean_Anomaly)
+      with Convention => C;
+
+   --* Fixed C array of Chebyshev coefficients (double[MAX_OE_COEFF]).
+   type Oe_Coeff_Array_C is array (0 .. Max_Oe_Coeff - 1) of aliased Long_Float
+      with Convention => C;
+
+   --* POD type matching ChebyshevFitArc_c in C. Field order and types mirror
+   --* the C struct exactly so the layout is ABI-compatible across the boundary.
+   type Cheb_Fit_Arc_C is record
+      Number_Cheb_Coefficients      : aliased Unsigned_32;      --* [-] active coefficients in this arc.
+      Ephemeris_Time_Middle         : aliased Long_Float;       --* [s] ephemeris time at the arc mid-point.
+      Ephemeris_Time_Radius         : aliased Long_Float;       --* [s] half-width of the arc's valid time range.
+      Radius_Periapsis_Coefficients : aliased Oe_Coeff_Array_C; --* [-] radius-of-periapsis coefficients.
+      Eccentricity_Coefficients     : aliased Oe_Coeff_Array_C; --* [-] eccentricity coefficients.
+      Inclination_Coefficients      : aliased Oe_Coeff_Array_C; --* [-] inclination coefficients.
+      Arg_Periapsis_Coefficients    : aliased Oe_Coeff_Array_C; --* [-] argument-of-periapsis coefficients.
+      Raan_Coefficients             : aliased Oe_Coeff_Array_C; --* [-] RAAN coefficients.
+      True_Anomaly_Coefficients     : aliased Oe_Coeff_Array_C; --* [-] anomaly-angle coefficients.
+      Anomaly_Flag                  : aliased Anomaly_Type_C;   --* [-] true vs mean anomaly flag.
+   end record
+      with Convention => C_Pass_By_Copy;
+
+   --* Fixed C array of fit arcs (ChebyshevFitArc_c[MAX_OE_RECORDS]).
+   type Cheb_Fit_Arc_Array_C is array (0 .. Max_Oe_Records - 1) of aliased Cheb_Fit_Arc_C
+      with Convention => C;
+
+   --* POD config type matching OEStateEphemConfig_c in C.
+   type Oe_State_Ephem_Config_C is record
+      Central_Body_Gravitational_Parameter : aliased Long_Float;          --* [m^3/s^2] central-body gravitational parameter.
+      Number_Of_Arcs                       : aliased Unsigned_32;         --* [-] number of populated arcs.
+      Ephemeris_Time_J2000                 : aliased Long_Float;          --* [s] ephemeris time offset referenced to J2000.
+      Vehicle_Time_Offset                  : aliased Long_Float;          --* [s] vehicle clock time offset.
+      Fit_Coefficients                     : aliased Cheb_Fit_Arc_Array_C; --* [-] table of Chebyshev fit arcs.
+   end record
+      with Convention => C_Pass_By_Copy;
+
+   --* @brief Report whether a configuration would be accepted by Create/Set_Config.
+   --* @param Config The configuration to check.
+   --* @return True if the configuration is valid. Never throws, so it can guard the
+   --* throwing Create/Set_Config from an invalid configuration.
+   function Validate_Config
+     (Config : access constant Oe_State_Ephem_Config_C)
+     return Boolean
+     with Import       => True,
+          Convention   => C,
+          External_Name => "OEStateEphemAlgorithm_validateConfig";
+
+   --* @brief Construct a new OEStateEphemAlgorithm from a configuration.
+   --* @param Config The configuration to apply (validated; throws on invalid input).
+   --* Validate config values with Validate_Config before calling so an invalid config
+   --* never reaches this.
    function Create
+     (Config : access constant Oe_State_Ephem_Config_C)
      return Oe_State_Ephem_Algorithm_Access
      with Import       => True,
           Convention   => C,
@@ -49,6 +102,16 @@ package Oe_State_Ephem_Algorithm_C is
           Convention   => C,
           External_Name => "OEStateEphemAlgorithm_destroy";
 
+   --* @brief Apply a new configuration (validated; throws on invalid input).
+   --* @param Self   The algorithm instance.
+   --* @param Config The configuration to apply.
+   procedure Set_Config
+     (Self   : Oe_State_Ephem_Algorithm_Access;
+      Config : access constant Oe_State_Ephem_Config_C)
+     with Import       => True,
+          Convention   => C,
+          External_Name => "OEStateEphemAlgorithm_setConfig";
+
    --* @brief Run the ephemeris update step.
    --* @param Self      The algorithm instance.
    --* @param Call_Time Vehicle time in nanoseconds.
@@ -60,266 +123,6 @@ package Oe_State_Ephem_Algorithm_C is
      with Import       => True,
           Convention   => C,
           External_Name => "OEStateEphemAlgorithm_update";
-
-   --* @brief Set the central body gravitational parameter.
-   --* @param Self The algorithm instance.
-   --* @param Mu   [m^3/s^2] Gravitational parameter.
-   procedure Set_Central_Body_Gravitational_Parameter
-     (Self : Oe_State_Ephem_Algorithm_Access;
-      Mu   : Long_Float)
-     with Import       => True,
-          Convention   => C,
-          External_Name => "OEStateEphemAlgorithm_setCentralBodyGravitationalParameter";
-
-   --* @brief Get the central body gravitational parameter.
-   --* @param Self The algorithm instance.
-   --* @return [m^3/s^2] The gravitational parameter.
-   function Get_Central_Body_Gravitational_Parameter
-     (Self : Oe_State_Ephem_Algorithm_Access)
-     return Long_Float
-     with Import       => True,
-          Convention   => C,
-          External_Name => "OEStateEphemAlgorithm_getCentralBodyGravitationalParameter";
-
-   --* @brief Set the number of orbital element coefficient arcs.
-   --* @param Self The algorithm instance.
-   --* @param Arcs Number of arcs.
-   procedure Set_Number_Of_Arcs
-     (Self : Oe_State_Ephem_Algorithm_Access;
-      Arcs : Unsigned_32)
-     with Import       => True,
-          Convention   => C,
-          External_Name => "OEStateEphemAlgorithm_setNumberOfArcs";
-
-   --* @brief Get the number of orbital element coefficient arcs.
-   --* @param Self The algorithm instance.
-   --* @return Number of arcs.
-   function Get_Number_Of_Arcs
-     (Self : Oe_State_Ephem_Algorithm_Access)
-     return Unsigned_32
-     with Import       => True,
-          Convention   => C,
-          External_Name => "OEStateEphemAlgorithm_getNumberOfArcs";
-
-   --* @brief Set the ephemeris time offset referenced to J2000.
-   --* @param Self            The algorithm instance.
-   --* @param Ephemeris_J2000 [s] Ephemeris time offset.
-   procedure Set_Ephemeris_Time_J2000
-     (Self            : Oe_State_Ephem_Algorithm_Access;
-      Ephemeris_J2000 : Long_Float)
-     with Import       => True,
-          Convention   => C,
-          External_Name => "OEStateEphemAlgorithm_setEphemerisTimeJ2000";
-
-   --* @brief Get the ephemeris time offset referenced to J2000.
-   --* @param Self The algorithm instance.
-   --* @return [s] Ephemeris time offset.
-   function Get_Ephemeris_Time_J2000
-     (Self : Oe_State_Ephem_Algorithm_Access)
-     return Long_Float
-     with Import       => True,
-          Convention   => C,
-          External_Name => "OEStateEphemAlgorithm_getEphemerisTimeJ2000";
-
-   --* @brief Set the vehicle time offset.
-   --* @param Self        The algorithm instance.
-   --* @param Time_Offset [s] Vehicle time offset.
-   procedure Set_Vehicle_Time_Offset
-     (Self        : Oe_State_Ephem_Algorithm_Access;
-      Time_Offset : Long_Float)
-     with Import       => True,
-          Convention   => C,
-          External_Name => "OEStateEphemAlgorithm_setVehicleTimeOffset";
-
-   --* @brief Get the vehicle time offset.
-   --* @param Self The algorithm instance.
-   --* @return [s] Vehicle time offset.
-   function Get_Vehicle_Time_Offset
-     (Self : Oe_State_Ephem_Algorithm_Access)
-     return Long_Float
-     with Import       => True,
-          Convention   => C,
-          External_Name => "OEStateEphemAlgorithm_getVehicleTimeOffset";
-
-   --* @brief Set number of Chebyshev coefficients for a given arc.
-   procedure Set_Arc_Number_Of_Coefficients
-     (Self                   : Oe_State_Ephem_Algorithm_Access;
-      Arc_Number             : Unsigned_32;
-      Number_Of_Coefficients : Unsigned_32)
-     with Import       => True,
-          Convention   => C,
-          External_Name => "OEStateEphemAlgorithm_setArcNumberOfCoefficients";
-
-   --* @brief Get number of Chebyshev coefficients for a given arc.
-   function Get_Arc_Number_Of_Coefficients
-     (Self       : Oe_State_Ephem_Algorithm_Access;
-      Arc_Number : Unsigned_32)
-     return Unsigned_32
-     with Import       => True,
-          Convention   => C,
-          External_Name => "OEStateEphemAlgorithm_getArcNumberOfCoefficients";
-
-   --* @brief Set the ephemeris time midpoint for a given arc.
-   procedure Set_Arc_Middle_Time
-     (Self        : Oe_State_Ephem_Algorithm_Access;
-      Arc_Number  : Unsigned_32;
-      Time_Middle : Long_Float)
-     with Import       => True,
-          Convention   => C,
-          External_Name => "OEStateEphemAlgorithm_setArcMiddleTime";
-
-   --* @brief Get the ephemeris time midpoint for a given arc.
-   function Get_Arc_Middle_Time
-     (Self       : Oe_State_Ephem_Algorithm_Access;
-      Arc_Number : Unsigned_32)
-     return Long_Float
-     with Import       => True,
-          Convention   => C,
-          External_Name => "OEStateEphemAlgorithm_getArcMiddleTime";
-
-   --* @brief Set the ephemeris time radius for a given arc.
-   procedure Set_Arc_Radius_Time
-     (Self        : Oe_State_Ephem_Algorithm_Access;
-      Arc_Number  : Unsigned_32;
-      Time_Radius : Long_Float)
-     with Import       => True,
-          Convention   => C,
-          External_Name => "OEStateEphemAlgorithm_setArcRadiusTime";
-
-   --* @brief Get the ephemeris time radius for a given arc.
-   function Get_Arc_Radius_Time
-     (Self       : Oe_State_Ephem_Algorithm_Access;
-      Arc_Number : Unsigned_32)
-     return Long_Float
-     with Import       => True,
-          Convention   => C,
-          External_Name => "OEStateEphemAlgorithm_getArcRadiusTime";
-
-   --* @brief Set the anomaly flag for a given arc.
-   procedure Set_Arc_Anomaly_Flag
-     (Self         : Oe_State_Ephem_Algorithm_Access;
-      Arc_Number   : Unsigned_32;
-      Anomaly_Flag : Unsigned_32)
-     with Import       => True,
-          Convention   => C,
-          External_Name => "OEStateEphemAlgorithm_setArcAnomalyFlag";
-
-   --* @brief Get the anomaly flag for a given arc.
-   function Get_Arc_Anomaly_Flag
-     (Self       : Oe_State_Ephem_Algorithm_Access;
-      Arc_Number : Unsigned_32)
-     return Unsigned_32
-     with Import       => True,
-          Convention   => C,
-          External_Name => "OEStateEphemAlgorithm_getArcAnomalyFlag";
-
-   --* @brief Set radius periapsis Chebyshev coefficients for a given arc.
-   procedure Set_Arc_Radius_Periapsis_Coefficients
-     (Self         : Oe_State_Ephem_Algorithm_Access;
-      Arc_Number   : Unsigned_32;
-      Coefficients : access constant Oe_Coefficients.C.U_C)
-     with Import       => True,
-          Convention   => C,
-          External_Name => "OEStateEphemAlgorithm_setArcRadiusPeriapsisCoefficients";
-
-   --* @brief Get radius periapsis Chebyshev coefficients for a given arc.
-   function Get_Arc_Radius_Periapsis_Coefficients
-     (Self       : Oe_State_Ephem_Algorithm_Access;
-      Arc_Number : Unsigned_32)
-     return Oe_Coefficients.C.U_C
-     with Import       => True,
-          Convention   => C,
-          External_Name => "OEStateEphemAlgorithm_getArcRadiusPeriapsisCoefficients";
-
-   --* @brief Set eccentricity Chebyshev coefficients for a given arc.
-   procedure Set_Arc_Eccentricity_Coefficients
-     (Self         : Oe_State_Ephem_Algorithm_Access;
-      Arc_Number   : Unsigned_32;
-      Coefficients : access constant Oe_Coefficients.C.U_C)
-     with Import       => True,
-          Convention   => C,
-          External_Name => "OEStateEphemAlgorithm_setArcEccentricityCoefficients";
-
-   --* @brief Get eccentricity Chebyshev coefficients for a given arc.
-   function Get_Arc_Eccentricity_Coefficients
-     (Self       : Oe_State_Ephem_Algorithm_Access;
-      Arc_Number : Unsigned_32)
-     return Oe_Coefficients.C.U_C
-     with Import       => True,
-          Convention   => C,
-          External_Name => "OEStateEphemAlgorithm_getArcEccentricityCoefficients";
-
-   --* @brief Set inclination Chebyshev coefficients for a given arc.
-   procedure Set_Arc_Inclination_Coefficients
-     (Self         : Oe_State_Ephem_Algorithm_Access;
-      Arc_Number   : Unsigned_32;
-      Coefficients : access constant Oe_Coefficients.C.U_C)
-     with Import       => True,
-          Convention   => C,
-          External_Name => "OEStateEphemAlgorithm_setArcInclinationCoefficients";
-
-   --* @brief Get inclination Chebyshev coefficients for a given arc.
-   function Get_Arc_Inclination_Coefficients
-     (Self       : Oe_State_Ephem_Algorithm_Access;
-      Arc_Number : Unsigned_32)
-     return Oe_Coefficients.C.U_C
-     with Import       => True,
-          Convention   => C,
-          External_Name => "OEStateEphemAlgorithm_getArcInclinationCoefficients";
-
-   --* @brief Set argument of periapsis Chebyshev coefficients for a given arc.
-   procedure Set_Arc_Arg_Periapsis_Coefficients
-     (Self         : Oe_State_Ephem_Algorithm_Access;
-      Arc_Number   : Unsigned_32;
-      Coefficients : access constant Oe_Coefficients.C.U_C)
-     with Import       => True,
-          Convention   => C,
-          External_Name => "OEStateEphemAlgorithm_setArcArgPeriapsisCoefficients";
-
-   --* @brief Get argument of periapsis Chebyshev coefficients for a given arc.
-   function Get_Arc_Arg_Periapsis_Coefficients
-     (Self       : Oe_State_Ephem_Algorithm_Access;
-      Arc_Number : Unsigned_32)
-     return Oe_Coefficients.C.U_C
-     with Import       => True,
-          Convention   => C,
-          External_Name => "OEStateEphemAlgorithm_getArcArgPeriapsisCoefficients";
-
-   --* @brief Set RAAN Chebyshev coefficients for a given arc.
-   procedure Set_Arc_Raan_Coefficients
-     (Self         : Oe_State_Ephem_Algorithm_Access;
-      Arc_Number   : Unsigned_32;
-      Coefficients : access constant Oe_Coefficients.C.U_C)
-     with Import       => True,
-          Convention   => C,
-          External_Name => "OEStateEphemAlgorithm_setArcRaanCoefficients";
-
-   --* @brief Get RAAN Chebyshev coefficients for a given arc.
-   function Get_Arc_Raan_Coefficients
-     (Self       : Oe_State_Ephem_Algorithm_Access;
-      Arc_Number : Unsigned_32)
-     return Oe_Coefficients.C.U_C
-     with Import       => True,
-          Convention   => C,
-          External_Name => "OEStateEphemAlgorithm_getArcRaanCoefficients";
-
-   --* @brief Set true anomaly Chebyshev coefficients for a given arc.
-   procedure Set_Arc_True_Anomaly_Coefficients
-     (Self         : Oe_State_Ephem_Algorithm_Access;
-      Arc_Number   : Unsigned_32;
-      Coefficients : access constant Oe_Coefficients.C.U_C)
-     with Import       => True,
-          Convention   => C,
-          External_Name => "OEStateEphemAlgorithm_setArcTrueAnomalyCoefficients";
-
-   --* @brief Get true anomaly Chebyshev coefficients for a given arc.
-   function Get_Arc_True_Anomaly_Coefficients
-     (Self       : Oe_State_Ephem_Algorithm_Access;
-      Arc_Number : Unsigned_32)
-     return Oe_Coefficients.C.U_C
-     with Import       => True,
-          Convention   => C,
-          External_Name => "OEStateEphemAlgorithm_getArcTrueAnomalyCoefficients";
 
 private
 

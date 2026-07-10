@@ -54,8 +54,11 @@ private
    type Instance is new Oe_State_Ephem.Base_Instance with record
       Alg : Oe_State_Ephem_Algorithm_Access := null;
       Staged_Parameters : Staged_Table_Pkg.Staged_Variable;
-      -- Dedicated dump buffer. Service handler's Get_Pointer fills this
-      -- in-place from the C++ algorithm getters and returns its address.
+      -- Copy of the currently-applied parameter table. The config-pattern C
+      -- shim exposes no getters, so the component owns the source of truth for
+      -- the algorithm's configuration: this buffer is written at Init (default
+      -- table) and refreshed on every applying tick, and Get_Pointer returns
+      -- its address for dumps.
       Dump_Buffer : Oe_State_Ephem_Parameter_Table.T;
    end record;
 

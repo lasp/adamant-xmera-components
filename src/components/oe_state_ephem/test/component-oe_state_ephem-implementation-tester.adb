@@ -16,6 +16,7 @@ package body Component.Oe_State_Ephem.Implementation.Tester is
       Self.Sys_Time_T_Return_History.Init (Depth => 100);
       -- Event histories:
       Self.Invalid_Parameter_Table_Format_History.Init (Depth => 100);
+      Self.Invalid_Parameter_Table_Values_History.Init (Depth => 100);
       Self.Parameter_Table_Applied_History.Init (Depth => 100);
       Self.Get_Copy_Not_Supported_History.Init (Depth => 100);
       Self.Validate_Not_Supported_History.Init (Depth => 100);
@@ -32,6 +33,7 @@ package body Component.Oe_State_Ephem.Implementation.Tester is
       Self.Sys_Time_T_Return_History.Destroy;
       -- Event histories:
       Self.Invalid_Parameter_Table_Format_History.Destroy;
+      Self.Invalid_Parameter_Table_Values_History.Destroy;
       Self.Parameter_Table_Applied_History.Destroy;
       Self.Get_Copy_Not_Supported_History.Destroy;
       Self.Validate_Not_Supported_History.Destroy;
@@ -98,6 +100,16 @@ package body Component.Oe_State_Ephem.Implementation.Tester is
       -- Push the argument onto the test history for looking at later:
       Self.Invalid_Parameter_Table_Format_History.Push (Arg);
    end Invalid_Parameter_Table_Format;
+
+   -- A parameter table with a valid byte format was received, but its values
+   -- were rejected by the algorithm's configuration validator. The table was
+   -- not staged or applied.
+   overriding procedure Invalid_Parameter_Table_Values (Self : in out Instance) is
+      Arg : constant Natural := 0;
+   begin
+      -- Push the argument onto the test history for looking at later:
+      Self.Invalid_Parameter_Table_Values_History.Push (Arg);
+   end Invalid_Parameter_Table_Values;
 
    -- A staged parameter table was drained and pushed to the C++ algorithm on this
    -- tick.
