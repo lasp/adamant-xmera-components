@@ -154,4 +154,33 @@ package body Css_Comm_Tests.Implementation is
 
    end Test_Stale_Input_Is_Zeroed;
 
+   -- Verify parameter validation rejects configs the algorithm would reject.
+   -- Staging only range-checks the type; the algorithm's rule (numSensors in
+   -- [1, MAX_NUM_CSS_SENSORS], finite polynomials) is enforced by the component's
+   -- Validate_Parameters via the shim's non-throwing Validate_Config.
+   overriding procedure Test_Invalid_Parameter (Self : in out Instance) is
+      T : Component.Css_Comm.Implementation.Tester.Instance_Access renames Self.Tester;
+      Params : Css_Comm_Parameters.Instance;
+
+      Valid_Num   : constant Packed_U32.T := (Value => 8);
+      Valid_Cheby : constant Packed_F64x11.T := [others => 0.0];
+   begin
+      -- A valid sensor count and finite polynomials validate.
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Num_Sensors (Valid_Num)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cheby_Polynomials (Valid_Cheby)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
+
+      -- numSensors = 0 violates the [1, MAX] rule: stages fine but fails validation.
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Num_Sensors ((Value => 0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- numSensors above MAX_NUM_CSS_SENSORS (32) is rejected.
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Num_Sensors ((Value => 33))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- Restoring a valid sensor count validates again.
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Num_Sensors (Valid_Num)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
+   end Test_Invalid_Parameter;
+
 end Css_Comm_Tests.Implementation;

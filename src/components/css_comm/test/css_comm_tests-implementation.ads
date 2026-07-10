@@ -22,6 +22,9 @@ private
    -- the algorithm runs, producing an all-zero output.
    overriding procedure Test_Stale_Input_Is_Zeroed (Self : in out Instance);
 
+   -- Verify parameter validation rejects configs the algorithm would reject.
+   overriding procedure Test_Invalid_Parameter (Self : in out Instance);
+
    -- Test data and state:
    type Instance is new Css_Comm_Tests.Base_Instance with record
       null;
