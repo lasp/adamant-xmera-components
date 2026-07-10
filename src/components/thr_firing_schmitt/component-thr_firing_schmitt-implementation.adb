@@ -12,14 +12,33 @@ package body Component.Thr_Firing_Schmitt.Implementation is
    -- Number of thrusters in the system (8-element data products vs 36-element C API)
    Num_Thrusters : constant := 8;
 
+   -- Build the C config POD from the current component parameters and the
+   -- Ada-side thruster array. The control values come from the component
+   -- parameters; the thruster array is set by Configure_Thrusters and tracked
+   -- on the instance.
+   function Make_Config (Self : Instance) return Thr_Firing_Schmitt_Config_C is
+     (Thruster_Array     => Self.Thruster_Array,
+      Control_Parameters =>
+        (Level_On                  => Self.Levels.Level_On,
+         Level_Off                 => Self.Levels.Level_Off,
+         Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time.Value,
+         Control_Period            => Self.Control_Period.Value,
+         On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor.Value,
+         Pulsing_Regime            =>
+           Thr_Firing_Schmitt_Pulsing_Regime'Val (Natural (Self.Thrust_Pulsing_Regime.Value))));
+
    --------------------------------------------------
    -- Subprogram for implementation init method:
    --------------------------------------------------
    -- Initializes the thruster firing Schmitt algorithm.
    overriding procedure Init (Self : in out Instance) is
+      -- Build the initial configuration from the parameter defaults and the
+      -- empty (zero-thruster) array. Both are valid, so Create will not reject
+      -- them.
+      Config : aliased Thr_Firing_Schmitt_Config_C := Make_Config (Self);
    begin
-      -- Allocate C++ class on the heap
-      Self.Alg := Create;
+      -- Allocate the C++ algorithm on the heap with the initial configuration.
+      Self.Alg := Create (Config'Access);
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -33,7 +52,20 @@ package body Component.Thr_Firing_Schmitt.Implementation is
       Config : access constant Thr_Firing_Schmitt_Array_Config)
    is
    begin
-      Set_Thrusters (Self.Alg, Config);
+      -- Extract the per-thruster maximum thrust (the only field the Schmitt
+      -- algorithm consumes) into the Ada-side thruster array.
+      Self.Thruster_Array.Num_Thrusters := Config.Num_Thrusters;
+      Self.Thruster_Array.Max_Thrust := [others => 0.0];
+      for I in Config.Thrusters'Range loop
+         Self.Thruster_Array.Max_Thrust (I) := Config.Thrusters (I).Max_Thrust;
+      end loop;
+
+      -- Push the updated thruster array into the algorithm via a config swap.
+      declare
+         Cfg : aliased Thr_Firing_Schmitt_Config_C := Make_Config (Self);
+      begin
+         Set_Config (Self.Alg, Cfg'Access);
+      end;
    end Configure_Thrusters;
 
    ---------------------------------------
@@ -94,7 +126,7 @@ package body Component.Thr_Firing_Schmitt.Implementation is
    overriding procedure Reset_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
    begin
       -- Clear the algorithm's previous-state thruster history.
-      Reset (Self.Alg);
+      Re_Initialize (Self.Alg);
    end Reset_Tick_T_Recv_Sync;
 
    -- The parameter update connector.
@@ -109,14 +141,12 @@ package body Component.Thr_Firing_Schmitt.Implementation is
    -----------------------------------------------
    -- This procedure is called when the parameters of a component have been updated.
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
+      -- Rebuild the algorithm configuration from the updated parameters. The
+      -- values were checked by Validate_Parameters at staging, so Set_Config
+      -- will not reject them.
+      Config : aliased Thr_Firing_Schmitt_Config_C := Make_Config (Self);
    begin
-      -- Set algorithm configuration from parameters.
-      Set_Levels_On_Off (Self.Alg, Self.Levels.Level_On, Self.Levels.Level_Off);
-      Set_Thr_Min_Fire_Time (Self.Alg, Self.Thr_Min_Fire_Time.Value);
-      Set_Control_Period (Self.Alg, Self.Control_Period.Value);
-      Set_On_Time_Saturation_Factor (Self.Alg, Self.On_Time_Saturation_Factor.Value);
-      Set_Thrust_Pulsing_Regime (Self.Alg,
-         Thr_Firing_Schmitt_Pulsing_Regime'Val (Natural (Self.Thrust_Pulsing_Regime.Value)));
+      Set_Config (Self.Alg, Config'Access);
    end Update_Parameters_Action;
 
    -- Invalid Parameter handler. This procedure is called when a parameter's type is found to be invalid:

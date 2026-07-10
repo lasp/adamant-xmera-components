@@ -29,6 +29,13 @@ private
    -- The component class instance record:
    type Instance is new Thr_Firing_Schmitt.Base_Instance with record
       Alg : Thr_Firing_Schmitt_Algorithm_Access := null;
+      -- Ada-side source of truth for the thruster array (set by
+      -- Configure_Thrusters). It is not a parameter, so it is tracked on the
+      -- instance and fed into the algorithm config alongside the parameters.
+      -- Defaults to an empty (zero-thruster) array, which is valid, so the
+      -- initial config built at Init is accepted.
+      Thruster_Array : Thr_Firing_Schmitt_Thruster_Array_C :=
+        (Num_Thrusters => 0, Max_Thrust => [others => 0.0]);
    end record;
 
    ---------------------------------------
