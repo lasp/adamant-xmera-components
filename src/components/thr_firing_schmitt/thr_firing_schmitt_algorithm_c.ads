@@ -2,6 +2,11 @@ pragma Ada_2012;
 
 pragma Style_Checks (Off);
 pragma Warnings     (Off, "-gnatwu");
+-- Boolean is used at the C boundary for Validate_Config to match the shim's
+-- C99 bool (_Bool): 1-byte, 0/1 representation, interoperable under
+-- Convention => C. Suppress the -gnatwx advisory about using a C "char"-style
+-- type for the mapping.
+pragma Warnings     (Off, "-gnatwx");
 
 with Interfaces.C;     use Interfaces; use Interfaces.C;
 with Packed_F32x3.C;
@@ -176,3 +181,4 @@ end Thr_Firing_Schmitt_Algorithm_C;
 
 pragma Style_Checks (On);
 pragma Warnings     (On, "-gnatwu");
+pragma Warnings     (On, "-gnatwx");
