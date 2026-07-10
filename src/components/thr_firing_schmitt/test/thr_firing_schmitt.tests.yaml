@@ -5,3 +5,5 @@ tests:
     description: Run algorithm to ensure integration is sound.
   - name: Test_Reset
     description: Verify the reset connector clears the Schmitt-trigger hysteresis state.
+  - name: Test_Invalid_Parameter
+    description: Verify parameter validation rejects configs the algorithm would reject.

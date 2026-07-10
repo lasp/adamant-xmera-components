@@ -231,4 +231,58 @@ package body Thr_Firing_Schmitt_Tests.Implementation is
       -- Tear_Down_Test will handle the final Destroy
    end Test_Reset;
 
+   -- Verify parameter validation rejects configs the algorithm would reject.
+   -- Staging only range-checks the type; the algorithm's rules (levels, positive
+   -- fire time / control period, saturation factor >= 1) are enforced by the
+   -- component's Validate_Parameters via the shim's non-throwing Validate_Config.
+   overriding procedure Test_Invalid_Parameter (Self : in out Instance) is
+      T : Component.Thr_Firing_Schmitt.Implementation.Tester.Instance_Access renames Self.Tester;
+      Params : Thr_Firing_Schmitt_Parameters.Instance;
+
+      Valid_Levels : constant Levels_On_Off.T := (Level_On => 0.75, Level_Off => 0.25);
+      Valid_Fire   : constant Packed_F32.T := (Value => 0.02);
+      Valid_Period : constant Packed_F32.T := (Value => 0.5);
+      Valid_Sat    : constant Packed_F32.T := (Value => 1.0);
+      Valid_Regime : constant Packed_Byte.T := (Value => 0);
+   begin
+      T.Component_Instance.Init;
+      T.Component_Instance.Set_Up;
+
+      -- Stage a full valid parameter set first so each case below isolates a
+      -- single invalid field.
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Levels (Valid_Levels)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thr_Min_Fire_Time (Valid_Fire)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Period (Valid_Period)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.On_Time_Saturation_Factor (Valid_Sat)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thrust_Pulsing_Regime (Valid_Regime)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
+
+      -- Level_On = 0.0 violates 0 < Level_On: stages fine but fails validation.
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Levels ((Level_On => 0.0, Level_Off => 0.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- Level_On < Level_Off is rejected.
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Levels ((Level_On => 0.2, Level_Off => 0.5))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- Restore valid levels; a non-positive control period is rejected.
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Levels (Valid_Levels)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Period ((Value => 0.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- A saturation factor below 1.0 is rejected.
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Period (Valid_Period)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.On_Time_Saturation_Factor ((Value => 0.5))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- A pulsing regime outside the defined enumerators (0, 1) is rejected.
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.On_Time_Saturation_Factor (Valid_Sat)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thrust_Pulsing_Regime ((Value => 2))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- All fields valid again validates successfully.
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thrust_Pulsing_Regime (Valid_Regime)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
+   end Test_Invalid_Parameter;
+
 end Thr_Firing_Schmitt_Tests.Implementation;
