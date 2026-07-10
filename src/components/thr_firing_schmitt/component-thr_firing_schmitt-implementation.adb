@@ -149,6 +149,48 @@ package body Component.Thr_Firing_Schmitt.Implementation is
       Set_Config (Self.Alg, Config'Access);
    end Update_Parameters_Action;
 
+   -- Validate a staged parameter set before it is applied by asking the
+   -- algorithm's own non-throwing Validate_Config predicate, so the config
+   -- rules live solely in the algorithm. The candidate config combines the
+   -- staged parameter values with the current Ada-side thruster array.
+   -- Rejecting an invalid update here at staging keeps it from reaching the
+   -- throwing Create/Set_Config across the FFI boundary.
+   overriding function Validate_Parameters (
+      Self : in out Instance;
+      Levels : in Levels_On_Off.U;
+      Thr_Min_Fire_Time : in Packed_F32.U;
+      Control_Period : in Packed_F32.U;
+      On_Time_Saturation_Factor : in Packed_F32.U;
+      Thrust_Pulsing_Regime : in Packed_Byte.U
+   ) return Parameter_Validation_Status.E is
+      -- Position of the staged pulsing regime. A byte outside the defined
+      -- enumerators is rejected up front, since converting it with 'Val would
+      -- raise Constraint_Error.
+      Regime_Pos : constant Natural := Natural (Thrust_Pulsing_Regime.Value);
+   begin
+      if Regime_Pos > Thr_Firing_Schmitt_Pulsing_Regime'Pos (Thr_Firing_Schmitt_Pulsing_Regime'Last) then
+         return Parameter_Validation_Status.Invalid;
+      end if;
+
+      declare
+         Config : aliased Thr_Firing_Schmitt_Config_C :=
+           (Thruster_Array     => Self.Thruster_Array,
+            Control_Parameters =>
+              (Level_On                  => Levels.Level_On,
+               Level_Off                 => Levels.Level_Off,
+               Thr_Min_Fire_Time         => Thr_Min_Fire_Time.Value,
+               Control_Period            => Control_Period.Value,
+               On_Time_Saturation_Factor => On_Time_Saturation_Factor.Value,
+               Pulsing_Regime            => Thr_Firing_Schmitt_Pulsing_Regime'Val (Regime_Pos)));
+      begin
+         if Validate_Config (Config'Access) then
+            return Parameter_Validation_Status.Valid;
+         else
+            return Parameter_Validation_Status.Invalid;
+         end if;
+      end;
+   end Validate_Parameters;
+
    -- Invalid Parameter handler. This procedure is called when a parameter's type is found to be invalid:
    overriding procedure Invalid_Parameter (Self : in out Instance; Par : in Parameter.T; Errant_Field_Number : in Unsigned_32; Errant_Field : in Basic_Types.Poly_Type) is
       pragma Annotate (GNATSAS, Intentional, "subp always fails", "intentional assertion");
