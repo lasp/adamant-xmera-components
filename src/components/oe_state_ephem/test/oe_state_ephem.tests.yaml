@@ -7,6 +7,8 @@ tests:
     description: Upload a single-arc Chebyshev fit via Set; the next tick applies it and the algorithm reconstructs a known circular equatorial orbit within 0.1 percent.
   - name: Test_Set_Invalid_Format
     description: A memory region with an out-of-range Anomaly_Type is rejected before deserialization; release returns Parameter_Error and an Invalid_Parameter_Table_Format event fires.
+  - name: Test_Set_Invalid_Values
+    description: A byte-valid table whose values fail the algorithm's config validator (an active arc with a non-positive middle time) is rejected at Set; release returns Parameter_Error, an Invalid_Parameter_Table_Values event fires, and nothing is staged or applied.
   - name: Test_Validate_Returns_Parameter_Error
     description: Validate is unsupported; release returns Parameter_Error and a Validate_Not_Supported event is emitted; no table is staged or applied.
   - name: Test_Get_Pointer_Returns_Current_Table

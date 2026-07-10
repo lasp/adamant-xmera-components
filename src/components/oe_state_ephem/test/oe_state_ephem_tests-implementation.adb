@@ -256,6 +256,53 @@ package body Oe_State_Ephem_Tests.Implementation is
       Natural_Assert.Eq (T.Parameter_Table_Applied_History.Get_Count, 0);
    end Test_Set_Invalid_Format;
 
+   overriding procedure Test_Set_Invalid_Values (Self : in out Instance) is
+      use Oe_State_Ephem_Enums;
+      use Parameter_Enums.Parameter_Table_Update_Status;
+      T : Component.Oe_State_Ephem.Implementation.Tester.Instance_Access renames Self.Tester;
+
+      -- The byte format is valid (every field is well-typed), but the sole
+      -- active arc has Middle_Time = 0.0, which the C++ config validator
+      -- rejects (isValidArc requires ephemerisTimeMiddle > 0). This case
+      -- passes type-level Validation.Valid yet must be rejected by the
+      -- component's Validate_Config check at Set, before it can be staged and
+      -- reach the throwing Set_Config on a later tick.
+      Zero_Coeff_U : constant Oe_Coefficients.U := (Data => [others => 0.0]);
+      Bad_Arc : constant Oe_Arc.U := (
+         Number_Of_Coefficients => (Value => 1),
+         Middle_Time => 0.0,
+         Radius_Time => 0.5,
+         Anomaly_Flag => Anomaly_Type.True_Anomaly,
+         Radius_Periapsis => Zero_Coeff_U,
+         Eccentricity => Zero_Coeff_U,
+         Inclination => Zero_Coeff_U,
+         Arg_Periapsis => Zero_Coeff_U,
+         Raan => Zero_Coeff_U,
+         True_Anomaly => Zero_Coeff_U
+      );
+      Arcs : constant Oe_Arc_Records.U := [0 => Bad_Arc, others => Zero_Arc];
+      Bad_Table : constant Oe_State_Ephem_Parameter_Table.T :=
+         Oe_State_Ephem_Parameter_Table.Pack ((
+            Ephemeris_Time => 0.0,
+            Vehicle_Clock_Time => 0.0,
+            Central_Body_Mu => 0.0,
+            Number_Of_Arcs => (Value => 1),
+            Arcs => Arcs));
+
+      Set_Status : constant Parameter_Enums.Parameter_Table_Update_Status.E :=
+         Send_Set_Table (T, Bad_Table);
+   begin
+      -- Set is rejected at staging with Parameter_Error; the config-values
+      -- event fires and the format event does NOT (the bytes were well-formed).
+      pragma Assert (Set_Status = Parameter_Error);
+      Natural_Assert.Eq (T.Invalid_Parameter_Table_Values_History.Get_Count, 1);
+      Natural_Assert.Eq (T.Invalid_Parameter_Table_Format_History.Get_Count, 0);
+
+      -- Nothing was staged, so the next tick applies nothing.
+      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+      Natural_Assert.Eq (T.Parameter_Table_Applied_History.Get_Count, 0);
+   end Test_Set_Invalid_Values;
+
    overriding procedure Test_Validate_Returns_Parameter_Error (Self : in out Instance) is
       use Parameter_Enums.Parameter_Table_Operation_Type;
       use Parameter_Enums.Parameter_Table_Update_Status;

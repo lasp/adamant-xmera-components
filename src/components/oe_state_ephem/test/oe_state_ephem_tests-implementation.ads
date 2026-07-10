@@ -24,6 +24,11 @@ private
    -- deserialization; release returns Parameter_Error and an
    -- Invalid_Parameter_Table_Format event fires.
    overriding procedure Test_Set_Invalid_Format (Self : in out Instance);
+   -- A byte-valid table whose values fail the algorithm's config validator
+   -- (an active arc with a non-positive middle time) is rejected at Set;
+   -- release returns Parameter_Error, an Invalid_Parameter_Table_Values event
+   -- fires, and nothing is staged or applied.
+   overriding procedure Test_Set_Invalid_Values (Self : in out Instance);
    -- Validate is unsupported; release returns Parameter_Error and a
    -- Validate_Not_Supported event is emitted. No table is staged or applied.
    overriding procedure Test_Validate_Returns_Parameter_Error (Self : in out Instance);
