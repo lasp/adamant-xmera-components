@@ -4,19 +4,33 @@
 
 with Css_Sensor_Values;
 with Css_Sensor_Values.C;
-with Cheby_Polynomials.C;
 with Packed_F64x11.C;
 
 package body Component.Css_Comm.Implementation is
+
+   -- Build the C config POD from the component parameters. Num_Sensors and the
+   -- Chebyshev polynomials come from parameters. The per-sensor maxSensorValues
+   -- are pinned to 1.0 so the C algorithm's divide-by-max is a no-op: the
+   -- Ada-side ADC->cosine conversion in Tick_T_Recv_Sync (using Max_Sensor_Value)
+   -- is the single source of truth for ADC scaling. (Cheby_Count is no longer a
+   -- config field -- it was removed from the algorithm -- so it is not applied.)
+   function Make_Config (Self : Instance) return Css_Comm_Config_C is
+     (Num_Sensors       => Self.Num_Sensors.Value,
+      Max_Sensor_Values => [others => 1.0],
+      Cheby_Polynomials => Css_Cheby_Polynomials_C (Packed_F64x11.C.To_C (Self.Cheby_Polynomials)));
 
    --------------------------------------------------
    -- Subprogram for implementation init method:
    --------------------------------------------------
    -- Initializes the CSS comm algorithm.
    overriding procedure Init (Self : in out Instance) is
+      -- Build the initial configuration from the parameter defaults (numSensors
+      -- in [1, MAX], finite polynomials, pinned maxSensorValues), all valid, so
+      -- Create will not reject them.
+      Config : aliased Css_Comm_Config_C := Make_Config (Self);
    begin
-      -- Allocate C++ class on the heap
-      Self.Alg := Create;
+      -- Allocate the C++ algorithm on the heap with the initial configuration.
+      Self.Alg := Create (Config'Access);
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -103,21 +117,37 @@ package body Component.Css_Comm.Implementation is
    -----------------------------------------------
    -- Apply parameters to the C algorithm when they are updated.
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
-      -- Construct Chebyshev polynomials C type from parameter:
-      Cheby_Poly_C : aliased Cheby_Polynomials.C.U_C := (
-         Data => Packed_F64x11.C.To_C (Self.Cheby_Polynomials)
-      );
+      -- Rebuild the algorithm configuration from the updated parameters. The
+      -- values were checked by Validate_Parameters at staging, so Set_Config
+      -- will not reject them.
+      Config : aliased Css_Comm_Config_C := Make_Config (Self);
    begin
-      Set_Num_Sensors (Self.Alg, Self.Num_Sensors.Value);
-      -- Max_Sensor_Value is consumed by the Ada-side ADC->cosine conversion in
-      -- Tick_T_Recv_Sync (matching the css_wls_estimator pattern). The C
-      -- algorithm performs its own divide-by-max as part of the Chebyshev
-      -- correction; pin it to 1.0 so the C divide is a no-op and the
-      -- Ada-side conversion is the single source of truth for ADC scaling.
-      Set_Max_Sensor_Value (Self.Alg, 1.0);
-      Set_Cheby_Count (Self.Alg, Self.Cheby_Count.Value);
-      Set_Cheby_Polynomials (Self.Alg, Cheby_Poly_C'Unchecked_Access);
+      Set_Config (Self.Alg, Config'Access);
    end Update_Parameters_Action;
+
+   -- Validate a staged parameter set before it is applied by asking the
+   -- algorithm's own non-throwing Validate_Config predicate. Only Num_Sensors and
+   -- the Chebyshev polynomials feed the config; Max_Sensor_Value (applied
+   -- Ada-side) and Cheby_Count (no longer a config field) do not affect validity.
+   overriding function Validate_Parameters (
+      Self : in out Instance;
+      Num_Sensors : in Packed_U32.U;
+      Max_Sensor_Value : in Packed_F64.U;
+      Cheby_Count : in Packed_U32.U;
+      Cheby_Polynomials : in Packed_F64x11.U
+   ) return Parameter_Validation_Status.E is
+      pragma Unreferenced (Self, Max_Sensor_Value, Cheby_Count);
+      Config : aliased Css_Comm_Config_C :=
+        (Num_Sensors       => Num_Sensors.Value,
+         Max_Sensor_Values => [others => 1.0],
+         Cheby_Polynomials => Css_Cheby_Polynomials_C (Packed_F64x11.C.To_C (Cheby_Polynomials)));
+   begin
+      if Validate_Config (Config'Access) then
+         return Parameter_Validation_Status.Valid;
+      else
+         return Parameter_Validation_Status.Invalid;
+      end if;
+   end Validate_Parameters;
 
    -- Description:
    --    Parameters for the Css Comm component
