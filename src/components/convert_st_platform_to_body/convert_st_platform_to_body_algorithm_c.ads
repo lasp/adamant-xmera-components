@@ -23,6 +23,9 @@ package Convert_St_Platform_To_Body_Algorithm_C is
    end record
       with Convention => C_Pass_By_Copy;
 
+   --* Named access-to-constant for the config POD passed across the C boundary.
+   type Convert_St_Platform_To_Body_Config_C_Access is access constant Convert_St_Platform_To_Body_Config_C;
+
    --* Fixed C array of four floats used for the star-tracker quaternion inputs.
    type St_Quaternion_C is array (0 .. 3) of aliased Short_Float
       with Convention => C;
@@ -55,7 +58,7 @@ package Convert_St_Platform_To_Body_Algorithm_C is
    --* @return True if the configuration is valid. Never throws, so it can guard the
    --* throwing Create/Set_Config from an invalid configuration.
    function Validate_Config
-     (Config : access constant Convert_St_Platform_To_Body_Config_C)
+     (Config : Convert_St_Platform_To_Body_Config_C_Access)
      return Boolean
      with Import        => True,
           Convention    => C,
@@ -66,7 +69,7 @@ package Convert_St_Platform_To_Body_Algorithm_C is
    --* Validate config values with Validate_Config before calling so an invalid config
    --* never reaches this.
    function Create
-     (Config : access constant Convert_St_Platform_To_Body_Config_C)
+     (Config : Convert_St_Platform_To_Body_Config_C_Access)
      return Convert_St_Platform_To_Body_Algorithm_Access
      with Import        => True,
           Convention    => C,
@@ -84,7 +87,7 @@ package Convert_St_Platform_To_Body_Algorithm_C is
    --* @param Config The configuration to apply.
    procedure Set_Config
      (Self   : Convert_St_Platform_To_Body_Algorithm_Access;
-      Config : access constant Convert_St_Platform_To_Body_Config_C)
+      Config : Convert_St_Platform_To_Body_Config_C_Access)
      with Import        => True,
           Convention    => C,
           External_Name => "ConvertStPlatformToBodyAlgorithm_setConfig";

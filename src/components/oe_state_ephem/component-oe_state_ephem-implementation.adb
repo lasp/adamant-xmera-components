@@ -87,7 +87,7 @@ package body Component.Oe_State_Ephem.Implementation is
       -- Number_Of_Coefficients >= 1 and positive middle/radius time); an
       -- invalid config would make Create throw across the FFI boundary.
       Make_Config (Self.Dump_Buffer, Config);
-      Self.Alg := Create (Config'Access);
+      Self.Alg := Create (Config'Unchecked_Access);
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -113,7 +113,7 @@ package body Component.Oe_State_Ephem.Implementation is
             -- time, so Set_Config will not reject them.
             Self.Staged_Parameters.Copy_From_Staged (Self.Dump_Buffer);
             Make_Config (Self.Dump_Buffer, Config);
-            Set_Config (Self.Alg, Config'Access);
+            Set_Config (Self.Alg, Config'Unchecked_Access);
          end;
          Self.Event_T_Send_If_Connected (Self.Events.Parameter_Table_Applied (Self.Sys_Time_T_Get));
       end if;
@@ -163,7 +163,7 @@ package body Component.Oe_State_Ephem.Implementation is
                      Config : aliased Oe_State_Ephem_Config_C;
                   begin
                      Make_Config (Table_T, Config);
-                     if Validate_Config (Config'Access) then
+                     if Validate_Config (Config'Unchecked_Access) then
                         Self.Staged_Parameters.Stage (Table_T);
                      else
                         Self.Event_T_Send_If_Connected (Self.Events.Invalid_Parameter_Table_Values (

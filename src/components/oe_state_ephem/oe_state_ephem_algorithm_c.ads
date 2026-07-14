@@ -73,12 +73,15 @@ package Oe_State_Ephem_Algorithm_C is
    end record
       with Convention => C_Pass_By_Copy;
 
+   --* Named access-to-constant for the config POD passed across the C boundary.
+   type Oe_State_Ephem_Config_C_Access is access constant Oe_State_Ephem_Config_C;
+
    --* @brief Report whether a configuration would be accepted by Create/Set_Config.
    --* @param Config The configuration to check.
    --* @return True if the configuration is valid. Never throws, so it can guard the
    --* throwing Create/Set_Config from an invalid configuration.
    function Validate_Config
-     (Config : access constant Oe_State_Ephem_Config_C)
+     (Config : Oe_State_Ephem_Config_C_Access)
      return Boolean
      with Import       => True,
           Convention   => C,
@@ -89,7 +92,7 @@ package Oe_State_Ephem_Algorithm_C is
    --* Validate config values with Validate_Config before calling so an invalid config
    --* never reaches this.
    function Create
-     (Config : access constant Oe_State_Ephem_Config_C)
+     (Config : Oe_State_Ephem_Config_C_Access)
      return Oe_State_Ephem_Algorithm_Access
      with Import       => True,
           Convention   => C,
@@ -107,7 +110,7 @@ package Oe_State_Ephem_Algorithm_C is
    --* @param Config The configuration to apply.
    procedure Set_Config
      (Self   : Oe_State_Ephem_Algorithm_Access;
-      Config : access constant Oe_State_Ephem_Config_C)
+      Config : Oe_State_Ephem_Config_C_Access)
      with Import       => True,
           Convention   => C,
           External_Name => "OEStateEphemAlgorithm_setConfig";

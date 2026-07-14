@@ -102,6 +102,9 @@ package Thr_Firing_Remainder_Algorithm_C is
    end record
    with Convention => C_Pass_By_Copy;
 
+   --* Named access-to-constant for the config POD passed across the C boundary.
+   type Thr_Firing_Remainder_Config_C_Access is access constant Thr_Firing_Remainder_Config_C;
+
    --* Opaque handle for a ThrFiringRemainderAlgorithm instance.
    type Thr_Firing_Remainder_Algorithm is limited private;
    type Thr_Firing_Remainder_Algorithm_Access is access all Thr_Firing_Remainder_Algorithm;
@@ -111,7 +114,7 @@ package Thr_Firing_Remainder_Algorithm_C is
    --* @return True if the configuration is valid. Never throws, so it can guard the
    --* throwing Create/Set_Config from an invalid configuration.
    function Validate_Config
-     (Config : access constant Thr_Firing_Remainder_Config_C)
+     (Config : Thr_Firing_Remainder_Config_C_Access)
      return Boolean
      with Import       => True,
           Convention   => C,
@@ -120,7 +123,7 @@ package Thr_Firing_Remainder_Algorithm_C is
    --* @brief Construct a new ThrFiringRemainderAlgorithm from a configuration.
    --* @param Config The configuration to apply (validated; throws on invalid input).
    function Create
-     (Config : access constant Thr_Firing_Remainder_Config_C)
+     (Config : Thr_Firing_Remainder_Config_C_Access)
      return Thr_Firing_Remainder_Algorithm_Access
      with Import       => True,
           Convention   => C,
@@ -138,7 +141,7 @@ package Thr_Firing_Remainder_Algorithm_C is
    --* @param Config The configuration to apply.
    procedure Set_Config
      (Self   : Thr_Firing_Remainder_Algorithm_Access;
-      Config : access constant Thr_Firing_Remainder_Config_C)
+      Config : Thr_Firing_Remainder_Config_C_Access)
      with Import       => True,
           Convention   => C,
           External_Name => "ThrFiringRemainderAlgorithm_setConfig";

@@ -58,6 +58,9 @@ package Css_Comm_Algorithm_C is
    end record
       with Convention => C_Pass_By_Copy;
 
+   --* Named access-to-constant for the config POD passed across the C boundary.
+   type Css_Comm_Config_C_Access is access constant Css_Comm_Config_C;
+
    --* Opaque handle for a CssCommAlgorithm instance.
    type Css_Comm_Algorithm is limited private;
    type Css_Comm_Algorithm_Access is access all Css_Comm_Algorithm;
@@ -67,7 +70,7 @@ package Css_Comm_Algorithm_C is
    --* @return True if the configuration is valid. Never throws, so it can guard the
    --* throwing Create/Set_Config from an invalid configuration.
    function Validate_Config
-     (Config : access constant Css_Comm_Config_C)
+     (Config : Css_Comm_Config_C_Access)
      return Boolean
      with Import       => True,
           Convention   => C,
@@ -76,7 +79,7 @@ package Css_Comm_Algorithm_C is
    --* @brief Construct a new CssCommAlgorithm from a configuration.
    --* @param Config The configuration to apply (validated; throws on invalid input).
    function Create
-     (Config : access constant Css_Comm_Config_C)
+     (Config : Css_Comm_Config_C_Access)
      return Css_Comm_Algorithm_Access
      with Import       => True,
           Convention   => C,
@@ -94,7 +97,7 @@ package Css_Comm_Algorithm_C is
    --* @param Config The configuration to apply.
    procedure Set_Config
      (Self   : Css_Comm_Algorithm_Access;
-      Config : access constant Css_Comm_Config_C)
+      Config : Css_Comm_Config_C_Access)
      with Import       => True,
           Convention   => C,
           External_Name => "CssCommAlgorithm_setConfig";

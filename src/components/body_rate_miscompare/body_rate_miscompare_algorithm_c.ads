@@ -25,6 +25,9 @@ package Body_Rate_Miscompare_Algorithm_C is
    end record
       with Convention => C_Pass_By_Copy;
 
+   --* Named access-to-constant for the config POD passed across the C boundary.
+   type Body_Rate_Miscompare_Config_C_Access is access constant Body_Rate_Miscompare_Config_C;
+
    --* POD output type matching BodyRateMiscompareOutput_c in C.
    --* Layout: float omega_BN_B[3]; bool bodyRateFaultDetected;
    type Body_Rate_Miscompare_Output_C is record
@@ -38,7 +41,7 @@ package Body_Rate_Miscompare_Algorithm_C is
    --* @return True if the configuration is valid. Never throws, so it can guard the
    --* throwing Create/Set_Config from an invalid configuration.
    function Validate_Config
-     (Config : access constant Body_Rate_Miscompare_Config_C)
+     (Config : Body_Rate_Miscompare_Config_C_Access)
      return Boolean
      with Import       => True,
           Convention   => C,
@@ -49,7 +52,7 @@ package Body_Rate_Miscompare_Algorithm_C is
    --* Validate config values with Validate_Config before calling so an invalid config
    --* never reaches this.
    function Create
-     (Config : access constant Body_Rate_Miscompare_Config_C)
+     (Config : Body_Rate_Miscompare_Config_C_Access)
      return Body_Rate_Miscompare_Algorithm_Access
      with Import       => True,
           Convention   => C,
@@ -68,7 +71,7 @@ package Body_Rate_Miscompare_Algorithm_C is
    --* Swaps the configured values; the latched fault state is left untouched.
    procedure Set_Config
      (Self   : Body_Rate_Miscompare_Algorithm_Access;
-      Config : access constant Body_Rate_Miscompare_Config_C)
+      Config : Body_Rate_Miscompare_Config_C_Access)
      with Import       => True,
           Convention   => C,
           External_Name => "BodyRateMiscompareAlgorithm_setConfig";

@@ -28,7 +28,7 @@ package body Component.Body_Rate_Miscompare.Implementation is
       Config : aliased Body_Rate_Miscompare_Config_C := Make_Config (Self);
    begin
       -- Allocate the C++ algorithm on the heap with the initial configuration.
-      Self.Alg := Create (Config'Access);
+      Self.Alg := Create (Config'Unchecked_Access);
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -128,7 +128,7 @@ package body Component.Body_Rate_Miscompare.Implementation is
       declare
          Config : aliased Body_Rate_Miscompare_Config_C := Make_Config (Self);
       begin
-         Set_Config (Self.Alg, Config'Access);
+         Set_Config (Self.Alg, Config'Unchecked_Access);
          -- Re-seed the latched fault state from the new Use_Imu_Rates: forces IMU
          -- rates when True, and clears a latched fault when set False.
          Re_Initialize (Self.Alg);
@@ -157,7 +157,7 @@ package body Component.Body_Rate_Miscompare.Implementation is
       -- them.
       Config : aliased Body_Rate_Miscompare_Config_C := Make_Config (Self);
    begin
-      Set_Config (Self.Alg, Config'Access);
+      Set_Config (Self.Alg, Config'Unchecked_Access);
    end Update_Parameters_Action;
 
    -- Validate a staged parameter set before it is applied by asking the algorithm's
@@ -175,7 +175,7 @@ package body Component.Body_Rate_Miscompare.Implementation is
          Fault_Persistence_Limit => Fault_Persistence_Limit.Value,
          Use_Imu_Rates           => (if Self.Use_Imu_Rates then 1 else 0));
    begin
-      if Validate_Config (Config'Access) then
+      if Validate_Config (Config'Unchecked_Access) then
          return Parameter_Validation_Status.Valid;
       else
          return Parameter_Validation_Status.Invalid;

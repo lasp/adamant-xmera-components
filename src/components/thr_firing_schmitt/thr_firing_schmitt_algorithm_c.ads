@@ -108,6 +108,9 @@ package Thr_Firing_Schmitt_Algorithm_C is
    end record
    with Convention => C_Pass_By_Copy;
 
+   --* Named access-to-constant for the config POD passed across the C boundary.
+   type Thr_Firing_Schmitt_Config_C_Access is access constant Thr_Firing_Schmitt_Config_C;
+
    --* Opaque handle for a ThrFiringSchmittAlgorithm instance.
    type Thr_Firing_Schmitt_Algorithm is limited private;
    type Thr_Firing_Schmitt_Algorithm_Access is access all Thr_Firing_Schmitt_Algorithm;
@@ -117,7 +120,7 @@ package Thr_Firing_Schmitt_Algorithm_C is
    --* @return True if the configuration is valid. Never throws, so it can guard the
    --* throwing Create/Set_Config from an invalid configuration.
    function Validate_Config
-     (Config : access constant Thr_Firing_Schmitt_Config_C)
+     (Config : Thr_Firing_Schmitt_Config_C_Access)
      return Boolean
      with Import       => True,
           Convention   => C,
@@ -128,7 +131,7 @@ package Thr_Firing_Schmitt_Algorithm_C is
    --* Validate config values with Validate_Config before calling so an invalid config
    --* never reaches this.
    function Create
-     (Config : access constant Thr_Firing_Schmitt_Config_C)
+     (Config : Thr_Firing_Schmitt_Config_C_Access)
      return Thr_Firing_Schmitt_Algorithm_Access
      with Import       => True,
           Convention   => C,
@@ -147,7 +150,7 @@ package Thr_Firing_Schmitt_Algorithm_C is
    --* The Schmitt-trigger state is preserved.
    procedure Set_Config
      (Self   : Thr_Firing_Schmitt_Algorithm_Access;
-      Config : access constant Thr_Firing_Schmitt_Config_C)
+      Config : Thr_Firing_Schmitt_Config_C_Access)
      with Import       => True,
           Convention   => C,
           External_Name => "ThrFiringSchmittAlgorithm_setConfig";

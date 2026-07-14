@@ -27,7 +27,7 @@ package body Component.Convert_St_Platform_To_Body.Implementation is
       Config : aliased Convert_St_Platform_To_Body_Config_C := Make_Config (Self);
    begin
       -- Allocate the C++ algorithm on the heap with the initial configuration.
-      Self.Alg := Create (Config'Access);
+      Self.Alg := Create (Config'Unchecked_Access);
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -123,7 +123,7 @@ package body Component.Convert_St_Platform_To_Body.Implementation is
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
       Config : aliased Convert_St_Platform_To_Body_Config_C := Make_Config (Self);
    begin
-      Set_Config (Self.Alg, Config'Access);
+      Set_Config (Self.Alg, Config'Unchecked_Access);
    end Update_Parameters_Action;
 
    -- Validate a staged Dcm_Cb before it is applied by asking the algorithm's own
@@ -139,7 +139,7 @@ package body Component.Convert_St_Platform_To_Body.Implementation is
       Config : aliased Convert_St_Platform_To_Body_Config_C :=
         (Dcm_Cb => (Value => Packed_F32x9.C.To_C (Dcm_Cb)));
    begin
-      if Validate_Config (Config'Access) then
+      if Validate_Config (Config'Unchecked_Access) then
          return Parameter_Validation_Status.Valid;
       else
          return Parameter_Validation_Status.Invalid;

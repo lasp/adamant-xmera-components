@@ -30,7 +30,7 @@ package body Component.Css_Comm.Implementation is
       Config : aliased Css_Comm_Config_C := Make_Config (Self);
    begin
       -- Allocate the C++ algorithm on the heap with the initial configuration.
-      Self.Alg := Create (Config'Access);
+      Self.Alg := Create (Config'Unchecked_Access);
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -122,7 +122,7 @@ package body Component.Css_Comm.Implementation is
       -- will not reject them.
       Config : aliased Css_Comm_Config_C := Make_Config (Self);
    begin
-      Set_Config (Self.Alg, Config'Access);
+      Set_Config (Self.Alg, Config'Unchecked_Access);
    end Update_Parameters_Action;
 
    -- Validate a staged parameter set before it is applied by asking the
@@ -142,7 +142,7 @@ package body Component.Css_Comm.Implementation is
          Max_Sensor_Values => [others => 1.0],
          Cheby_Polynomials => Css_Cheby_Polynomials_C (Packed_F64x11.C.To_C (Cheby_Polynomials)));
    begin
-      if Validate_Config (Config'Access) then
+      if Validate_Config (Config'Unchecked_Access) then
          return Parameter_Validation_Status.Valid;
       else
          return Parameter_Validation_Status.Invalid;

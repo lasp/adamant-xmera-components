@@ -38,7 +38,7 @@ package body Component.Thr_Firing_Schmitt.Implementation is
       Config : aliased Thr_Firing_Schmitt_Config_C := Make_Config (Self);
    begin
       -- Allocate the C++ algorithm on the heap with the initial configuration.
-      Self.Alg := Create (Config'Access);
+      Self.Alg := Create (Config'Unchecked_Access);
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -64,7 +64,7 @@ package body Component.Thr_Firing_Schmitt.Implementation is
       declare
          Cfg : aliased Thr_Firing_Schmitt_Config_C := Make_Config (Self);
       begin
-         Set_Config (Self.Alg, Cfg'Access);
+         Set_Config (Self.Alg, Cfg'Unchecked_Access);
       end;
    end Configure_Thrusters;
 
@@ -146,7 +146,7 @@ package body Component.Thr_Firing_Schmitt.Implementation is
       -- will not reject them.
       Config : aliased Thr_Firing_Schmitt_Config_C := Make_Config (Self);
    begin
-      Set_Config (Self.Alg, Config'Access);
+      Set_Config (Self.Alg, Config'Unchecked_Access);
    end Update_Parameters_Action;
 
    -- Validate a staged parameter set before it is applied by asking the
@@ -183,7 +183,7 @@ package body Component.Thr_Firing_Schmitt.Implementation is
                On_Time_Saturation_Factor => On_Time_Saturation_Factor.Value,
                Pulsing_Regime            => Thr_Firing_Schmitt_Pulsing_Regime'Val (Regime_Pos)));
       begin
-         if Validate_Config (Config'Access) then
+         if Validate_Config (Config'Unchecked_Access) then
             return Parameter_Validation_Status.Valid;
          else
             return Parameter_Validation_Status.Invalid;
