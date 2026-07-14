@@ -1,0 +1,9 @@
+---
+description: Events for the Inertial UKF component.
+events:
+  - name: Invalid_Parameter_Received
+    description: |
+      A parameter was received that failed type-level validation and was
+      rejected. Parameter updates originate from the ground, so this is
+      reported as an event rather than asserted.
+    param_type: Invalid_Parameter_Info.T

@@ -64,7 +64,13 @@ package body Component.Oe_State_Ephem.Implementation is
                Arg_Periapsis_Coefficients => To_Coeff_Array (Arc.Arg_Periapsis),
                Raan_Coefficients => To_Coeff_Array (Arc.Raan),
                True_Anomaly_Coefficients => To_Coeff_Array (Arc.True_Anomaly),
-               Anomaly_Flag => Anomaly_Type_C'Val (Anomaly_Type.E'Pos (Arc.Anomaly_Flag))
+               -- Map the Ada anomaly enum to the C enum with an exhaustive case
+               -- (rather than 'Pos/'Val) so the mapping is explicit and cannot
+               -- silently drift if either enum is reordered.
+               Anomaly_Flag =>
+                 (case Arc.Anomaly_Flag is
+                     when Anomaly_Type.True_Anomaly => Anomaly_Type_C'(True_Anomaly),
+                     when Anomaly_Type.Mean_Anomaly => Anomaly_Type_C'(Mean_Anomaly))
             );
          end;
       end loop;

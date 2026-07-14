@@ -186,10 +186,12 @@ package body Component.Body_Rate_Miscompare.Implementation is
    --    Parameters for the Body Rate Miscompare component
    -- Invalid Parameter handler. This procedure is called when a parameter's type is found to be invalid:
    overriding procedure Invalid_Parameter (Self : in out Instance; Par : in Parameter.T; Errant_Field_Number : in Unsigned_32; Errant_Field : in Basic_Types.Poly_Type) is
-      pragma Annotate (GNATSAS, Intentional, "subp always fails", "intentional assertion");
    begin
-      -- None of the parameters should be invalid in this case.
-      pragma Assert (False);
+      -- A parameter update originates from the ground, so report a malformed
+      -- one as an event rather than asserting.
+      Self.Event_T_Send_If_Connected (Self.Events.Invalid_Parameter_Received (
+         Self.Sys_Time_T_Get,
+         (Id => Par.Header.Id, Errant_Field_Number => Errant_Field_Number, Errant_Field => Errant_Field)));
    end Invalid_Parameter;
 
    -----------------------------------------------
