@@ -12,22 +12,6 @@ package body Component.Thr_Firing_Schmitt.Implementation is
    -- Number of thrusters in the system (8-element data products vs 36-element C API)
    Num_Thrusters : constant := 8;
 
-   -- Map the pulsing-regime parameter byte to the C enum. A case statement
-   -- makes the mapping exhaustive and total: unlike 'Val, it cannot raise
-   -- Constraint_Error on an out-of-range byte. The value is gated by
-   -- Validate_Parameters before it reaches here, so the others branch is
-   -- unreachable in practice.
-   function To_Pulsing_Regime (Value : Basic_Types.Byte)
-      return Thr_Firing_Schmitt_Pulsing_Regime
-   is
-   begin
-      case Value is
-         when 0 => return On_Pulsing;
-         when 1 => return Off_Pulsing;
-         when others => return On_Pulsing;
-      end case;
-   end To_Pulsing_Regime;
-
    -- Build the C config POD from the current component parameters. Both the
    -- control values and the thruster array come from parameters; only
    -- Num_Thrusters and each thruster's Max_Thrust feed the algorithm (the
@@ -43,7 +27,12 @@ package body Component.Thr_Firing_Schmitt.Implementation is
             Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time.Value,
             Control_Period            => Self.Control_Period.Value,
             On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor.Value,
-            Pulsing_Regime            => To_Pulsing_Regime (Self.Thrust_Pulsing_Regime.Value)));
+            -- Map the regime byte to the C enum via its representation clause
+            -- (Enum_Val honors the "for ... use" codes). The value was accepted
+            -- by Validate_Parameters, so this cannot raise here.
+            Pulsing_Regime            =>
+              Thr_Firing_Schmitt_Pulsing_Regime'Enum_Val
+                (Integer (Self.Thrust_Pulsing_Regime.Value))));
    begin
       for I in Self.Thruster_Config.Thrusters'Range loop
          Config.Thruster_Array.Max_Thrust (I) := Self.Thruster_Config.Thrusters (I).Max_Thrust;
@@ -169,15 +158,11 @@ package body Component.Thr_Firing_Schmitt.Implementation is
    ) return Parameter_Validation_Status.E is
       pragma Unreferenced (Self);
    begin
-      -- Reject a pulsing-regime byte outside the defined enumerators up front.
-      -- A case statement forces every value to be handled, so an out-of-range
-      -- byte can never reach the 'Val-free To_Pulsing_Regime mapping.
-      case Thrust_Pulsing_Regime.Value is
-         when 0 | 1 => null;
-         when others => return Parameter_Validation_Status.Invalid;
-      end case;
-
       declare
+         -- Map the staged regime byte to the C enum via its representation clause.
+         -- Enum_Val raises Constraint_Error on a byte that is not a defined
+         -- representation; the handler below maps that to Invalid, so the enum's
+         -- "for ... use" clause is the single source of valid regime values.
          Config : aliased Thr_Firing_Schmitt_Config_C :=
            (Thruster_Array     =>
               (Num_Thrusters => Thruster_Config.Num_Thrusters,
@@ -188,7 +173,9 @@ package body Component.Thr_Firing_Schmitt.Implementation is
                Thr_Min_Fire_Time         => Thr_Min_Fire_Time.Value,
                Control_Period            => Control_Period.Value,
                On_Time_Saturation_Factor => On_Time_Saturation_Factor.Value,
-               Pulsing_Regime            => To_Pulsing_Regime (Thrust_Pulsing_Regime.Value)));
+               Pulsing_Regime            =>
+                 Thr_Firing_Schmitt_Pulsing_Regime'Enum_Val
+                   (Integer (Thrust_Pulsing_Regime.Value))));
       begin
          for I in Thruster_Config.Thrusters'Range loop
             Config.Thruster_Array.Max_Thrust (I) := Thruster_Config.Thrusters (I).Max_Thrust;
@@ -199,6 +186,10 @@ package body Component.Thr_Firing_Schmitt.Implementation is
             return Parameter_Validation_Status.Invalid;
          end if;
       end;
+   exception
+      when Constraint_Error =>
+         -- The staged Thrust_Pulsing_Regime byte is not a defined representation.
+         return Parameter_Validation_Status.Invalid;
    end Validate_Parameters;
 
    -- Invalid Parameter handler. This procedure is called when a parameter's type is found to be invalid:

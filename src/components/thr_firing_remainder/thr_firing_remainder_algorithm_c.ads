@@ -34,6 +34,9 @@ package Thr_Firing_Remainder_Algorithm_C is
      (On_Pulsing,
       Off_Pulsing)
      with Convention => C;
+   --* Underlying codes match the C enum ThrFiringRemainderPulsingRegime, so the
+   --* byte->enum mapping is a representation conversion ('Enum_Val), not a case.
+   for Thr_Firing_Remainder_Pulsing_Regime use (On_Pulsing => 0, Off_Pulsing => 1);
 
    ---------------------------------------------------------------------------
    -- Config POD types mirroring the C shim (thrFiringRemainderTypes.h)
