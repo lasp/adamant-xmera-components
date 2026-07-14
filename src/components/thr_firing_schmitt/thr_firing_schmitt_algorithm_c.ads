@@ -9,7 +9,6 @@ pragma Warnings     (Off, "-gnatwu");
 pragma Warnings     (Off, "-gnatwx");
 
 with Interfaces.C;     use Interfaces; use Interfaces.C;
-with Packed_F32x3.C;
 with Thr_Firing_Schmitt_Force_Cmd.C;
 with Thr_Firing_Schmitt_On_Time_Cmd.C;
 
@@ -36,40 +35,6 @@ package Thr_Firing_Schmitt_Algorithm_C is
      (On_Pulsing,
       Off_Pulsing)
      with Convention => C;
-
-   ---------------------------------------------------------------------------
-   -- Configure_Thrusters input type (Ada-side only)
-   --
-   -- Retained for symmetry with the sibling thr_firing_remainder component and
-   -- to carry the full per-thruster geometry a caller may already hold. Only
-   -- Num_Thrusters and Max_Thrust feed the algorithm config; R_Thrust_B and
-   -- T_Hat_Thrust_B are unused by the Schmitt algorithm. This record is no
-   -- longer passed across the C boundary.
-   ---------------------------------------------------------------------------
-
-   --* Single thruster configuration (POD).
-   type Thr_Firing_Schmitt_Thruster_Config is record
-      R_Thrust_B     : aliased Packed_F32x3.C.U_C;
-      T_Hat_Thrust_B : aliased Packed_F32x3.C.U_C;
-      Max_Thrust     : aliased Short_Float;
-   end record
-   with Convention => C_Pass_By_Copy;
-
-   --* Array of thruster configurations.
-   type Thr_Config_Array is
-     array (0 .. THR_FIRING_SCHMITT_MAX_THRUSTER_COUNT - 1) of
-       aliased Thr_Firing_Schmitt_Thruster_Config
-     with Convention => C;
-
-   --* Thruster array configuration (POD).
-   type Thr_Firing_Schmitt_Array_Config is record
-      Num_Thrusters : aliased Unsigned_32;
-      Thrusters     : aliased Thr_Config_Array;
-   end record
-   with Convention => C_Pass_By_Copy;
-
-   type Thr_Firing_Schmitt_Array_Config_Access is
-     access all Thr_Firing_Schmitt_Array_Config;
 
    ---------------------------------------------------------------------------
    -- Config POD types mirroring the C shim (thrFiringSchmittTypes.h)

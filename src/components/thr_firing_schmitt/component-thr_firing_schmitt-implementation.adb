@@ -12,20 +12,44 @@ package body Component.Thr_Firing_Schmitt.Implementation is
    -- Number of thrusters in the system (8-element data products vs 36-element C API)
    Num_Thrusters : constant := 8;
 
-   -- Build the C config POD from the current component parameters and the
-   -- Ada-side thruster array. The control values come from the component
-   -- parameters; the thruster array is set by Configure_Thrusters and tracked
-   -- on the instance.
+   -- Map the pulsing-regime parameter byte to the C enum. A case statement
+   -- makes the mapping exhaustive and total: unlike 'Val, it cannot raise
+   -- Constraint_Error on an out-of-range byte. The value is gated by
+   -- Validate_Parameters before it reaches here, so the others branch is
+   -- unreachable in practice.
+   function To_Pulsing_Regime (Value : Basic_Types.Byte)
+      return Thr_Firing_Schmitt_Pulsing_Regime
+   is
+   begin
+      case Value is
+         when 0 => return On_Pulsing;
+         when 1 => return Off_Pulsing;
+         when others => return On_Pulsing;
+      end case;
+   end To_Pulsing_Regime;
+
+   -- Build the C config POD from the current component parameters. Both the
+   -- control values and the thruster array come from parameters; only
+   -- Num_Thrusters and each thruster's Max_Thrust feed the algorithm (the
+   -- 8-element parameter array is zero-padded into the 36-element C array).
    function Make_Config (Self : Instance) return Thr_Firing_Schmitt_Config_C is
-     (Thruster_Array     => Self.Thruster_Array,
-      Control_Parameters =>
-        (Level_On                  => Self.Levels.Level_On,
-         Level_Off                 => Self.Levels.Level_Off,
-         Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time.Value,
-         Control_Period            => Self.Control_Period.Value,
-         On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor.Value,
-         Pulsing_Regime            =>
-           Thr_Firing_Schmitt_Pulsing_Regime'Val (Natural (Self.Thrust_Pulsing_Regime.Value))));
+      Config : Thr_Firing_Schmitt_Config_C :=
+        (Thruster_Array     =>
+           (Num_Thrusters => Self.Thruster_Config.Num_Thrusters,
+            Max_Thrust    => [others => 0.0]),
+         Control_Parameters =>
+           (Level_On                  => Self.Levels.Level_On,
+            Level_Off                 => Self.Levels.Level_Off,
+            Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time.Value,
+            Control_Period            => Self.Control_Period.Value,
+            On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor.Value,
+            Pulsing_Regime            => To_Pulsing_Regime (Self.Thrust_Pulsing_Regime.Value)));
+   begin
+      for I in Self.Thruster_Config.Thrusters'Range loop
+         Config.Thruster_Array.Max_Thrust (I) := Self.Thruster_Config.Thrusters (I).Max_Thrust;
+      end loop;
+      return Config;
+   end Make_Config;
 
    --------------------------------------------------
    -- Subprogram for implementation init method:
@@ -46,27 +70,6 @@ package body Component.Thr_Firing_Schmitt.Implementation is
       -- Free the C++ heap data.
       Destroy (Self.Alg);
    end Destroy;
-
-   not overriding procedure Configure_Thrusters (
-      Self   : in out Instance;
-      Config : access constant Thr_Firing_Schmitt_Array_Config)
-   is
-   begin
-      -- Extract the per-thruster maximum thrust (the only field the Schmitt
-      -- algorithm consumes) into the Ada-side thruster array.
-      Self.Thruster_Array.Num_Thrusters := Config.Num_Thrusters;
-      Self.Thruster_Array.Max_Thrust := [others => 0.0];
-      for I in Config.Thrusters'Range loop
-         Self.Thruster_Array.Max_Thrust (I) := Config.Thrusters (I).Max_Thrust;
-      end loop;
-
-      -- Push the updated thruster array into the algorithm via a config swap.
-      declare
-         Cfg : aliased Thr_Firing_Schmitt_Config_C := Make_Config (Self);
-      begin
-         Set_Config (Self.Alg, Cfg'Unchecked_Access);
-      end;
-   end Configure_Thrusters;
 
    ---------------------------------------
    -- Invokee connector primitives:
@@ -161,28 +164,35 @@ package body Component.Thr_Firing_Schmitt.Implementation is
       Thr_Min_Fire_Time : in Packed_F32.U;
       Control_Period : in Packed_F32.U;
       On_Time_Saturation_Factor : in Packed_F32.U;
-      Thrust_Pulsing_Regime : in Packed_Byte.U
+      Thrust_Pulsing_Regime : in Packed_Byte.U;
+      Thruster_Config : in Thr_Firing_Schmitt_Array_Config.U
    ) return Parameter_Validation_Status.E is
-      -- Position of the staged pulsing regime. A byte outside the defined
-      -- enumerators is rejected up front, since converting it with 'Val would
-      -- raise Constraint_Error.
-      Regime_Pos : constant Natural := Natural (Thrust_Pulsing_Regime.Value);
+      pragma Unreferenced (Self);
    begin
-      if Regime_Pos > Thr_Firing_Schmitt_Pulsing_Regime'Pos (Thr_Firing_Schmitt_Pulsing_Regime'Last) then
-         return Parameter_Validation_Status.Invalid;
-      end if;
+      -- Reject a pulsing-regime byte outside the defined enumerators up front.
+      -- A case statement forces every value to be handled, so an out-of-range
+      -- byte can never reach the 'Val-free To_Pulsing_Regime mapping.
+      case Thrust_Pulsing_Regime.Value is
+         when 0 | 1 => null;
+         when others => return Parameter_Validation_Status.Invalid;
+      end case;
 
       declare
          Config : aliased Thr_Firing_Schmitt_Config_C :=
-           (Thruster_Array     => Self.Thruster_Array,
+           (Thruster_Array     =>
+              (Num_Thrusters => Thruster_Config.Num_Thrusters,
+               Max_Thrust    => [others => 0.0]),
             Control_Parameters =>
               (Level_On                  => Levels.Level_On,
                Level_Off                 => Levels.Level_Off,
                Thr_Min_Fire_Time         => Thr_Min_Fire_Time.Value,
                Control_Period            => Control_Period.Value,
                On_Time_Saturation_Factor => On_Time_Saturation_Factor.Value,
-               Pulsing_Regime            => Thr_Firing_Schmitt_Pulsing_Regime'Val (Regime_Pos)));
+               Pulsing_Regime            => To_Pulsing_Regime (Thrust_Pulsing_Regime.Value)));
       begin
+         for I in Thruster_Config.Thrusters'Range loop
+            Config.Thruster_Array.Max_Thrust (I) := Thruster_Config.Thrusters (I).Max_Thrust;
+         end loop;
          if Validate_Config (Config'Unchecked_Access) then
             return Parameter_Validation_Status.Valid;
          else
@@ -193,10 +203,12 @@ package body Component.Thr_Firing_Schmitt.Implementation is
 
    -- Invalid Parameter handler. This procedure is called when a parameter's type is found to be invalid:
    overriding procedure Invalid_Parameter (Self : in out Instance; Par : in Parameter.T; Errant_Field_Number : in Unsigned_32; Errant_Field : in Basic_Types.Poly_Type) is
-      pragma Annotate (GNATSAS, Intentional, "subp always fails", "intentional assertion");
    begin
-      -- None of the parameters should be invalid in this case.
-      pragma Assert (False);
+      -- A parameter update originates from the ground, so report a malformed
+      -- one as an event rather than asserting.
+      Self.Event_T_Send_If_Connected (Self.Events.Invalid_Parameter_Received (
+         Self.Sys_Time_T_Get,
+         (Id => Par.Header.Id, Errant_Field_Number => Errant_Field_Number, Errant_Field => Errant_Field)));
    end Invalid_Parameter;
 
    -----------------------------------------------

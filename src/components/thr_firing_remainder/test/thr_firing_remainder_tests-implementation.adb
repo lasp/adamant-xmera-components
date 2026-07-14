@@ -6,7 +6,7 @@ with Basic_Assertions; use Basic_Assertions;
 with Thr_On_Time_Cmd;
 with Packed_F32x8.Assertion; use Packed_F32x8.Assertion;
 with Thr_Firing_Remainder_Parameters;
-with Thr_Firing_Remainder_Algorithm_C; use Thr_Firing_Remainder_Algorithm_C;
+with Thr_Firing_Remainder_Array_Config;
 with Packed_F32;
 with Packed_Byte;
 with Parameter_Enums.Assertion;
@@ -47,7 +47,7 @@ package body Thr_Firing_Remainder_Tests.Implementation is
       Params : Thr_Firing_Remainder_Parameters.Instance;
 
       -- Thruster configuration: 2 thrusters with maxThrust = 1.0
-      Thr_Config : aliased Thr_Firing_Remainder_Array_Config := (
+      Thr_Config : constant Thr_Firing_Remainder_Array_Config.T := (
          Num_Thrusters => 2,
          Thrusters => [
             0 => (R_Thrust_B => [0.0, 0.0, 0.0], T_Hat_Thrust_B => [0.0, 0.0, 1.0], Max_Thrust => 1.0),
@@ -83,10 +83,8 @@ package body Thr_Firing_Remainder_Tests.Implementation is
       T.Component_Instance.Init;
       T.Component_Instance.Set_Up;
 
-      -- Configure thrusters
-      T.Component_Instance.Configure_Thrusters (Thr_Config'Unchecked_Access);
-
-      -- Stage and apply parameters
+      -- Stage and apply parameters (thruster config is now a parameter)
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thruster_Config (Thr_Config)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thr_Min_Fire_Time (Min_Fire_Time)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Period (Control_Period_Param)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.On_Time_Saturation_Factor (Saturation_Factor)), Success);
@@ -127,10 +125,8 @@ package body Thr_Firing_Remainder_Tests.Implementation is
       T.Component_Instance.Init;
       T.Component_Instance.Set_Up;
 
-      -- Configure thrusters
-      T.Component_Instance.Configure_Thrusters (Thr_Config'Unchecked_Access);
-
-      -- Stage and apply parameters with OFF_PULSING regime
+      -- Stage and apply parameters with OFF_PULSING regime (thruster config is a parameter)
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thruster_Config (Thr_Config)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thr_Min_Fire_Time (Min_Fire_Time)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Period (Control_Period_Param)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.On_Time_Saturation_Factor (Saturation_Factor)), Success);

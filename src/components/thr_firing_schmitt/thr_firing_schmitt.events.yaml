@@ -1,0 +1,10 @@
+---
+description: Events for the Thr Firing Schmitt component.
+events:
+  - name: Invalid_Parameter_Received
+    description: |
+      A parameter was received that failed type-level validation and was
+      rejected. Parameter updates originate from the ground, so this is
+      reported as an event (rather than asserted) so the rejection is visible
+      in telemetry.
+    param_type: Invalid_Parameter_Info.T

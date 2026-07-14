@@ -1,0 +1,17 @@
+---
+# Per-thruster configuration for the thruster firing remainder component. Carries
+# the full per-thruster geometry a caller may hold; only Max_Thrust feeds the
+# remainder algorithm (R_Thrust_B and T_Hat_Thrust_B are retained for symmetry
+# with the thruster cluster definition and future use).
+description: Single-thruster configuration for the thruster firing remainder component.
+fields:
+  - name: R_Thrust_B
+    type: Packed_F32x3.T
+    description: "[m] thruster location in the body frame"
+  - name: T_Hat_Thrust_B
+    type: Packed_F32x3.T
+    description: "[-] thruster force unit direction in the body frame"
+  - name: Max_Thrust
+    type: Short_Float
+    format: F32
+    description: "[N] maximum thrust magnitude"

@@ -52,9 +52,11 @@ event_buffer_size: 32
 
 # The size of the buffer within the parameter type (in bytes). This buffer is
 # used to serialize the parameter type. Choose a size that fits the largest
-# parameter type in your system. We size this by a floating point DCM which
-# would be 3x3 32-bit floats = 3x3x4 = 36 bytes plus some margin
-parameter_buffer_size: 96
+# parameter type in your system. Sized for the thruster firing components'
+# Thr_Firing_*_Array_Config parameter: Num_Thrusters (4) + 8 per-thruster
+# configs of R_Thrust_B (12) + T_Hat_Thrust_B (12) + Max_Thrust (4) = 4 + 8*28
+# = 228 bytes, rounded up with margin.
+parameter_buffer_size: 256
 
 # The size of the buffer within the fault type (in bytes). This buffer is
 # used to serialize the fault parameters. Choose a size that fits the largest

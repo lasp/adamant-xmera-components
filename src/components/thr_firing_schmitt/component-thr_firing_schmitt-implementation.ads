@@ -20,22 +20,12 @@ package Component.Thr_Firing_Schmitt.Implementation is
    -- Initializes the thruster firing Schmitt algorithm.
    overriding procedure Init (Self : in out Instance);
    not overriding procedure Destroy (Self : in out Instance);
-   not overriding procedure Configure_Thrusters (
-      Self   : in out Instance;
-      Config : access constant Thr_Firing_Schmitt_Array_Config);
 
 private
 
    -- The component class instance record:
    type Instance is new Thr_Firing_Schmitt.Base_Instance with record
       Alg : Thr_Firing_Schmitt_Algorithm_Access := null;
-      -- Ada-side source of truth for the thruster array (set by
-      -- Configure_Thrusters). It is not a parameter, so it is tracked on the
-      -- instance and fed into the algorithm config alongside the parameters.
-      -- Defaults to an empty (zero-thruster) array, which is valid, so the
-      -- initial config built at Init is accepted.
-      Thruster_Array : Thr_Firing_Schmitt_Thruster_Array_C :=
-        (Num_Thrusters => 0, Max_Thrust => [others => 0.0]);
    end record;
 
    ---------------------------------------

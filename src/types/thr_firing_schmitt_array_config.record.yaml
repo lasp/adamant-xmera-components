@@ -1,0 +1,13 @@
+---
+# Thruster array configuration used as a component parameter. Mirrors the C
+# ThrFiringSchmittThrusterArray (numThrusters + per-thruster data); only
+# Num_Thrusters and each thruster's Max_Thrust feed the Schmitt algorithm.
+description: Thruster array configuration for the thruster firing Schmitt component.
+fields:
+  - name: Num_Thrusters
+    type: Interfaces.Unsigned_32
+    format: U32
+    description: "[-] number of thrusters on the vehicle"
+  - name: Thrusters
+    type: Thr_Firing_Schmitt_Thruster_Config_Array.T
+    description: "[-] per-thruster configuration"

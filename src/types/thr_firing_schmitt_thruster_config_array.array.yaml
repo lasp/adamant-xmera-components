@@ -1,0 +1,4 @@
+---
+description: Array of per-thruster configurations for the thruster firing Schmitt component (8-thruster system).
+type: Thr_Firing_Schmitt_Thruster_Config.T
+length: 8

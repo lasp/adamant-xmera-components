@@ -26,3 +26,7 @@ parameters:
     description: "Thrust pulsing regime (0 = on-pulsing, 1 = off-pulsing)"
     type: Packed_Byte.T
     default: "(Value => 0)"
+  - name: Thruster_Config
+    description: "Per-thruster configuration (count + geometry + max thrust). Only Num_Thrusters and each Max_Thrust feed the algorithm. Defaults to an empty (zero-thruster) array, which is valid."
+    type: Thr_Firing_Schmitt_Array_Config.T
+    default: "(Num_Thrusters => 0, Thrusters => [others => (R_Thrust_B => [0.0, 0.0, 0.0], T_Hat_Thrust_B => [0.0, 0.0, 0.0], Max_Thrust => 0.0)])"
