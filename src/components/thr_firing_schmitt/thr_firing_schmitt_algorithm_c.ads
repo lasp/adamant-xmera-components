@@ -48,36 +48,8 @@ package Thr_Firing_Schmitt_Algorithm_C is
      array (0 .. THR_FIRING_SCHMITT_MAX_THRUSTER_COUNT - 1) of aliased Short_Float
      with Convention => C;
 
-   --* POD matching ThrFiringSchmittThrusterArray_c in C.
-   --* Layout: uint32_t numThrusters; float maxThrust[MAX];
-   type Thr_Firing_Schmitt_Thruster_Array_C is record
-      Num_Thrusters : aliased Unsigned_32;                     --* [-] number of thrusters on the vehicle.
-      Max_Thrust    : aliased Thr_Firing_Schmitt_Max_Thrust_Array; --* [N] per-thruster maximum thrust.
-   end record
-   with Convention => C_Pass_By_Copy;
-
-   --* POD matching ThrFiringSchmittControlParameters_c in C.
-   --* Layout: float levelOn, levelOff, thrMinFireTime, controlPeriod, onTimeSaturationFactor; enum pulsingRegime;
-   type Thr_Firing_Schmitt_Control_Parameters_C is record
-      Level_On                  : aliased Short_Float;                       --* [-] ON duty cycle fraction, in (0, 1].
-      Level_Off                 : aliased Short_Float;                       --* [-] OFF duty cycle fraction, in [0, 1).
-      Thr_Min_Fire_Time         : aliased Short_Float;                       --* [s] minimum commandable fire time.
-      Control_Period            : aliased Short_Float;                       --* [s] control period.
-      On_Time_Saturation_Factor : aliased Short_Float;                       --* [-] control-period multiplier at saturation.
-      Pulsing_Regime            : aliased Thr_Firing_Schmitt_Pulsing_Regime; --* [-] on-pulsing or off-pulsing.
-   end record
-   with Convention => C_Pass_By_Copy;
-
-   --* POD matching ThrFiringSchmittConfig_c in C.
-   --* Layout: ThrFiringSchmittThrusterArray_c thrusterArray; ThrFiringSchmittControlParameters_c controlParameters;
-   type Thr_Firing_Schmitt_Config_C is record
-      Thruster_Array     : aliased Thr_Firing_Schmitt_Thruster_Array_C;
-      Control_Parameters : aliased Thr_Firing_Schmitt_Control_Parameters_C;
-   end record
-   with Convention => C_Pass_By_Copy;
-
    --* Named access-to-constant for the config POD passed across the C boundary.
-   type Thr_Firing_Schmitt_Config_C_Access is access constant Thr_Firing_Schmitt_Config_C;
+   --  type Thr_Firing_Schmitt_Config_C_Access is access constant Thr_Firing_Schmitt_Config_C;
 
    --* Opaque handle for a ThrFiringSchmittAlgorithm instance.
    type Thr_Firing_Schmitt_Algorithm is limited private;
@@ -88,7 +60,14 @@ package Thr_Firing_Schmitt_Algorithm_C is
    --* @return True if the configuration is valid. Never throws, so it can guard the
    --* throwing Create/Set_Config from an invalid configuration.
    function Validate_Config
-     (Config : Thr_Firing_Schmitt_Config_C_Access)
+     (Num_Thrusters             : Unsigned_32;
+      Max_Thrust                : Thr_Firing_Schmitt_Max_Thrust_Array;
+      Level_On                  : Short_Float;
+      Level_Off                 : Short_Float;
+      Thr_Min_Fire_Time         : Short_Float;
+      Control_Period            : Short_Float;
+      On_Time_Saturation_Factor : Short_Float;
+      Pulsing_Regime            : Thr_Firing_Schmitt_Pulsing_Regime)
      return Boolean
      with Import       => True,
           Convention   => C,
@@ -99,7 +78,14 @@ package Thr_Firing_Schmitt_Algorithm_C is
    --* Validate config values with Validate_Config before calling so an invalid config
    --* never reaches this.
    function Create
-     (Config : Thr_Firing_Schmitt_Config_C_Access)
+     (Num_Thrusters             : Unsigned_32;
+      Max_Thrust                : Thr_Firing_Schmitt_Max_Thrust_Array;
+      Level_On                  : Short_Float;
+      Level_Off                 : Short_Float;
+      Thr_Min_Fire_Time         : Short_Float;
+      Control_Period            : Short_Float;
+      On_Time_Saturation_Factor : Short_Float;
+      Pulsing_Regime            : Thr_Firing_Schmitt_Pulsing_Regime)
      return Thr_Firing_Schmitt_Algorithm_Access
      with Import       => True,
           Convention   => C,
@@ -118,7 +104,14 @@ package Thr_Firing_Schmitt_Algorithm_C is
    --* The Schmitt-trigger state is preserved.
    procedure Set_Config
      (Self   : Thr_Firing_Schmitt_Algorithm_Access;
-      Config : Thr_Firing_Schmitt_Config_C_Access)
+      Num_Thrusters             : Unsigned_32;
+      Max_Thrust                : Thr_Firing_Schmitt_Max_Thrust_Array;
+      Level_On                  : Short_Float;
+      Level_Off                 : Short_Float;
+      Thr_Min_Fire_Time         : Short_Float;
+      Control_Period            : Short_Float;
+      On_Time_Saturation_Factor : Short_Float;
+      Pulsing_Regime            : Thr_Firing_Schmitt_Pulsing_Regime)
      with Import       => True,
           Convention   => C,
           External_Name => "ThrFiringSchmittAlgorithm_setConfig";

@@ -12,46 +12,43 @@ package body Component.Thr_Firing_Schmitt.Implementation is
    -- Number of thrusters in the system (8-element data products vs 36-element C API)
    Num_Thrusters : constant := 8;
 
-   -- Build the C config POD from the current component parameters. Both the
-   -- control values and the thruster array come from parameters; only
-   -- Num_Thrusters and each thruster's Max_Thrust feed the algorithm (the
-   -- 8-element parameter array is zero-padded into the 36-element C array).
-   function Make_Config (Self : Instance) return Thr_Firing_Schmitt_Config_C is
-      Config : Thr_Firing_Schmitt_Config_C :=
-        (Thruster_Array     =>
-           (Num_Thrusters => Self.Thruster_Config.Num_Thrusters,
-            Max_Thrust    => [others => 0.0]),
-         Control_Parameters =>
-           (Level_On                  => Self.Levels.Level_On,
-            Level_Off                 => Self.Levels.Level_Off,
-            Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time.Value,
-            Control_Period            => Self.Control_Period.Value,
-            On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor.Value,
-            -- Map the regime byte to the C enum via its representation clause
-            -- (Enum_Val honors the "for ... use" codes). The value was accepted
-            -- by Validate_Parameters, so this cannot raise here.
-            Pulsing_Regime            =>
-              Thr_Firing_Schmitt_Pulsing_Regime'Enum_Val
-                (Integer (Self.Thrust_Pulsing_Regime.Value))));
+   -- Build the 36-element C max-thrust array from the thruster-config parameter.
+   -- This is the only non-scalar argument to Create/Set_Config/Validate_Config;
+   -- every other config value is passed directly as a scalar. The parameter's
+   -- thruster array is zero-padded into the 36-element C array.
+   function Make_Max_Thrust (Thruster_Config : Thr_Firing_Schmitt_Array_Config.U)
+      return Thr_Firing_Schmitt_Max_Thrust_Array is
+      Result : Thr_Firing_Schmitt_Max_Thrust_Array := [others => 0.0];
    begin
-      for I in Self.Thruster_Config.Thrusters'Range loop
-         Config.Thruster_Array.Max_Thrust (I) := Self.Thruster_Config.Thrusters (I).Max_Thrust;
+      for I in Thruster_Config.Thrusters'Range loop
+         Result (I) := Thruster_Config.Thrusters (I).Max_Thrust;
       end loop;
-      return Config;
-   end Make_Config;
+      return Result;
+   end Make_Max_Thrust;
 
    --------------------------------------------------
    -- Subprogram for implementation init method:
    --------------------------------------------------
    -- Initializes the thruster firing Schmitt algorithm.
    overriding procedure Init (Self : in out Instance) is
-      -- Build the initial configuration from the parameter defaults and the
-      -- empty (zero-thruster) array. Both are valid, so Create will not reject
-      -- them.
-      Config : aliased Thr_Firing_Schmitt_Config_C := Make_Config (Self);
    begin
-      -- Allocate the C++ algorithm on the heap with the initial configuration.
-      Self.Alg := Create (Config'Unchecked_Access);
+      -- Allocate the C++ algorithm on the heap with the initial configuration
+      -- built from the parameter defaults and the empty (zero-thruster) array.
+      -- Both are valid, so Create will not reject them.
+      Self.Alg := Create
+        (Num_Thrusters             => Self.Thruster_Config.Num_Thrusters,
+         Max_Thrust                => Make_Max_Thrust (Self.Thruster_Config),
+         Level_On                  => Self.Levels.Level_On,
+         Level_Off                 => Self.Levels.Level_Off,
+         Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time.Value,
+         Control_Period            => Self.Control_Period.Value,
+         On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor.Value,
+         -- Map the regime byte to the C enum via its representation clause
+         -- (Enum_Val honors the "for ... use" codes). The value was accepted
+         -- by Validate_Parameters, so this cannot raise here.
+         Pulsing_Regime            =>
+           Thr_Firing_Schmitt_Pulsing_Regime'Enum_Val
+             (Integer (Self.Thrust_Pulsing_Regime.Value)));
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -133,12 +130,22 @@ package body Component.Thr_Firing_Schmitt.Implementation is
    -----------------------------------------------
    -- This procedure is called when the parameters of a component have been updated.
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
+   begin
       -- Rebuild the algorithm configuration from the updated parameters. The
       -- values were checked by Validate_Parameters at staging, so Set_Config
       -- will not reject them.
-      Config : aliased Thr_Firing_Schmitt_Config_C := Make_Config (Self);
-   begin
-      Set_Config (Self.Alg, Config'Unchecked_Access);
+      Set_Config
+        (Self.Alg,
+         Num_Thrusters             => Self.Thruster_Config.Num_Thrusters,
+         Max_Thrust                => Make_Max_Thrust (Self.Thruster_Config),
+         Level_On                  => Self.Levels.Level_On,
+         Level_Off                 => Self.Levels.Level_Off,
+         Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time.Value,
+         Control_Period            => Self.Control_Period.Value,
+         On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor.Value,
+         Pulsing_Regime            =>
+           Thr_Firing_Schmitt_Pulsing_Regime'Enum_Val
+             (Integer (Self.Thrust_Pulsing_Regime.Value)));
    end Update_Parameters_Action;
 
    -- Validate a staged parameter set before it is applied by asking the
@@ -163,24 +170,20 @@ package body Component.Thr_Firing_Schmitt.Implementation is
          -- Enum_Val raises Constraint_Error on a byte that is not a defined
          -- representation; the handler below maps that to Invalid, so the enum's
          -- "for ... use" clause is the single source of valid regime values.
-         Config : aliased Thr_Firing_Schmitt_Config_C :=
-           (Thruster_Array     =>
-              (Num_Thrusters => Thruster_Config.Num_Thrusters,
-               Max_Thrust    => [others => 0.0]),
-            Control_Parameters =>
-              (Level_On                  => Levels.Level_On,
+         Pulsing_Regime : constant Thr_Firing_Schmitt_Pulsing_Regime :=
+           Thr_Firing_Schmitt_Pulsing_Regime'Enum_Val
+             (Integer (Thrust_Pulsing_Regime.Value));
+      begin
+         if Validate_Config
+              (Num_Thrusters             => Thruster_Config.Num_Thrusters,
+               Max_Thrust                => Make_Max_Thrust (Thruster_Config),
+               Level_On                  => Levels.Level_On,
                Level_Off                 => Levels.Level_Off,
                Thr_Min_Fire_Time         => Thr_Min_Fire_Time.Value,
                Control_Period            => Control_Period.Value,
                On_Time_Saturation_Factor => On_Time_Saturation_Factor.Value,
-               Pulsing_Regime            =>
-                 Thr_Firing_Schmitt_Pulsing_Regime'Enum_Val
-                   (Integer (Thrust_Pulsing_Regime.Value))));
-      begin
-         for I in Thruster_Config.Thrusters'Range loop
-            Config.Thruster_Array.Max_Thrust (I) := Thruster_Config.Thrusters (I).Max_Thrust;
-         end loop;
-         if Validate_Config (Config'Unchecked_Access) then
+               Pulsing_Regime            => Pulsing_Regime)
+         then
             return Parameter_Validation_Status.Valid;
          else
             return Parameter_Validation_Status.Invalid;

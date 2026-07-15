@@ -83,7 +83,8 @@ private
       Thr_Min_Fire_Time : in Packed_F32.U;
       Control_Period : in Packed_F32.U;
       On_Time_Saturation_Factor : in Packed_F32.U;
-      Thrust_Pulsing_Regime : in Packed_Byte.U
+      Thrust_Pulsing_Regime : in Packed_Byte.U;
+      Thruster_Config : in Thr_Firing_Schmitt_Array_Config.U
    ) return Parameter_Validation_Status.E;
 
    -----------------------------------------------
