@@ -5,5 +5,5 @@ data_dependencies:
     type: Att_Ref.T
     description: Reference attitude for tracking
   - name: Navigation_Attitude
-    type: Nav_Att.T
+    type: Nav_Att_Output.T
     description: Current navigation attitude estimate

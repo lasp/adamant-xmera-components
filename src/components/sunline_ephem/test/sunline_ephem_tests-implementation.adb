@@ -3,7 +3,6 @@
 --------------------------------------------------------------------------------
 
 with Basic_Assertions; use Basic_Assertions;
-with Nav_Att;
 with Packed_F64x3;
 with Packed_F32x3.Assertion; use Packed_F32x3.Assertion;
 
@@ -93,12 +92,12 @@ package body Sunline_Ephem_Tests.Implementation is
          Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, I);
          Natural_Assert.Eq (T.Sunline_Body_Frame_History.Get_Count, I);
 
-         -- Check the sunline output (stored in vehSunPntBdy field)
+         -- Check the sunline output (the body-frame sun heading vector).
          declare
-            Output : constant Nav_Att.T := T.Sunline_Body_Frame_History.Get (I);
+            Output : constant Packed_F32x3.T := T.Sunline_Body_Frame_History.Get (I);
          begin
             Packed_F32x3_Assert.Eq (
-               Output.Veh_Sun_Pnt_Bdy,
+               Output,
                Test_Cases (I).Expected_Sunline,
                Epsilon => 0.0001
             );

@@ -10,7 +10,7 @@ fields:
     type: Interfaces.Unsigned_64
     format: U64
     description: "[ns] Time tag associated with measurement"
-  - name: Mrp_Bdy_Inrtl
+  - name: Sigma_Bn
     type: Packed_F32x3.T
     description: "[-] MRP from inertial to body frame"
   - name: Omega_Bn_B

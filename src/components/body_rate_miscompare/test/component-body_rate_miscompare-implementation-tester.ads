@@ -12,7 +12,7 @@ with Command_Response.Representation;
 with Event.Representation;
 with Sys_Time.Representation;
 with Data_Product;
-with Nav_Att.Representation;
+with Packed_F32x3.Representation;
 with Body_Rate_Fault.Representation;
 with Mimu_Majority_Vote_Output;
 with St_Att;
@@ -38,7 +38,7 @@ package Component.Body_Rate_Miscompare.Implementation.Tester is
    package Invalid_Command_Received_History_Package is new Printable_History (Invalid_Command_Info.T, Invalid_Command_Info.Representation.Image);
 
    -- Data product history packages:
-   package Body_Rate_History_Package is new Printable_History (Nav_Att.T, Nav_Att.Representation.Image);
+   package Body_Rate_History_Package is new Printable_History (Packed_F32x3.T, Packed_F32x3.Representation.Image);
    package Rate_Fault_Status_History_Package is new Printable_History (Body_Rate_Fault.T, Body_Rate_Fault.Representation.Image);
 
    -- Component class instance:
@@ -121,7 +121,7 @@ package Component.Body_Rate_Miscompare.Implementation.Tester is
    --    Data products for the Body Rate Miscompare component.
    -- Selected body rate output (star tracker rate if rates agree, IMU rate if they
    -- disagree)
-   overriding procedure Body_Rate (Self : in out Instance; Arg : in Nav_Att.T);
+   overriding procedure Body_Rate (Self : in out Instance; Arg : in Packed_F32x3.T);
    -- Body rate fault detection status
    overriding procedure Rate_Fault_Status (Self : in out Instance; Arg : in Body_Rate_Fault.T);
 

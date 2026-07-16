@@ -66,7 +66,7 @@ package body Convert_St_Platform_To_Body_Tests.Implementation is
          Platform_Attitude         : St_Platform_Attitude.T;
          Platform_Angular_Velocity : St_Platform_Angular_Velocity.T;
          Expected_Time_Tag         : Interfaces.Unsigned_64;
-         Expected_Mrp_Bdy_Inrtl    : Packed_F32x3.T;
+         Expected_Sigma_Bn         : Packed_F32x3.T;
          Expected_Omega_Bn_B       : Packed_F32x3.T;
       end record;
 
@@ -109,7 +109,7 @@ package body Convert_St_Platform_To_Body_Tests.Implementation is
                Time_Tag                  => 1_000_000_000,
                Platform_Angular_Velocity => [0.00499996, -0.00999992, 0.01499988, 0.99982493]),
             Expected_Time_Tag      => 1_000_000_000,
-            Expected_Mrp_Bdy_Inrtl => [0.0, 0.0, 0.13165250],
+            Expected_Sigma_Bn => [0.0, 0.0, 0.13165250],
             Expected_Omega_Bn_B    => [0.01, -0.02, 0.03]
          ),
          (
@@ -123,7 +123,7 @@ package body Convert_St_Platform_To_Body_Tests.Implementation is
                Time_Tag                  => 1_500_000_000,
                Platform_Angular_Velocity => [0.0, 0.0, 0.0, 1.0]),
             Expected_Time_Tag      => 1_500_000_000,
-            Expected_Mrp_Bdy_Inrtl => [0.26794919, 0.0, 0.0],
+            Expected_Sigma_Bn => [0.26794919, 0.0, 0.0],
             Expected_Omega_Bn_B    => [0.0, 0.0, 0.0]
          ),
          (
@@ -137,7 +137,7 @@ package body Convert_St_Platform_To_Body_Tests.Implementation is
                Time_Tag                  => 2_000_000_000,
                Platform_Angular_Velocity => [-0.00750022, 0.00400012, 0.01100032, 0.99990336]),
             Expected_Time_Tag      => 2_000_000_000,
-            Expected_Mrp_Bdy_Inrtl => [0.25661850, 0.10629486, -0.18410810],
+            Expected_Sigma_Bn => [0.25661850, 0.10629486, -0.18410810],
             Expected_Omega_Bn_B    => [-0.01626346, -0.00494975, 0.022]
          )
       ];
@@ -165,8 +165,8 @@ package body Convert_St_Platform_To_Body_Tests.Implementation is
          begin
             Unsigned_64_Assert.Eq (Output.Time_Tag, Test_Cases (I).Expected_Time_Tag);
             Packed_F32x3_Assert.Eq
-              (Output.Mrp_Bdy_Inrtl,
-               Test_Cases (I).Expected_Mrp_Bdy_Inrtl,
+              (Output.Sigma_Bn,
+               Test_Cases (I).Expected_Sigma_Bn,
                Epsilon => 1.0E-4);
             Packed_F32x3_Assert.Eq
               (Output.Omega_Bn_B,

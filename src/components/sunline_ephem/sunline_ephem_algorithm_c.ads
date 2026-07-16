@@ -4,9 +4,8 @@ pragma Style_Checks (Off);
 pragma Warnings (Off, "-gnatwu");
 
 with Interfaces.C; use Interfaces; use Interfaces.C;
-with Ephemeris.C;
-with Nav_Att.C;
-with Nav_Trans.C;
+with Packed_F32x3_Record.C;
+with Packed_F64x3_Record.C;
 
 package Sunline_Ephem_Algorithm_C is
 
@@ -29,17 +28,17 @@ package Sunline_Ephem_Algorithm_C is
           External_Name => "SunlineEphemAlgorithm_destroy";
 
    --* @brief Compute ephemeris-based sunline heading in body frame.
-   --* @param Self    The algorithm instance.
-   --* @param Sun_Pos Pointer to sun ephemeris message payload.
-   --* @param Sc_Pos  Pointer to spacecraft position message payload.
-   --* @param Sc_Att  Pointer to spacecraft attitude message payload.
-   --* @return Navigation message containing sunline direction in body frame.
-   function Update
-     (Self    : Sunline_Ephem_Algorithm_Access;
-      Sun_Pos : Ephemeris.C.U_C_Access;
-      Sc_Pos  : Nav_Trans.C.U_C_Access;
-      Sc_Att  : Nav_Att.C.U_C_Access)
-     return Nav_Att.C.U_C
+   --* @param Self     The algorithm instance.
+   --* @param Sun_Pos  Sun inertial position r_SN_N [m] (Vector3d_c).
+   --* @param Sc_Pos   Spacecraft inertial position r_BN_N [m] (Vector3d_c).
+   --* @param Sigma_Bn Spacecraft attitude MRP, body relative to inertial (Vector3f_c).
+   --* @param Result   Out: sunline direction (unit vector) in body frame (Vector3f_c).
+   procedure Update
+     (Self     : Sunline_Ephem_Algorithm_Access;
+      Sun_Pos  : Packed_F64x3_Record.C.U_C_Access;
+      Sc_Pos   : Packed_F64x3_Record.C.U_C_Access;
+      Sigma_Bn : Packed_F32x3_Record.C.U_C_Access;
+      Result   : Packed_F32x3_Record.C.U_C_Access)
      with Import       => True,
           Convention   => C,
           External_Name => "SunlineEphemAlgorithm_update";

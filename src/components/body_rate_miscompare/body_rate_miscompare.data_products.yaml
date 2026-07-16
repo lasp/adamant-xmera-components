@@ -2,8 +2,8 @@
 description: Data products for the Body Rate Miscompare component.
 data_products:
   - name: Body_Rate
-    type: Nav_Att.T
-    description: Selected body rate output (star tracker rate if rates agree, IMU rate if they disagree)
+    type: Packed_F32x3.T
+    description: Selected body rate output omega_BN_B (star tracker rate if rates agree, IMU rate if they disagree)
   - name: Rate_Fault_Status
     type: Body_Rate_Fault.T
     description: Body rate fault detection status

@@ -2,8 +2,8 @@
 description: Data dependencies for the Sunline SRuKF component.
 data_dependencies:
   - name: Spacecraft_Attitude
-    type: Nav_Att.T
-    description: Spacecraft attitude navigation state (sigma_BN, omega_BN_B, vehSunPntBdy, timeTag)
+    type: Packed_F32x3.T
+    description: Spacecraft body angular velocity omega_BN_B (from body_rate_miscompare's selected body rate)
   - name: Css_Sensor_Input
     type: Css_Sensor_Values.T
     description: Coarse sun sensor cosine measurements (pre-converted from ADC by css_comm). The Data field is a 16-element F64 vector; the algorithm currently uses up to MAX_NUM_CSS_SENSORS entries.

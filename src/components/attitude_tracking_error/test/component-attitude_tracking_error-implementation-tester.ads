@@ -9,7 +9,7 @@ with Data_Product_Return.Representation;
 with Data_Product_Fetch.Representation;
 with Data_Product.Representation;
 with Att_Ref;
-with Nav_Att;
+with Nav_Att_Output;
 with Data_Product;
 with Att_Guid.Representation;
 
@@ -38,7 +38,7 @@ package Component.Attitude_Tracking_Error.Implementation.Tester is
       -- and will be returned to the component when a data dependency call
       -- is made.
       Attitude_Reference : Att_Ref.T;
-      Navigation_Attitude : Nav_Att.T;
+      Navigation_Attitude : Nav_Att_Output.T;
       -- The return status for the data dependency fetch. This can be set
       -- during unit test to return something other than Success.
       Data_Dependency_Return_Status_Override : Data_Product_Enums.Fetch_Status.E := Data_Product_Enums.Fetch_Status.Success;

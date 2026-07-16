@@ -1,9 +1,0 @@
----
-description: Data products for the Nav Aggregate component.
-data_products:
-  - name: Aggregated_Nav_Att
-    type: Nav_Att.T
-    description: Aggregated attitude navigation message combining fields from multiple sources.
-  - name: Aggregated_Nav_Trans
-    type: Nav_Trans.T
-    description: Aggregated translational navigation message combining fields from multiple sources.

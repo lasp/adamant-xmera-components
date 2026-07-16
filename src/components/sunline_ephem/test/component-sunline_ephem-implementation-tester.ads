@@ -9,9 +9,9 @@ with Data_Product_Return.Representation;
 with Data_Product_Fetch.Representation;
 with Data_Product.Representation;
 with Data_Product;
-with Nav_Att.Representation;
+with Packed_F32x3.Representation;
 with Cartesian_State;
-with Nav_Att;
+with Nav_Att_Output;
 
 -- Sunline ephemeris algorithm computes the direction to the sun in the spacecraft
 -- body frame.
@@ -24,7 +24,7 @@ package Component.Sunline_Ephem.Implementation.Tester is
    package Data_Product_T_Recv_Sync_History_Package is new Printable_History (Data_Product.T, Data_Product.Representation.Image);
 
    -- Data product history packages:
-   package Sunline_Body_Frame_History_Package is new Printable_History (Nav_Att.T, Nav_Att.Representation.Image);
+   package Sunline_Body_Frame_History_Package is new Printable_History (Packed_F32x3.T, Packed_F32x3.Representation.Image);
 
    -- Component class instance:
    type Instance is new Component.Sunline_Ephem_Reciprocal.Base_Instance with record
@@ -40,7 +40,7 @@ package Component.Sunline_Ephem.Implementation.Tester is
       -- is made.
       Sun_Ephemeris : Cartesian_State.T;
       Spacecraft_Position : Cartesian_State.T;
-      Spacecraft_Attitude : Nav_Att.T;
+      Spacecraft_Attitude : Nav_Att_Output.T;
       -- The return status for the data dependency fetch. This can be set
       -- during unit test to return something other than Success.
       Data_Dependency_Return_Status_Override : Data_Product_Enums.Fetch_Status.E := Data_Product_Enums.Fetch_Status.Success;
@@ -84,6 +84,6 @@ package Component.Sunline_Ephem.Implementation.Tester is
    --    Data products for the Sunline Ephem component.
    -- Sunline direction vector in spacecraft body frame (stored in vehSunPntBdy
    -- field).
-   overriding procedure Sunline_Body_Frame (Self : in out Instance; Arg : in Nav_Att.T);
+   overriding procedure Sunline_Body_Frame (Self : in out Instance; Arg : in Packed_F32x3.T);
 
 end Component.Sunline_Ephem.Implementation.Tester;
