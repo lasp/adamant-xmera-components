@@ -59,7 +59,7 @@ package body Component.Body_Rate_Miscompare.Implementation is
 
       -- Call algorithm with angular velocity vectors:
       declare
-         Imu_Omega : constant Packed_F32x3_Record.C.U_C := (Value => Packed_F32x3.C.Unpack (Imu_Body.Avg_Ang_Vel_Body));
+         Imu_Omega : constant Packed_F32x3_Record.C.U_C := (Value => Packed_F32x3.C.Unpack (Imu_Body.Gyro.Average));
          St_Omega : constant Packed_F32x3_Record.C.U_C := (Value => Packed_F32x3.C.Unpack (St_Body.Omega_Bn_B));
 
          Output : constant Body_Rate_Miscompare_Output_C := Update (

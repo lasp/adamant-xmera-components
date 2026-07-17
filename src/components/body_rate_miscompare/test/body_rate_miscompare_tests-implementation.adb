@@ -89,9 +89,16 @@ package body Body_Rate_Miscompare_Tests.Implementation is
       for I in Test_Cases'Range loop
          -- Set IMU angular velocity data dependency
          T.Imu_Body := (
-            Avg_Ang_Vel_Body => Test_Cases (I).Imu_Angular_Velocity,
-            Fault_Detected => 0,
-            Mimu_Index_Faulted => -1
+            Gyro => (
+               Average => Test_Cases (I).Imu_Angular_Velocity,
+               Fault_Detected => False,
+               Imu_Difference_Mag => [others => 0.0],
+               Imu_Valid => [others => True]),
+            Accel => (
+               Average => [others => 0.0],
+               Fault_Detected => False,
+               Imu_Difference_Mag => [others => 0.0],
+               Imu_Valid => [others => True])
          );
 
          -- Set star tracker attitude data dependency
@@ -142,7 +149,7 @@ package body Body_Rate_Miscompare_Tests.Implementation is
       St_Rate : constant Packed_F32x3.T := [0.11, 0.21, 0.31];
    begin
       -- Provide agreeing data dependencies:
-      T.Imu_Body := (Avg_Ang_Vel_Body => Imu_Rate, Fault_Detected => 0, Mimu_Index_Faulted => -1);
+      T.Imu_Body := (Gyro => (Average => Imu_Rate, Fault_Detected => False, Imu_Difference_Mag => [others => 0.0], Imu_Valid => [others => True]), Accel => (Average => [others => 0.0], Fault_Detected => False, Imu_Difference_Mag => [others => 0.0], Imu_Valid => [others => True]));
       T.Star_Tracker_Attitude := (Time_Tag => 0, Sigma_Bn => [0.0, 0.0, 0.0], Omega_Bn_B => St_Rate);
 
       -- Command the override on:
@@ -210,7 +217,7 @@ package body Body_Rate_Miscompare_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
 
       -- Persistent disagreement:
-      T.Imu_Body := (Avg_Ang_Vel_Body => Imu_Rate, Fault_Detected => 0, Mimu_Index_Faulted => -1);
+      T.Imu_Body := (Gyro => (Average => Imu_Rate, Fault_Detected => False, Imu_Difference_Mag => [others => 0.0], Imu_Valid => [others => True]), Accel => (Average => [others => 0.0], Fault_Detected => False, Imu_Difference_Mag => [others => 0.0], Imu_Valid => [others => True]));
       T.Star_Tracker_Attitude := (Time_Tag => 0, Sigma_Bn => [0.0, 0.0, 0.0], Omega_Bn_B => St_Rate);
 
       -- Two disagreements: persistence counter reaches 2 (limit 3 not yet hit) -> no fault:
