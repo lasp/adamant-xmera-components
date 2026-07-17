@@ -18,8 +18,14 @@ package body Component.Mimu_Majority_Vote.Implementation is
    -- Initializes the MIMU majority vote algorithm.
    overriding procedure Init (Self : in out Instance) is
    begin
-      -- Allocate C++ class on the heap
-      Self.Alg := Create;
+      -- Allocate the C++ algorithm on the heap with the initial configuration built
+      -- from the component's parameter defaults. The defaults (thresholds > 0,
+      -- persistence limits > 0) are valid, so Create will not reject them.
+      Self.Alg := Create (
+         Self.Omega_Threshold.Value,
+         Self.Gyro_Fault_Persistence_Limit.Value,
+         Self.Accel_Threshold.Value,
+         Self.Accel_Fault_Persistence_Limit.Value);
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -59,22 +65,30 @@ package body Component.Mimu_Majority_Vote.Implementation is
       Self.Update_Parameters;
 
       declare
-         -- Extract angular velocity from each IMU and build C input array:
-         Imu_Inputs : constant Packed_F32x3_X3.C.U_C := [
+         -- Extract angular velocity and acceleration from each IMU and build the C
+         -- input arrays. These are aliased so their addresses can be passed to the C
+         -- shim, which takes each array by reference (const Vector3fArray3_c*).
+         Imu_Omegas : aliased Packed_F32x3_X3.C.U_C := [
             Packed_F32x3.C.Unpack (Imu_1_T.Ang_Vel_Body),
             Packed_F32x3.C.Unpack (Imu_2_T.Ang_Vel_Body),
             Packed_F32x3.C.Unpack (Imu_3_T.Ang_Vel_Body)
          ];
+         Imu_Accels : aliased Packed_F32x3_X3.C.U_C := [
+            Packed_F32x3.C.Unpack (Imu_1_T.Accel_Body),
+            Packed_F32x3.C.Unpack (Imu_2_T.Accel_Body),
+            Packed_F32x3.C.Unpack (Imu_3_T.Accel_Body)
+         ];
 
-         -- Call the C algorithm:
+         -- Call the C algorithm with both quantities:
          Result : constant Mimu_Majority_Vote_Output.C.U_C := Update (
             Self.Alg,
-            Imu_Inputs     => Imu_Inputs
+            Imu_Omegas => Imu_Omegas'Unchecked_Access,
+            Imu_Accels => Imu_Accels'Unchecked_Access
          );
          Packed_Result : constant Mimu_Majority_Vote_Output.T :=
             Mimu_Majority_Vote_Output.Pack (Mimu_Majority_Vote_Output.C.To_Ada (Result));
       begin
-         -- Publish result with fault status:
+         -- Publish result with independent gyro and accel votes:
          Self.Data_Product_T_Send (Self.Data_Products.Majority_Vote_Result (
             Arg.Time,
             Packed_Result
@@ -95,12 +109,40 @@ package body Component.Mimu_Majority_Vote.Implementation is
    -- Description:
    --    Parameters for the MIMU Majority Vote component
    -- This procedure is called when the parameters of a component have been updated.
-   -- Apply the omega threshold parameter to the C algorithm.
+   -- Apply the staged configuration to the C algorithm. The values were checked by
+   -- Validate_Parameters at staging, so Set_Config will not reject them.
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
    begin
-      Set_Omega_Threshold (Self.Alg, Self.Omega_Threshold.Value);
-      Set_Fault_Persistence_Limit (Self.Alg, Self.Fault_Persistence_Limit.Value);
+      Set_Config (
+         Self.Alg,
+         Self.Omega_Threshold.Value,
+         Self.Gyro_Fault_Persistence_Limit.Value,
+         Self.Accel_Threshold.Value,
+         Self.Accel_Fault_Persistence_Limit.Value);
    end Update_Parameters_Action;
+
+   -- Validate staged parameters against the algorithm's own (non-throwing) config
+   -- rules so an invalid configuration never reaches the throwing Set_Config.
+   overriding function Validate_Parameters (
+      Self : in out Instance;
+      Omega_Threshold : in Packed_F32.U;
+      Gyro_Fault_Persistence_Limit : in Packed_U32.U;
+      Accel_Threshold : in Packed_F32.U;
+      Accel_Fault_Persistence_Limit : in Packed_U32.U
+   ) return Parameter_Validation_Status.E is
+      pragma Unreferenced (Self);
+   begin
+      if Validate_Config (
+            Omega_Threshold.Value,
+            Gyro_Fault_Persistence_Limit.Value,
+            Accel_Threshold.Value,
+            Accel_Fault_Persistence_Limit.Value)
+      then
+         return Parameter_Validation_Status.Valid;
+      else
+         return Parameter_Validation_Status.Invalid;
+      end if;
+   end Validate_Parameters;
 
    -- Invalid Parameter handler. This procedure is called when a parameter's type is found to be invalid:
    overriding procedure Invalid_Parameter (Self : in out Instance; Par : in Parameter.T; Errant_Field_Number : in Unsigned_32; Errant_Field : in Basic_Types.Poly_Type) is
