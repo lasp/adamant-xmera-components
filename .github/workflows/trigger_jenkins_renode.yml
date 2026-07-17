@@ -63,7 +63,7 @@ jobs:
       # ADAMANT_REF_PIN: 'feature/your-branch-here'
       # ADAMANT_EXAMPLE_REF_PIN: 'feature/your-branch-here'
       # FP32_FSW_XMERA_REF_PIN: 'feature/your-branch-here'
-      # PROJECT_REF_PIN: 'feature/your-branch-here'
+      PROJECT_REF_PIN: 'feature/safe-state-algorithm-topic'
     steps:
       - run: echo "Starting job triggered by a ${{ github.event_name }} event on a ${{ runner.os }} server hosted by GitHub."
       - name: Resolve commit SHA
