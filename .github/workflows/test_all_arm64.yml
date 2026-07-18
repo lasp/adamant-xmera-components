@@ -3,6 +3,11 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      fp32_ref:
+        description: 'fp32-fsw-xmera branch, tag, or commit SHA to test against'
+        required: false
+        default: develop
 jobs:
   compile_job:
     name: test_all (arm64)
@@ -33,7 +38,7 @@ jobs:
           set-safe-directory: true
           repository: lasp/fp32-fsw-xmera
           path: fp32-fsw-xmera
-          ref: develop
+          ref: ${{ inputs.fp32_ref || 'develop' }}
 
       - name: Clone Eigen with freestanding support
         uses: actions/checkout@v4

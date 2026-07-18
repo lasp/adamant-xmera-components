@@ -7,6 +7,11 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      fp32_ref:
+        description: 'fp32-fsw-xmera branch, tag, or commit SHA to test against'
+        required: false
+        default: develop
 jobs:
   compile_job:
     name: test_all
@@ -28,7 +33,7 @@ jobs:
           set-safe-directory: true
           repository: lasp/fp32-fsw-xmera
           path: fp32-fsw-xmera
-          ref: develop
+          ref: ${{ inputs.fp32_ref || 'develop' }}
       - name: Clone adamant repository
         uses: actions/checkout@v4
         with:
