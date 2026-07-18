@@ -19,6 +19,13 @@ jobs:
     container:
       image: ghcr.io/lasp/adamant:0.2
       options: --user root
+    env:
+      # === Per-CI-run pin ==========================================
+      # Set to a fp32-fsw-xmera branch/tag/SHA to test coupled changes
+      # on THIS branch's push/PR runs (adamant-xmera-components and
+      # fp32-fsw-xmera are often changed together). workflow_dispatch's
+      # fp32_ref input still wins; revert to '' before merging.
+      FP32_FSW_XMERA_REF_PIN: ''
     steps:
       - run: echo "Starting job triggered by a ${{ github.event_name }} event on a ${{ runner.os }} server hosted by GitHub."
       - run: echo "Checking out ${{ github.repository }} on branch ${{ github.ref }}."
@@ -33,7 +40,7 @@ jobs:
           set-safe-directory: true
           repository: lasp/fp32-fsw-xmera
           path: fp32-fsw-xmera
-          ref: ${{ inputs.fp32_ref || 'develop' }}
+          ref: ${{ inputs.fp32_ref || env.FP32_FSW_XMERA_REF_PIN || 'develop' }}
       - name: Clone adamant repository
         uses: actions/checkout@v4
         with:
