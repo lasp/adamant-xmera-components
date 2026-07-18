@@ -2,7 +2,6 @@
 -- Body_Rate_Miscompare Tests Body
 --------------------------------------------------------------------------------
 
-with Interfaces; use Interfaces;
 with Basic_Assertions; use Basic_Assertions;
 with Body_Rate_Fault;
 with Packed_F32x3.Assertion; use Packed_F32x3.Assertion;
