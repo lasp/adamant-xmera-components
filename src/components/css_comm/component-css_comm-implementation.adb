@@ -26,6 +26,11 @@ package body Component.Css_Comm.Implementation is
       -- its Chebyshev model's [0, 1] fit domain; all calibration shaping
       -- lives in the Chebyshev parameters.
       Set_Max_Sensor_Value (Self.Alg, Long_Float (Interfaces.Unsigned_16'Last));
+      -- Apply the Ada parameter defaults to the algorithm: the framework
+      -- invokes Update_Parameters_Action only after a ground parameter
+      -- update, and the C++ constructor defaults do not match the Ada
+      -- defaults.
+      Self.Update_Parameters_Action;
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is

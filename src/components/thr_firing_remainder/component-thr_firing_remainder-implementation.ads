@@ -19,6 +19,12 @@ package Component.Thr_Firing_Remainder.Implementation is
    -- Initializes the thruster firing remainder algorithm.
    overriding procedure Init (Self : in out Instance);
    not overriding procedure Destroy (Self : in out Instance);
+   -- Configures the thruster geometry and maximum thrusts. MUST be called
+   -- before the first tick: with unconfigured (zero) maximum thrusts the C
+   -- algorithm's on-time division produces Inf (commanding a thruster
+   -- full-on) or NaN. No parameter or data dependency supplies this
+   -- configuration; the caller integrating this component into an assembly
+   -- owns invoking it.
    not overriding procedure Configure_Thrusters (
       Self   : in out Instance;
       Config : access constant Thr_Firing_Remainder_Array_Config);
