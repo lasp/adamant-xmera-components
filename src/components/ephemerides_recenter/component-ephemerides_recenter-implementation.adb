@@ -14,7 +14,7 @@ package body Component.Ephemerides_Recenter.Implementation is
    --------------------------------------------------
    -- Subprogram for implementation init method:
    --------------------------------------------------
-   overriding procedure Init (Self : in out Instance; New_Zero_Base_Id : in Interfaces.Integer_32; Previous_Common_Zero_Base_Id : in Interfaces.Integer_32; Body_Count : in Interfaces.Unsigned_32; Body_0_Spice_Id : in Interfaces.Integer_32; Body_0_Original_Central_Body_Id : in Interfaces.Integer_32; Body_1_Spice_Id : in Interfaces.Integer_32; Body_1_Original_Central_Body_Id : in Interfaces.Integer_32; Body_2_Spice_Id : in Interfaces.Integer_32; Body_2_Original_Central_Body_Id : in Interfaces.Integer_32; Body_3_Spice_Id : in Interfaces.Integer_32; Body_3_Original_Central_Body_Id : in Interfaces.Integer_32) is
+   overriding procedure Init (Self : in out Instance; New_Zero_Base_Id : in Interfaces.Integer_32; Previous_Common_Zero_Base_Id : in Interfaces.Integer_32; Body_0_Spice_Id : in Interfaces.Integer_32; Body_0_Original_Central_Body_Id : in Interfaces.Integer_32; Body_1_Spice_Id : in Interfaces.Integer_32; Body_1_Original_Central_Body_Id : in Interfaces.Integer_32; Body_2_Spice_Id : in Interfaces.Integer_32; Body_2_Original_Central_Body_Id : in Interfaces.Integer_32; Body_3_Spice_Id : in Interfaces.Integer_32; Body_3_Original_Central_Body_Id : in Interfaces.Integer_32) is
       Body_0 : aliased Body_To_Recenter.C.U_C := (
          Body_Spice_Id => Body_0_Spice_Id,
          Original_Central_Body_Id => Body_0_Original_Central_Body_Id);
@@ -30,25 +30,16 @@ package body Component.Ephemerides_Recenter.Implementation is
    begin
       -- Allocate C++ class on the heap
       Self.Alg := Create;
-      Self.Body_Count := Body_Count;
 
-      -- Add each configured body in order. Bodies must be added before
+      -- Add the four bodies in order. Bodies must be added before
       -- Set_Previous_Common_Zero_Base, which validates its argument against
       -- the populated body list immediately (it does NOT defer validation
       -- to Reset). The C++ algorithm orders bodies by insertion; the data
       -- dependency index matches that ordering.
-      if Body_Count >= 1 then
-         Add_Body_Ephemeris_To_Recenter (Self.Alg, Body_0'Unchecked_Access);
-      end if;
-      if Body_Count >= 2 then
-         Add_Body_Ephemeris_To_Recenter (Self.Alg, Body_1'Unchecked_Access);
-      end if;
-      if Body_Count >= 3 then
-         Add_Body_Ephemeris_To_Recenter (Self.Alg, Body_2'Unchecked_Access);
-      end if;
-      if Body_Count >= 4 then
-         Add_Body_Ephemeris_To_Recenter (Self.Alg, Body_3'Unchecked_Access);
-      end if;
+      Add_Body_Ephemeris_To_Recenter (Self.Alg, Body_0'Unchecked_Access);
+      Add_Body_Ephemeris_To_Recenter (Self.Alg, Body_1'Unchecked_Access);
+      Add_Body_Ephemeris_To_Recenter (Self.Alg, Body_2'Unchecked_Access);
+      Add_Body_Ephemeris_To_Recenter (Self.Alg, Body_3'Unchecked_Access);
 
       -- Configure central bodies. Set_Previous_Common_Zero_Base validates
       -- the given SPICE ID exists in the body list and throws otherwise.
@@ -73,42 +64,29 @@ package body Component.Ephemerides_Recenter.Implementation is
       use Data_Product_Enums;
       use Data_Product_Enums.Data_Dependency_Status;
 
-      -- Body input Cartesian states. Initialized to zero in case Body_Count
-      -- gates a fetch off; the algorithm will see zero r/v for those slots.
+      -- Fetch each body's input Cartesian state.
       --
       -- Data_Dependency_Status.E can be Success, Not_Available, Error, or Stale.
       -- All return values besides Success indicate that this component is not
       -- wired up correctly in the algorithm execution order and received errant,
       -- stale, or no data. This should never happen, so we assert after each fetch.
-      Zero_State : constant Cartesian_State.T := Cartesian_State.Pack (
-         (Position => [others => 0.0],
-          Velocity => [others => 0.0]));
-      Body_0_State : Cartesian_State.T := Zero_State;
-      Body_0_Status : Data_Dependency_Status.E := Success;
-      Body_1_State : Cartesian_State.T := Zero_State;
-      Body_1_Status : Data_Dependency_Status.E := Success;
-      Body_2_State : Cartesian_State.T := Zero_State;
-      Body_2_Status : Data_Dependency_Status.E := Success;
-      Body_3_State : Cartesian_State.T := Zero_State;
-      Body_3_Status : Data_Dependency_Status.E := Success;
+      Body_0_State : Cartesian_State.T;
+      Body_0_Status : constant Data_Dependency_Status.E :=
+         Self.Get_Body_0_Ephemeris (Value => Body_0_State, Stale_Reference => Arg.Time);
+      pragma Assert (Body_0_Status = Success);
+      Body_1_State : Cartesian_State.T;
+      Body_1_Status : constant Data_Dependency_Status.E :=
+         Self.Get_Body_1_Ephemeris (Value => Body_1_State, Stale_Reference => Arg.Time);
+      pragma Assert (Body_1_Status = Success);
+      Body_2_State : Cartesian_State.T;
+      Body_2_Status : constant Data_Dependency_Status.E :=
+         Self.Get_Body_2_Ephemeris (Value => Body_2_State, Stale_Reference => Arg.Time);
+      pragma Assert (Body_2_Status = Success);
+      Body_3_State : Cartesian_State.T;
+      Body_3_Status : constant Data_Dependency_Status.E :=
+         Self.Get_Body_3_Ephemeris (Value => Body_3_State, Stale_Reference => Arg.Time);
+      pragma Assert (Body_3_Status = Success);
    begin
-      -- Fetch each configured body's input Cartesian state.
-      if Self.Body_Count >= 1 then
-         Body_0_Status := Self.Get_Body_0_Ephemeris (Value => Body_0_State, Stale_Reference => Arg.Time);
-         pragma Assert (Body_0_Status = Success);
-      end if;
-      if Self.Body_Count >= 2 then
-         Body_1_Status := Self.Get_Body_1_Ephemeris (Value => Body_1_State, Stale_Reference => Arg.Time);
-         pragma Assert (Body_1_Status = Success);
-      end if;
-      if Self.Body_Count >= 3 then
-         Body_2_Status := Self.Get_Body_2_Ephemeris (Value => Body_2_State, Stale_Reference => Arg.Time);
-         pragma Assert (Body_2_Status = Success);
-      end if;
-      if Self.Body_Count >= 4 then
-         Body_3_Status := Self.Get_Body_3_Ephemeris (Value => Body_3_State, Stale_Reference => Arg.Time);
-         pragma Assert (Body_3_Status = Success);
-      end if;
 
       declare
          -- Convert Ada Cartesian_State.T to its C-compatible form for each body.
@@ -117,42 +95,58 @@ package body Component.Ephemerides_Recenter.Implementation is
          Body_2_C : constant Cartesian_State.C.U_C := Cartesian_State.C.To_C (Cartesian_State.Unpack (Body_2_State));
          Body_3_C : constant Cartesian_State.C.U_C := Cartesian_State.C.To_C (Cartesian_State.Unpack (Body_3_State));
 
-         -- Zero-initialized payload for unused array slots.
-         Zero_Payload : constant Body_Ephemeris_Payload.C.U_C := (
-            Body_Spice_Id => 0,
-            Original_Central_Body_Id => 0,
-            Is_Moon => 0,
-            Input_R => [others => 0.0],
-            Input_V => [others => 0.0],
-            Output_R => [others => 0.0],
-            Output_V => [others => 0.0]
-         );
-
-         -- Helper to produce a payload from one fetched Cartesian state. Spice IDs
-         -- and isMoon are zero -- the algorithm indexes by position on update,
-         -- the IDs were already supplied at Init via Add_Body_Ephemeris_To_Recenter.
-         function Make_Payload (State_C : Cartesian_State.C.U_C) return Body_Ephemeris_Payload.C.U_C is
-         begin
-            return (
-               Body_Spice_Id => 0,
-               Original_Central_Body_Id => 0,
-               Is_Moon => 0,
-               Input_R => State_C.Position,
-               Input_V => State_C.Velocity,
-               Output_R => [others => 0.0],
-               Output_V => [others => 0.0]
-            );
-         end Make_Payload;
-
-         -- Build the bounded-array input record. The C shim reads all 20
-         -- entries; trailing entries are zero-padded.
+         -- Build the bounded-array input record in a single aggregate. The C
+         -- shim reads all 20 entries; trailing entries are zero-padded. Spice
+         -- IDs and isMoon are zero -- the algorithm indexes by position on
+         -- update, the IDs were already supplied at Init via
+         -- Add_Body_Ephemeris_To_Recenter.
          Input : aliased Body_Ephemeris_Payload_X20_Record.C.U_C := (
             Bodies => [
-               0 => Make_Payload (Body_0_C),
-               1 => Make_Payload (Body_1_C),
-               2 => Make_Payload (Body_2_C),
-               3 => Make_Payload (Body_3_C),
-               others => Zero_Payload
+               0 => (
+                  Body_Spice_Id => 0,
+                  Original_Central_Body_Id => 0,
+                  Is_Moon => 0,
+                  Input_R => Body_0_C.Position,
+                  Input_V => Body_0_C.Velocity,
+                  Output_R => [others => 0.0],
+                  Output_V => [others => 0.0]
+               ),
+               1 => (
+                  Body_Spice_Id => 0,
+                  Original_Central_Body_Id => 0,
+                  Is_Moon => 0,
+                  Input_R => Body_1_C.Position,
+                  Input_V => Body_1_C.Velocity,
+                  Output_R => [others => 0.0],
+                  Output_V => [others => 0.0]
+               ),
+               2 => (
+                  Body_Spice_Id => 0,
+                  Original_Central_Body_Id => 0,
+                  Is_Moon => 0,
+                  Input_R => Body_2_C.Position,
+                  Input_V => Body_2_C.Velocity,
+                  Output_R => [others => 0.0],
+                  Output_V => [others => 0.0]
+               ),
+               3 => (
+                  Body_Spice_Id => 0,
+                  Original_Central_Body_Id => 0,
+                  Is_Moon => 0,
+                  Input_R => Body_3_C.Position,
+                  Input_V => Body_3_C.Velocity,
+                  Output_R => [others => 0.0],
+                  Output_V => [others => 0.0]
+               ),
+               others => (
+                  Body_Spice_Id => 0,
+                  Original_Central_Body_Id => 0,
+                  Is_Moon => 0,
+                  Input_R => [others => 0.0],
+                  Input_V => [others => 0.0],
+                  Output_R => [others => 0.0],
+                  Output_V => [others => 0.0]
+               )
             ]
          );
 
@@ -173,9 +167,7 @@ package body Component.Ephemerides_Recenter.Implementation is
             return Cartesian_State.Pack (Cartesian_State.C.To_Ada (Out_State_C));
          end Build_Output_State;
       begin
-         -- Send out a recentered Cartesian state data product for every body slot.
-         -- Slots beyond Body_Count receive a zero-valued state because the
-         -- algorithm leaves those output slots untouched.
+         -- Send out a recentered Cartesian state data product for every body.
          Self.Data_Product_T_Send (Self.Data_Products.Body_0_Recentered (
             Arg.Time, Build_Output_State (Output.Bodies (0))
          ));

@@ -25,8 +25,6 @@ package Component.Ephemerides_Recenter.Implementation is
    -- body about which all output ephemerides are expressed.
    -- Previous_Common_Zero_Base_Id : Interfaces.Integer_32 - SPICE ID of the
    -- previous common central body shared by every primary input ephemeris.
-   -- Body_Count : Interfaces.Unsigned_32 - Number of configured bodies, in the
-   -- range 1 .. 4.
    -- Body_0_Spice_Id : Interfaces.Integer_32 - SPICE ID of body 0.
    -- Body_0_Original_Central_Body_Id : Interfaces.Integer_32 - SPICE ID of
    -- body 0's original central body.
@@ -40,7 +38,7 @@ package Component.Ephemerides_Recenter.Implementation is
    -- Body_3_Original_Central_Body_Id : Interfaces.Integer_32 - SPICE ID of
    -- body 3's original central body.
    --
-   overriding procedure Init (Self : in out Instance; New_Zero_Base_Id : in Interfaces.Integer_32; Previous_Common_Zero_Base_Id : in Interfaces.Integer_32; Body_Count : in Interfaces.Unsigned_32; Body_0_Spice_Id : in Interfaces.Integer_32; Body_0_Original_Central_Body_Id : in Interfaces.Integer_32; Body_1_Spice_Id : in Interfaces.Integer_32; Body_1_Original_Central_Body_Id : in Interfaces.Integer_32; Body_2_Spice_Id : in Interfaces.Integer_32; Body_2_Original_Central_Body_Id : in Interfaces.Integer_32; Body_3_Spice_Id : in Interfaces.Integer_32; Body_3_Original_Central_Body_Id : in Interfaces.Integer_32);
+   overriding procedure Init (Self : in out Instance; New_Zero_Base_Id : in Interfaces.Integer_32; Previous_Common_Zero_Base_Id : in Interfaces.Integer_32; Body_0_Spice_Id : in Interfaces.Integer_32; Body_0_Original_Central_Body_Id : in Interfaces.Integer_32; Body_1_Spice_Id : in Interfaces.Integer_32; Body_1_Original_Central_Body_Id : in Interfaces.Integer_32; Body_2_Spice_Id : in Interfaces.Integer_32; Body_2_Original_Central_Body_Id : in Interfaces.Integer_32; Body_3_Spice_Id : in Interfaces.Integer_32; Body_3_Original_Central_Body_Id : in Interfaces.Integer_32);
    not overriding procedure Destroy (Self : in out Instance);
 
 private
@@ -48,7 +46,6 @@ private
    -- The component class instance record:
    type Instance is new Ephemerides_Recenter.Base_Instance with record
       Alg : Ephemerides_Recenter_Algorithm_Access := null;
-      Body_Count : Interfaces.Unsigned_32 := 0;
    end record;
 
    ---------------------------------------

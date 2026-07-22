@@ -2,7 +2,7 @@
 description: Ephemerides recenter component re-expresses up to four body ephemerides about a new central body. Wraps the EphemeridesRecenterAlgorithm C++ algorithm via its C shim.
 execution: passive
 init:
-  description: Initializes the ephemerides recenter algorithm with the new and previous central body SPICE IDs and the configured body list.
+  description: Initializes the ephemerides recenter algorithm with the new and previous central body SPICE IDs and the four configured bodies.
   parameters:
     - name: New_Zero_Base_Id
       type: Interfaces.Integer_32
@@ -10,33 +10,30 @@ init:
     - name: Previous_Common_Zero_Base_Id
       type: Interfaces.Integer_32
       description: SPICE ID of the previous common central body shared by every primary input ephemeris.
-    - name: Body_Count
-      type: Interfaces.Unsigned_32
-      description: Number of configured bodies, in the range 1 .. 4.
     - name: Body_0_Spice_Id
       type: Interfaces.Integer_32
-      description: SPICE ID of body 0 (only used when Body_Count >= 1).
+      description: SPICE ID of body 0.
     - name: Body_0_Original_Central_Body_Id
       type: Interfaces.Integer_32
-      description: SPICE ID of body 0's original central body (only used when Body_Count >= 1).
+      description: SPICE ID of body 0's original central body.
     - name: Body_1_Spice_Id
       type: Interfaces.Integer_32
-      description: SPICE ID of body 1 (only used when Body_Count >= 2).
+      description: SPICE ID of body 1.
     - name: Body_1_Original_Central_Body_Id
       type: Interfaces.Integer_32
-      description: SPICE ID of body 1's original central body (only used when Body_Count >= 2).
+      description: SPICE ID of body 1's original central body.
     - name: Body_2_Spice_Id
       type: Interfaces.Integer_32
-      description: SPICE ID of body 2 (only used when Body_Count >= 3).
+      description: SPICE ID of body 2.
     - name: Body_2_Original_Central_Body_Id
       type: Interfaces.Integer_32
-      description: SPICE ID of body 2's original central body (only used when Body_Count >= 3).
+      description: SPICE ID of body 2's original central body.
     - name: Body_3_Spice_Id
       type: Interfaces.Integer_32
-      description: SPICE ID of body 3 (only used when Body_Count >= 4).
+      description: SPICE ID of body 3.
     - name: Body_3_Original_Central_Body_Id
       type: Interfaces.Integer_32
-      description: SPICE ID of body 3's original central body (only used when Body_Count >= 4).
+      description: SPICE ID of body 3's original central body.
 connectors:
   - description: Run the algorithm up to the current time.
     type: Tick.T
