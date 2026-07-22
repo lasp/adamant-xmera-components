@@ -111,7 +111,7 @@ package body Component.Css_Comm.Implementation is
          Data => Packed_F64x11.C.To_C (Self.Cheby_Polynomials)
       );
    begin
-      Set_Max_Sensor_Value (Self.Alg, Long_Float (Self.Max_Sensor_Value.Value));
+      Set_Max_Sensor_Value (Self.Alg, Self.Max_Sensor_Value.Value);
       Set_Cheby_Count (Self.Alg, Self.Cheby_Count.Value);
       Set_Cheby_Polynomials (Self.Alg, Cheby_Poly_C'Unchecked_Access);
    end Update_Parameters_Action;
