@@ -70,15 +70,13 @@ package body Component.Mimu_Majority_Vote.Implementation is
          -- Call the C algorithm:
          Result : constant Mimu_Majority_Vote_Output.C.U_C := Update (
             Self.Alg,
-            Imu_Inputs     => Imu_Inputs
+            Imu_Inputs => Imu_Inputs
          );
-         Packed_Result : constant Mimu_Majority_Vote_Output.T :=
-            Mimu_Majority_Vote_Output.Pack (Mimu_Majority_Vote_Output.C.To_Ada (Result));
       begin
          -- Publish result with fault status:
          Self.Data_Product_T_Send (Self.Data_Products.Majority_Vote_Result (
             Arg.Time,
-            Packed_Result
+            Mimu_Majority_Vote_Output.Pack (Mimu_Majority_Vote_Output.C.To_Ada (Result))
          ));
       end;
    end Tick_T_Recv_Sync;
