@@ -5,6 +5,7 @@ pragma Warnings     (Off, "-gnatwu");
 
 with Interfaces.C;     use Interfaces; use Interfaces.C;
 with Packed_F32x3.C;
+with Packed_F32x36.C;
 with Thr_Firing_Remainder_Force_Cmd.C;
 with Thr_Firing_Remainder_On_Time_Cmd.C;
 
@@ -22,9 +23,6 @@ package Thr_Firing_Remainder_Algorithm_C is
      with Import       => True,
           Convention   => C,
           External_Name => "ThrFiringRemainderAlgorithm_getMaxThrusterCount";
-
-   -- Runtime validation: ensure Ada constant matches C definition
-   pragma Assert (Unsigned_32 (THR_FIRING_REMAINDER_MAX_THRUSTER_COUNT) = Get_Max_Thruster_Count);
 
    --* Thrust pulsing regime selection.
    type Thr_Firing_Remainder_Pulsing_Regime is
@@ -55,6 +53,21 @@ package Thr_Firing_Remainder_Algorithm_C is
 
    type Thr_Firing_Remainder_Array_Config_Access is
      access all Thr_Firing_Remainder_Array_Config;
+
+   -- ABI validation: the constant-dimensioned Ada arrays crossing the FFI
+   -- boundary must match the C-side THR_FIRING_REMAINDER_MAX_THRUSTER_COUNT,
+   -- checked at elaboration.
+   -- ThrFiringRemainderArrayConfig: uint32_t numThrusters;
+   -- ThrFiringRemainderThrusterConfig thrusters[THR_FIRING_REMAINDER_MAX_THRUSTER_COUNT];
+   pragma Assert (Unsigned_32 (Thr_Config_Array'Length) = Get_Max_Thruster_Count);
+   pragma Assert (Thr_Firing_Remainder_Array_Config'Object_Size = Unsigned_32'Object_Size + Thr_Config_Array'Object_Size);
+   -- ThrFiringRemainderForceCmd: float thrForce[THR_FIRING_REMAINDER_MAX_THRUSTER_COUNT];
+   pragma Assert (Unsigned_32 (Packed_F32x36.Length) = Get_Max_Thruster_Count);
+   pragma Assert (Packed_F32x36.C.U_C'Object_Size = Thr_Firing_Remainder_Force_Cmd.C.U_C'Object_Size);
+   pragma Assert (Unsigned_32 (Thr_Firing_Remainder_Force_Cmd.C.U_C'Object_Size / Short_Float'Object_Size) = Get_Max_Thruster_Count);
+   -- ThrFiringRemainderOnTimeCmd: float onTimeRequest[THR_FIRING_REMAINDER_MAX_THRUSTER_COUNT];
+   pragma Assert (Packed_F32x36.C.U_C'Object_Size = Thr_Firing_Remainder_On_Time_Cmd.C.U_C'Object_Size);
+   pragma Assert (Unsigned_32 (Thr_Firing_Remainder_On_Time_Cmd.C.U_C'Object_Size / Short_Float'Object_Size) = Get_Max_Thruster_Count);
 
    --* Opaque handle for a ThrFiringRemainderAlgorithm instance.
    type Thr_Firing_Remainder_Algorithm is limited private;

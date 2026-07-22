@@ -70,9 +70,13 @@ package Average_Mimu_Data_Algorithm_C is
           Convention   => C,
           External_Name => "AverageMimuDataAlgorithm_getMaxMimuSamplesPerPkt";
 
-   -- Runtime validation: ensure Ada constants match C definitions
-   pragma Assert (Unsigned_32 (Max_Mimu_Pkt) = Get_Max_Mimu_Pkt);
-   pragma Assert (Unsigned_32 (Max_Mimu_Samples_Per_Pkt) = Get_Max_Mimu_Samples_Per_Pkt);
+   -- ABI validation: the constant-dimensioned Ada arrays crossing the FFI
+   -- boundary must match the C-side constants, checked at elaboration.
+   pragma Assert (Unsigned_32 (Packets_Array_C'Length) = Get_Max_Mimu_Pkt);
+   pragma Assert (Packets_Array_C'Object_Size = Input_Pkts_Data_C'Object_Size);
+   pragma Assert (Unsigned_32 (Input_Pkts_Data_C'Object_Size / Input_Packet_C'Object_Size) = Get_Max_Mimu_Pkt);
+   pragma Assert (Unsigned_32 (Sample_Array_C'Length) = Get_Max_Mimu_Samples_Per_Pkt);
+   pragma Assert (Unsigned_32 (Sample_Array_C'Object_Size / Sample_C'Object_Size) = Get_Max_Mimu_Samples_Per_Pkt);
 
    --* @brief Construct a new AverageMimuDataAlgorithm.
    function Create

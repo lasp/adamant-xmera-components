@@ -6,14 +6,10 @@ pragma Warnings (Off, "-gnatwu");
 with Interfaces.C; use Interfaces; use Interfaces.C;
 with Css_Sensor_Values.C;
 with Cheby_Polynomials.C;
+with Packed_F64x16.C;
+with Packed_F64x11.C;
 
 package Css_Comm_Algorithm_C is
-
-   -- MAX_NUM_CSS_SENSORS must match the #define in definitions.h
-   MAX_NUM_CSS_SENSORS : constant := 32;
-
-   -- MAX_NUM_CHEBY_POLYS must match the #define in cssCommTypes.h
-   MAX_NUM_CHEBY_POLYS : constant := 11;
 
    --* Opaque handle for a CssCommAlgorithm instance.
    type Css_Comm_Algorithm is limited private;
@@ -141,9 +137,16 @@ package Css_Comm_Algorithm_C is
           Convention   => C,
           External_Name => "CssCommAlgorithm_getMaxNumChebyPolys";
 
-   -- Runtime validation: ensure Ada constants match C definitions
-   pragma Assert (Unsigned_32 (MAX_NUM_CSS_SENSORS) = Get_Max_Num_Css_Sensors);
-   pragma Assert (Unsigned_32 (MAX_NUM_CHEBY_POLYS) = Get_Max_Num_Cheby_Polys);
+   -- ABI validation: the constant-dimensioned Ada arrays crossing the FFI
+   -- boundary must match the C-side sizing constants, checked at elaboration.
+   -- CssSensorValues_c: double data[MAX_NUM_CSS_SENSORS];
+   pragma Assert (Unsigned_32 (Packed_F64x16.Length) = Get_Max_Num_Css_Sensors);
+   pragma Assert (Packed_F64x16.C.U_C'Object_Size = Css_Sensor_Values.C.U_C'Object_Size);
+   pragma Assert (Unsigned_32 (Css_Sensor_Values.C.U_C'Object_Size / Long_Float'Object_Size) = Get_Max_Num_Css_Sensors);
+   -- ChebyPolynomials_c: double data[MAX_NUM_CHEBY_POLYS];
+   pragma Assert (Unsigned_32 (Packed_F64x11.Length) = Get_Max_Num_Cheby_Polys);
+   pragma Assert (Packed_F64x11.C.U_C'Object_Size = Cheby_Polynomials.C.U_C'Object_Size);
+   pragma Assert (Unsigned_32 (Cheby_Polynomials.C.U_C'Object_Size / Long_Float'Object_Size) = Get_Max_Num_Cheby_Polys);
 
 private
 
