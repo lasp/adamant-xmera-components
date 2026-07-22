@@ -1,5 +1,5 @@
 ---
-description: Corrected CSS sensor cosine values for the 8 physical CSS ADC channels. The C algorithm's wider FFI type is handled locally in the css_comm binding.
+description: Corrected CSS sensor cosine values for the 8 physical CSS ADC channels.
 fields:
   - name: Data
     type: Packed_F64x8.T

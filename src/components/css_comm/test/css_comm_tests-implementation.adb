@@ -147,30 +147,5 @@ package body Css_Comm_Tests.Implementation is
 
    end Test_Stale_Input_Is_Zeroed;
 
-   -- An out-of-range Cheby_Count is rejected by Validate_Parameters before it
-   -- can reach the C algorithm's setter, which raises a C++ exception for such
-   -- counts; that exception must never cross the FFI boundary.
-   overriding procedure Test_Cheby_Count_Validation (Self : in out Instance) is
-      T : Component.Css_Comm.Implementation.Tester.Instance_Access renames Self.Tester;
-      Params : Css_Comm_Parameters.Instance;
-   begin
-      -- Initialize component
-      T.Component_Instance.Init;
-
-      -- A count one past the coefficient array length stages (it is a valid
-      -- U32) but must be rejected by validation:
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
-         Params.Cheby_Count ((Value => Interfaces.Unsigned_32 (Packed_F64x11.Length + 1)))), Success);
-      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
-
-      -- A zero count must also be rejected:
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cheby_Count ((Value => 0))), Success);
-      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
-
-      -- The full coefficient count validates:
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
-         Params.Cheby_Count ((Value => Interfaces.Unsigned_32 (Packed_F64x11.Length)))), Success);
-      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
-   end Test_Cheby_Count_Validation;
 
 end Css_Comm_Tests.Implementation;

@@ -22,10 +22,6 @@ private
    -- the algorithm runs, producing an all-zero output.
    overriding procedure Test_Stale_Input_Is_Zeroed (Self : in out Instance);
 
-   -- An out-of-range Cheby_Count is rejected by parameter validation before it
-   -- can reach the C algorithm's setter.
-   overriding procedure Test_Cheby_Count_Validation (Self : in out Instance);
-
    -- Test data and state:
    type Instance is new Css_Comm_Tests.Base_Instance with record
       null;

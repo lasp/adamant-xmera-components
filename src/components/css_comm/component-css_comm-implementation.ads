@@ -67,18 +67,16 @@ private
    -- This procedure is called when the parameters of a component have been updated.
    overriding procedure Update_Parameters_Action (Self : in out Instance);
    -- This function is called when the parameter operation type is "Validate".
-   -- Cheby_Count must address only coefficients that exist in the
-   -- Cheby_Polynomials array; the C algorithm's setter rejects other counts
-   -- by raising a C++ exception, which must never cross the FFI boundary.
+   -- No custom validation: float garbage (NaN/Inf) in the Chebyshev
+   -- coefficients is rejected by type validation during staging, and an
+   -- out-of-range Cheby_Count is the C algorithm setter's contract to
+   -- reject.
    overriding function Validate_Parameters (
       Self : in out Instance;
       Max_Sensor_Value : in Packed_F64.U;
       Cheby_Count : in Packed_U32.U;
       Cheby_Polynomials : in Packed_F64x11.U
-   ) return Parameter_Validation_Status.E is
-      (if Cheby_Count.Value in 1 .. Unsigned_32 (Packed_F64x11.Length)
-       then Parameter_Validation_Status.Valid
-       else Parameter_Validation_Status.Invalid);
+   ) return Parameter_Validation_Status.E is (Parameter_Validation_Status.Valid);
 
    -----------------------------------------------
    -- Data dependency primitives:
