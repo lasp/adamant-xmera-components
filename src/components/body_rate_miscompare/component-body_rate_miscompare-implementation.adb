@@ -5,7 +5,6 @@
 with Body_Rate_Miscompare_Output.C;
 with Packed_F32x3.C;
 with Packed_F32x3_Record.C;
-with Interfaces.C;
 
 package body Component.Body_Rate_Miscompare.Implementation is
 

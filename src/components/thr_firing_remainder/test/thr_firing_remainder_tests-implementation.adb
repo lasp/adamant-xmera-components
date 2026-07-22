@@ -7,7 +7,6 @@ with Basic_Assertions; use Basic_Assertions;
 with Thr_On_Time_Cmd;
 with Packed_F32x8.Assertion; use Packed_F32x8.Assertion;
 with Thr_Firing_Remainder_Parameters;
-with Thr_Firing_Remainder_Algorithm_C; use Thr_Firing_Remainder_Algorithm_C;
 with Packed_F32;
 with Packed_Pulsing_Regime;
 with Thr_Firing_Remainder_Enums;

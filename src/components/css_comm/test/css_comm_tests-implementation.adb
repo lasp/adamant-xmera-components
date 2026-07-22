@@ -147,5 +147,4 @@ package body Css_Comm_Tests.Implementation is
 
    end Test_Stale_Input_Is_Zeroed;
 
-
 end Css_Comm_Tests.Implementation;
