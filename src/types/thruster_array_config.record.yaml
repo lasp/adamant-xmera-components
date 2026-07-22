@@ -1,0 +1,10 @@
+---
+description: Thruster array configuration - the active thruster count and per-thruster configurations. Maps to ThrFiringRemainderArrayConfig in the thrFiringRemainder C shim.
+fields:
+  - name: Num_Thrusters
+    description: "[-] Number of active thrusters."
+    type: Interfaces.Unsigned_32
+    format: U32
+  - name: Thrusters
+    description: The thruster configurations.
+    type: Thruster_Config_X36.T

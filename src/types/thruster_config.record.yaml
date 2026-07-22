@@ -1,0 +1,13 @@
+---
+description: Single thruster configuration - location, thrust direction, and maximum thrust. Maps to ThrFiringRemainderThrusterConfig in the thrFiringRemainder C shim.
+fields:
+  - name: R_Thrust_B
+    description: "[m] Location of the thruster in the spacecraft frame."
+    type: Packed_F32x3.T
+  - name: T_Hat_Thrust_B
+    description: "[-] Unit vector of the thrust direction."
+    type: Packed_F32x3.T
+  - name: Max_Thrust
+    description: "[N] Maximum thrust."
+    type: Short_Float
+    format: F32

@@ -2,6 +2,7 @@
 -- Body_Rate_Miscompare Component Implementation Body
 --------------------------------------------------------------------------------
 
+with Body_Rate_Miscompare_Output.C;
 with Packed_F32x3.C;
 with Packed_F32x3_Record.C;
 with Interfaces.C;
@@ -61,7 +62,7 @@ package body Component.Body_Rate_Miscompare.Implementation is
          Imu_Omega : constant Packed_F32x3_Record.C.U_C := (Value => Packed_F32x3.C.Unpack (Imu_Body.Avg_Ang_Vel_Body));
          St_Omega : constant Packed_F32x3_Record.C.U_C := (Value => Packed_F32x3.C.Unpack (St_Body.Omega_Bn_B));
 
-         Output : constant Body_Rate_Miscompare_Output_C := Update (
+         Output : constant Body_Rate_Miscompare_Output.C.U_C := Update (
             Self.Alg,
             Imu_Omega => Imu_Omega,
             St_Omega  => St_Omega
@@ -70,12 +71,12 @@ package body Component.Body_Rate_Miscompare.Implementation is
          -- Send out body rate data product (omega_BN_B only):
          Self.Data_Product_T_Send (Self.Data_Products.Body_Rate (
             Arg.Time,
-            Packed_F32x3.C.Pack (Output.Omega_Bn_B.Value)
+            Packed_F32x3.C.Pack (Output.Omega_Bn_B)
          ));
          -- Send out body rate fault data product:
          Self.Data_Product_T_Send (Self.Data_Products.Rate_Fault_Status (
             Arg.Time,
-            (Fault_Detected => Interfaces.C."/=" (Output.Body_Rate_Fault_Detected, 0))
+            (Fault_Detected => Interfaces."/=" (Output.Body_Rate_Fault_Detected, 0))
          ));
       end;
    end Tick_T_Recv_Sync;

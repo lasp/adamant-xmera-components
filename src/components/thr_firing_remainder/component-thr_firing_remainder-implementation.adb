@@ -36,7 +36,7 @@ package body Component.Thr_Firing_Remainder.Implementation is
 
    not overriding procedure Configure_Thrusters (
       Self   : in out Instance;
-      Config : access constant Thr_Firing_Remainder_Array_Config)
+      Config : access constant Thruster_Array_Config.C.U_C)
    is
    begin
       Set_Thrusters (Self.Alg, Config);

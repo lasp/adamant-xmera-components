@@ -2,6 +2,7 @@
 -- Thr_Firing_Remainder Tests Body
 --------------------------------------------------------------------------------
 
+with Thruster_Array_Config.C;
 with Basic_Assertions; use Basic_Assertions;
 with Thr_On_Time_Cmd;
 with Packed_F32x8.Assertion; use Packed_F32x8.Assertion;
@@ -50,7 +51,7 @@ package body Thr_Firing_Remainder_Tests.Implementation is
       Params : Thr_Firing_Remainder_Parameters.Instance;
 
       -- Thruster configuration: 2 thrusters with maxThrust = 1.0
-      Thr_Config : aliased Thr_Firing_Remainder_Array_Config := (
+      Thr_Config : aliased Thruster_Array_Config.C.U_C := (
          Num_Thrusters => 2,
          Thrusters => [
             0 => (R_Thrust_B => [0.0, 0.0, 0.0], T_Hat_Thrust_B => [0.0, 0.0, 1.0], Max_Thrust => 1.0),

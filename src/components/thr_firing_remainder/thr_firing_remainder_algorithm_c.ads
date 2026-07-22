@@ -3,18 +3,14 @@ pragma Ada_2012;
 pragma Style_Checks (Off);
 pragma Warnings     (Off, "-gnatwu");
 
-with Interfaces.C;     use Interfaces; use Interfaces.C;
-with Packed_F32x3.C;
+with Interfaces;       use Interfaces;
 with Packed_F32x36.C;
 with Thr_Firing_Remainder_Force_Cmd.C;
 with Thr_Firing_Remainder_On_Time_Cmd.C;
+with Thruster_Config_X36.C;
+with Thruster_Array_Config.C;
 
 package Thr_Firing_Remainder_Algorithm_C is
-
-   -- THR_FIRING_REMAINDER_MAX_THRUSTER_COUNT must match the #define in
-   -- thrFiringRemainderAlgorithm_c.h:17
-   -- Re-run h2ads if the C header changes to regenerate this binding
-   THR_FIRING_REMAINDER_MAX_THRUSTER_COUNT : constant := 36;
 
    --* @brief Get the maximum thruster count constant for validation.
    --* @return The maximum thruster count (THR_FIRING_REMAINDER_MAX_THRUSTER_COUNT).
@@ -30,37 +26,13 @@ package Thr_Firing_Remainder_Algorithm_C is
       Off_Pulsing)
      with Convention => C;
 
-   --* Single thruster configuration (POD).
-   type Thr_Firing_Remainder_Thruster_Config is record
-      R_Thrust_B     : aliased Packed_F32x3.C.U_C;
-      T_Hat_Thrust_B : aliased Packed_F32x3.C.U_C;
-      Max_Thrust     : aliased Short_Float;
-   end record
-   with Convention => C_Pass_By_Copy;
-
-   --* Array of thruster configurations.
-   type Thr_Config_Array is
-     array (0 .. THR_FIRING_REMAINDER_MAX_THRUSTER_COUNT - 1) of
-       aliased Thr_Firing_Remainder_Thruster_Config
-     with Convention => C;
-
-   --* Thruster array configuration (POD).
-   type Thr_Firing_Remainder_Array_Config is record
-      Num_Thrusters : aliased Unsigned_32;
-      Thrusters     : aliased Thr_Config_Array;
-   end record
-   with Convention => C_Pass_By_Copy;
-
-   type Thr_Firing_Remainder_Array_Config_Access is
-     access all Thr_Firing_Remainder_Array_Config;
-
    -- ABI validation: the constant-dimensioned Ada arrays crossing the FFI
    -- boundary must match the C-side THR_FIRING_REMAINDER_MAX_THRUSTER_COUNT,
    -- checked at elaboration.
    -- ThrFiringRemainderArrayConfig: uint32_t numThrusters;
    -- ThrFiringRemainderThrusterConfig thrusters[THR_FIRING_REMAINDER_MAX_THRUSTER_COUNT];
-   pragma Assert (Unsigned_32 (Thr_Config_Array'Length) = Get_Max_Thruster_Count);
-   pragma Assert (Thr_Firing_Remainder_Array_Config'Object_Size = Unsigned_32'Object_Size + Thr_Config_Array'Object_Size);
+   pragma Assert (Unsigned_32 (Thruster_Config_X36.Length) = Get_Max_Thruster_Count);
+   pragma Assert (Thruster_Array_Config.C.U_C'Object_Size = Unsigned_32'Object_Size + Thruster_Config_X36.C.U_C'Object_Size);
    -- ThrFiringRemainderForceCmd: float thrForce[THR_FIRING_REMAINDER_MAX_THRUSTER_COUNT];
    pragma Assert (Unsigned_32 (Packed_F32x36.Length) = Get_Max_Thruster_Count);
    pragma Assert (Packed_F32x36.C.U_C'Object_Size = Thr_Firing_Remainder_Force_Cmd.C.U_C'Object_Size);
@@ -112,7 +84,7 @@ package Thr_Firing_Remainder_Algorithm_C is
    --* @param Config Pointer to thruster array configuration.
    procedure Set_Thrusters
      (Self   : Thr_Firing_Remainder_Algorithm_Access;
-      Config : access constant Thr_Firing_Remainder_Array_Config)
+      Config : access constant Thruster_Array_Config.C.U_C)
      with Import       => True,
           Convention   => C,
           External_Name => "ThrFiringRemainderAlgorithm_setThrusters";

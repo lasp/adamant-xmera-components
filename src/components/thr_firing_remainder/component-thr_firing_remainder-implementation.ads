@@ -3,6 +3,7 @@
 --------------------------------------------------------------------------------
 
 -- Includes:
+with Thruster_Array_Config.C;
 with Tick;
 with Thr_Firing_Remainder_Algorithm_C; use Thr_Firing_Remainder_Algorithm_C;
 
@@ -27,7 +28,7 @@ package Component.Thr_Firing_Remainder.Implementation is
    -- owns invoking it.
    not overriding procedure Configure_Thrusters (
       Self   : in out Instance;
-      Config : access constant Thr_Firing_Remainder_Array_Config);
+      Config : access constant Thruster_Array_Config.C.U_C);
 
 private
 
