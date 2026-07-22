@@ -1,9 +1,0 @@
----
-description: Raw MIMU data packet containing a timestamp and 10 measurement samples for the Average_Mimu_Data component interface.
-fields:
-  - name: Timestamp
-    description: "Timestamp of first MIMU data sample in packet."
-    type: Sys_Time.T
-  - name: Samples
-    description: "10 equally time-distributed raw MIMU measurement samples."
-    type: Mimu_Data_Field_Sample_10.T

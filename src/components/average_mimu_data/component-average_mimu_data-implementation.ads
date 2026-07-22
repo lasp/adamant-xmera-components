@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 
 -- Includes:
-with Mimu_Raw_Packet;
+with Mimu_Eng_Packet;
 with Tick;
 with Parameter_Update;
 with Mimu_Input_Packet_X4;
@@ -29,12 +29,6 @@ private
    -- Maximum number of packets to buffer between ticks (the FFI packet ring
    -- size, validated against the C constant at elaboration in the binding):
    Max_Buffered_Packets : constant Natural := Mimu_Input_Packet_X4.Length;
-
-   -- ICD conversion factors (mission-stable, not parameterized):
-   -- gyro [rad/s/count] = 4000 / 2^31-1 * pi/180
-   Gyro_Scale : constant Short_Float := 3.2513631e-08;
-   -- accel [m/s^2/count] = 160 / 2^31-1
-   Accel_Scale : constant Short_Float := 7.4505806e-08;
 
    -- The component class instance record:
    type Instance is new Average_Mimu_Data.Base_Instance with record
@@ -71,8 +65,8 @@ private
    ---------------------------------------
    -- Invokee connector primitives:
    ---------------------------------------
-   -- Receive raw MIMU data packet and buffer for later processing.
-   overriding procedure Mimu_Raw_Packet_T_Recv_Sync (Self : in out Instance; Arg : in Mimu_Raw_Packet.T);
+   -- Receive engineering-unit MIMU data packet and buffer for later processing.
+   overriding procedure Mimu_Eng_Packet_T_Recv_Sync (Self : in out Instance; Arg : in Mimu_Eng_Packet.T);
    -- Tick that triggers the averaging algorithm over buffered samples and publishes
    -- the result.
    overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T);

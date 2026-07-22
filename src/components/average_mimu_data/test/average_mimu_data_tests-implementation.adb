@@ -5,7 +5,8 @@
 with Ada.Numerics;
 with Interfaces; use Interfaces;
 with Basic_Assertions; use Basic_Assertions;
-with Mimu_Raw_Packet;
+with Mimu_Eng_Packet;
+with Mimu_Sample;
 with Averaged_Imu_Data;
 with Packed_F32x3.Assertion; use Packed_F32x3.Assertion;
 with Parameter;
@@ -19,7 +20,8 @@ package body Average_Mimu_Data_Tests.Implementation is
    -- Short name for the tester access type:
    subtype Tester_Ref is Component.Average_Mimu_Data.Implementation.Tester.Instance_Access;
 
-   -- ICD conversion factors (must match the component spec constants):
+   -- ICD conversion factors used to derive engineering-unit test values
+   -- from representative raw counts:
    --   gyro[rad/s] = dn * 4000/2^31-1 * pi/180
    --   acc[m/s^2]  = dn * 160/2^31-1
    Gyro_Scale : constant Short_Float :=
@@ -43,33 +45,31 @@ package body Average_Mimu_Data_Tests.Implementation is
    -- Helpers:
    -------------------------------------------------------------------------
 
-   -- A uniform raw packet (all 10 samples identical) at the given timestamp.
+   -- Sys_Time seconds/subseconds expressed in nanoseconds.
+   function To_Ns (Seconds : Interfaces.Unsigned_32; Subseconds : Interfaces.Unsigned_16) return Interfaces.Unsigned_64 is
+      (Interfaces.Unsigned_64 (Seconds) * 1_000_000_000 +
+       Interfaces.Unsigned_64 (Subseconds) * 1_000_000_000 / 65_536);
+
+   -- Build one engineering-unit sample from representative raw counts
+   function Eng_Sample (Gyro_Dn_X, Gyro_Dn_Y, Gyro_Dn_Z, Accel_Dn_X, Accel_Dn_Y, Accel_Dn_Z : Short_Float) return Mimu_Sample.T is
+      ((Gyro_P => [Gyro_Dn_X * Gyro_Scale, Gyro_Dn_Y * Gyro_Scale, Gyro_Dn_Z * Gyro_Scale],
+        Accel_P => [Accel_Dn_X * Accel_Scale, Accel_Dn_Y * Accel_Scale, Accel_Dn_Z * Accel_Scale]));
+
+   -- A uniform packet (all 10 samples identical) at the given timestamp.
    -- ICD scale: gyro dn 1M/2M/3M -> GyroA/GyroB/GyroC, accel dn 4M/5M/6M -> AccelA/AccelB/AccelC.
-   function Uniform_Packet (Seconds : Interfaces.Unsigned_32; Subseconds : Interfaces.Unsigned_16) return Mimu_Raw_Packet.T is
+   function Uniform_Packet (Seconds : Interfaces.Unsigned_32; Subseconds : Interfaces.Unsigned_16) return Mimu_Eng_Packet.T is
       ((
-         Timestamp => (Seconds => Seconds, Subseconds => Subseconds),
-         Samples => [others => (
-            Merged_Gyro_Rates => (X_Measurement => 1_000_000, Y_Measurement => 2_000_000, Z_Measurement => 3_000_000),
-            Merged_Accelerations => (X_Measurement => 4_000_000, Y_Measurement => 5_000_000, Z_Measurement => 6_000_000),
-            Merge_Info => 0
-         )]
+         Meas_Time => To_Ns (Seconds, Subseconds),
+         Samples => [others => Eng_Sample (1_000_000.0, 2_000_000.0, 3_000_000.0, 4_000_000.0, 5_000_000.0, 6_000_000.0)]
       ));
 
    -- Non-uniform packet with negative values: first 5 samples negative, last 5
    -- positive, designed so the 10-sample average is exactly [GyroA,GyroB,GyroC]/[AccelA,AccelB,AccelC].
-   Mixed_Packet : constant Mimu_Raw_Packet.T := (
-      Timestamp => (Seconds => 1, Subseconds => 0),
+   Mixed_Packet : constant Mimu_Eng_Packet.T := (
+      Meas_Time => To_Ns (1, 0),
       Samples => [
-         0 .. 4 => (
-            Merged_Gyro_Rates => (X_Measurement => -1_000_000, Y_Measurement => -2_000_000, Z_Measurement => -3_000_000),
-            Merged_Accelerations => (X_Measurement => -4_000_000, Y_Measurement => -5_000_000, Z_Measurement => -6_000_000),
-            Merge_Info => 0
-         ),
-         5 .. 9 => (
-            Merged_Gyro_Rates => (X_Measurement => 3_000_000, Y_Measurement => 6_000_000, Z_Measurement => 9_000_000),
-            Merged_Accelerations => (X_Measurement => 12_000_000, Y_Measurement => 15_000_000, Z_Measurement => 18_000_000),
-            Merge_Info => 0
-         )
+         0 .. 4 => Eng_Sample (-1_000_000.0, -2_000_000.0, -3_000_000.0, -4_000_000.0, -5_000_000.0, -6_000_000.0),
+         5 .. 9 => Eng_Sample (3_000_000.0, 6_000_000.0, 9_000_000.0, 12_000_000.0, 15_000_000.0, 18_000_000.0)
       ]
    );
 
@@ -77,19 +77,11 @@ package body Average_Mimu_Data_Tests.Implementation is
    -- Per-sample times are first-sample-time + I*10ms; maxTimeTag = base + 90ms.
    -- With a 45 ms window, sample I is kept when (9-I)*10ms <= 45ms, i.e. I in 5..9.
    -- Average of samples 5-9: gyro=[GyroA,GyroB,GyroC], accel=[AccelA,AccelB,AccelC].
-   Filtered_Packet : constant Mimu_Raw_Packet.T := (
-      Timestamp => (Seconds => 1, Subseconds => 0),
+   Filtered_Packet : constant Mimu_Eng_Packet.T := (
+      Meas_Time => To_Ns (1, 0),
       Samples => [
-         0 .. 4 => (
-            Merged_Gyro_Rates => (X_Measurement => 99_000_000, Y_Measurement => 99_000_000, Z_Measurement => 99_000_000),
-            Merged_Accelerations => (X_Measurement => 99_000_000, Y_Measurement => 99_000_000, Z_Measurement => 99_000_000),
-            Merge_Info => 0
-         ),
-         5 .. 9 => (
-            Merged_Gyro_Rates => (X_Measurement => 1_000_000, Y_Measurement => 2_000_000, Z_Measurement => 3_000_000),
-            Merged_Accelerations => (X_Measurement => 4_000_000, Y_Measurement => 5_000_000, Z_Measurement => 6_000_000),
-            Merge_Info => 0
-         )
+         0 .. 4 => Eng_Sample (99_000_000.0, 99_000_000.0, 99_000_000.0, 99_000_000.0, 99_000_000.0, 99_000_000.0),
+         5 .. 9 => Eng_Sample (1_000_000.0, 2_000_000.0, 3_000_000.0, 4_000_000.0, 5_000_000.0, 6_000_000.0)
       ]
    );
 
@@ -97,19 +89,11 @@ package body Average_Mimu_Data_Tests.Implementation is
    -- large sentinel while sample 9 carries the standard 1_000_000/2_000_000/3_000_000, 4_000_000/5_000_000/6_000_000 values
    -- (-> [GyroA,GyroB,GyroC]/[AccelA,AccelB,AccelC]). A 0.0 s window keeps only sample 9, so the result
    -- distinguishes "newest sample only" from any multi-sample average.
-   Newest_Sample_Packet : constant Mimu_Raw_Packet.T := (
-      Timestamp => (Seconds => 1, Subseconds => 0),
+   Newest_Sample_Packet : constant Mimu_Eng_Packet.T := (
+      Meas_Time => To_Ns (1, 0),
       Samples => [
-         0 .. 8 => (
-            Merged_Gyro_Rates => (X_Measurement => 50_000_000, Y_Measurement => 50_000_000, Z_Measurement => 50_000_000),
-            Merged_Accelerations => (X_Measurement => 50_000_000, Y_Measurement => 50_000_000, Z_Measurement => 50_000_000),
-            Merge_Info => 0
-         ),
-         9 => (
-            Merged_Gyro_Rates => (X_Measurement => 1_000_000, Y_Measurement => 2_000_000, Z_Measurement => 3_000_000),
-            Merged_Accelerations => (X_Measurement => 4_000_000, Y_Measurement => 5_000_000, Z_Measurement => 6_000_000),
-            Merge_Info => 0
-         )
+         0 .. 8 => Eng_Sample (50_000_000.0, 50_000_000.0, 50_000_000.0, 50_000_000.0, 50_000_000.0, 50_000_000.0),
+         9 => Eng_Sample (1_000_000.0, 2_000_000.0, 3_000_000.0, 4_000_000.0, 5_000_000.0, 6_000_000.0)
       ]
    );
 
@@ -170,7 +154,7 @@ package body Average_Mimu_Data_Tests.Implementation is
    begin
       Apply_Standard_Params (T, Gyro_Window => 1.0, Accel_Window => 1.0);
 
-      T.Mimu_Raw_Packet_T_Send (Uniform_Packet (1, 0));
+      T.Mimu_Eng_Packet_T_Send (Uniform_Packet (1, 0));
 
       -- No output yet - the algorithm runs on tick, not on recv:
       Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, 0);
@@ -207,7 +191,7 @@ package body Average_Mimu_Data_Tests.Implementation is
          ])), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
 
-      T.Mimu_Raw_Packet_T_Send (Uniform_Packet (1, 0));
+      T.Mimu_Eng_Packet_T_Send (Uniform_Packet (1, 0));
       T.Tick_T_Send (((0, 0), 0));
 
       Natural_Assert.Eq (T.Imu_Body_Data_History.Get_Count, 1);
@@ -227,7 +211,7 @@ package body Average_Mimu_Data_Tests.Implementation is
    begin
       Apply_Standard_Params (T, Gyro_Window => 1.0, Accel_Window => 1.0);
 
-      T.Mimu_Raw_Packet_T_Send (Mixed_Packet);
+      T.Mimu_Eng_Packet_T_Send (Mixed_Packet);
       T.Tick_T_Send (((0, 0), 0));
 
       Natural_Assert.Eq (T.Imu_Body_Data_History.Get_Count, 1);
@@ -247,7 +231,7 @@ package body Average_Mimu_Data_Tests.Implementation is
    begin
       Apply_Standard_Params (T, Gyro_Window => 0.045, Accel_Window => 0.045);
 
-      T.Mimu_Raw_Packet_T_Send (Filtered_Packet);
+      T.Mimu_Eng_Packet_T_Send (Filtered_Packet);
       T.Tick_T_Send (((0, 0), 0));
 
       Natural_Assert.Eq (T.Imu_Body_Data_History.Get_Count, 1);
@@ -287,8 +271,8 @@ package body Average_Mimu_Data_Tests.Implementation is
    begin
       Apply_Standard_Params (T, Gyro_Window => 1.0, Accel_Window => 1.0);
 
-      T.Mimu_Raw_Packet_T_Send (Uniform_Packet (1, 0));
-      T.Mimu_Raw_Packet_T_Send (Uniform_Packet (1, Pkt_Subsec_Step));
+      T.Mimu_Eng_Packet_T_Send (Uniform_Packet (1, 0));
+      T.Mimu_Eng_Packet_T_Send (Uniform_Packet (1, Pkt_Subsec_Step));
       T.Tick_T_Send (((0, 0), 0));
 
       Natural_Assert.Eq (T.Imu_Body_Data_History.Get_Count, 1);
@@ -310,16 +294,16 @@ package body Average_Mimu_Data_Tests.Implementation is
 
       Natural_Assert.Eq (T.Packet_Buffer_Overflow_History.Get_Count, 0);
 
-      T.Mimu_Raw_Packet_T_Send (Uniform_Packet (1, 0 * Pkt_Subsec_Step));
-      T.Mimu_Raw_Packet_T_Send (Uniform_Packet (1, 1 * Pkt_Subsec_Step));
-      T.Mimu_Raw_Packet_T_Send (Uniform_Packet (1, 2 * Pkt_Subsec_Step));
-      T.Mimu_Raw_Packet_T_Send (Uniform_Packet (1, 3 * Pkt_Subsec_Step));
+      T.Mimu_Eng_Packet_T_Send (Uniform_Packet (1, 0 * Pkt_Subsec_Step));
+      T.Mimu_Eng_Packet_T_Send (Uniform_Packet (1, 1 * Pkt_Subsec_Step));
+      T.Mimu_Eng_Packet_T_Send (Uniform_Packet (1, 2 * Pkt_Subsec_Step));
+      T.Mimu_Eng_Packet_T_Send (Uniform_Packet (1, 3 * Pkt_Subsec_Step));
 
       -- Buffer is now full (4/4), no overflow yet:
       Natural_Assert.Eq (T.Packet_Buffer_Overflow_History.Get_Count, 0);
 
       -- 5th packet should trigger the overflow event:
-      T.Mimu_Raw_Packet_T_Send (Uniform_Packet (1, 4 * Pkt_Subsec_Step));
+      T.Mimu_Eng_Packet_T_Send (Uniform_Packet (1, 4 * Pkt_Subsec_Step));
       Natural_Assert.Eq (T.Packet_Buffer_Overflow_History.Get_Count, 1);
 
       -- Tick still processes the 4 buffered packets:
@@ -368,7 +352,7 @@ package body Average_Mimu_Data_Tests.Implementation is
       -- Gyro window 45 ms keeps samples 5-9; accel window 1.0 s keeps all 10:
       Apply_Standard_Params (T, Gyro_Window => 0.045, Accel_Window => 1.0);
 
-      T.Mimu_Raw_Packet_T_Send (Mixed_Packet);
+      T.Mimu_Eng_Packet_T_Send (Mixed_Packet);
       T.Tick_T_Send (((0, 0), 0));
 
       Natural_Assert.Eq (T.Imu_Body_Data_History.Get_Count, 1);
@@ -392,7 +376,7 @@ package body Average_Mimu_Data_Tests.Implementation is
    begin
       Apply_Standard_Params (T, Gyro_Window => 0.0, Accel_Window => 0.0);
 
-      T.Mimu_Raw_Packet_T_Send (Newest_Sample_Packet);
+      T.Mimu_Eng_Packet_T_Send (Newest_Sample_Packet);
       T.Tick_T_Send (((0, 0), 0));
 
       Natural_Assert.Eq (T.Imu_Body_Data_History.Get_Count, 1);
