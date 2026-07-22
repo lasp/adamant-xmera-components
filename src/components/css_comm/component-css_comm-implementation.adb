@@ -3,8 +3,10 @@
 --------------------------------------------------------------------------------
 
 with Css_Sensor_Values;
+with Css_Adc_U16_8;
 with Cheby_Polynomials.C;
 with Packed_F64x11.C;
+with Interfaces;
 
 package body Component.Css_Comm.Implementation is
 
@@ -16,6 +18,14 @@ package body Component.Css_Comm.Implementation is
    begin
       -- Allocate C++ class on the heap
       Self.Alg := Create;
+      -- The number of CSS sensors is fixed by the hardware interface: the
+      -- ADC data dependency carries exactly Css_Adc_U16_8.Length channels.
+      Set_Num_Sensors (Self.Alg, Interfaces.Unsigned_32 (Css_Adc_U16_8.Length));
+      -- The full-scale U16 ADC count maps to cosine 1.0. Since the reading
+      -- is a U16, the C algorithm's normalized input is structurally within
+      -- its Chebyshev model's [0, 1] fit domain; all calibration shaping
+      -- lives in the Chebyshev parameters.
+      Set_Max_Sensor_Value (Self.Alg, Long_Float (Interfaces.Unsigned_16'Last));
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -52,33 +62,24 @@ package body Component.Css_Comm.Implementation is
          Css_Adc_Input := (Adc_Value => [others => 0]);
       end if;
 
-      -- Convert ADC counts to cosine values per the css_wls_estimator pattern:
-      -- divide each U16 ADC value by Max_Sensor_Value and clamp to <= 1.0
-      -- (lower bound is implicit since ADC is unsigned). The result is written
-      -- into the FFI input type with the first 8 elements taken from the ADC
-      -- source and the remaining elements zero-padded up to the C algorithm's
-      -- MAX_NUM_CSS_SENSORS bound.
+      -- Pass the raw ADC counts to the C algorithm, which normalizes each
+      -- reading by the fixed U16 full scale, applies the Chebyshev
+      -- correction, and clamps the corrected value to [0, 1]. The reading is
+      -- a U16, so the normalized input is structurally within the Chebyshev
+      -- model's [0, 1] fit domain. Entries beyond the physical ADC channels
+      -- are zero-padded up to the C algorithm's MAX_NUM_CSS_SENSORS bound.
       declare
-         Max_Value : constant Long_Float := Long_Float (Self.Max_Sensor_Value.Value);
          Css_Input_C : aliased Css_Sensor_Values_C := (Data => [others => 0.0]);
       begin
          for I in Css_Adc_Input.Adc_Value'Range loop
-            declare
-               Cos_Value : Long_Float :=
-                  Long_Float (Css_Adc_Input.Adc_Value (I)) / Max_Value;
-            begin
-               if Cos_Value > 1.0 then
-                  Cos_Value := 1.0;
-               end if;
-               Css_Input_C.Data (Css_Input_C.Data'First + Natural (I - Css_Adc_Input.Adc_Value'First)) := Cos_Value;
-            end;
+            Css_Input_C.Data (Css_Input_C.Data'First + Natural (I - Css_Adc_Input.Adc_Value'First)) :=
+               Long_Float (Css_Adc_Input.Adc_Value (I));
          end loop;
 
-         -- Call algorithm with the converted cosine values and publish the
-         -- corrected values as the data product. Css_Sensor_Values.T is
-         -- narrower than the C algorithm's MAX_NUM_CSS_SENSORS bound; the
-         -- trailing entries of the C output correspond to no physical sensor
-         -- and are not published.
+         -- Call the algorithm and publish the corrected cosine values as the
+         -- data product. Css_Sensor_Values.T is narrower than the C
+         -- algorithm's MAX_NUM_CSS_SENSORS bound; the trailing entries of the
+         -- C output correspond to no physical sensor and are not published.
          declare
             Css_Output : constant Css_Sensor_Values_C := Update (
                Self.Alg,
@@ -111,13 +112,6 @@ package body Component.Css_Comm.Implementation is
          Data => Packed_F64x11.C.To_C (Self.Cheby_Polynomials)
       );
    begin
-      Set_Num_Sensors (Self.Alg, Self.Num_Sensors.Value);
-      -- Max_Sensor_Value is consumed by the Ada-side ADC->cosine conversion in
-      -- Tick_T_Recv_Sync (matching the css_wls_estimator pattern). The C
-      -- algorithm performs its own divide-by-max as part of the Chebyshev
-      -- correction; pin it to 1.0 so the C divide is a no-op and the
-      -- Ada-side conversion is the single source of truth for ADC scaling.
-      Set_Max_Sensor_Value (Self.Alg, 1.0);
       Set_Cheby_Count (Self.Alg, Self.Cheby_Count.Value);
       Set_Cheby_Polynomials (Self.Alg, Cheby_Poly_C'Unchecked_Access);
    end Update_Parameters_Action;
