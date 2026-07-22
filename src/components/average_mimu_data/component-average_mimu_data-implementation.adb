@@ -2,9 +2,10 @@
 -- Average_Mimu_Data Component Implementation Body
 --------------------------------------------------------------------------------
 
+with Mimu_Input_Packet.C;
 with Averaged_Imu_Data.C;
 with Packed_F32x9.C;
-with Interfaces.C;
+with Interfaces;
 
 package body Component.Average_Mimu_Data.Implementation is
 
@@ -32,7 +33,8 @@ package body Component.Average_Mimu_Data.Implementation is
    ---------------------------------------
    -- Invokee connector primitives:
    ---------------------------------------
-   -- Receive raw MIMU data packet and buffer for later processing.
+   -- Receive raw MIMU data packet and stage it directly into the algorithm
+   -- input for the next tick.
    overriding procedure Mimu_Raw_Packet_T_Recv_Sync (Self : in out Instance; Arg : in Mimu_Raw_Packet.T) is
    begin
       Self.Update_Parameters;
@@ -41,25 +43,27 @@ package body Component.Average_Mimu_Data.Implementation is
          -- Buffer full, drop the incoming packet.
          Self.Event_T_Send_If_Connected (Self.Events.Packet_Buffer_Overflow (Self.Sys_Time_T_Get));
       else
-         -- Convert raw packet to float samples and store in pre-converted buffer:
+         -- Convert raw counts to float samples directly into the next free
+         -- packet slot of the algorithm input:
          declare
             Base_Time_Ns : constant Interfaces.Unsigned_64 :=
                Interfaces.Unsigned_64 (Arg.Timestamp.Seconds) * 1_000_000_000 +
                Interfaces.Unsigned_64 (Arg.Timestamp.Subseconds) * 1_000_000_000 / 65_536;
 
-            Buffer : Converted_Packet_Data renames Self.Buffer (Self.Packet_Count);
+            Pkt : Mimu_Input_Packet.C.U_C renames Self.Input.Packets (Self.Packet_Count);
          begin
+            Pkt.Is_Valid := 1;
             -- The algorithm derives per-sample times from the packet's
             -- first-sample time plus the device sample period, so we only
             -- carry that one timestamp:
-            Buffer.Meas_Time := Base_Time_Ns;
+            Pkt.Meas_Time := Base_Time_Ns;
             for Idx in Arg.Samples'Range loop
-               Buffer.Gyro_P (Idx) := [
+               Pkt.Samples (Idx).Gyro_P := [
                   Short_Float (Arg.Samples (Idx).Merged_Gyro_Rates.X_Measurement) * Gyro_Scale,
                   Short_Float (Arg.Samples (Idx).Merged_Gyro_Rates.Y_Measurement) * Gyro_Scale,
                   Short_Float (Arg.Samples (Idx).Merged_Gyro_Rates.Z_Measurement) * Gyro_Scale
                ];
-               Buffer.Accel_P (Idx) := [
+               Pkt.Samples (Idx).Accel_P := [
                   Short_Float (Arg.Samples (Idx).Merged_Accelerations.X_Measurement) * Accel_Scale,
                   Short_Float (Arg.Samples (Idx).Merged_Accelerations.Y_Measurement) * Accel_Scale,
                   Short_Float (Arg.Samples (Idx).Merged_Accelerations.Z_Measurement) * Accel_Scale
@@ -70,44 +74,17 @@ package body Component.Average_Mimu_Data.Implementation is
       end if;
    end Mimu_Raw_Packet_T_Recv_Sync;
 
-   -- Tick that triggers the averaging algorithm over buffered samples and publishes
-   -- the result. Always publishes Imu_Body_Data with a current timestamp so
-   -- downstream consumers see Success on every tick; with nothing buffered every
-   -- packet is left invalid and the algorithm returns its current rolling average.
+   -- Tick that runs the averaging algorithm over the staged packets and
+   -- publishes the result. Always publishes Imu_Body_Data with a current
+   -- timestamp so downstream consumers see Success on every tick; with
+   -- nothing staged every packet is invalid and the algorithm returns its
+   -- current rolling average.
    overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
       Ignore : Tick.T renames Arg;
-
-      -- Build the InputPktsData_c (4 packets, each holding 10 samples) from the
-      -- pre-converted buffer. Packets with Is_Valid = 0 are skipped by the
-      -- algorithm; we mark Is_Valid = 1 only for filled packet slots
-      -- [0 .. Packet_Count - 1].
-      Input : aliased Input_Pkts_Data_C := (
-         Packets => [others => (
-            Is_Valid  => 0,
-            Meas_Time => 0,
-            Samples   => [others => (
-               Gyro_P  => [others => 0.0],
-               Accel_P => [others => 0.0]
-            )]
-         )]
-      );
    begin
-      -- Copy pre-converted samples into the algorithm input buffer and flag each
-      -- filled packet as valid:
-      for Pdx in 0 .. Self.Packet_Count - 1 loop
-         Input.Packets (Pdx).Is_Valid := 1;
-         Input.Packets (Pdx).Meas_Time := Self.Buffer (Pdx).Meas_Time;
-         for Idx in 0 .. Samples_Per_Packet - 1 loop
-            Input.Packets (Pdx).Samples (Idx) := (
-               Gyro_P  => Self.Buffer (Pdx).Gyro_P (Idx),
-               Accel_P => Self.Buffer (Pdx).Accel_P (Idx)
-            );
-         end loop;
-      end loop;
-
       declare
          Output : constant Averaged_Imu_Data.C.U_C :=
-            Update (Self.Alg, Input'Unchecked_Access);
+            Update (Self.Alg, Self.Input'Unchecked_Access);
       begin
          Self.Data_Product_T_Send (Self.Data_Products.Imu_Body_Data (
             Self.Sys_Time_T_Get,
@@ -115,7 +92,11 @@ package body Component.Average_Mimu_Data.Implementation is
          ));
       end;
 
-      -- Reset buffer for next cycle:
+      -- Invalidate the staged packets for the next cycle. Sample data behind
+      -- an invalid flag is skipped by the algorithm, so it is not re-zeroed.
+      for Pdx in 0 .. Self.Packet_Count - 1 loop
+         Self.Input.Packets (Pdx).Is_Valid := 0;
+      end loop;
       Self.Packet_Count := 0;
    end Tick_T_Recv_Sync;
 
@@ -135,8 +116,8 @@ package body Component.Average_Mimu_Data.Implementation is
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
    begin
       -- Set the gyro and accel averaging windows (validated to [0.0, 2.0] s):
-      Set_Gyro_Averaging_Window (Self.Alg, Interfaces.C.double (Self.Gyro_Time_Delta.Value));
-      Set_Accel_Averaging_Window (Self.Alg, Interfaces.C.double (Self.Accel_Time_Delta.Value));
+      Set_Gyro_Averaging_Window (Self.Alg, Long_Float (Self.Gyro_Time_Delta.Value));
+      Set_Accel_Averaging_Window (Self.Alg, Long_Float (Self.Accel_Time_Delta.Value));
       -- Set the platform-to-body DCM:
       Set_Dcm_Pltf_To_Bdy (Self.Alg, (Value => Packed_F32x9.C.To_C (Self.Dcm_Pltf_To_Bdy)));
    end Update_Parameters_Action;

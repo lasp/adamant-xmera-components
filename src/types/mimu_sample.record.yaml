@@ -1,0 +1,9 @@
+---
+description: One pre-converted MIMU sample - platform-frame gyro and accelerometer vectors. Maps to Sample_c in the averageMimuData C shim. The sample carries no timestamp; per-sample times are derived inside the algorithm from the enclosing packet's Meas_Time and the device sample period.
+fields:
+  - name: Gyro_P
+    description: "[rad/s] Platform-frame angular rate sample."
+    type: Packed_F32x3.T
+  - name: Accel_P
+    description: "[m/s^2] Platform-frame acceleration sample."
+    type: Packed_F32x3.T
