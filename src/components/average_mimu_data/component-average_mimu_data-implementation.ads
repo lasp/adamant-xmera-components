@@ -110,11 +110,14 @@ private
    -- certain parameters beyond individual type ranges, or performing other special functionality that only needs to be
    -- performed after parameters have been validated. Note that range checking is performed during staging, and does not need
    -- to be implemented here.
+   -- No custom validation: float garbage (NaN/Inf) is rejected by type
+   -- validation during staging, and out-of-range windows and non-orthonormal
+   -- DCMs are the C algorithm setters' contract to reject.
    overriding function Validate_Parameters (
       Self : in out Instance;
       Gyro_Time_Delta : in Packed_F32.U;
       Accel_Time_Delta : in Packed_F32.U;
       Dcm_Pltf_To_Bdy : in Packed_F32x9.U
-   ) return Parameter_Validation_Status.E;
+   ) return Parameter_Validation_Status.E is (Parameter_Validation_Status.Valid);
 
 end Component.Average_Mimu_Data.Implementation;

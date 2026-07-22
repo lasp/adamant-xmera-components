@@ -122,24 +122,4 @@ package body Component.Average_Mimu_Data.Implementation is
       Set_Dcm_Pltf_To_Bdy (Self.Alg, (Value => Packed_F32x9.C.To_C (Self.Dcm_Pltf_To_Bdy)));
    end Update_Parameters_Action;
 
-   -- Validate parameters before they are staged. The averaging windows must
-   -- fall within [0.0, 2.0] seconds; the C++ algorithm rejects values outside
-   -- that range, so we guard them here to avoid the cross-FFI exception.
-   overriding function Validate_Parameters (
-      Self : in out Instance;
-      Gyro_Time_Delta : in Packed_F32.U;
-      Accel_Time_Delta : in Packed_F32.U;
-      Dcm_Pltf_To_Bdy : in Packed_F32x9.U
-   ) return Parameter_Validation_Status.E is
-      pragma Unreferenced (Self, Dcm_Pltf_To_Bdy);
-      Max_Averaging_Window : constant Short_Float := 2.0;
-   begin
-      if Gyro_Time_Delta.Value < 0.0 or else Gyro_Time_Delta.Value > Max_Averaging_Window or else
-         Accel_Time_Delta.Value < 0.0 or else Accel_Time_Delta.Value > Max_Averaging_Window
-      then
-         return Parameter_Validation_Status.Invalid;
-      end if;
-      return Parameter_Validation_Status.Valid;
-   end Validate_Parameters;
-
 end Component.Average_Mimu_Data.Implementation;

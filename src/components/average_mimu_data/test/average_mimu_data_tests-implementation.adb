@@ -336,8 +336,7 @@ package body Average_Mimu_Data_Tests.Implementation is
 
    -- Test that an invalid parameter is rejected with an error status (the
    -- Invalid_Parameter handler is null; the Parameters component reports the
-   -- failure to the ground), and that an averaging window outside [0.0, 2.0] s
-   -- is rejected by Validate_Parameters.
+   -- failure to the ground).
    overriding procedure Test_Invalid_Parameter (Self : in out Instance) is
       T : Tester_Ref renames Self.Tester;
       Param : Parameter.T := T.Parameters.Gyro_Time_Delta ((Value => 1.0));
@@ -356,18 +355,6 @@ package body Average_Mimu_Data_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Param), Id_Error);
 
       Natural_Assert.Eq (T.Event_T_Recv_Sync_History.Get_Count, 0);
-
-      -- An averaging window above the 2.0 s cap is rejected on validation:
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
-         T.Parameters.Gyro_Time_Delta ((Value => 3.0))), Success);
-      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
-
-      -- Windows within [0.0, 2.0] s validate successfully:
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
-         T.Parameters.Gyro_Time_Delta ((Value => 2.0))), Success);
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
-         T.Parameters.Accel_Time_Delta ((Value => 0.0))), Success);
-      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
    end Test_Invalid_Parameter;
 
    -- The gyro and accel averaging windows are applied independently: a single
@@ -418,25 +405,5 @@ package body Average_Mimu_Data_Tests.Implementation is
          Packed_F32x3_Assert.Eq (Output.Accel_Body, [AccelA, AccelB, AccelC], Epsilon => 0.0001);
       end;
    end Test_Zero_Window;
-
-   -- A negative averaging window stages successfully but is rejected by
-   -- Validate_Parameters (the C++ algorithm rejects windows outside [0.0, 2.0] s,
-   -- so the component guards against negatives before they cross the FFI). Both
-   -- the gyro and accel channels are checked.
-   overriding procedure Test_Negative_Window_Rejected (Self : in out Instance) is
-      T : Tester_Ref renames Self.Tester;
-   begin
-      -- A negative gyro window is rejected:
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
-         T.Parameters.Gyro_Time_Delta ((Value => -1.0))), Success);
-      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
-
-      -- With the gyro window valid again, a negative accel window is rejected:
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
-         T.Parameters.Gyro_Time_Delta ((Value => 1.0))), Success);
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
-         T.Parameters.Accel_Time_Delta ((Value => -0.5))), Success);
-      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
-   end Test_Negative_Window_Rejected;
 
 end Average_Mimu_Data_Tests.Implementation;
