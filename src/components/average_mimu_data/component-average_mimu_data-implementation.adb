@@ -75,19 +75,18 @@ package body Component.Average_Mimu_Data.Implementation is
    end Mimu_Raw_Packet_T_Recv_Sync;
 
    -- Tick that runs the averaging algorithm over the staged packets and
-   -- publishes the result. Always publishes Imu_Body_Data with a current
-   -- timestamp so downstream consumers see Success on every tick; with
-   -- nothing staged every packet is invalid and the algorithm returns its
-   -- current rolling average.
+   -- publishes the result. Publishes Imu_Body_Data on every tick so
+   -- downstream consumers see Success each cycle; with nothing staged every
+   -- packet is invalid and the algorithm returns its current rolling
+   -- average.
    overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
-      Ignore : Tick.T renames Arg;
    begin
       declare
          Output : constant Averaged_Imu_Data.C.U_C :=
             Update (Self.Alg, Self.Input'Unchecked_Access);
       begin
          Self.Data_Product_T_Send (Self.Data_Products.Imu_Body_Data (
-            Self.Sys_Time_T_Get,
+            Arg.Time,
             Averaged_Imu_Data.C.Pack (Output)
          ));
       end;
