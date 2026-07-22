@@ -3,7 +3,6 @@
 --------------------------------------------------------------------------------
 
 with Css_Sensor_Values;
-with Css_Sensor_Values.C;
 with Cheby_Polynomials.C;
 with Packed_F64x11.C;
 
@@ -55,13 +54,13 @@ package body Component.Css_Comm.Implementation is
 
       -- Convert ADC counts to cosine values per the css_wls_estimator pattern:
       -- divide each U16 ADC value by Max_Sensor_Value and clamp to <= 1.0
-      -- (lower bound is implicit since ADC is unsigned). The result is packed
-      -- into a Css_Sensor_Values.T with the first 8 elements taken from the
-      -- ADC source and the remaining elements zero-padded up to the
-      -- C algorithm's MAX_NUM_CSS_SENSORS bound.
+      -- (lower bound is implicit since ADC is unsigned). The result is written
+      -- into the FFI input type with the first 8 elements taken from the ADC
+      -- source and the remaining elements zero-padded up to the C algorithm's
+      -- MAX_NUM_CSS_SENSORS bound.
       declare
          Max_Value : constant Long_Float := Long_Float (Self.Max_Sensor_Value.Value);
-         Cosines : Css_Sensor_Values.T := (Data => [others => 0.0]);
+         Css_Input_C : aliased Css_Sensor_Values_C := (Data => [others => 0.0]);
       begin
          for I in Css_Adc_Input.Adc_Value'Range loop
             declare
@@ -71,22 +70,26 @@ package body Component.Css_Comm.Implementation is
                if Cos_Value > 1.0 then
                   Cos_Value := 1.0;
                end if;
-               Cosines.Data (Cosines.Data'First + Natural (I - Css_Adc_Input.Adc_Value'First)) := Cos_Value;
+               Css_Input_C.Data (Css_Input_C.Data'First + Natural (I - Css_Adc_Input.Adc_Value'First)) := Cos_Value;
             end;
          end loop;
 
-         -- Call algorithm with the converted cosine values:
+         -- Call algorithm with the converted cosine values and publish the
+         -- corrected values as the data product. Css_Sensor_Values.T is
+         -- narrower than the C algorithm's MAX_NUM_CSS_SENSORS bound; the
+         -- trailing entries of the C output correspond to no physical sensor
+         -- and are not published.
          declare
-            Css_Input_C : aliased Css_Sensor_Values.C.U_C := Css_Sensor_Values.C.To_C (Css_Sensor_Values.Unpack (Cosines));
-            Css_Output : constant Css_Sensor_Values.C.U_C := Update (
+            Css_Output : constant Css_Sensor_Values_C := Update (
                Self.Alg,
                Input_Values => Css_Input_C'Unchecked_Access
             );
+            Out_Product : Css_Sensor_Values.T := (Data => [others => 0.0]);
          begin
-            Self.Data_Product_T_Send (Self.Data_Products.Css_Sensor_Output (
-               Arg.Time,
-               Css_Sensor_Values.Pack (Css_Sensor_Values.C.To_Ada (Css_Output))
-            ));
+            for I in Out_Product.Data'Range loop
+               Out_Product.Data (I) := Css_Output.Data (Css_Output.Data'First + Natural (I - Out_Product.Data'First));
+            end loop;
+            Self.Data_Product_T_Send (Self.Data_Products.Css_Sensor_Output (Arg.Time, Out_Product));
          end;
       end;
    end Tick_T_Recv_Sync;

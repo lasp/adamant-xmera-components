@@ -4,12 +4,29 @@ pragma Style_Checks (Off);
 pragma Warnings (Off, "-gnatwu");
 
 with Interfaces.C; use Interfaces; use Interfaces.C;
-with Css_Sensor_Values.C;
 with Cheby_Polynomials.C;
-with Packed_F64x16.C;
 with Packed_F64x11.C;
 
 package Css_Comm_Algorithm_C is
+
+   -- MAX_NUM_CSS_SENSORS bounds the local FFI type below (an Ada array bound
+   -- must be static); it is validated against the C definition in the ABI
+   -- validation block at the bottom of this package.
+   MAX_NUM_CSS_SENSORS : constant := 32;
+
+   --* POD type matching CssSensorValues_c in C.
+   --* Layout: double data[MAX_NUM_CSS_SENSORS];
+   --* This type exists only to cross the FFI boundary: the published
+   --* Css_Sensor_Values.T data product carries fewer entries than the C
+   --* algorithm's bound, so the implementation zero-pads into this type on
+   --* input and truncates on return.
+   type Css_Values_Array_C is array (0 .. MAX_NUM_CSS_SENSORS - 1) of aliased Long_Float
+      with Convention => C;
+   type Css_Sensor_Values_C is record
+      Data : aliased Css_Values_Array_C;
+   end record
+      with Convention => C_Pass_By_Copy;
+   type Css_Sensor_Values_C_Access is access all Css_Sensor_Values_C;
 
    --* Opaque handle for a CssCommAlgorithm instance.
    type Css_Comm_Algorithm is limited private;
@@ -35,8 +52,8 @@ package Css_Comm_Algorithm_C is
    --* @return The corrected CSS sensor values.
    function Update
      (Self         : Css_Comm_Algorithm_Access;
-      Input_Values : Css_Sensor_Values.C.U_C_Access)
-     return Css_Sensor_Values.C.U_C
+      Input_Values : Css_Sensor_Values_C_Access)
+     return Css_Sensor_Values_C
      with Import       => True,
           Convention   => C,
           External_Name => "CssCommAlgorithm_update";
@@ -140,9 +157,9 @@ package Css_Comm_Algorithm_C is
    -- ABI validation: the constant-dimensioned Ada arrays crossing the FFI
    -- boundary must match the C-side sizing constants, checked at elaboration.
    -- CssSensorValues_c: double data[MAX_NUM_CSS_SENSORS];
-   pragma Assert (Unsigned_32 (Packed_F64x16.Length) = Get_Max_Num_Css_Sensors);
-   pragma Assert (Packed_F64x16.C.U_C'Object_Size = Css_Sensor_Values.C.U_C'Object_Size);
-   pragma Assert (Unsigned_32 (Css_Sensor_Values.C.U_C'Object_Size / Long_Float'Object_Size) = Get_Max_Num_Css_Sensors);
+   pragma Assert (Unsigned_32 (Css_Values_Array_C'Length) = Get_Max_Num_Css_Sensors);
+   pragma Assert (Css_Values_Array_C'Object_Size = Css_Sensor_Values_C'Object_Size);
+   pragma Assert (Unsigned_32 (Css_Sensor_Values_C'Object_Size / Long_Float'Object_Size) = Get_Max_Num_Css_Sensors);
    -- ChebyPolynomials_c: double data[MAX_NUM_CHEBY_POLYS];
    pragma Assert (Unsigned_32 (Packed_F64x11.Length) = Get_Max_Num_Cheby_Polys);
    pragma Assert (Packed_F64x11.C.U_C'Object_Size = Cheby_Polynomials.C.U_C'Object_Size);

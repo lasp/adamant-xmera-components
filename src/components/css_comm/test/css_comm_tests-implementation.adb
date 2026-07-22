@@ -4,7 +4,7 @@
 
 with Ada.Real_Time;
 with Basic_Assertions; use Basic_Assertions;
-with Packed_F64x16.Assertion; use Packed_F64x16.Assertion;
+with Packed_F64x8.Assertion; use Packed_F64x8.Assertion;
 with Packed_F64x11;
 with Packed_U32;
 with Packed_F64;
@@ -64,7 +64,7 @@ package body Css_Comm_Tests.Implementation is
       Input_Data : constant Css_Array_Adc_8.T := (
          Adc_Value => [50, 0, 100, 0, 110, 0, 0, 0]
       );
-      Expected_Output : constant Packed_F64x16.T :=
+      Expected_Output : constant Packed_F64x8.T :=
          [0.5, 0.0, 1.0, 0.0, 1.0, others => 0.0];
 
       Output : Css_Sensor_Values.T;
@@ -91,7 +91,7 @@ package body Css_Comm_Tests.Implementation is
 
       -- Check output matches expected value
       Output := T.Css_Sensor_Output_History.Get (1);
-      Packed_F64x16_Assert.Eq (Output.Data, Expected_Output, Epsilon => 1.0e-10);
+      Packed_F64x8_Assert.Eq (Output.Data, Expected_Output, Epsilon => 1.0e-10);
 
    end Test_Zero_Cheby_Is_Identity;
 
@@ -114,7 +114,7 @@ package body Css_Comm_Tests.Implementation is
          Adc_Value => [50, 0, 100, 0, 110, 0, 0, 0]
       );
       -- Stale input is zeroed, so the entire output is expected to be zero.
-      Expected_Output : constant Packed_F64x16.T := [others => 0.0];
+      Expected_Output : constant Packed_F64x8.T := [others => 0.0];
 
       Output : Css_Sensor_Values.T;
    begin
@@ -150,7 +150,7 @@ package body Css_Comm_Tests.Implementation is
 
       -- Output must be all zeros because the stale ADC input was zeroed.
       Output := T.Css_Sensor_Output_History.Get (1);
-      Packed_F64x16_Assert.Eq (Output.Data, Expected_Output, Epsilon => 1.0e-10);
+      Packed_F64x8_Assert.Eq (Output.Data, Expected_Output, Epsilon => 1.0e-10);
 
    end Test_Stale_Input_Is_Zeroed;
 
