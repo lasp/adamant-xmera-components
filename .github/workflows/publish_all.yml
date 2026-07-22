@@ -28,7 +28,10 @@ jobs:
           set-safe-directory: true
           repository: lasp/fp32-fsw-xmera
           path: fp32-fsw-xmera
-          ref: develop
+          # The C shims move in lockstep with the Ada bindings, so CI must
+          # build the fp32 revision the bindings were written against rather
+          # than the develop tip.
+          ref: 26d19cbbc1f00bb2d3cdbfc74e7ce1f1c37ab9d2
       - name: Clone adamant repository
         uses: actions/checkout@v4
         with:
