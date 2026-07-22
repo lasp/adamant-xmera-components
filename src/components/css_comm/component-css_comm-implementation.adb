@@ -21,11 +21,6 @@ package body Component.Css_Comm.Implementation is
       -- The number of CSS sensors is fixed by the hardware interface: the
       -- ADC data dependency carries exactly Css_Adc_U16_8.Length channels.
       Set_Num_Sensors (Self.Alg, Interfaces.Unsigned_32 (Css_Adc_U16_8.Length));
-      -- The full-scale U16 ADC count maps to cosine 1.0. Since the reading
-      -- is a U16, the C algorithm's normalized input is structurally within
-      -- its Chebyshev model's [0, 1] fit domain; all calibration shaping
-      -- lives in the Chebyshev parameters.
-      Set_Max_Sensor_Value (Self.Alg, Long_Float (Interfaces.Unsigned_16'Last));
       -- Apply the Ada parameter defaults to the algorithm: the framework
       -- invokes Update_Parameters_Action only after a ground parameter
       -- update, and the C++ constructor defaults do not match the Ada
@@ -68,11 +63,10 @@ package body Component.Css_Comm.Implementation is
       end if;
 
       -- Pass the raw ADC counts to the C algorithm, which normalizes each
-      -- reading by the fixed U16 full scale, applies the Chebyshev
-      -- correction, and clamps the corrected value to [0, 1]. The reading is
-      -- a U16, so the normalized input is structurally within the Chebyshev
-      -- model's [0, 1] fit domain. Entries beyond the physical ADC channels
-      -- are zero-padded up to the C algorithm's MAX_NUM_CSS_SENSORS bound.
+      -- reading by the Max_Sensor_Value parameter, applies the Chebyshev
+      -- correction, and clamps the corrected value to [0, 1]. Entries beyond
+      -- the physical ADC channels are zero-padded up to the C algorithm's
+      -- MAX_NUM_CSS_SENSORS bound.
       declare
          Css_Input_C : aliased Css_Sensor_Values_C := (Data => [others => 0.0]);
       begin
@@ -117,6 +111,7 @@ package body Component.Css_Comm.Implementation is
          Data => Packed_F64x11.C.To_C (Self.Cheby_Polynomials)
       );
    begin
+      Set_Max_Sensor_Value (Self.Alg, Long_Float (Self.Max_Sensor_Value.Value));
       Set_Cheby_Count (Self.Alg, Self.Cheby_Count.Value);
       Set_Cheby_Polynomials (Self.Alg, Cheby_Poly_C'Unchecked_Access);
    end Update_Parameters_Action;

@@ -1,6 +1,10 @@
 ---
 description: Parameters for the Css Comm component
 parameters:
+  - name: Max_Sensor_Value
+    description: "[-] Scale factor to go from sensor values to cosine"
+    type: Packed_F64.T
+    default: "(Value => 65535.0)"
   - name: Cheby_Count
     description: "[-] Count on the number of Chebyshev polynomials"
     type: Packed_U32.T

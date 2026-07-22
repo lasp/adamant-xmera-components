@@ -72,6 +72,7 @@ private
    -- by raising a C++ exception, which must never cross the FFI boundary.
    overriding function Validate_Parameters (
       Self : in out Instance;
+      Max_Sensor_Value : in Packed_F64.U;
       Cheby_Count : in Packed_U32.U;
       Cheby_Polynomials : in Packed_F64x11.U
    ) return Parameter_Validation_Status.E is
