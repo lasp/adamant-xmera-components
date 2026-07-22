@@ -3,7 +3,7 @@ pragma Ada_2012;
 pragma Style_Checks (Off);
 pragma Warnings (Off, "-gnatwu");
 
-with Interfaces.C; use Interfaces; use Interfaces.C;
+with Interfaces; use Interfaces;
 with Gyro_Input.C;
 with Inertial_Filter_Output.C;
 with Nav_Att_Output.C;

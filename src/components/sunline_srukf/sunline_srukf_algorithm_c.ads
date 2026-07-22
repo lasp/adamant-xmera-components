@@ -3,7 +3,7 @@ pragma Ada_2012;
 pragma Style_Checks (Off);
 pragma Warnings     (Off, "-gnatwu");
 
-with Interfaces.C; use Interfaces; use Interfaces.C;
+with Interfaces; use Interfaces;
 with Sunline_Srukf_Input.C;
 with Sunline_Srukf_Output.C;
 with Packed_F32x3.C;

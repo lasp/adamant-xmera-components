@@ -3,7 +3,7 @@ pragma Ada_2012;
 pragma Style_Checks (Off);
 pragma Warnings     (Off, "-gnatwu");
 
-with Interfaces.C; use Interfaces; use Interfaces.C;
+with Interfaces; use Interfaces;
 with Body_Ephemeris_Payload.C;
 with Body_Ephemeris_Payload_X20.C;
 with Body_Ephemeris_Payload_X20_Record.C;

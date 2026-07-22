@@ -3,19 +3,15 @@ pragma Ada_2012;
 pragma Style_Checks (Off);
 pragma Warnings     (Off, "-gnatwu");
 
-with Interfaces.C;              use Interfaces; use Interfaces.C;
+with Interfaces;                use Interfaces;
 with Mimu_Majority_Vote_Output.C;
 with Packed_F32x3.C;
 with Packed_F32x3_X3.C;
 
 package Mimu_Majority_Vote_Algorithm_C is
 
-   -- MIMU_COUNT must match MIMU_COUNT_C in mimuMajorityVoteAlgorithm_c.h:18
-   -- Re-run h2ads if the C header changes to regenerate this binding
-   MIMU_COUNT : constant := 3;
-
    --* @brief Get the MIMU count constant for validation.
-   --* @return The IMU count (MIMU_COUNT = 3).
+   --* @return The IMU count (MIMU_COUNT_C).
    function Get_Mimu_Count
      return Unsigned_32
      with Import       => True,

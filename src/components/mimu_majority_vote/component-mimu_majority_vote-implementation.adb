@@ -8,10 +8,6 @@ with Mimu_Majority_Vote_Output.C;
 
 package body Component.Mimu_Majority_Vote.Implementation is
 
-   -- Compile-time check that the algorithm uses exactly 3 IMUs.
-   pragma Compile_Time_Error (MIMU_COUNT /= 3,
-      "This wrapper requires exactly 3 active IMUs");
-
    --------------------------------------------------
    -- Subprogram for implementation init method:
    --------------------------------------------------
