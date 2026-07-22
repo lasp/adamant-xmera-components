@@ -14,6 +14,6 @@ parameters:
     type: Packed_F32.T
     default: "(Value => 1.0)"
   - name: Thrust_Pulsing_Regime
-    description: "Thrust pulsing regime (0 = on-pulsing, 1 = off-pulsing)"
-    type: Packed_Byte.T
-    default: "(Value => 0)"
+    description: "Thrust pulsing regime"
+    type: Packed_Pulsing_Regime.T
+    default: "(Value => Thr_Firing_Remainder_Enums.Pulsing_Regime.On_Pulsing)"

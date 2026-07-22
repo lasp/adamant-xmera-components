@@ -2,6 +2,7 @@
 -- Thr_Firing_Remainder Component Implementation Body
 --------------------------------------------------------------------------------
 
+with Thr_Firing_Remainder_Enums;
 with Thr_Force_Cmd;
 with Thr_On_Time_Cmd;
 with Thr_Firing_Remainder_Force_Cmd.C;
@@ -111,8 +112,13 @@ package body Component.Thr_Firing_Remainder.Implementation is
       Set_Thr_Min_Fire_Time (Self.Alg, Self.Thr_Min_Fire_Time.Value);
       Set_Control_Period (Self.Alg, Self.Control_Period.Value);
       Set_On_Time_Saturation_Factor (Self.Alg, Self.On_Time_Saturation_Factor.Value);
+      -- The parameter's enumeration and the binding's enumeration both match
+      -- the C ThrFiringRemainderPulsingRegime values, so a position-based
+      -- conversion is safe; the parameter's E8 type validation rejects any
+      -- other value during staging.
       Set_Thrust_Pulsing_Regime (Self.Alg,
-         Thr_Firing_Remainder_Pulsing_Regime'Val (Natural (Self.Thrust_Pulsing_Regime.Value)));
+         Thr_Firing_Remainder_Pulsing_Regime'Val (
+            Thr_Firing_Remainder_Enums.Pulsing_Regime.E'Pos (Self.Thrust_Pulsing_Regime.Value)));
    end Update_Parameters_Action;
 
    -----------------------------------------------
