@@ -122,16 +122,6 @@ package body Component.Css_Comm.Implementation is
       Set_Cheby_Polynomials (Self.Alg, Cheby_Poly_C'Unchecked_Access);
    end Update_Parameters_Action;
 
-   -- Description:
-   --    Parameters for the Css Comm component
-   -- Invalid Parameter handler. This procedure is called when a parameter's type is found to be invalid:
-   overriding procedure Invalid_Parameter (Self : in out Instance; Par : in Parameter.T; Errant_Field_Number : in Unsigned_32; Errant_Field : in Basic_Types.Poly_Type) is
-      pragma Annotate (GNATSAS, Intentional, "subp always fails", "intentional assertion");
-   begin
-      -- None of the parameters should be invalid in this case.
-      pragma Assert (False);
-   end Invalid_Parameter;
-
    -----------------------------------------------
    -- Data dependency handlers:
    -----------------------------------------------

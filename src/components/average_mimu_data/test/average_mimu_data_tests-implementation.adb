@@ -13,7 +13,6 @@ with Average_Mimu_Data_Parameters;
 with Parameter_Enums.Assertion;
 use Parameter_Enums.Parameter_Update_Status;
 use Parameter_Enums.Assertion;
-with Invalid_Parameter_Info.Assertion; use Invalid_Parameter_Info.Assertion;
 
 package body Average_Mimu_Data_Tests.Implementation is
 
@@ -335,8 +334,10 @@ package body Average_Mimu_Data_Tests.Implementation is
       end;
    end Test_Buffer_Overflow;
 
-   -- Test that an invalid parameter throws the appropriate event, and that an
-   -- averaging window outside [0.0, 2.0] s is rejected by Validate_Parameters.
+   -- Test that an invalid parameter is rejected with an error status (the
+   -- Invalid_Parameter handler is null; the Parameters component reports the
+   -- failure to the ground), and that an averaging window outside [0.0, 2.0] s
+   -- is rejected by Validate_Parameters.
    overriding procedure Test_Invalid_Parameter (Self : in out Instance) is
       T : Tester_Ref renames Self.Tester;
       Param : Parameter.T := T.Parameters.Gyro_Time_Delta ((Value => 1.0));
@@ -347,21 +348,14 @@ package body Average_Mimu_Data_Tests.Implementation is
       -- Send bad parameter and expect bad response:
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Param), Length_Error);
 
-      -- Make sure the invalid parameter event was thrown:
-      Natural_Assert.Eq (T.Event_T_Recv_Sync_History.Get_Count, 1);
-      Natural_Assert.Eq (T.Invalid_Parameter_Received_History.Get_Count, 1);
-      Invalid_Parameter_Info_Assert.Eq (T.Invalid_Parameter_Received_History.Get (1), (
-         Id => T.Parameters.Get_Gyro_Time_Delta_Id,
-         Errant_Field_Number => Interfaces.Unsigned_32'Last,
-         Errant_Field => [0, 0, 0, 0, 0, 0, 0, 0]
-      ));
+      -- The Invalid_Parameter handler is null, so no event is thrown:
+      Natural_Assert.Eq (T.Event_T_Recv_Sync_History.Get_Count, 0);
 
       -- Test with invalid id:
       Param.Header.Id := 1_001;
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Param), Id_Error);
 
-      Natural_Assert.Eq (T.Event_T_Recv_Sync_History.Get_Count, 2);
-      Natural_Assert.Eq (T.Invalid_Parameter_Received_History.Get_Count, 2);
+      Natural_Assert.Eq (T.Event_T_Recv_Sync_History.Get_Count, 0);
 
       -- An averaging window above the 2.0 s cap is rejected on validation:
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (

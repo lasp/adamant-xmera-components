@@ -2,8 +2,8 @@
 -- Mimu_Majority_Vote Tests Body
 --------------------------------------------------------------------------------
 
-with Interfaces; use Interfaces;
 with Basic_Assertions; use Basic_Assertions;
+with Interfaces; use Interfaces;
 with Packed_F32x3.Assertion; use Packed_F32x3.Assertion;
 with Mimu_Majority_Vote_Output;
 with Mimu_Majority_Vote_Parameters;
@@ -11,7 +11,6 @@ with Parameter;
 with Parameter_Enums.Assertion;
 use Parameter_Enums.Parameter_Update_Status;
 use Parameter_Enums.Assertion;
-with Invalid_Parameter_Info.Assertion; use Invalid_Parameter_Info.Assertion;
 
 package body Mimu_Majority_Vote_Tests.Implementation is
 
@@ -120,7 +119,9 @@ package body Mimu_Majority_Vote_Tests.Implementation is
 
    end Test;
 
-   -- Test that an invalid parameter throws the appropriate event.
+   -- Test that an invalid parameter is rejected with an error status (the
+   -- Invalid_Parameter handler is null; the Parameters component reports the
+   -- failure to the ground).
    overriding procedure Test_Invalid_Parameter (Self : in out Instance) is
       T : Component.Mimu_Majority_Vote.Implementation.Tester.Instance_Access renames Self.Tester;
       Param : Parameter.T := T.Parameters.Omega_Threshold ((Value => 1.0));
@@ -131,21 +132,9 @@ package body Mimu_Majority_Vote_Tests.Implementation is
       -- Send bad parameter and expect bad response:
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Param), Length_Error);
 
-      -- Make sure the invalid parameter event was thrown:
-      Natural_Assert.Eq (T.Event_T_Recv_Sync_History.Get_Count, 1);
-      Natural_Assert.Eq (T.Invalid_Parameter_Received_History.Get_Count, 1);
-      Invalid_Parameter_Info_Assert.Eq (T.Invalid_Parameter_Received_History.Get (1), (
-         Id => T.Parameters.Get_Omega_Threshold_Id,
-         Errant_Field_Number => Interfaces.Unsigned_32'Last,
-         Errant_Field => [0, 0, 0, 0, 0, 0, 0, 0]
-      ));
-
       -- Test with invalid id:
       Param.Header.Id := 1_001;
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Param), Id_Error);
-
-      Natural_Assert.Eq (T.Event_T_Recv_Sync_History.Get_Count, 2);
-      Natural_Assert.Eq (T.Invalid_Parameter_Received_History.Get_Count, 2);
    end Test_Invalid_Parameter;
 
 end Mimu_Majority_Vote_Tests.Implementation;

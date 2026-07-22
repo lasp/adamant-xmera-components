@@ -9,7 +9,6 @@ with Sys_Time.Representation;
 with Event.Representation;
 with Data_Product.Representation;
 with Event;
-with Invalid_Parameter_Info.Representation;
 with Data_Product;
 with Averaged_Imu_Data.Representation;
 
@@ -25,7 +24,6 @@ package Component.Average_Mimu_Data.Implementation.Tester is
 
    -- Event history packages:
    package Packet_Buffer_Overflow_History_Package is new Printable_History (Natural, Natural'Image);
-   package Invalid_Parameter_Received_History_Package is new Printable_History (Invalid_Parameter_Info.T, Invalid_Parameter_Info.Representation.Image);
 
    -- Data product history packages:
    package Imu_Body_Data_History_Package is new Printable_History (Averaged_Imu_Data.T, Averaged_Imu_Data.Representation.Image);
@@ -40,7 +38,6 @@ package Component.Average_Mimu_Data.Implementation.Tester is
       Data_Product_T_Recv_Sync_History : Data_Product_T_Recv_Sync_History_Package.Instance;
       -- Event histories:
       Packet_Buffer_Overflow_History : Packet_Buffer_Overflow_History_Package.Instance;
-      Invalid_Parameter_Received_History : Invalid_Parameter_Received_History_Package.Instance;
       -- Data product histories:
       Imu_Body_Data_History : Imu_Body_Data_History_Package.Instance;
    end record;
@@ -75,8 +72,6 @@ package Component.Average_Mimu_Data.Implementation.Tester is
    -- A raw MIMU data packet was received but the internal buffer is full. The
    -- incoming packet was dropped.
    overriding procedure Packet_Buffer_Overflow (Self : in out Instance);
-   -- A parameter was received with an invalid value.
-   overriding procedure Invalid_Parameter_Received (Self : in out Instance; Arg : in Invalid_Parameter_Info.T);
 
    -----------------------------------------------
    -- Data product handler primitives:

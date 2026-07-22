@@ -19,7 +19,6 @@ package body Component.Average_Mimu_Data.Implementation.Tester is
       Self.Data_Product_T_Recv_Sync_History.Init (Depth => 100);
       -- Event histories:
       Self.Packet_Buffer_Overflow_History.Init (Depth => 100);
-      Self.Invalid_Parameter_Received_History.Init (Depth => 100);
       -- Data product histories:
       Self.Imu_Body_Data_History.Init (Depth => 100);
    end Init_Base;
@@ -33,7 +32,6 @@ package body Component.Average_Mimu_Data.Implementation.Tester is
       Self.Data_Product_T_Recv_Sync_History.Destroy;
       -- Event histories:
       Self.Packet_Buffer_Overflow_History.Destroy;
-      Self.Invalid_Parameter_Received_History.Destroy;
       -- Data product histories:
       Self.Imu_Body_Data_History.Destroy;
    end Final_Base;
@@ -95,13 +93,6 @@ package body Component.Average_Mimu_Data.Implementation.Tester is
       -- Push the argument onto the test history for looking at later:
       Self.Packet_Buffer_Overflow_History.Push (Arg);
    end Packet_Buffer_Overflow;
-
-   -- A parameter was received with an invalid value.
-   overriding procedure Invalid_Parameter_Received (Self : in out Instance; Arg : in Invalid_Parameter_Info.T) is
-   begin
-      -- Push the argument onto the test history for looking at later:
-      Self.Invalid_Parameter_Received_History.Push (Arg);
-   end Invalid_Parameter_Received;
 
    -----------------------------------------------
    -- Data product handler primitive:

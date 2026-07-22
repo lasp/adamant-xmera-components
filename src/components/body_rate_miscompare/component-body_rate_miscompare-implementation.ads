@@ -81,7 +81,10 @@ private
    --    Parameters for the Body Rate Miscompare component
 
    -- Invalid parameter handler. This procedure is called when a parameter's type is found to be invalid:
-   overriding procedure Invalid_Parameter (Self : in out Instance; Par : in Parameter.T; Errant_Field_Number : in Unsigned_32; Errant_Field : in Basic_Types.Poly_Type);
+   -- Null: the staging code rejects the value and returns an error status to the Parameters
+   -- component, which reports the offending parameter ID to the ground. That is sufficient, and
+   -- we avoid adding per-component event overhead to these algorithm components.
+   overriding procedure Invalid_Parameter (Self : in out Instance; Par : in Parameter.T; Errant_Field_Number : in Unsigned_32; Errant_Field : in Basic_Types.Poly_Type) is null;
    -- This procedure is called when the parameters of a component have been updated. The default implementation of this
    -- subprogram in the implementation package is a null procedure. However, this procedure can, and should be implemented if
    -- something special needs to happen after a parameter update. Examples of this might be copying certain parameters to
