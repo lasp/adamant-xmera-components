@@ -9,6 +9,13 @@ with Packed_F64x11.C;
 
 package Css_Comm_Algorithm_C is
 
+   -- TODO: This local FFI type is the solitary exception to the rule that all
+   -- C structs crossing the FFI boundary are generated packed records. The C
+   -- algorithm currently sizes CssSensorValues_c to MAX_NUM_CSS_SENSORS = 32
+   -- while only Css_Sensor_Values.T's 8 physical channels are meaningful.
+   -- Once fp32-fsw-xmera narrows the C type to 8, delete this local typing
+   -- and pass Css_Sensor_Values.C.U_C directly.
+   --
    -- MAX_NUM_CSS_SENSORS bounds the local FFI type below (an Ada array bound
    -- must be static); it is validated against the C definition in the ABI
    -- validation block at the bottom of this package.
