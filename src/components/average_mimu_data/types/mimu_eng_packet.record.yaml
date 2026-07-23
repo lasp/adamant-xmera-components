@@ -1,0 +1,10 @@
+---
+description: Engineering-unit MIMU data packet containing a first-sample time and 10 measurement samples for the Average_Mimu_Data component interface.
+fields:
+  - name: Meas_Time
+    description: "[ns] Time of the first MIMU data sample in the packet."
+    type: Interfaces.Unsigned_64
+    format: U64
+  - name: Samples
+    description: "10 equally time-distributed engineering-unit MIMU measurement samples."
+    type: Mimu_Sample_X10.T

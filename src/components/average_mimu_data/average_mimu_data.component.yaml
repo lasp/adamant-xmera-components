@@ -4,8 +4,8 @@ execution: passive
 init:
   description: Initializes the AverageMimuData algorithm.
 connectors:
-  - description: Receive raw MIMU data packet and buffer for later processing.
-    type: Mimu_Raw_Packet.T
+  - description: Receive engineering-unit MIMU data packet and buffer for later processing.
+    type: Mimu_Eng_Packet.T
     kind: recv_sync
   - description: Tick that triggers the averaging algorithm over buffered samples and publishes the result.
     type: Tick.T

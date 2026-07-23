@@ -58,13 +58,9 @@ package body Component.Sunline_Ephem.Implementation is
       -- Convert to the narrow C vectors the algorithm consumes: the sun and
       -- spacecraft inertial positions (r_SN_N, r_BN_N) and the attitude MRP
       -- (sigma_BN). Nothing else is needed.
-      Sun_State_C : constant Cartesian_State.C.U_C := Cartesian_State.C.To_C (Cartesian_State.Unpack (Sun_State));
-      Sc_Pos_C_Cartesian : constant Cartesian_State.C.U_C := Cartesian_State.C.To_C (Cartesian_State.Unpack (Sc_Pos));
-      Sc_Att_C : constant Nav_Att_Output.C.U_C := Nav_Att_Output.C.To_C (Nav_Att_Output.Unpack (Sc_Att));
-
-      Sun_R    : aliased Packed_F64x3_Record.C.U_C := (Value => Sun_State_C.Position);
-      Sc_R     : aliased Packed_F64x3_Record.C.U_C := (Value => Sc_Pos_C_Cartesian.Position);
-      Sigma_C  : aliased Packed_F32x3_Record.C.U_C := (Value => Sc_Att_C.Sigma_Bn);
+      Sun_R    : aliased Packed_F64x3_Record.C.U_C := (Value => Cartesian_State.C.To_C (Cartesian_State.Unpack (Sun_State)).Position);
+      Sc_R     : aliased Packed_F64x3_Record.C.U_C := (Value => Cartesian_State.C.To_C (Cartesian_State.Unpack (Sc_Pos)).Position);
+      Sigma_C  : aliased Packed_F32x3_Record.C.U_C := (Value => Nav_Att_Output.C.To_C (Nav_Att_Output.Unpack (Sc_Att)).Sigma_Bn);
       Sunline  : aliased Packed_F32x3_Record.C.U_C;
    begin
       -- Call algorithm update: all vectors passed by reference, result written

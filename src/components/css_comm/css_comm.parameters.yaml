@@ -1,10 +1,6 @@
 ---
 description: Parameters for the Css Comm component
 parameters:
-  - name: Num_Sensors
-    description: "[-] The number of CSS sensors to process"
-    type: Packed_U32.T
-    default: "(Value => 8)"
   - name: Max_Sensor_Value
     description: "[-] Scale factor to go from sensor values to cosine"
     type: Packed_F64.T

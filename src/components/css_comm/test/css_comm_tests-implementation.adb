@@ -4,7 +4,7 @@
 
 with Ada.Real_Time;
 with Basic_Assertions; use Basic_Assertions;
-with Packed_F64x16.Assertion; use Packed_F64x16.Assertion;
+with Packed_F64x8.Assertion; use Packed_F64x8.Assertion;
 with Packed_F64x11;
 with Packed_U32;
 with Packed_F64;
@@ -40,16 +40,13 @@ package body Css_Comm_Tests.Implementation is
 
    -- Adapted from C++ test ZeroChebyIsIdentity:
    -- With all zero Chebyshev coefficients, the output equals
-   -- ADC_count/Max_Sensor_Value clamped to <= 1.0 (lower bound is implicit
-   -- since ADC counts are unsigned). The Ada wrapper performs the divide and
-   -- upper clamp; the C algorithm is configured with Max_Sensor_Value=1.0 so
-   -- its internal divide is a no-op.
+   -- ADC_count/Max_Sensor_Value clamped to [0, 1]. The Ada wrapper passes
+   -- raw counts; the C algorithm performs the divide and the output clamp.
    overriding procedure Test_Zero_Cheby_Is_Identity (Self : in out Instance) is
       T : Component.Css_Comm.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Css_Comm_Parameters.Instance;
 
       -- Configuration
-      Num_Sensors_Val : constant Packed_U32.T := (Value => 5);
       Max_Sensor_Val : constant Packed_F64.T := (Value => 100.0);
       Cheby_Count_Val : constant Packed_U32.T := (Value => 3);
       Cheby_Poly_Val : constant Packed_F64x11.T := [others => 0.0];
@@ -59,12 +56,11 @@ package body Css_Comm_Tests.Implementation is
       -- representable here; replaced with 0.)
       -- Expected output (16 elements, last 8 are zero-padding to
       -- MAX_NUM_CSS_SENSORS): [0.5, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, ...]
-      -- Rationale: ada_cosine = clamp(adc/100, <= 1.0); cheby = 0 so the C
-      -- algorithm passes the value through unchanged.
+      -- Rationale: cheby = 0, so the C output is clamp(adc/100, [0, 1]).
       Input_Data : constant Css_Array_Adc_8.T := (
          Adc_Value => [50, 0, 100, 0, 110, 0, 0, 0]
       );
-      Expected_Output : constant Packed_F64x16.T :=
+      Expected_Output : constant Packed_F64x8.T :=
          [0.5, 0.0, 1.0, 0.0, 1.0, others => 0.0];
 
       Output : Css_Sensor_Values.T;
@@ -73,7 +69,6 @@ package body Css_Comm_Tests.Implementation is
       T.Component_Instance.Init;
 
       -- Stage and update parameters
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Num_Sensors (Num_Sensors_Val)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Sensor_Value (Max_Sensor_Val)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cheby_Count (Cheby_Count_Val)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cheby_Polynomials (Cheby_Poly_Val)), Success);
@@ -91,7 +86,7 @@ package body Css_Comm_Tests.Implementation is
 
       -- Check output matches expected value
       Output := T.Css_Sensor_Output_History.Get (1);
-      Packed_F64x16_Assert.Eq (Output.Data, Expected_Output, Epsilon => 1.0e-10);
+      Packed_F64x8_Assert.Eq (Output.Data, Expected_Output, Epsilon => 1.0e-10);
 
    end Test_Zero_Cheby_Is_Identity;
 
@@ -103,7 +98,6 @@ package body Css_Comm_Tests.Implementation is
       Params : Css_Comm_Parameters.Instance;
 
       -- Configuration (same as the identity test).
-      Num_Sensors_Val : constant Packed_U32.T := (Value => 5);
       Max_Sensor_Val : constant Packed_F64.T := (Value => 100.0);
       Cheby_Count_Val : constant Packed_U32.T := (Value => 3);
       Cheby_Poly_Val : constant Packed_F64x11.T := [others => 0.0];
@@ -114,7 +108,7 @@ package body Css_Comm_Tests.Implementation is
          Adc_Value => [50, 0, 100, 0, 110, 0, 0, 0]
       );
       -- Stale input is zeroed, so the entire output is expected to be zero.
-      Expected_Output : constant Packed_F64x16.T := [others => 0.0];
+      Expected_Output : constant Packed_F64x8.T := [others => 0.0];
 
       Output : Css_Sensor_Values.T;
    begin
@@ -129,7 +123,6 @@ package body Css_Comm_Tests.Implementation is
       );
 
       -- Stage and update parameters
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Num_Sensors (Num_Sensors_Val)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Sensor_Value (Max_Sensor_Val)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cheby_Count (Cheby_Count_Val)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cheby_Polynomials (Cheby_Poly_Val)), Success);
@@ -150,7 +143,7 @@ package body Css_Comm_Tests.Implementation is
 
       -- Output must be all zeros because the stale ADC input was zeroed.
       Output := T.Css_Sensor_Output_History.Get (1);
-      Packed_F64x16_Assert.Eq (Output.Data, Expected_Output, Epsilon => 1.0e-10);
+      Packed_F64x8_Assert.Eq (Output.Data, Expected_Output, Epsilon => 1.0e-10);
 
    end Test_Stale_Input_Is_Zeroed;
 

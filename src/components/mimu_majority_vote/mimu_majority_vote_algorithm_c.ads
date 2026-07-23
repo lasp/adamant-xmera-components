@@ -3,26 +3,26 @@ pragma Ada_2012;
 pragma Style_Checks (Off);
 pragma Warnings     (Off, "-gnatwu");
 
-with Interfaces.C;              use Interfaces; use Interfaces.C;
+with Interfaces;                use Interfaces;
 with Mimu_Majority_Vote_Output.C;
+with Packed_F32x3.C;
 with Packed_F32x3_X3.C;
 
 package Mimu_Majority_Vote_Algorithm_C is
 
-   -- MIMU_COUNT must match MIMU_COUNT_C in mimuMajorityVoteAlgorithm_c.h:18
-   -- Re-run h2ads if the C header changes to regenerate this binding
-   MIMU_COUNT : constant := 3;
-
    --* @brief Get the MIMU count constant for validation.
-   --* @return The IMU count (MIMU_COUNT = 3).
+   --* @return The IMU count (MIMU_COUNT_C).
    function Get_Mimu_Count
      return Unsigned_32
      with Import       => True,
           Convention   => C,
           External_Name => "MimuMajorityVoteAlgorithm_getMimuCount";
 
-   -- Runtime validation: ensure Ada constant matches C definition
-   pragma Assert (Unsigned_32 (MIMU_COUNT) = Get_Mimu_Count);
+   -- ABI validation: the constant-dimensioned Ada array crossing the FFI
+   -- boundary must match the C-side MIMU_COUNT_C, checked at elaboration.
+   -- Vector3fArray3_c: Vector3f_c vec[MIMU_COUNT_C];
+   pragma Assert (Unsigned_32 (Packed_F32x3_X3.Length) = Get_Mimu_Count);
+   pragma Assert (Unsigned_32 (Packed_F32x3_X3.C.U_C'Object_Size / Packed_F32x3.C.U_C'Object_Size) = Get_Mimu_Count);
 
    --* Opaque handle for a MimuMajorityVoteAlgorithm instance.
    type Mimu_Majority_Vote_Algorithm is limited private;

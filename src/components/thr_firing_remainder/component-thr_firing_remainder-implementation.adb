@@ -2,6 +2,7 @@
 -- Thr_Firing_Remainder Component Implementation Body
 --------------------------------------------------------------------------------
 
+with Thr_Firing_Remainder_Enums;
 with Thr_Force_Cmd;
 with Thr_On_Time_Cmd;
 with Thr_Firing_Remainder_Force_Cmd.C;
@@ -20,6 +21,11 @@ package body Component.Thr_Firing_Remainder.Implementation is
    begin
       -- Allocate C++ class on the heap
       Self.Alg := Create;
+      -- Apply the Ada parameter defaults to the algorithm: the framework
+      -- invokes Update_Parameters_Action only after a ground parameter
+      -- update, and the C++ constructor defaults do not match the Ada
+      -- defaults.
+      Self.Update_Parameters_Action;
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -30,7 +36,7 @@ package body Component.Thr_Firing_Remainder.Implementation is
 
    not overriding procedure Configure_Thrusters (
       Self   : in out Instance;
-      Config : access constant Thr_Firing_Remainder_Array_Config)
+      Config : access constant Thruster_Array_Config.C.U_C)
    is
    begin
       Set_Thrusters (Self.Alg, Config);
@@ -106,17 +112,14 @@ package body Component.Thr_Firing_Remainder.Implementation is
       Set_Thr_Min_Fire_Time (Self.Alg, Self.Thr_Min_Fire_Time.Value);
       Set_Control_Period (Self.Alg, Self.Control_Period.Value);
       Set_On_Time_Saturation_Factor (Self.Alg, Self.On_Time_Saturation_Factor.Value);
+      -- The parameter's enumeration and the binding's enumeration both match
+      -- the C ThrFiringRemainderPulsingRegime values, so a position-based
+      -- conversion is safe; the parameter's E8 type validation rejects any
+      -- other value during staging.
       Set_Thrust_Pulsing_Regime (Self.Alg,
-         Thr_Firing_Remainder_Pulsing_Regime'Val (Natural (Self.Thrust_Pulsing_Regime.Value)));
+         Thr_Firing_Remainder_Pulsing_Regime'Val (
+            Thr_Firing_Remainder_Enums.Pulsing_Regime.E'Pos (Self.Thrust_Pulsing_Regime.Value)));
    end Update_Parameters_Action;
-
-   -- Invalid Parameter handler. This procedure is called when a parameter's type is found to be invalid:
-   overriding procedure Invalid_Parameter (Self : in out Instance; Par : in Parameter.T; Errant_Field_Number : in Unsigned_32; Errant_Field : in Basic_Types.Poly_Type) is
-      pragma Annotate (GNATSAS, Intentional, "subp always fails", "intentional assertion");
-   begin
-      -- None of the parameters should be invalid in this case.
-      pragma Assert (False);
-   end Invalid_Parameter;
 
    -----------------------------------------------
    -- Data dependency handlers:

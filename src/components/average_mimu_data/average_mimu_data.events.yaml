@@ -3,6 +3,3 @@ description: Events for the Average Mimu Data component.
 events:
   - name: Packet_Buffer_Overflow
     description: A raw MIMU data packet was received but the internal buffer is full. The incoming packet was dropped.
-  - name: Invalid_Parameter_Received
-    description: A parameter was received with an invalid value.
-    param_type: Invalid_Parameter_Info.T

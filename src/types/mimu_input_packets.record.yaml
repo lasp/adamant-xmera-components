@@ -1,0 +1,6 @@
+---
+description: Input to the MIMU averaging algorithm - the buffered packet ring. Maps to InputPktsData_c in the averageMimuData C shim.
+fields:
+  - name: Packets
+    description: The buffered MIMU packets.
+    type: Mimu_Input_Packet_X4.T

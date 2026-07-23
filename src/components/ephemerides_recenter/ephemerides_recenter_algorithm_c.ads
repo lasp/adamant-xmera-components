@@ -3,16 +3,15 @@ pragma Ada_2012;
 pragma Style_Checks (Off);
 pragma Warnings     (Off, "-gnatwu");
 
-with Interfaces.C; use Interfaces; use Interfaces.C;
+with Interfaces; use Interfaces;
+with Body_Ephemeris_Payload.C;
+with Body_Ephemeris_Payload_X20.C;
 with Body_Ephemeris_Payload_X20_Record.C;
 with Body_To_Recenter.C;
+with Int32_X20.C;
 with Int32_X20_Record.C;
 
 package Ephemerides_Recenter_Algorithm_C is
-
-   -- MAX_NUM_CHANGE_BODIES must match the #define in ephemeridesRecenterTypes.h
-   -- Re-run h2ads if the C header changes to regenerate this binding
-   MAX_NUM_CHANGE_BODIES : constant := 20;
 
    --* @brief Get the MAX_NUM_CHANGE_BODIES constant for validation.
    --* @return The maximum number of change bodies (MAX_NUM_CHANGE_BODIES).
@@ -22,8 +21,17 @@ package Ephemerides_Recenter_Algorithm_C is
           Convention   => C,
           External_Name => "EphemeridesRecenterAlgorithm_getMaxNumChangeBodies";
 
-   -- Runtime validation: ensure Ada constant matches C definition
-   pragma Assert (Unsigned_32 (MAX_NUM_CHANGE_BODIES) = Get_Max_Num_Change_Bodies);
+   -- ABI validation: the constant-dimensioned Ada arrays crossing the FFI
+   -- boundary must match the C-side MAX_NUM_CHANGE_BODIES, checked at
+   -- elaboration.
+   -- BodyEphemerisPayloadArray20_c: BodyEphemerisPayload_c body[MAX_NUM_CHANGE_BODIES];
+   pragma Assert (Unsigned_32 (Body_Ephemeris_Payload_X20.Length) = Get_Max_Num_Change_Bodies);
+   pragma Assert (Body_Ephemeris_Payload_X20.C.U_C'Object_Size = Body_Ephemeris_Payload_X20_Record.C.U_C'Object_Size);
+   pragma Assert (Unsigned_32 (Body_Ephemeris_Payload_X20_Record.C.U_C'Object_Size / Body_Ephemeris_Payload.C.U_C'Object_Size) = Get_Max_Num_Change_Bodies);
+   -- IntArray20_c: int id[MAX_NUM_CHANGE_BODIES];
+   pragma Assert (Unsigned_32 (Int32_X20.Length) = Get_Max_Num_Change_Bodies);
+   pragma Assert (Int32_X20.C.U_C'Object_Size = Int32_X20_Record.C.U_C'Object_Size);
+   pragma Assert (Unsigned_32 (Int32_X20_Record.C.U_C'Object_Size / Integer_32'Object_Size) = Get_Max_Num_Change_Bodies);
 
    --* Opaque handle for an EphemeridesRecenterAlgorithm instance.
    type Ephemerides_Recenter_Algorithm is limited private;

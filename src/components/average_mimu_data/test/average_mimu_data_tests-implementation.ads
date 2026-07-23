@@ -34,8 +34,6 @@ private
    overriding procedure Test_Asymmetric_Windows (Self : in out Instance);
    -- A 0.0 s averaging window keeps only the single newest sample.
    overriding procedure Test_Zero_Window (Self : in out Instance);
-   -- A negative averaging window is rejected by validation for both the gyro and accel channels.
-   overriding procedure Test_Negative_Window_Rejected (Self : in out Instance);
 
    -- Test data and state:
    type Instance is new Average_Mimu_Data_Tests.Base_Instance with record

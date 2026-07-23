@@ -1,0 +1,10 @@
+---
+description: Body rate miscompare output - the selected body angular velocity and the fault detection flag. Maps to BodyRateMiscompareOutput_c in the bodyRateMiscompare C shim.
+fields:
+  - name: Omega_Bn_B
+    description: "[rad/s] Selected body angular velocity omega_BN_B."
+    type: Packed_F32x3.T
+  - name: Body_Rate_Fault_Detected
+    description: Whether a body rate fault was detected (1) or not (0).
+    type: Interfaces.Unsigned_8
+    format: U8

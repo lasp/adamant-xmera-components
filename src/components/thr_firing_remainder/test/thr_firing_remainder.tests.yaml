@@ -3,3 +3,5 @@ description: This is a unit test suite for the Thr Firing Remainder component
 tests:
   - name: Test
     description: Run algorithm to ensure integration is sound.
+  - name: Test_Pulsing_Regime_Validation
+    description: A byte outside the pulsing regime enumeration is rejected at parameter staging by E8 type validation.

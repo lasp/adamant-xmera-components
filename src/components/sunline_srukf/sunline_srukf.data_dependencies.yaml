@@ -6,4 +6,4 @@ data_dependencies:
     description: Spacecraft body angular velocity omega_BN_B (from body_rate_miscompare's selected body rate)
   - name: Css_Sensor_Input
     type: Css_Sensor_Values.T
-    description: Coarse sun sensor cosine measurements (pre-converted from ADC by css_comm). The Data field is a 16-element F64 vector; the algorithm currently uses up to MAX_NUM_CSS_SENSORS entries.
+    description: Coarse sun sensor cosine measurements (pre-converted from ADC by css_comm). The Data field carries the 8 physical CSS ADC channels.

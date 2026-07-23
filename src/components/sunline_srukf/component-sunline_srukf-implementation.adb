@@ -3,6 +3,7 @@
 --------------------------------------------------------------------------------
 
 with Packed_F32x3.C;
+with Packed_F32x32;
 with Css_Sensor_Values;
 with Sunline_Srukf_Input.C;
 with Sunline_Srukf_Output.C;
@@ -45,8 +46,8 @@ package body Component.Sunline_Srukf.Implementation is
       pragma Assert (Sc_Att_Status = Success);
 
       -- Coarse sun sensor cosine measurements (pre-converted from ADC by
-      -- css_comm). Css_Sensor_Values.T's Data field is 16 F64 elements,
-      -- corresponding to MAX_NUM_CSS_SENSORS in the C-side definitions.
+      -- css_comm). Css_Sensor_Values.T's Data field carries the 8 physical
+      -- CSS ADC channels.
       Css_Input : Css_Sensor_Values.T;
       Css_Input_Status : constant Data_Dependency_Status.E :=
          Self.Get_Css_Sensor_Input (Value => Css_Input, Stale_Reference => Arg.Time);
@@ -54,34 +55,18 @@ package body Component.Sunline_Srukf.Implementation is
 
       -- Build algorithm input from the body rate and CSS cosine data. Only
       -- Omega_Bn_B is supplied upstream; Sigma_Bn, Veh_Sun_Pnt_Bdy, and
-      -- Time_Tag are zeroed (no upstream producer). The C algorithm's
-      -- Cos_Values is Packed_F32x32; cast each F64 cosine down to Short_Float
-      -- and zero-pad the trailing entries past Css_Input.
+      -- Time_Tag are zeroed (no upstream producer). N_Css tells the C
+      -- algorithm how many real sensors it receives; cast each F64 cosine
+      -- down to Short_Float and zero-pad the trailing entries of the wider
+      -- Cos_Values FFI array past Css_Input.
       Input_C : aliased Sunline_Srukf_Input.C.U_C := (
          Time_Tag        => 0.0,
          Sigma_Bn        => Packed_F32x3.C.Unpack (Packed_F32x3.T'[0.0, 0.0, 0.0]),
          Omega_Bn_B      => Packed_F32x3.C.Unpack (Sc_Att),
          Veh_Sun_Pnt_Bdy => Packed_F32x3.C.Unpack (Packed_F32x3.T'[0.0, 0.0, 0.0]),
          N_Css           => Css_Input.Data'Length,
-         Cos_Values      => [
-            0  => Short_Float (Css_Input.Data (Css_Input.Data'First + 0)),
-            1  => Short_Float (Css_Input.Data (Css_Input.Data'First + 1)),
-            2  => Short_Float (Css_Input.Data (Css_Input.Data'First + 2)),
-            3  => Short_Float (Css_Input.Data (Css_Input.Data'First + 3)),
-            4  => Short_Float (Css_Input.Data (Css_Input.Data'First + 4)),
-            5  => Short_Float (Css_Input.Data (Css_Input.Data'First + 5)),
-            6  => Short_Float (Css_Input.Data (Css_Input.Data'First + 6)),
-            7  => Short_Float (Css_Input.Data (Css_Input.Data'First + 7)),
-            8  => Short_Float (Css_Input.Data (Css_Input.Data'First + 8)),
-            9  => Short_Float (Css_Input.Data (Css_Input.Data'First + 9)),
-            10 => Short_Float (Css_Input.Data (Css_Input.Data'First + 10)),
-            11 => Short_Float (Css_Input.Data (Css_Input.Data'First + 11)),
-            12 => Short_Float (Css_Input.Data (Css_Input.Data'First + 12)),
-            13 => Short_Float (Css_Input.Data (Css_Input.Data'First + 13)),
-            14 => Short_Float (Css_Input.Data (Css_Input.Data'First + 14)),
-            15 => Short_Float (Css_Input.Data (Css_Input.Data'First + 15)),
-            others => 0.0
-         ]
+         Cos_Values      => [for I in Packed_F32x32.Constrained_Index_Type =>
+            (if I <= Css_Input.Data'Last then Short_Float (Css_Input.Data (I)) else 0.0)]
       );
 
       -- Call the C algorithm:

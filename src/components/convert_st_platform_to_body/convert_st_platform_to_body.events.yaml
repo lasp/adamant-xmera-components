@@ -1,6 +1,0 @@
----
-description: Events for the Convert St Platform To Body component.
-events:
-  - name: Invalid_Parameter_Received
-    description: A parameter was received with an invalid value.
-    param_type: Invalid_Parameter_Info.T

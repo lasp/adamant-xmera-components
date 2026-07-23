@@ -17,6 +17,10 @@ private
    -- Run algorithm to ensure integration is sound.
    overriding procedure Test (Self : in out Instance);
 
+   -- A byte outside the pulsing regime enumeration is rejected at parameter
+   -- staging by E8 type validation.
+   overriding procedure Test_Pulsing_Regime_Validation (Self : in out Instance);
+
    -- Test data and state:
    type Instance is new Thr_Firing_Remainder_Tests.Base_Instance with record
       null;

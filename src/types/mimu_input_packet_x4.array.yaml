@@ -1,0 +1,4 @@
+---
+description: Ring of MIMU packets buffered between algorithm ticks.
+type: Mimu_Input_Packet.T
+length: 4

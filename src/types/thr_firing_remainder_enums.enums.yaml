@@ -1,0 +1,12 @@
+---
+description: Enumerations for the Thr Firing Remainder component.
+enums:
+  - name: Pulsing_Regime
+    description: Thrust pulsing regime selection. Values match the C ThrFiringRemainderPulsingRegime enumeration.
+    literals:
+      - name: On_Pulsing
+        value: 0
+        description: Thruster on-pulsing regime.
+      - name: Off_Pulsing
+        value: 1
+        description: Thruster off-pulsing regime.

@@ -1,11 +1,5 @@
 ---
-#  /**
-#   * @brief Bounded array of CSS sensor values (double precision).
-#   */
-#  typedef struct {
-#      double data[MAX_NUM_CSS_SENSORS];
-#  } CssSensorValues_c;
-description: Bounded array of CSS sensor values. Maps to CssSensorValues_c in the C shim.
+description: Corrected CSS sensor cosine values for the 8 physical CSS ADC channels.
 fields:
   - name: Data
-    type: Packed_F64x16.T
+    type: Packed_F64x8.T

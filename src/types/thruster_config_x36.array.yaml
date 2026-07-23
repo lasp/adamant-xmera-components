@@ -1,0 +1,4 @@
+---
+description: Array of thruster configurations.
+type: Thruster_Config.T
+length: 36

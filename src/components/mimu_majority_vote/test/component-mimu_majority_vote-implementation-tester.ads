@@ -5,13 +5,10 @@
 -- Includes:
 with Component.Mimu_Majority_Vote_Reciprocal;
 with Printable_History;
-with Sys_Time.Representation;
+with Sys_Time;
 with Data_Product_Return.Representation;
 with Data_Product_Fetch.Representation;
 with Data_Product.Representation;
-with Event.Representation;
-with Event;
-with Invalid_Parameter_Info.Representation;
 with Averaged_Imu_Data;
 with Data_Product;
 with Mimu_Majority_Vote_Output.Representation;
@@ -22,14 +19,9 @@ package Component.Mimu_Majority_Vote.Implementation.Tester is
 
    use Component.Mimu_Majority_Vote_Reciprocal;
    -- Invoker connector history packages:
-   package Sys_Time_T_Return_History_Package is new Printable_History (Sys_Time.T, Sys_Time.Representation.Image);
    package Data_Product_Fetch_T_Service_History_Package is new Printable_History (Data_Product_Fetch.T, Data_Product_Fetch.Representation.Image);
    package Data_Product_Fetch_T_Service_Return_History_Package is new Printable_History (Data_Product_Return.T, Data_Product_Return.Representation.Image);
    package Data_Product_T_Recv_Sync_History_Package is new Printable_History (Data_Product.T, Data_Product.Representation.Image);
-   package Event_T_Recv_Sync_History_Package is new Printable_History (Event.T, Event.Representation.Image);
-
-   -- Event history packages:
-   package Invalid_Parameter_Received_History_Package is new Printable_History (Invalid_Parameter_Info.T, Invalid_Parameter_Info.Representation.Image);
 
    -- Data product history packages:
    package Majority_Vote_Result_History_Package is new Printable_History (Mimu_Majority_Vote_Output.T, Mimu_Majority_Vote_Output.Representation.Image);
@@ -39,12 +31,8 @@ package Component.Mimu_Majority_Vote.Implementation.Tester is
       -- The component instance under test:
       Component_Instance : aliased Component.Mimu_Majority_Vote.Implementation.Instance;
       -- Connector histories:
-      Sys_Time_T_Return_History : Sys_Time_T_Return_History_Package.Instance;
       Data_Product_Fetch_T_Service_History : Data_Product_Fetch_T_Service_History_Package.Instance;
       Data_Product_T_Recv_Sync_History : Data_Product_T_Recv_Sync_History_Package.Instance;
-      Event_T_Recv_Sync_History : Event_T_Recv_Sync_History_Package.Instance;
-      -- Event histories:
-      Invalid_Parameter_Received_History : Invalid_Parameter_Received_History_Package.Instance;
       -- Data product histories:
       Majority_Vote_Result_History : Majority_Vote_Result_History_Package.Instance;
       -- Data dependency return values. These can be set during unit test
@@ -84,22 +72,10 @@ package Component.Mimu_Majority_Vote.Implementation.Tester is
    ---------------------------------------
    -- Invokee connector primitives:
    ---------------------------------------
-   -- The system time is retrieved via this connector.
-   overriding function Sys_Time_T_Return (Self : in out Instance) return Sys_Time.T;
    -- Fetch a data product item from the database.
    overriding function Data_Product_Fetch_T_Service (Self : in out Instance; Arg : in Data_Product_Fetch.T) return Data_Product_Return.T;
    -- The data product invoker connector
    overriding procedure Data_Product_T_Recv_Sync (Self : in out Instance; Arg : in Data_Product.T);
-   -- The event send connector
-   overriding procedure Event_T_Recv_Sync (Self : in out Instance; Arg : in Event.T);
-
-   -----------------------------------------------
-   -- Event handler primitive:
-   -----------------------------------------------
-   -- Description:
-   --    Events for the MIMU Majority Vote component.
-   -- A parameter was received with an invalid value.
-   overriding procedure Invalid_Parameter_Received (Self : in out Instance; Arg : in Invalid_Parameter_Info.T);
 
    -----------------------------------------------
    -- Data product handler primitives:

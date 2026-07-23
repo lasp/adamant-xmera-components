@@ -1,0 +1,14 @@
+---
+description: One MIMU packet for the averaging algorithm - validity flag, first-sample time, and the packet's samples. Maps to InputPacket_c in the averageMimuData C shim; the C bool is one byte and the C-compatible representation carries the alignment padding before Meas_Time.
+fields:
+  - name: Is_Valid
+    description: Packet validity flag; 1 marks a filled packet slot, 0 packets are skipped by the algorithm.
+    type: Interfaces.Unsigned_8
+    format: U8
+  - name: Meas_Time
+    description: "[ns] First-sample time of the packet."
+    type: Interfaces.Unsigned_64
+    format: U64
+  - name: Samples
+    description: The packet's pre-converted samples.
+    type: Mimu_Sample_X10.T

@@ -7,7 +7,8 @@ pragma Warnings (Off, "-gnatwu");
 -- the -gnatwx advisory about using a C "char"-style type for the mapping.
 pragma Warnings (Off, "-gnatwx");
 
-with Interfaces.C; use Interfaces; use Interfaces.C;
+with Interfaces; use Interfaces;
+with Body_Rate_Miscompare_Output.C;
 with Packed_F32x3_Record.C;
 
 package Body_Rate_Miscompare_Algorithm_C is
@@ -15,14 +16,6 @@ package Body_Rate_Miscompare_Algorithm_C is
    --* Opaque handle for a BodyRateMiscompareAlgorithm instance.
    type Body_Rate_Miscompare_Algorithm is limited private;
    type Body_Rate_Miscompare_Algorithm_Access is access all Body_Rate_Miscompare_Algorithm;
-
-   --* POD output type matching BodyRateMiscompareOutput_c in C.
-   --* Layout: float omega_BN_B[3]; bool bodyRateFaultDetected;
-   type Body_Rate_Miscompare_Output_C is record
-      Omega_Bn_B : aliased Packed_F32x3_Record.C.U_C;
-      Body_Rate_Fault_Detected : aliased C.unsigned_char;
-   end record
-      with Convention => C_Pass_By_Copy;
 
    --* @brief Construct a new BodyRateMiscompareAlgorithm.
    function Create
@@ -47,7 +40,7 @@ package Body_Rate_Miscompare_Algorithm_C is
      (Self      : Body_Rate_Miscompare_Algorithm_Access;
       Imu_Omega : Packed_F32x3_Record.C.U_C;
       St_Omega  : Packed_F32x3_Record.C.U_C)
-     return Body_Rate_Miscompare_Output_C
+     return Body_Rate_Miscompare_Output.C.U_C
      with Import       => True,
           Convention   => C,
           External_Name => "BodyRateMiscompareAlgorithm_update";

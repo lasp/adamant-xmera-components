@@ -1,0 +1,7 @@
+---
+description: Thrust pulsing regime selection, packed as an 8-bit enumeration. Values outside the enumeration fail type validation during parameter staging.
+fields:
+  - name: Value
+    description: The thrust pulsing regime.
+    type: Thr_Firing_Remainder_Enums.Pulsing_Regime.E
+    format: E8

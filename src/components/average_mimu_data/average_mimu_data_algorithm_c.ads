@@ -3,8 +3,12 @@ pragma Ada_2012;
 pragma Style_Checks (Off);
 pragma Warnings     (Off, "-gnatwu");
 
-with Interfaces.C; use Interfaces; use Interfaces.C;
-with Packed_F32x3.C;
+with Interfaces; use Interfaces;
+with Mimu_Sample.C;
+with Mimu_Sample_X10.C;
+with Mimu_Input_Packet.C;
+with Mimu_Input_Packet_X4.C;
+with Mimu_Input_Packets.C;
 with Packed_F32x9_Record.C;
 with Averaged_Imu_Data.C;
 
@@ -13,48 +17,6 @@ package Average_Mimu_Data_Algorithm_C is
    --* Opaque handle for an AverageMimuDataAlgorithm instance.
    type Average_Mimu_Data_Algorithm is limited private;
    type Average_Mimu_Data_Algorithm_Access is access all Average_Mimu_Data_Algorithm;
-
-   -- Must match #defines in averageMimuDataAlgorithm_c.h
-   Max_Mimu_Pkt : constant := 4;
-   Max_Mimu_Samples_Per_Pkt : constant := 10;
-
-   --* POD equivalent of one MIMU sample (Sample_c in C).
-   --* Layout: Vector3f_c gyro_P; Vector3f_c accel_P;
-   --* The sample carries no timestamp; per-sample times are derived inside the
-   --* algorithm from the enclosing packet's Meas_Time and the device sample period.
-   type Sample_C is record
-      Gyro_P  : aliased Packed_F32x3.C.U_C;
-      Accel_P : aliased Packed_F32x3.C.U_C;
-   end record
-      with Convention => C_Pass_By_Copy;
-
-   --* Per-packet sample array (10 samples).
-   type Sample_Array_C is array (0 .. Max_Mimu_Samples_Per_Pkt - 1) of aliased Sample_C
-      with Convention => C;
-
-   --* POD equivalent of one MIMU packet (InputPacket_c in C).
-   --* Layout: bool isValid; uint64 measTime; Sample_c samples[MAX_MIMU_SAMPLES_PER_PKT_C];
-   --* `Is_Valid` gates the whole packet; `Meas_Time` is the first sample's time.
-   --* C99 bool is one byte (matches C.unsigned_char); GNAT inserts the pad
-   --* before the 8-aligned Meas_Time to match the C ABI.
-   type Input_Packet_C is record
-      Is_Valid  : aliased C.unsigned_char;
-      Meas_Time : aliased Unsigned_64;
-      Samples   : aliased Sample_Array_C;
-   end record
-      with Convention => C_Pass_By_Copy;
-
-   --* Outer array of packets (4 packets).
-   type Packets_Array_C is array (0 .. Max_Mimu_Pkt - 1) of aliased Input_Packet_C
-      with Convention => C;
-
-   --* POD input matching C InputPktsData_c.
-   --* Layout: InputPacket_c packets[MAX_MIMU_PKT_C];
-   type Input_Pkts_Data_C is record
-      Packets : Packets_Array_C;
-   end record
-      with Convention => C_Pass_By_Copy;
-   type Input_Pkts_Data_C_Access is access all Input_Pkts_Data_C;
 
    --* @brief Get the MAX_MIMU_PKT constant for Ada validation.
    function Get_Max_Mimu_Pkt
@@ -70,9 +32,15 @@ package Average_Mimu_Data_Algorithm_C is
           Convention   => C,
           External_Name => "AverageMimuDataAlgorithm_getMaxMimuSamplesPerPkt";
 
-   -- Runtime validation: ensure Ada constants match C definitions
-   pragma Assert (Unsigned_32 (Max_Mimu_Pkt) = Get_Max_Mimu_Pkt);
-   pragma Assert (Unsigned_32 (Max_Mimu_Samples_Per_Pkt) = Get_Max_Mimu_Samples_Per_Pkt);
+   -- ABI validation: the constant-dimensioned Ada arrays crossing the FFI
+   -- boundary must match the C-side constants, checked at elaboration.
+   -- InputPktsData_c: InputPacket_c packets[MAX_MIMU_PKT_C];
+   pragma Assert (Unsigned_32 (Mimu_Input_Packet_X4.Length) = Get_Max_Mimu_Pkt);
+   pragma Assert (Mimu_Input_Packet_X4.C.U_C'Object_Size = Mimu_Input_Packets.C.U_C'Object_Size);
+   pragma Assert (Unsigned_32 (Mimu_Input_Packets.C.U_C'Object_Size / Mimu_Input_Packet.C.U_C'Object_Size) = Get_Max_Mimu_Pkt);
+   -- InputPacket_c: Sample_c samples[MAX_MIMU_SAMPLES_PER_PKT_C];
+   pragma Assert (Unsigned_32 (Mimu_Sample_X10.Length) = Get_Max_Mimu_Samples_Per_Pkt);
+   pragma Assert (Unsigned_32 (Mimu_Sample_X10.C.U_C'Object_Size / Mimu_Sample.C.U_C'Object_Size) = Get_Max_Mimu_Samples_Per_Pkt);
 
    --* @brief Construct a new AverageMimuDataAlgorithm.
    function Create
@@ -94,7 +62,7 @@ package Average_Mimu_Data_Algorithm_C is
    --* @return Averaged body-frame accel and angular velocity.
    function Update
      (Self  : Average_Mimu_Data_Algorithm_Access;
-      Input : Input_Pkts_Data_C_Access)
+      Input : Mimu_Input_Packets.C.U_C_Access)
      return Averaged_Imu_Data.C.U_C
      with Import       => True,
           Convention   => C,
@@ -105,7 +73,7 @@ package Average_Mimu_Data_Algorithm_C is
    --* @param Window Gyro averaging window in seconds (valid range [0.0, 2.0]).
    procedure Set_Gyro_Averaging_Window
      (Self   : Average_Mimu_Data_Algorithm_Access;
-      Window : Interfaces.C.double)
+      Window : Long_Float)
      with Import       => True,
           Convention   => C,
           External_Name => "AverageMimuDataAlgorithm_setGyroAveragingWindow";
@@ -115,7 +83,7 @@ package Average_Mimu_Data_Algorithm_C is
    --* @return The current gyro averaging window in seconds.
    function Get_Gyro_Averaging_Window
      (Self : Average_Mimu_Data_Algorithm_Access)
-     return Interfaces.C.double
+     return Long_Float
      with Import       => True,
           Convention   => C,
           External_Name => "AverageMimuDataAlgorithm_getGyroAveragingWindow";
@@ -125,7 +93,7 @@ package Average_Mimu_Data_Algorithm_C is
    --* @param Window Accel averaging window in seconds (valid range [0.0, 2.0]).
    procedure Set_Accel_Averaging_Window
      (Self   : Average_Mimu_Data_Algorithm_Access;
-      Window : Interfaces.C.double)
+      Window : Long_Float)
      with Import       => True,
           Convention   => C,
           External_Name => "AverageMimuDataAlgorithm_setAccelAveragingWindow";
@@ -135,7 +103,7 @@ package Average_Mimu_Data_Algorithm_C is
    --* @return The current accel averaging window in seconds.
    function Get_Accel_Averaging_Window
      (Self : Average_Mimu_Data_Algorithm_Access)
-     return Interfaces.C.double
+     return Long_Float
      with Import       => True,
           Convention   => C,
           External_Name => "AverageMimuDataAlgorithm_getAccelAveragingWindow";

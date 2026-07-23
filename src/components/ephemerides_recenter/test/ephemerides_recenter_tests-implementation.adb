@@ -34,7 +34,6 @@ package body Ephemerides_Recenter_Tests.Implementation is
       Self.Tester.Component_Instance.Init (
          New_Zero_Base_Id => Mars_Id,
          Previous_Common_Zero_Base_Id => Sun_Id,
-         Body_Count => 4,
          Body_0_Spice_Id => Sun_Id,
          Body_0_Original_Central_Body_Id => Sun_Id,
          Body_1_Spice_Id => Earth_Id,

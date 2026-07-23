@@ -1,0 +1,4 @@
+---
+description: Per-packet array of pre-converted MIMU samples.
+type: Mimu_Sample.T
+length: 10

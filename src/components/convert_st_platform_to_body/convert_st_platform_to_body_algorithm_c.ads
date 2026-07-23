@@ -3,7 +3,7 @@ pragma Ada_2012;
 pragma Style_Checks (Off);
 pragma Warnings (Off, "-gnatwu");
 
-with Interfaces.C; use Interfaces; use Interfaces.C;
+with Interfaces; use Interfaces;
 with St_Platform_Attitude.C;
 with St_Platform_Angular_Velocity.C;
 with St_Att.C;

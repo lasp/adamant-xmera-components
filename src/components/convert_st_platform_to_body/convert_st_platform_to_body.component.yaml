@@ -17,9 +17,3 @@ connectors:
   - description: The parameter update connector.
     type: Parameter_Update.T
     kind: modify
-  - description: The system time is retrieved via this connector.
-    return_type: Sys_Time.T
-    kind: get
-  - description: The event send connector
-    type: Event.T
-    kind: send

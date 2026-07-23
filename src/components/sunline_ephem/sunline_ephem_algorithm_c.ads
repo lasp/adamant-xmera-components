@@ -3,7 +3,7 @@ pragma Ada_2012;
 pragma Style_Checks (Off);
 pragma Warnings (Off, "-gnatwu");
 
-with Interfaces.C; use Interfaces; use Interfaces.C;
+with Interfaces; use Interfaces;
 with Packed_F32x3_Record.C;
 with Packed_F64x3_Record.C;
 

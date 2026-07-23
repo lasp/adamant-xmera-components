@@ -3,7 +3,7 @@ pragma Ada_2012;
 pragma Style_Checks (Off);
 pragma Warnings     (Off, "-gnatwu");
 
-with Interfaces.C;         use Interfaces; use Interfaces.C;
+with Interfaces;         use Interfaces;
 with Att_Nav_Input.C;
 with Att_Ref.C;
 with Att_Guid.C;

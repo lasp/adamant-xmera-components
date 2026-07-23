@@ -6,6 +6,7 @@ pragma Warnings (Off, "-gnatwu");
 with Interfaces; use Interfaces;
 with Cartesian_State.C;
 with Oe_Coefficients.C;
+with Packed_F64x20.C;
 
 package Oe_State_Ephem_Algorithm_C is
 
@@ -13,27 +14,28 @@ package Oe_State_Ephem_Algorithm_C is
    type Oe_State_Ephem_Algorithm is limited private;
    type Oe_State_Ephem_Algorithm_Access is access all Oe_State_Ephem_Algorithm;
 
-   --* Maximum number of Chebyshev coefficients per orbital element.
-   Max_Oe_Coeff : constant := 20;
-
-   --* Maximum number of time-segmented arc records.
-   Max_Oe_Records : constant := 10;
-
-   --* @brief Validate Max_Oe_Coeff matches the C++ constant.
+   --* @brief Get MAX_OE_COEFF, the number of Chebyshev coefficients per
+   --* orbital element, for ABI validation.
    function Get_Max_Oe_Coeff return Unsigned_32
      with Import       => True,
           Convention   => C,
           External_Name => "OEStateEphemAlgorithm_getMaxOeCoeff";
 
-   --* @brief Validate Max_Oe_Records matches the C++ constant.
+   --* @brief Get MAX_OE_RECORDS, the maximum number of time-segmented arc
+   --* records. No Ada type is dimensioned by this constant; the C setters
+   --* enforce the arc count at runtime, so there is nothing to validate on
+   --* the Ada side.
    function Get_Max_Oe_Records return Unsigned_32
      with Import       => True,
           Convention   => C,
           External_Name => "OEStateEphemAlgorithm_getMaxOeRecords";
 
-   --* Runtime validation catches mismatches at program startup.
-   pragma Assert (Unsigned_32 (Max_Oe_Coeff) = Get_Max_Oe_Coeff);
-   pragma Assert (Unsigned_32 (Max_Oe_Records) = Get_Max_Oe_Records);
+   -- ABI validation: the constant-dimensioned Ada array crossing the FFI
+   -- boundary must match the C-side MAX_OE_COEFF, checked at elaboration.
+   -- OeCoefficients: double data[MAX_OE_COEFF];
+   pragma Assert (Unsigned_32 (Packed_F64x20.Length) = Get_Max_Oe_Coeff);
+   pragma Assert (Packed_F64x20.C.U_C'Object_Size = Oe_Coefficients.C.U_C'Object_Size);
+   pragma Assert (Unsigned_32 (Oe_Coefficients.C.U_C'Object_Size / Long_Float'Object_Size) = Get_Max_Oe_Coeff);
 
    --* @brief Construct a new OEStateEphemAlgorithm.
    function Create

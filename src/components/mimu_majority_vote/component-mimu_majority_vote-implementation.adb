@@ -8,10 +8,6 @@ with Mimu_Majority_Vote_Output.C;
 
 package body Component.Mimu_Majority_Vote.Implementation is
 
-   -- Compile-time check that the algorithm uses exactly 3 IMUs.
-   pragma Compile_Time_Error (MIMU_COUNT /= 3,
-      "This wrapper requires exactly 3 active IMUs");
-
    --------------------------------------------------
    -- Subprogram for implementation init method:
    --------------------------------------------------
@@ -20,6 +16,11 @@ package body Component.Mimu_Majority_Vote.Implementation is
    begin
       -- Allocate C++ class on the heap
       Self.Alg := Create;
+      -- Apply the Ada parameter defaults to the algorithm: the framework
+      -- invokes Update_Parameters_Action only after a ground parameter
+      -- update, and the C++ constructor defaults do not match the Ada
+      -- defaults.
+      Self.Update_Parameters_Action;
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -69,15 +70,13 @@ package body Component.Mimu_Majority_Vote.Implementation is
          -- Call the C algorithm:
          Result : constant Mimu_Majority_Vote_Output.C.U_C := Update (
             Self.Alg,
-            Imu_Inputs     => Imu_Inputs
+            Imu_Inputs => Imu_Inputs
          );
-         Packed_Result : constant Mimu_Majority_Vote_Output.T :=
-            Mimu_Majority_Vote_Output.Pack (Mimu_Majority_Vote_Output.C.To_Ada (Result));
       begin
          -- Publish result with fault status:
          Self.Data_Product_T_Send (Self.Data_Products.Majority_Vote_Result (
             Arg.Time,
-            Packed_Result
+            Mimu_Majority_Vote_Output.Pack (Mimu_Majority_Vote_Output.C.To_Ada (Result))
          ));
       end;
    end Tick_T_Recv_Sync;
@@ -101,16 +100,6 @@ package body Component.Mimu_Majority_Vote.Implementation is
       Set_Omega_Threshold (Self.Alg, Self.Omega_Threshold.Value);
       Set_Fault_Persistence_Limit (Self.Alg, Self.Fault_Persistence_Limit.Value);
    end Update_Parameters_Action;
-
-   -- Invalid Parameter handler. This procedure is called when a parameter's type is found to be invalid:
-   overriding procedure Invalid_Parameter (Self : in out Instance; Par : in Parameter.T; Errant_Field_Number : in Unsigned_32; Errant_Field : in Basic_Types.Poly_Type) is
-   begin
-      -- Throw event:
-      Self.Event_T_Send_If_Connected (Self.Events.Invalid_Parameter_Received (
-         Self.Sys_Time_T_Get,
-         (Id => Par.Header.Id, Errant_Field_Number => Errant_Field_Number, Errant_Field => Errant_Field)
-      ));
-   end Invalid_Parameter;
 
    -----------------------------------------------
    -- Data dependency handlers:

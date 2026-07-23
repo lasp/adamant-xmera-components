@@ -20,6 +20,11 @@ package body Component.Convert_St_Platform_To_Body.Implementation is
    begin
       -- Allocate C++ class on the heap
       Self.Alg := Create;
+      -- Apply the Ada parameter defaults to the algorithm: the framework
+      -- invokes Update_Parameters_Action only after a ground parameter
+      -- update, and the C++ constructor defaults do not match the Ada
+      -- defaults.
+      Self.Update_Parameters_Action;
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -91,16 +96,6 @@ package body Component.Convert_St_Platform_To_Body.Implementation is
    begin
       Set_Dcm_Cb (Self.Alg, Dcm_Cb_C);
    end Update_Parameters_Action;
-
-   -- Invalid Parameter handler. This procedure is called when a parameter's type is found to be invalid:
-   overriding procedure Invalid_Parameter (Self : in out Instance; Par : in Parameter.T; Errant_Field_Number : in Unsigned_32; Errant_Field : in Basic_Types.Poly_Type) is
-   begin
-      -- Throw event:
-      Self.Event_T_Send_If_Connected (Self.Events.Invalid_Parameter_Received (
-         Self.Sys_Time_T_Get,
-         (Id => Par.Header.Id, Errant_Field_Number => Errant_Field_Number, Errant_Field => Errant_Field)
-      ));
-   end Invalid_Parameter;
 
    -----------------------------------------------
    -- Data dependency handlers:

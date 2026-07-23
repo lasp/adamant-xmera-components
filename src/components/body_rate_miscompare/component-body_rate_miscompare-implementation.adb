@@ -2,9 +2,9 @@
 -- Body_Rate_Miscompare Component Implementation Body
 --------------------------------------------------------------------------------
 
+with Body_Rate_Miscompare_Output.C;
 with Packed_F32x3.C;
 with Packed_F32x3_Record.C;
-with Interfaces.C;
 
 package body Component.Body_Rate_Miscompare.Implementation is
 
@@ -17,12 +17,11 @@ package body Component.Body_Rate_Miscompare.Implementation is
       -- Allocate C++ class on the heap
       Self.Alg := Create;
 
-      -- Sync the Ada-side parameter defaults into the C algorithm so its
-      -- settings match component state before the first tick. The C
-      -- constructor value-initializes the threshold to 0.0, which would
-      -- otherwise flag every non-zero rate diff as a miscompare.
-      Set_Body_Rate_Threshold (Self.Alg, Self.Body_Rate_Threshold.Value);
-      Set_Fault_Persistence_Limit (Self.Alg, Self.Fault_Persistence_Limit.Value);
+      -- Apply the Ada parameter defaults to the algorithm: the framework
+      -- invokes Update_Parameters_Action only after a ground parameter
+      -- update, and the C++ constructor defaults do not match the Ada
+      -- defaults.
+      Self.Update_Parameters_Action;
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -62,7 +61,7 @@ package body Component.Body_Rate_Miscompare.Implementation is
          Imu_Omega : constant Packed_F32x3_Record.C.U_C := (Value => Packed_F32x3.C.Unpack (Imu_Body.Avg_Ang_Vel_Body));
          St_Omega : constant Packed_F32x3_Record.C.U_C := (Value => Packed_F32x3.C.Unpack (St_Body.Omega_Bn_B));
 
-         Output : constant Body_Rate_Miscompare_Output_C := Update (
+         Output : constant Body_Rate_Miscompare_Output.C.U_C := Update (
             Self.Alg,
             Imu_Omega => Imu_Omega,
             St_Omega  => St_Omega
@@ -71,12 +70,12 @@ package body Component.Body_Rate_Miscompare.Implementation is
          -- Send out body rate data product (omega_BN_B only):
          Self.Data_Product_T_Send (Self.Data_Products.Body_Rate (
             Arg.Time,
-            Packed_F32x3.C.Pack (Output.Omega_Bn_B.Value)
+            Packed_F32x3.C.Pack (Output.Omega_Bn_B)
          ));
          -- Send out body rate fault data product:
          Self.Data_Product_T_Send (Self.Data_Products.Rate_Fault_Status (
             Arg.Time,
-            (Fault_Detected => Interfaces.C."/=" (Output.Body_Rate_Fault_Detected, 0))
+            (Fault_Detected => Interfaces."/=" (Output.Body_Rate_Fault_Detected, 0))
          ));
       end;
    end Tick_T_Recv_Sync;
@@ -141,16 +140,6 @@ package body Component.Body_Rate_Miscompare.Implementation is
       Set_Body_Rate_Threshold (Self.Alg, Self.Body_Rate_Threshold.Value);
       Set_Fault_Persistence_Limit (Self.Alg, Self.Fault_Persistence_Limit.Value);
    end Update_Parameters_Action;
-
-   -- Description:
-   --    Parameters for the Body Rate Miscompare component
-   -- Invalid Parameter handler. This procedure is called when a parameter's type is found to be invalid:
-   overriding procedure Invalid_Parameter (Self : in out Instance; Par : in Parameter.T; Errant_Field_Number : in Unsigned_32; Errant_Field : in Basic_Types.Poly_Type) is
-      pragma Annotate (GNATSAS, Intentional, "subp always fails", "intentional assertion");
-   begin
-      -- None of the parameters should be invalid in this case.
-      pragma Assert (False);
-   end Invalid_Parameter;
 
    -----------------------------------------------
    -- Data dependency handlers:
