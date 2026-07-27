@@ -81,16 +81,15 @@ package body Component.Thr_Firing_Remainder.Implementation is
                Update (Self.Alg, Force_36'Unchecked_Access);
 
             -- Extract first 8 elements for output
-            On_Time_Result : Thr_On_Time_Cmd.U := (On_Time_Request => [others => 0.0]);
+            On_Time_Result : Thr_On_Time_Cmd.T := (On_Time_Request => [others => 0.0]);
          begin
             for I in 0 .. Num_Thrusters - 1 loop
                On_Time_Result.On_Time_Request (I) := On_Time_36.On_Time_Request (I);
             end loop;
 
-            Self.Data_Product_T_Send (Self.Data_Products.On_Time_Cmd (
-               Arg.Time,
-               Thr_On_Time_Cmd.Pack (On_Time_Result)
-            ));
+            Self.Data_Product_T_Send (Self.Data_Products.On_Time_Cmd (Arg.Time, On_Time_Result));
+            -- Send the on-time command directly to the actuation interface:
+            Self.Thr_On_Time_Cmd_T_Send_If_Connected (On_Time_Result);
          end;
       end;
    end Tick_T_Recv_Sync;
