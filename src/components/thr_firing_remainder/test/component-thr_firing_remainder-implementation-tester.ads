@@ -21,6 +21,7 @@ package Component.Thr_Firing_Remainder.Implementation.Tester is
    package Data_Product_Fetch_T_Service_History_Package is new Printable_History (Data_Product_Fetch.T, Data_Product_Fetch.Representation.Image);
    package Data_Product_Fetch_T_Service_Return_History_Package is new Printable_History (Data_Product_Return.T, Data_Product_Return.Representation.Image);
    package Data_Product_T_Recv_Sync_History_Package is new Printable_History (Data_Product.T, Data_Product.Representation.Image);
+   package Thr_On_Time_Cmd_T_Recv_Sync_History_Package is new Printable_History (Thr_On_Time_Cmd.T, Thr_On_Time_Cmd.Representation.Image);
 
    -- Data product history packages:
    package On_Time_Cmd_History_Package is new Printable_History (Thr_On_Time_Cmd.T, Thr_On_Time_Cmd.Representation.Image);
@@ -32,6 +33,7 @@ package Component.Thr_Firing_Remainder.Implementation.Tester is
       -- Connector histories:
       Data_Product_Fetch_T_Service_History : Data_Product_Fetch_T_Service_History_Package.Instance;
       Data_Product_T_Recv_Sync_History : Data_Product_T_Recv_Sync_History_Package.Instance;
+      Thr_On_Time_Cmd_T_Recv_Sync_History : Thr_On_Time_Cmd_T_Recv_Sync_History_Package.Instance;
       -- Data product histories:
       On_Time_Cmd_History : On_Time_Cmd_History_Package.Instance;
       -- Data dependency return values. These can be set during unit test
@@ -73,6 +75,10 @@ package Component.Thr_Firing_Remainder.Implementation.Tester is
    overriding function Data_Product_Fetch_T_Service (Self : in out Instance; Arg : in Data_Product_Fetch.T) return Data_Product_Return.T;
    -- The data product invoker connector
    overriding procedure Data_Product_T_Recv_Sync (Self : in out Instance; Arg : in Data_Product.T);
+   -- Send the computed thruster on-time command directly to the actuation interface
+   -- component. Only honored by the receiver while the thruster group is in closed-
+   -- loop control.
+   overriding procedure Thr_On_Time_Cmd_T_Recv_Sync (Self : in out Instance; Arg : in Thr_On_Time_Cmd.T);
 
    -----------------------------------------------
    -- Data product handler primitives:
