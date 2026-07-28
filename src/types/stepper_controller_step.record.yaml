@@ -1,0 +1,11 @@
+---
+description: Closed-loop step command from a stepper motor controller wrapper to a motor interface. The targeted motor is identified by the connector wiring (one wrapper instance per motor).
+fields:
+  - name: Command
+    type: Stepper_Enums.Command_Type.E
+    format: E8
+    description: The commanded action - step in a direction, halt, or no-op.
+  - name: Num_Steps
+    type: Interfaces.Unsigned_16
+    format: U16
+    description: The number of steps to move for a Step_Ccw or Step_Cw command; unused for Halt or None.

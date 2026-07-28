@@ -1,0 +1,28 @@
+---
+description: Enumerations for the stepper motor controller command interface.
+enums:
+  - name: Command_Type
+    description: Action a stepper motor wrapper commands to the motor interface. Step_Ccw and Step_Cw request a step of the accompanying magnitude in the given direction; Halt stops the current motion. The wrapper sends no command at all when the algorithm produces none, so the motor interface never receives a no-op.
+    literals:
+      - name: Step_Ccw
+        value: 0
+      - name: Step_Cw
+        value: 1
+      - name: Halt
+        value: 2
+  - name: Motion_Status
+    description: Whether a stepper motor is currently moving.
+    literals:
+      - name: Stationary
+        value: 0
+      - name: Moving
+        value: 1
+  - name: Algorithm_Command
+    description: Command the StepperMotorController algorithm produces each tick. None takes no action; Stop halts the current motion; Move commands a move of the accompanying step delta. Mirrors the C StepperMotorCommandType enum (None = 0, Stop = 1, Move = 2).
+    literals:
+      - name: None
+        value: 0
+      - name: Stop
+        value: 1
+      - name: Move
+        value: 2

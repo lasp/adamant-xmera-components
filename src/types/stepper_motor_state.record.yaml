@@ -1,0 +1,11 @@
+---
+description: Per-motor state produced by the motor interface for the stepper motor controller wrapper - the current absolute step position and whether the motor is moving.
+fields:
+  - name: Current_Position
+    type: Interfaces.Integer_32
+    format: I32
+    description: The current absolute step position of the motor.
+  - name: Is_Moving
+    type: Stepper_Enums.Motion_Status.E
+    format: E8
+    description: Whether the motor is currently moving.
