@@ -11,13 +11,14 @@ with Stepper_Controller_Step.Representation;
 with Event.Representation;
 with Sys_Time.Representation;
 with Event;
-with Packed_I32.Representation;
+with Step_Command_Saturated_Event.Representation;
 with Stepper_Motor_State;
 with Packed_F32;
 
 -- Stepper motor controller algorithm commands a stepper motor to track a
--- reference angle. Each tick it fetches the motor state, runs the controller
--- state machine, and sends step or halt commands to the stepper motor interface.
+-- reference angle. Each tick it fetches the motor state and reference angle, runs
+-- the controller state machine, and sends step or halt commands to the stepper
+-- motor interface.
 package Component.Stepper_Motor_Controller.Implementation.Tester is
 
    use Component.Stepper_Motor_Controller_Reciprocal;
@@ -29,7 +30,7 @@ package Component.Stepper_Motor_Controller.Implementation.Tester is
    package Sys_Time_T_Return_History_Package is new Printable_History (Sys_Time.T, Sys_Time.Representation.Image);
 
    -- Event history packages:
-   package Step_Command_Saturated_History_Package is new Printable_History (Packed_I32.T, Packed_I32.Representation.Image);
+   package Step_Command_Saturated_History_Package is new Printable_History (Step_Command_Saturated_Event.T, Step_Command_Saturated_Event.Representation.Image);
 
    -- Component class instance:
    type Instance is new Component.Stepper_Motor_Controller_Reciprocal.Base_Instance with record
@@ -94,10 +95,9 @@ package Component.Stepper_Motor_Controller.Implementation.Tester is
    -- Description:
    --    Events for the Stepper Motor Controller component.
    -- The algorithm commanded a step delta whose magnitude exceeds the step command's
-   -- Num_Steps field range. The commanded number of steps was saturated; the
-   -- remainder is re-commanded on subsequent control cycles after the motor settles.
-   -- The parameter is the raw commanded step delta.
-   overriding procedure Step_Command_Saturated (Self : in out Instance; Arg : in Packed_I32.T);
+   -- Num_Steps field range. The command was saturated and sent; the remainder is re-
+   -- commanded on subsequent control cycles after the motor settles.
+   overriding procedure Step_Command_Saturated (Self : in out Instance; Arg : in Step_Command_Saturated_Event.T);
 
    -----------------------------------------------
    -- Special primitives for aiding in the staging,

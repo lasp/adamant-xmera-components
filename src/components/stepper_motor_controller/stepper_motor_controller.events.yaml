@@ -2,5 +2,5 @@
 description: Events for the Stepper Motor Controller component.
 events:
   - name: Step_Command_Saturated
-    description: The algorithm commanded a step delta whose magnitude exceeds the step command's Num_Steps field range. The commanded number of steps was saturated; the remainder is re-commanded on subsequent control cycles after the motor settles. The parameter is the raw commanded step delta.
-    param_type: Packed_I32.T
+    description: The algorithm commanded a step delta whose magnitude exceeds the step command's Num_Steps field range. The command was saturated and sent; the remainder is re-commanded on subsequent control cycles after the motor settles.
+    param_type: Step_Command_Saturated_Event.T

@@ -1,0 +1,10 @@
+---
+description: Event parameter reporting a saturated step command - the raw step delta the algorithm commanded and the saturated command sent to the motor interface.
+fields:
+  - name: Commanded_Delta
+    description: "[steps] Raw step delta commanded by the algorithm."
+    type: Interfaces.Integer_32
+    format: I32
+  - name: Sent_Command
+    description: The saturated step command sent to the motor interface.
+    type: Stepper_Controller_Step.T

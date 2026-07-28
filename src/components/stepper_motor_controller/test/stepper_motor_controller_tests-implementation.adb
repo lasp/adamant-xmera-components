@@ -5,7 +5,7 @@
 with Basic_Assertions; use Basic_Assertions;
 with AUnit.Assertions; use AUnit.Assertions;
 with Stepper_Controller_Step.Assertion; use Stepper_Controller_Step.Assertion;
-with Packed_I32.Assertion; use Packed_I32.Assertion;
+with Step_Command_Saturated_Event.Assertion; use Step_Command_Saturated_Event.Assertion;
 with Stepper_Motor_Controller_Parameters;
 with Stepper_Enums;
 with Parameter;
@@ -311,7 +311,9 @@ package body Stepper_Motor_Controller_Tests.Implementation is
          (Command => Stepper_Enums.Command_Type.Step_Cw, Num_Steps => 65_535));
       Natural_Assert.Eq (T.Event_T_Recv_Sync_History.Get_Count, 1);
       Natural_Assert.Eq (T.Step_Command_Saturated_History.Get_Count, 1);
-      Packed_I32_Assert.Eq (T.Step_Command_Saturated_History.Get (1), (Value => 100_060));
+      Step_Command_Saturated_Event_Assert.Eq (T.Step_Command_Saturated_History.Get (1),
+         (Commanded_Delta => 100_060,
+          Sent_Command => (Command => Stepper_Enums.Command_Type.Step_Cw, Num_Steps => 65_535)));
 
       -- The same saturation applies counter-clockwise. From step +100000 to
       -- the 60 degree reference is -99940 steps:
@@ -330,7 +332,9 @@ package body Stepper_Motor_Controller_Tests.Implementation is
          (Command => Stepper_Enums.Command_Type.Step_Ccw, Num_Steps => 65_535));
       Natural_Assert.Eq (T.Event_T_Recv_Sync_History.Get_Count, 2);
       Natural_Assert.Eq (T.Step_Command_Saturated_History.Get_Count, 2);
-      Packed_I32_Assert.Eq (T.Step_Command_Saturated_History.Get (2), (Value => -99_940));
+      Step_Command_Saturated_Event_Assert.Eq (T.Step_Command_Saturated_History.Get (2),
+         (Commanded_Delta => -99_940,
+          Sent_Command => (Command => Stepper_Enums.Command_Type.Step_Ccw, Num_Steps => 65_535)));
    end Test_Step_Command_Saturation;
 
    -- Verify a stale motor state is accepted and used, while an unavailable motor

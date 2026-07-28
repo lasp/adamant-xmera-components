@@ -171,10 +171,9 @@ package body Component.Stepper_Motor_Controller.Implementation.Tester is
    -- Description:
    --    Events for the Stepper Motor Controller component.
    -- The algorithm commanded a step delta whose magnitude exceeds the step command's
-   -- Num_Steps field range. The commanded number of steps was saturated; the
-   -- remainder is re-commanded on subsequent control cycles after the motor settles.
-   -- The parameter is the raw commanded step delta.
-   overriding procedure Step_Command_Saturated (Self : in out Instance; Arg : in Packed_I32.T) is
+   -- Num_Steps field range. The command was saturated and sent; the remainder is re-
+   -- commanded on subsequent control cycles after the motor settles.
+   overriding procedure Step_Command_Saturated (Self : in out Instance; Arg : in Step_Command_Saturated_Event.T) is
    begin
       -- Push the argument onto the test history for looking at later:
       Self.Step_Command_Saturated_History.Push (Arg);

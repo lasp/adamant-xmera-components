@@ -99,17 +99,18 @@ package body Component.Stepper_Motor_Controller.Implementation is
                      Saturated : constant Boolean := Magnitude > Integer_64 (Unsigned_16'Last);
                      Num_Steps : constant Unsigned_16 :=
                         (if Saturated then Unsigned_16'Last else Unsigned_16 (Magnitude));
-                  begin
-                     if Saturated then
-                        Self.Event_T_Send_If_Connected (Self.Events.Step_Command_Saturated (
-                           Arg.Time, (Value => Output.Steps_To_Move)));
-                     end if;
-                     Self.Stepper_Controller_Step_T_Send_If_Connected ((
+                     Step_Command : constant Stepper_Controller_Step.T := (
                         Command => (if Output.Steps_To_Move >= 0
                                     then Stepper_Enums.Command_Type.Step_Cw
                                     else Stepper_Enums.Command_Type.Step_Ccw),
                         Num_Steps => Num_Steps
-                     ));
+                     );
+                  begin
+                     if Saturated then
+                        Self.Event_T_Send_If_Connected (Self.Events.Step_Command_Saturated (
+                           Arg.Time, (Commanded_Delta => Output.Steps_To_Move, Sent_Command => Step_Command)));
+                     end if;
+                     Self.Stepper_Controller_Step_T_Send_If_Connected (Step_Command);
                   end;
                end if;
             when others =>
