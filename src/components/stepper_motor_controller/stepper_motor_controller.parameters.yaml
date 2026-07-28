@@ -1,0 +1,31 @@
+---
+description: Parameters for the Stepper Motor Controller component
+parameters:
+  - name: Step_Angle
+    description: "[rad/step] Angle traversed per motor step; must be in [2*pi/100000, 2*pi]."
+    type: Packed_F32.T
+    default: "(Value => 0.0174532925)"
+  - name: Motor_Min_Angle
+    description: "[rad] Lower bound of the motor travel range; must be in [-2*pi, 2*pi]."
+    type: Packed_F32.T
+    default: "(Value => 0.0)"
+  - name: Motor_Max_Angle
+    description: "[rad] Upper bound of the motor travel range; must be in [-2*pi, 2*pi] and strictly greater than Motor_Min_Angle."
+    type: Packed_F32.T
+    default: "(Value => 6.2831853071795862)"
+  - name: Settle_Count_Max
+    description: "[ticks] Total desired settle duration from the end of stepping; the applied settle count is reduced by Enable_Hold_Count."
+    type: Packed_U32.T
+    default: "(Value => 0)"
+  - name: Enable_Hold_Count
+    description: "[ticks] Post-move enable hold duration of the motor drive, subtracted from Settle_Count_Max to form the applied settle count (saturating at zero); 0 when enable hold is disabled."
+    type: Packed_U32.T
+    default: "(Value => 0)"
+  - name: Min_Step_Command
+    description: "[steps] Minimum step delta magnitude that triggers a MOVE (from IDLE) or a STOP-and-replan (from MOVING); must be greater than 0."
+    type: Packed_U32.T
+    default: "(Value => 1)"
+  - name: Reference_Angle
+    description: "[rad] Reference motor angle, passed to the algorithm update step each tick (not an algorithm configuration setter)."
+    type: Packed_F32.T
+    default: "(Value => 0.0)"

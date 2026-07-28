@@ -1,0 +1,16 @@
+---
+#  /*! @brief Output from the stepper motor controller algorithm */
+#  typedef struct StepperMotorControllerOutput {
+#      StepperMotorCommandType commandType; /*!< Type of command to issue */
+#      int32_t stepsToMove;                 /*!< [steps] Number of steps to move (only valid for MOVE command) */
+#  } StepperMotorControllerOutput;
+description: Output produced by the stepper motor controller algorithm update step. Command_Type is the algorithm's command (None, Stop, or Move); Steps_To_Move is the signed step delta whose magnitude and sign give the move count and direction.
+fields:
+  - name: Command_Type
+    type: Stepper_Enums.Algorithm_Command.E
+    format: E8
+    description: "The command the algorithm produced this step: None, Stop, or Move."
+  - name: Steps_To_Move
+    type: Interfaces.Integer_32
+    format: I32
+    description: "[steps] Signed number of steps to move (sign is direction); valid only for a MOVE command"

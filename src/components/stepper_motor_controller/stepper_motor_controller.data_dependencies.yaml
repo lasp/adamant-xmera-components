@@ -1,0 +1,6 @@
+---
+description: Data dependencies for the Stepper Motor Controller component.
+data_dependencies:
+  - name: Motor_State
+    type: Stepper_Motor_State.T
+    description: Current absolute step position and motion status of the controlled motor, produced by the motor interface.
