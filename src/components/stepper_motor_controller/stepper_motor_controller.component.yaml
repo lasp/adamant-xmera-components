@@ -1,0 +1,25 @@
+---
+description: Stepper motor controller algorithm commands a stepper motor to track a reference angle. Each tick it fetches the motor state, runs the controller state machine, and sends step or halt commands to the stepper motor interface.
+execution: passive
+init:
+  description: Initializes the stepper motor controller algorithm.
+connectors:
+  - description: Run the algorithm up to the current time.
+    type: Tick.T
+    kind: recv_sync
+  - description: Fetch a data product item from the database.
+    type: Data_Product_Fetch.T
+    return_type: Data_Product_Return.T
+    kind: request
+  - description: Send the computed step or halt command to the stepper motor interface component.
+    type: Stepper_Controller_Step.T
+    kind: send
+  - description: The event send connector
+    type: Event.T
+    kind: send
+  - description: The system time is retrieved via this connector.
+    return_type: Sys_Time.T
+    kind: get
+  - description: The parameter update connector.
+    type: Parameter_Update.T
+    kind: modify
