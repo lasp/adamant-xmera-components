@@ -39,7 +39,6 @@ package body Stepper_Motor_Controller_Tests.Implementation is
        Motor_Min_Angle : in Short_Float;
        Motor_Max_Angle : in Short_Float;
        Settle_Count_Max : in Unsigned_32;
-       Enable_Hold_Count : in Unsigned_32;
        Min_Step_Command : in Unsigned_32;
        Reference_Angle : in Short_Float)
    is
@@ -49,7 +48,6 @@ package body Stepper_Motor_Controller_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Motor_Min_Angle ((Value => Motor_Min_Angle))), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Motor_Max_Angle ((Value => Motor_Max_Angle))), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Settle_Count_Max ((Value => Settle_Count_Max))), Success);
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Enable_Hold_Count ((Value => Enable_Hold_Count))), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Min_Step_Command ((Value => Min_Step_Command))), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Reference_Angle ((Value => Reference_Angle))), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
@@ -125,7 +123,6 @@ package body Stepper_Motor_Controller_Tests.Implementation is
          Motor_Min_Angle => 0.0,
          Motor_Max_Angle => Two_Pi,
          Settle_Count_Max => 10,
-         Enable_Hold_Count => 0,
          Min_Step_Command => 1,
          Reference_Angle => 10.0 * Deg);
       T.Motor_State := (Current_Position => 0, Is_Moving => Stepper_Enums.Motion_Status.Stationary);
@@ -143,7 +140,6 @@ package body Stepper_Motor_Controller_Tests.Implementation is
          Motor_Min_Angle => 0.0,
          Motor_Max_Angle => Two_Pi,
          Settle_Count_Max => 10,
-         Enable_Hold_Count => 0,
          Min_Step_Command => 1,
          Reference_Angle => 359.0 * Deg);
       T.Motor_State := (Current_Position => 1, Is_Moving => Stepper_Enums.Motion_Status.Stationary);
@@ -161,7 +157,6 @@ package body Stepper_Motor_Controller_Tests.Implementation is
          Motor_Min_Angle => 0.0,
          Motor_Max_Angle => Two_Pi,
          Settle_Count_Max => 10,
-         Enable_Hold_Count => 0,
          Min_Step_Command => 1,
          Reference_Angle => -170.0 * Deg);
       T.Motor_State := (Current_Position => 170, Is_Moving => Stepper_Enums.Motion_Status.Stationary);
@@ -186,7 +181,6 @@ package body Stepper_Motor_Controller_Tests.Implementation is
          Motor_Min_Angle => 0.0,
          Motor_Max_Angle => Two_Pi,
          Settle_Count_Max => 10,
-         Enable_Hold_Count => 0,
          Min_Step_Command => 5,
          Reference_Angle => 3.0 * Deg);
       T.Motor_State := (Current_Position => 0, Is_Moving => Stepper_Enums.Motion_Status.Stationary);
@@ -212,7 +206,6 @@ package body Stepper_Motor_Controller_Tests.Implementation is
          Motor_Min_Angle => 0.0,
          Motor_Max_Angle => Two_Pi,
          Settle_Count_Max => 2,
-         Enable_Hold_Count => 0,
          Min_Step_Command => 1,
          Reference_Angle => 20.0 * Deg);
       T.Motor_State := (Current_Position => 0, Is_Moving => Stepper_Enums.Motion_Status.Stationary);
@@ -264,79 +257,6 @@ package body Stepper_Motor_Controller_Tests.Implementation is
       Natural_Assert.Eq (T.Event_T_Recv_Sync_History.Get_Count, 0);
    end Test_Interrupt_And_Replan;
 
-   -- Verify the settle count applied to the algorithm is the total settle duration
-   -- minus the enable hold count, saturating at zero.
-   overriding procedure Test_Enable_Hold_Count (Self : in out Instance) is
-      T : Tester_Access renames Self.Tester;
-   begin
-      -- Case 1: total settle 3 with enable hold 2 leaves 1 settling count for
-      -- the algorithm. Complete a move, then count the quiescent cycles until
-      -- the controller re-plans a new reference:
-      Stage_Config (T,
-         Step_Angle => Deg,
-         Motor_Min_Angle => 0.0,
-         Motor_Max_Angle => Two_Pi,
-         Settle_Count_Max => 3,
-         Enable_Hold_Count => 2,
-         Min_Step_Command => 1,
-         Reference_Angle => 10.0 * Deg);
-      T.Motor_State := (Current_Position => 0, Is_Moving => Stepper_Enums.Motion_Status.Stationary);
-      Send_Tick (T);
-      Natural_Assert.Eq (T.Stepper_Controller_Step_T_Recv_Sync_History.Get_Count, 1);
-      T.Motor_State := (Current_Position => 10, Is_Moving => Stepper_Enums.Motion_Status.Moving);
-      Send_Tick (T);
-      Natural_Assert.Eq (T.Stepper_Controller_Step_T_Recv_Sync_History.Get_Count, 1);
-
-      -- Move complete; settling begins:
-      T.Motor_State := (Current_Position => 10, Is_Moving => Stepper_Enums.Motion_Status.Stationary);
-      Send_Tick (T);
-      Natural_Assert.Eq (T.Stepper_Controller_Step_T_Recv_Sync_History.Get_Count, 1);
-
-      -- New reference back to zero, staged during settling. With an effective
-      -- settle count of 1 the controller counts one cycle, returns to idle on
-      -- the next, and re-plans on the cycle after that. If the enable hold
-      -- were not subtracted, the move would come two cycles later.
-      Stage_Reference (T, 0.0);
-      Send_Tick (T);
-      Natural_Assert.Eq (T.Stepper_Controller_Step_T_Recv_Sync_History.Get_Count, 1);
-      Send_Tick (T);
-      Natural_Assert.Eq (T.Stepper_Controller_Step_T_Recv_Sync_History.Get_Count, 1);
-      Send_Tick (T);
-      Natural_Assert.Eq (T.Stepper_Controller_Step_T_Recv_Sync_History.Get_Count, 2);
-      Stepper_Controller_Step_Assert.Eq (T.Stepper_Controller_Step_T_Recv_Sync_History.Get (2),
-         (Command => Stepper_Enums.Command_Type.Step_Ccw, Num_Steps => 10));
-
-      -- Case 2: an enable hold larger than the total settle duration saturates
-      -- the algorithm settle count at zero: settling lasts exactly the entry
-      -- cycle plus the immediate idle transition cycle:
-      Restart_Component (T);
-      Stage_Config (T,
-         Step_Angle => Deg,
-         Motor_Min_Angle => 0.0,
-         Motor_Max_Angle => Two_Pi,
-         Settle_Count_Max => 2,
-         Enable_Hold_Count => 5,
-         Min_Step_Command => 1,
-         Reference_Angle => 10.0 * Deg);
-      T.Motor_State := (Current_Position => 0, Is_Moving => Stepper_Enums.Motion_Status.Stationary);
-      Send_Tick (T);
-      Natural_Assert.Eq (T.Stepper_Controller_Step_T_Recv_Sync_History.Get_Count, 3);
-
-      -- Move completes immediately; settling entry cycle:
-      T.Motor_State := (Current_Position => 10, Is_Moving => Stepper_Enums.Motion_Status.Stationary);
-      Send_Tick (T);
-      Natural_Assert.Eq (T.Stepper_Controller_Step_T_Recv_Sync_History.Get_Count, 3);
-
-      -- Zero settle count: back to idle on the next cycle, re-plan follows:
-      Stage_Reference (T, 0.0);
-      Send_Tick (T);
-      Natural_Assert.Eq (T.Stepper_Controller_Step_T_Recv_Sync_History.Get_Count, 3);
-      Send_Tick (T);
-      Natural_Assert.Eq (T.Stepper_Controller_Step_T_Recv_Sync_History.Get_Count, 4);
-      Stepper_Controller_Step_Assert.Eq (T.Stepper_Controller_Step_T_Recv_Sync_History.Get (4),
-         (Command => Stepper_Enums.Command_Type.Step_Ccw, Num_Steps => 10));
-   end Test_Enable_Hold_Count;
-
    -- Verify references outside a partial motor angle range produce no motion and an
    -- in-range reference uses the linear path.
    overriding procedure Test_Out_Of_Range_Reference (Self : in out Instance) is
@@ -349,7 +269,6 @@ package body Stepper_Motor_Controller_Tests.Implementation is
          Motor_Min_Angle => 45.0 * Deg,
          Motor_Max_Angle => 90.0 * Deg,
          Settle_Count_Max => 10,
-         Enable_Hold_Count => 0,
          Min_Step_Command => 1,
          Reference_Angle => 200.0 * Deg);
       T.Motor_State := (Current_Position => 60, Is_Moving => Stepper_Enums.Motion_Status.Stationary);
@@ -384,7 +303,6 @@ package body Stepper_Motor_Controller_Tests.Implementation is
          Motor_Min_Angle => 45.0 * Deg,
          Motor_Max_Angle => 90.0 * Deg,
          Settle_Count_Max => 10,
-         Enable_Hold_Count => 0,
          Min_Step_Command => 1,
          Reference_Angle => 60.0 * Deg);
       T.Motor_State := (Current_Position => -100_000, Is_Moving => Stepper_Enums.Motion_Status.Stationary);
@@ -404,7 +322,6 @@ package body Stepper_Motor_Controller_Tests.Implementation is
          Motor_Min_Angle => 45.0 * Deg,
          Motor_Max_Angle => 90.0 * Deg,
          Settle_Count_Max => 10,
-         Enable_Hold_Count => 0,
          Min_Step_Command => 1,
          Reference_Angle => 60.0 * Deg);
       T.Motor_State := (Current_Position => 100_000, Is_Moving => Stepper_Enums.Motion_Status.Stationary);
@@ -436,7 +353,6 @@ package body Stepper_Motor_Controller_Tests.Implementation is
          Motor_Min_Angle => 0.0,
          Motor_Max_Angle => Two_Pi,
          Settle_Count_Max => 10,
-         Enable_Hold_Count => 0,
          Min_Step_Command => 1,
          Reference_Angle => 10.0 * Deg);
       T.Motor_State := (Current_Position => 0, Is_Moving => Stepper_Enums.Motion_Status.Stationary);

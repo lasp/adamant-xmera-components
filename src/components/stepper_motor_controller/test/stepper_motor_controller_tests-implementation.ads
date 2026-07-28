@@ -23,9 +23,6 @@ private
    -- Verify a reference change mid-move produces a halt command and the controller
    -- re-plans from the settled position after the settle duration.
    overriding procedure Test_Interrupt_And_Replan (Self : in out Instance);
-   -- Verify the settle count applied to the algorithm is the total settle duration
-   -- minus the enable hold count, saturating at zero.
-   overriding procedure Test_Enable_Hold_Count (Self : in out Instance);
    -- Verify references outside a partial motor angle range produce no motion and an
    -- in-range reference uses the linear path.
    overriding procedure Test_Out_Of_Range_Reference (Self : in out Instance);

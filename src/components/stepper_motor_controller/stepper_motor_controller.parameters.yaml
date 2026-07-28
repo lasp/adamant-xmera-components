@@ -14,13 +14,9 @@ parameters:
     type: Packed_F32.T
     default: "(Value => 6.2831853)"
   - name: Settle_Count_Max
-    description: "[ticks] Total desired settle duration measured from the end of stepping. The settle count applied to the algorithm is Settle_Count_Max - Enable_Hold_Count, saturating at zero."
+    description: "[ticks] Number of ticks the algorithm settles for after stepping ends."
     type: Packed_U32.T
     default: "(Value => 10)"
-  - name: Enable_Hold_Count
-    description: "[ticks] The motor drive's post-move enable hold duration, already covered by the drive itself. Subtracted from Settle_Count_Max when configuring the algorithm settle count."
-    type: Packed_U32.T
-    default: "(Value => 0)"
   - name: Min_Step_Command
     description: "[steps] Minimum step delta magnitude that triggers a move or a stop-and-replan. The C algorithm requires a value greater than zero."
     type: Packed_U32.T

@@ -7,8 +7,6 @@ tests:
     description: Verify no step command is issued while the step delta is below the minimum step command threshold.
   - name: Test_Interrupt_And_Replan
     description: Verify a reference change mid-move produces a halt command and the controller re-plans from the settled position after the settle duration.
-  - name: Test_Enable_Hold_Count
-    description: Verify the settle count applied to the algorithm is the total settle duration minus the enable hold count, saturating at zero.
   - name: Test_Out_Of_Range_Reference
     description: Verify references outside a partial motor angle range produce no motion and an in-range reference uses the linear path.
   - name: Test_Step_Command_Saturation

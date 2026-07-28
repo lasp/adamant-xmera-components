@@ -113,14 +113,6 @@ package body Component.Stepper_Motor_Controller.Implementation is
    -- Parameter handlers:
    -----------------------------------------------
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
-      -- The motor drive holds the motor enabled for Enable_Hold_Count ticks after
-      -- a move, which covers part of the total desired settle duration. The
-      -- algorithm settles for the remainder, saturating at zero when the enable
-      -- hold alone meets or exceeds the desired duration.
-      Total_Settle : constant Unsigned_32 := Self.Settle_Count_Max.Value;
-      Enable_Hold : constant Unsigned_32 := Self.Enable_Hold_Count.Value;
-      Algorithm_Settle : constant Unsigned_32 :=
-         (if Enable_Hold >= Total_Settle then 0 else Total_Settle - Enable_Hold);
    begin
       -- Set algorithm configuration from parameters. Reference_Angle is not
       -- applied here; it is passed to the algorithm update each tick.
@@ -128,7 +120,7 @@ package body Component.Stepper_Motor_Controller.Implementation is
       Set_Motor_Angle_Range (Self.Alg,
          Min_Angle => Self.Motor_Min_Angle.Value,
          Max_Angle => Self.Motor_Max_Angle.Value);
-      Set_Settle_Count_Max (Self.Alg, Algorithm_Settle);
+      Set_Settle_Count_Max (Self.Alg, Self.Settle_Count_Max.Value);
       Set_Min_Step_Command (Self.Alg, Self.Min_Step_Command.Value);
    end Update_Parameters_Action;
 

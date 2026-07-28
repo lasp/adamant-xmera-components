@@ -81,7 +81,6 @@ private
       Motor_Min_Angle : in Packed_F32.U;
       Motor_Max_Angle : in Packed_F32.U;
       Settle_Count_Max : in Packed_U32.U;
-      Enable_Hold_Count : in Packed_U32.U;
       Min_Step_Command : in Packed_U32.U;
       Reference_Angle : in Packed_F32.U
    ) return Parameter_Validation_Status.E is (Parameter_Validation_Status.Valid);
