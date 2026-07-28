@@ -75,38 +75,49 @@ package body Component.Stepper_Motor_Controller.Implementation is
          );
       begin
          -- Map the algorithm output onto the step command interface. A positive
-         -- step delta maps to a clockwise step command and a negative delta to a
-         -- counter-clockwise one; a STOP maps to Halt. No command is sent when
-         -- the algorithm output is NONE.
-         if Output.Command_Type = Stepper_Motor_Command_Type'Pos (Move) then
-            declare
-               -- Compute the step magnitude in a wider type so that the most
-               -- negative 32-bit delta cannot overflow, and saturate it to the
-               -- range of the step command's Num_Steps field. A saturated move
-               -- self-corrects: once the motor settles, the controller commands
-               -- the remaining delta on a later cycle.
-               Magnitude : constant Integer_64 := abs Integer_64 (Output.Steps_To_Move);
-               Saturated : constant Boolean := Magnitude > Integer_64 (Unsigned_16'Last);
-               Num_Steps : constant Unsigned_16 :=
-                  (if Saturated then Unsigned_16'Last else Unsigned_16 (Magnitude));
-            begin
-               if Saturated then
-                  Self.Event_T_Send_If_Connected (Self.Events.Step_Command_Saturated (
-                     Arg.Time, (Value => Output.Steps_To_Move)));
-               end if;
+         -- step delta maps to a clockwise step command and a negative delta to
+         -- a counter-clockwise one; a STOP maps to Halt; a NONE takes no
+         -- action. A zero-step move is absorbed as a no-op rather than sent as
+         -- an empty command.
+         case Output.Command_Type is
+            when Stepper_Motor_Command_Type'Pos (None) =>
+               null;
+            when Stepper_Motor_Command_Type'Pos (Stop) =>
                Self.Stepper_Controller_Step_T_Send_If_Connected ((
-                  Command => (if Output.Steps_To_Move >= 0
-                              then Stepper_Enums.Command_Type.Step_Cw
-                              else Stepper_Enums.Command_Type.Step_Ccw),
-                  Num_Steps => Num_Steps
+                  Command => Stepper_Enums.Command_Type.Halt,
+                  Num_Steps => 0
                ));
-            end;
-         elsif Output.Command_Type = Stepper_Motor_Command_Type'Pos (Stop) then
-            Self.Stepper_Controller_Step_T_Send_If_Connected ((
-               Command => Stepper_Enums.Command_Type.Halt,
-               Num_Steps => 0
-            ));
-         end if;
+            when Stepper_Motor_Command_Type'Pos (Move) =>
+               if Output.Steps_To_Move /= 0 then
+                  declare
+                     -- Compute the step magnitude in a wider type so that the
+                     -- most negative 32-bit delta cannot overflow, and saturate
+                     -- it to the range of the step command's Num_Steps field. A
+                     -- saturated move self-corrects: once the motor settles, the
+                     -- controller commands the remaining delta on a later cycle.
+                     Magnitude : constant Integer_64 := abs Integer_64 (Output.Steps_To_Move);
+                     Saturated : constant Boolean := Magnitude > Integer_64 (Unsigned_16'Last);
+                     Num_Steps : constant Unsigned_16 :=
+                        (if Saturated then Unsigned_16'Last else Unsigned_16 (Magnitude));
+                  begin
+                     if Saturated then
+                        Self.Event_T_Send_If_Connected (Self.Events.Step_Command_Saturated (
+                           Arg.Time, (Value => Output.Steps_To_Move)));
+                     end if;
+                     Self.Stepper_Controller_Step_T_Send_If_Connected ((
+                        Command => (if Output.Steps_To_Move >= 0
+                                    then Stepper_Enums.Command_Type.Step_Cw
+                                    else Stepper_Enums.Command_Type.Step_Ccw),
+                        Num_Steps => Num_Steps
+                     ));
+                  end;
+               end if;
+            when others =>
+               -- The C++ algorithm produces only the three command values, so
+               -- anything else indicates ABI corruption. This should never
+               -- happen, so we assert.
+               pragma Assert (False);
+         end case;
       end;
    end Tick_T_Recv_Sync;
 
