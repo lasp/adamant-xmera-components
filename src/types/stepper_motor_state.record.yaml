@@ -1,0 +1,11 @@
+---
+description: Stepper motor state published by the stepper motor interface and consumed by the stepper motor controller as a data dependency.
+fields:
+  - name: Current_Position
+    description: "[steps] Current absolute motor step position."
+    type: Interfaces.Integer_32
+    format: I32
+  - name: Is_Moving
+    description: Whether the motor is currently moving.
+    type: Stepper_Enums.Motion_Status.E
+    format: E8

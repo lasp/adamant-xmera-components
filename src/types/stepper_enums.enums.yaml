@@ -1,0 +1,27 @@
+---
+description: Enumerations for the stepper motor controller interfaces.
+enums:
+  - name: Command_Type
+    description: Type of step command issued to the stepper motor interface.
+    literals:
+      - name: None
+        value: 0
+        description: No command. The motor remains in its current state.
+      - name: Step_Cw
+        value: 1
+        description: Step in the clockwise direction (positive step delta).
+      - name: Step_Ccw
+        value: 2
+        description: Step in the counter-clockwise direction (negative step delta).
+      - name: Halt
+        value: 3
+        description: Halt the current motion.
+  - name: Motion_Status
+    description: Whether the stepper motor is currently moving.
+    literals:
+      - name: Stationary
+        value: 0
+        description: The motor is not moving.
+      - name: Moving
+        value: 1
+        description: The motor is currently moving.
