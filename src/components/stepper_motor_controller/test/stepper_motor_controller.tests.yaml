@@ -1,0 +1,19 @@
+---
+description: This is a unit test suite for the Stepper Motor Controller component.
+tests:
+  - name: Test_Move_Command
+    description: Across step angles and initial positions, a reference angle commands a step of the shortest-path magnitude and direction (clockwise for an increasing position, counterclockwise for a decreasing one).
+  - name: Test_No_Command
+    description: A reference within the minimum step command of the current position produces no motor command.
+  - name: Test_Out_Of_Range
+    description: A reference angle outside the configured motor travel range produces no motor command.
+  - name: Test_Interrupt
+    description: Changing the reference mid-move commands a halt, then re-plans a move from the final position once the motor settles.
+  - name: Test_Settle_Enable_Hold
+    description: The applied settle count is the total desired settle count reduced by the enable hold count, saturating at zero.
+  - name: Test_Position_Tracking
+    description: A move out and back from the fed-back absolute position produces equal and opposite step counts.
+  - name: Test_Over_Range_Rejected
+    description: A move whose step delta exceeds the motor-command field fails an assertion (an algorithm defect) rather than being sent or truncated; a delta at the exact field boundary is still sent.
+  - name: Test_Motor_State_Unavailable
+    description: An unavailable motor state data dependency fails an assertion; the motor interface publishes an initial state at Set_Up, so this can only indicate a wiring defect.
