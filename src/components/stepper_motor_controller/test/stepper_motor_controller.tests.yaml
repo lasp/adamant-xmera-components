@@ -13,5 +13,7 @@ tests:
     description: Verify references outside a partial motor angle range produce no motion and an in-range reference uses the linear path.
   - name: Test_Step_Command_Saturation
     description: Verify step deltas exceeding the Num_Steps field range are saturated and reported via event.
+  - name: Test_Motor_State_Staleness
+    description: Verify a stale motor state is accepted and used, while an unavailable motor state fails an assertion.
   - name: Test_Parameter_Staging_Errors
     description: Verify malformed parameter staging requests are rejected by status.

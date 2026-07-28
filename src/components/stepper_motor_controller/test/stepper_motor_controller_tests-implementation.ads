@@ -32,6 +32,9 @@ private
    -- Verify step deltas exceeding the Num_Steps field range are saturated and
    -- reported via event.
    overriding procedure Test_Step_Command_Saturation (Self : in out Instance);
+   -- Verify a stale motor state is accepted and used, while an unavailable motor
+   -- state fails an assertion.
+   overriding procedure Test_Motor_State_Staleness (Self : in out Instance);
    -- Verify malformed parameter staging requests are rejected by status.
    overriding procedure Test_Parameter_Staging_Errors (Self : in out Instance);
 

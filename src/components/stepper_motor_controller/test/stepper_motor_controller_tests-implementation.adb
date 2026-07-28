@@ -3,6 +3,7 @@
 --------------------------------------------------------------------------------
 
 with Basic_Assertions; use Basic_Assertions;
+with AUnit.Assertions; use AUnit.Assertions;
 with Stepper_Controller_Step.Assertion; use Stepper_Controller_Step.Assertion;
 with Packed_I32.Assertion; use Packed_I32.Assertion;
 with Stepper_Motor_Controller_Parameters;
@@ -10,6 +11,9 @@ with Stepper_Enums;
 with Parameter;
 with Parameter_Enums.Assertion;
 with Interfaces; use Interfaces;
+with Ada.Assertions;
+with Ada.Real_Time;
+with Data_Product_Enums;
 use Parameter_Enums.Parameter_Update_Status;
 use Parameter_Enums.Assertion;
 
@@ -412,6 +416,47 @@ package body Stepper_Motor_Controller_Tests.Implementation is
       Natural_Assert.Eq (T.Step_Command_Saturated_History.Get_Count, 2);
       Packed_I32_Assert.Eq (T.Step_Command_Saturated_History.Get (2), (Value => -99_940));
    end Test_Step_Command_Saturation;
+
+   -- Verify a stale motor state is accepted and used, while an unavailable motor
+   -- state fails an assertion.
+   overriding procedure Test_Motor_State_Staleness (Self : in out Instance) is
+      T : Tester_Access renames Self.Tester;
+   begin
+      -- Map a finite stale limit so the served timestamp can age out; the
+      -- tester serves the data dependency with id 0 and timestamp (0, 0) by
+      -- default:
+      T.Component_Instance.Map_Data_Dependencies (
+         Motor_State_Id => 0,
+         Motor_State_Stale_Limit => Ada.Real_Time.Milliseconds (500));
+
+      -- A stale motor state (timestamp far older than the tick's stale
+      -- reference) is accepted and the controller still commands the move:
+      Stage_Config (T,
+         Step_Angle => Deg,
+         Motor_Min_Angle => 0.0,
+         Motor_Max_Angle => Two_Pi,
+         Settle_Count_Max => 10,
+         Enable_Hold_Count => 0,
+         Min_Step_Command => 1,
+         Reference_Angle => 10.0 * Deg);
+      T.Motor_State := (Current_Position => 0, Is_Moving => Stepper_Enums.Motion_Status.Stationary);
+      T.Tick_T_Send ((Time => (100, 0), Count => 0));
+      Natural_Assert.Eq (T.Stepper_Controller_Step_T_Recv_Sync_History.Get_Count, 1);
+      Stepper_Controller_Step_Assert.Eq (T.Stepper_Controller_Step_T_Recv_Sync_History.Get (1),
+         (Command => Stepper_Enums.Command_Type.Step_Cw, Num_Steps => 10));
+
+      -- An unavailable motor state indicates a wiring defect and fails the
+      -- tick's assertion; no command is produced:
+      T.Data_Dependency_Return_Status_Override := Data_Product_Enums.Fetch_Status.Not_Available;
+      begin
+         Send_Tick (T);
+         Assert (False, "An unavailable motor state should have failed an assertion.");
+      exception
+         when Ada.Assertions.Assertion_Error =>
+            null; -- Expected.
+      end;
+      Natural_Assert.Eq (T.Stepper_Controller_Step_T_Recv_Sync_History.Get_Count, 1);
+   end Test_Motor_State_Staleness;
 
    -- Verify malformed parameter staging requests are rejected by status.
    overriding procedure Test_Parameter_Staging_Errors (Self : in out Instance) is

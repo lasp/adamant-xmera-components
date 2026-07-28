@@ -39,14 +39,16 @@ package body Component.Stepper_Motor_Controller.Implementation is
 
       -- Grab data dependencies:
       --
-      -- Data_Dependency_Status.E can be Success, Not_Available, Error, or Stale.
-      -- All return values besides Success indicate that this component is not
-      -- wired up correctly in the algorithm execution order and received errant,
-      -- stale, or no data. This should never happen, so we assert.
+      -- The motor interface publishes an initial motor state at Set_Up, so a
+      -- current or stale value is always available. Stale is acceptable: the
+      -- state may simply not have been republished since the last tick.
+      -- Not_Available or Error indicates the component is not wired up
+      -- correctly in the algorithm execution order. This should never happen,
+      -- so we assert.
       Motor_State : Stepper_Motor_State.T;
       Motor_State_Status : constant Data_Dependency_Status.E :=
          Self.Get_Motor_State (Value => Motor_State, Stale_Reference => Arg.Time);
-      pragma Assert (Motor_State_Status = Success);
+      pragma Assert (Motor_State_Status in Success | Stale);
    begin
       -- Update the parameters:
       Self.Update_Parameters;
@@ -55,15 +57,13 @@ package body Component.Stepper_Motor_Controller.Implementation is
       declare
          use type Stepper_Enums.Motion_Status.E;
 
-         State : constant Stepper_Motor_State.U := Stepper_Motor_State.Unpack (Motor_State);
-
          -- Run one tick of the controller state machine. The reference angle is
          -- a parameter passed through to the algorithm each tick:
          Output : constant Stepper_Motor_Controller_Output.C.U_C := Stepper_Motor_Controller_Algorithm_C.Update (
             Self.Alg,
-            Current_Position => State.Current_Position,
+            Current_Position => Motor_State.Current_Position,
             Reference_Angle => Self.Reference_Angle.Value,
-            Is_Motor_Moving => State.Is_Moving = Stepper_Enums.Motion_Status.Moving
+            Is_Motor_Moving => Motor_State.Is_Moving = Stepper_Enums.Motion_Status.Moving
          );
       begin
          -- Map the algorithm output onto the step command interface. A positive
