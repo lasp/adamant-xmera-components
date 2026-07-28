@@ -10,9 +10,10 @@ with Data_Product_Fetch.Representation;
 with Stepper_Controller_Step.Representation;
 with Event.Representation;
 with Sys_Time.Representation;
-with Stepper_Motor_State;
 with Event;
 with Packed_I32.Representation;
+with Stepper_Motor_State;
+with Packed_F32;
 
 -- Stepper motor controller algorithm commands a stepper motor to track a
 -- reference angle. Each tick it fetches the motor state, runs the controller
@@ -45,6 +46,7 @@ package Component.Stepper_Motor_Controller.Implementation.Tester is
       -- and will be returned to the component when a data dependency call
       -- is made.
       Motor_State : Stepper_Motor_State.T;
+      Reference_Angle : Packed_F32.T;
       -- The return status for the data dependency fetch. This can be set
       -- during unit test to return something other than Success.
       Data_Dependency_Return_Status_Override : Data_Product_Enums.Fetch_Status.E := Data_Product_Enums.Fetch_Status.Success;

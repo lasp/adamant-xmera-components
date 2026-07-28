@@ -21,7 +21,3 @@ parameters:
     description: "[steps] Minimum step delta magnitude that triggers a move or a stop-and-replan. The C algorithm requires a value greater than zero."
     type: Packed_U32.T
     default: "(Value => 1)"
-  - name: Reference_Angle
-    description: "[rad] Reference motor angle passed to the algorithm update each tick. For partial motor angle ranges the algorithm ignores references outside the range."
-    type: Packed_F32.T
-    default: "(Value => 0.0)"

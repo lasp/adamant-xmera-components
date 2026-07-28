@@ -65,6 +65,8 @@ package body Component.Stepper_Motor_Controller.Implementation.Tester is
          case Arg.Id is
             -- ID for Motor_State:
             when 0 => Id_To_Return := 0;
+            -- ID for Reference_Angle:
+            when 1 => Id_To_Return := 1;
             -- If ID can not be found, then return ID out of range error.
             when others =>
                if Return_Status = Data_Product_Enums.Fetch_Status.Success then
@@ -78,6 +80,8 @@ package body Component.Stepper_Motor_Controller.Implementation.Tester is
          case Arg.Id is
             -- Length for Motor_State:
             when 0 => Length_To_Return := Stepper_Motor_State.Size_In_Bytes;
+            -- Length for Reference_Angle:
+            when 1 => Length_To_Return := Packed_F32.Size_In_Bytes;
             -- If ID can not be found, then return ID out of range error.
             when others =>
                if Return_Status = Data_Product_Enums.Fetch_Status.Success then
@@ -98,6 +102,10 @@ package body Component.Stepper_Motor_Controller.Implementation.Tester is
             when 0 =>
                Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Stepper_Motor_State.Size_In_Bytes - 1) :=
                   Stepper_Motor_State.Serialization.To_Byte_Array (Self.Motor_State);
+            -- Length for Reference_Angle:
+            when 1 =>
+               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Packed_F32.Size_In_Bytes - 1) :=
+                  Packed_F32.Serialization.To_Byte_Array (Self.Reference_Angle);
             -- Do not fill. The ID is not recognized.
             when others =>
                Return_Status := Data_Product_Enums.Fetch_Status.Id_Out_Of_Range;

@@ -1,5 +1,5 @@
 ---
-description: Stepper motor controller algorithm commands a stepper motor to track a reference angle. Each tick it fetches the motor state, runs the controller state machine, and sends step or halt commands to the stepper motor interface.
+description: Stepper motor controller algorithm commands a stepper motor to track a reference angle. Each tick it fetches the motor state and reference angle, runs the controller state machine, and sends step or halt commands to the stepper motor interface.
 execution: passive
 init:
   description: Initializes the stepper motor controller algorithm.

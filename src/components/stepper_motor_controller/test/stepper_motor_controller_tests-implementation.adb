@@ -49,20 +49,19 @@ package body Stepper_Motor_Controller_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Motor_Max_Angle ((Value => Motor_Max_Angle))), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Settle_Count_Max ((Value => Settle_Count_Max))), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Min_Step_Command ((Value => Min_Step_Command))), Success);
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Reference_Angle ((Value => Reference_Angle))), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      -- The reference angle is a data dependency served by the tester:
+      T.Reference_Angle := (Value => Reference_Angle);
    end Stage_Config;
 
-   -- Stage a new reference angle and apply it:
-   procedure Stage_Reference
+   -- Serve a new reference angle from the simulated upstream algorithm:
+   procedure Set_Reference
       (T : in Tester_Access;
        Reference_Angle : in Short_Float)
    is
-      Params : Stepper_Motor_Controller_Parameters.Instance;
    begin
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Reference_Angle ((Value => Reference_Angle))), Success);
-      Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
-   end Stage_Reference;
+      T.Reference_Angle := (Value => Reference_Angle);
+   end Set_Reference;
 
    -- Send a tick to run one cycle of the controller:
    procedure Send_Tick (T : in Tester_Access) is
@@ -188,7 +187,7 @@ package body Stepper_Motor_Controller_Tests.Implementation is
       Natural_Assert.Eq (T.Stepper_Controller_Step_T_Recv_Sync_History.Get_Count, 0);
 
       -- A 5 step delta meets the threshold exactly and commands a move:
-      Stage_Reference (T, 5.0 * Deg);
+      Set_Reference (T, 5.0 * Deg);
       Send_Tick (T);
       Natural_Assert.Eq (T.Stepper_Controller_Step_T_Recv_Sync_History.Get_Count, 1);
       Stepper_Controller_Step_Assert.Eq (T.Stepper_Controller_Step_T_Recv_Sync_History.Get (1),
@@ -220,7 +219,7 @@ package body Stepper_Motor_Controller_Tests.Implementation is
       Natural_Assert.Eq (T.Stepper_Controller_Step_T_Recv_Sync_History.Get_Count, 1);
 
       -- Retarget to 10 degrees mid-move: the controller halts the motor:
-      Stage_Reference (T, 10.0 * Deg);
+      Set_Reference (T, 10.0 * Deg);
       T.Motor_State := (Current_Position => 8, Is_Moving => Stepper_Enums.Motion_Status.Moving);
       Send_Tick (T);
       Natural_Assert.Eq (T.Stepper_Controller_Step_T_Recv_Sync_History.Get_Count, 2);
@@ -276,13 +275,13 @@ package body Stepper_Motor_Controller_Tests.Implementation is
       Natural_Assert.Eq (T.Stepper_Controller_Step_T_Recv_Sync_History.Get_Count, 0);
 
       -- A reference below the range is also ignored:
-      Stage_Reference (T, -10.0 * Deg);
+      Set_Reference (T, -10.0 * Deg);
       Send_Tick (T);
       Natural_Assert.Eq (T.Stepper_Controller_Step_T_Recv_Sync_History.Get_Count, 0);
 
       -- An in-range reference at 50 degrees moves linearly from 60 to 50, 10
       -- steps counter-clockwise (a partial range never wraps):
-      Stage_Reference (T, 50.0 * Deg);
+      Set_Reference (T, 50.0 * Deg);
       Send_Tick (T);
       Natural_Assert.Eq (T.Stepper_Controller_Step_T_Recv_Sync_History.Get_Count, 1);
       Stepper_Controller_Step_Assert.Eq (T.Stepper_Controller_Step_T_Recv_Sync_History.Get (1),
@@ -344,7 +343,9 @@ package body Stepper_Motor_Controller_Tests.Implementation is
       -- default:
       T.Component_Instance.Map_Data_Dependencies (
          Motor_State_Id => 0,
-         Motor_State_Stale_Limit => Ada.Real_Time.Milliseconds (500));
+         Motor_State_Stale_Limit => Ada.Real_Time.Milliseconds (500),
+         Reference_Angle_Id => 1,
+         Reference_Angle_Stale_Limit => Ada.Real_Time.Milliseconds (500));
 
       -- A stale motor state (timestamp far older than the tick's stale
       -- reference) is accepted and the controller still commands the move:

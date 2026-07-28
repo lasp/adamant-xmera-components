@@ -4,3 +4,6 @@ data_dependencies:
   - name: Motor_State
     type: Stepper_Motor_State.T
     description: Current stepper motor state (absolute step position and motion status) published by the stepper motor interface.
+  - name: Reference_Angle
+    type: Packed_F32.T
+    description: "[rad] Reference motor angle to track, published by the upstream pointing algorithm."

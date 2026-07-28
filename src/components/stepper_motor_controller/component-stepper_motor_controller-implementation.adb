@@ -49,6 +49,14 @@ package body Component.Stepper_Motor_Controller.Implementation is
       Motor_State_Status : constant Data_Dependency_Status.E :=
          Self.Get_Motor_State (Value => Motor_State, Stale_Reference => Arg.Time);
       pragma Assert (Motor_State_Status in Success | Stale);
+
+      -- The reference angle comes from the upstream pointing algorithm under
+      -- the same contract: the producer seeds an initial value at Set_Up, so
+      -- only Not_Available or Error indicates a wiring defect.
+      Reference_Angle : Packed_F32.T;
+      Reference_Angle_Status : constant Data_Dependency_Status.E :=
+         Self.Get_Reference_Angle (Value => Reference_Angle, Stale_Reference => Arg.Time);
+      pragma Assert (Reference_Angle_Status in Success | Stale);
    begin
       -- Update the parameters:
       Self.Update_Parameters;
@@ -57,12 +65,12 @@ package body Component.Stepper_Motor_Controller.Implementation is
       declare
          use type Stepper_Enums.Motion_Status.E;
 
-         -- Run one tick of the controller state machine. The reference angle is
-         -- a parameter passed through to the algorithm each tick:
+         -- Run one tick of the controller state machine against the fetched
+         -- motor state and reference angle:
          Output : constant Stepper_Motor_Controller_Output.C.U_C := Stepper_Motor_Controller_Algorithm_C.Update (
             Self.Alg,
             Current_Position => Motor_State.Current_Position,
-            Reference_Angle => Self.Reference_Angle.Value,
+            Reference_Angle => Reference_Angle.Value,
             Is_Motor_Moving => Motor_State.Is_Moving = Stepper_Enums.Motion_Status.Moving
          );
       begin
@@ -114,8 +122,7 @@ package body Component.Stepper_Motor_Controller.Implementation is
    -----------------------------------------------
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
    begin
-      -- Set algorithm configuration from parameters. Reference_Angle is not
-      -- applied here; it is passed to the algorithm update each tick.
+      -- Set algorithm configuration from parameters:
       Set_Step_Angle (Self.Alg, Self.Step_Angle.Value);
       Set_Motor_Angle_Range (Self.Alg,
          Min_Angle => Self.Motor_Min_Angle.Value,
