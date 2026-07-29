@@ -14,6 +14,7 @@ with Css_Comm_Parameters;
 with Parameter_Enums.Assertion;
 use Parameter_Enums.Parameter_Update_Status;
 use Parameter_Enums.Assertion;
+with Sys_Time.Assertion; use Sys_Time.Assertion;
 
 package body Css_Comm_Tests.Implementation is
 
@@ -90,10 +91,11 @@ package body Css_Comm_Tests.Implementation is
 
    end Test_Zero_Cheby_Is_Identity;
 
-   -- When the CSS sensor data dependency is stale, the implementation zeroes the
-   -- ADC input before passing it to the algorithm, so the output is all zeros
-   -- regardless of the (stale) reading that was actually fetched.
-   overriding procedure Test_Stale_Input_Is_Zeroed (Self : in out Instance) is
+   -- When the CSS sensor data dependency is stale, the implementation processes
+   -- the fetched reading just like a fresh one and publishes the output with the
+   -- reading's original timestamp, so the downstream filter receives the old
+   -- data and can judge it by its age.
+   overriding procedure Test_Stale_Input_Is_Processed (Self : in out Instance) is
       T : Component.Css_Comm.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Css_Comm_Parameters.Instance;
 
@@ -102,13 +104,16 @@ package body Css_Comm_Tests.Implementation is
       Cheby_Count_Val : constant Packed_U32.T := (Value => 3);
       Cheby_Poly_Val : constant Packed_F64x11.T := [others => 0.0];
 
-      -- A non-zero reading that would produce a non-zero output if it were
-      -- processed. Because the fetch returns Stale, it must NOT be.
+      -- A non-zero reading stamped well in the past. Even though the fetch
+      -- returns Stale, it must be processed like a fresh reading.
       Input_Data : constant Css_Array_Adc_8.T := (
          Adc_Value => [50, 0, 100, 0, 110, 0, 0, 0]
       );
-      -- Stale input is zeroed, so the entire output is expected to be zero.
-      Expected_Output : constant Packed_F64x8.T := [others => 0.0];
+      Input_Time : constant Sys_Time.T := (Seconds => 1, Subseconds => 0);
+      -- The stale reading is processed, so the output is the corrected values,
+      -- not zeros (cheby = 0, so the C output is clamp(adc/100, [0, 1])).
+      Expected_Output : constant Packed_F64x8.T :=
+         [0.5, 0.0, 1.0, 0.0, 1.0, others => 0.0];
 
       Output : Css_Sensor_Values.T;
    begin
@@ -128,9 +133,9 @@ package body Css_Comm_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cheby_Polynomials (Cheby_Poly_Val)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
 
-      -- Provide a non-zero reading stamped well in the past.
+      -- Provide the non-zero reading stamped well in the past.
       T.Css_Sensor_Input := Input_Data;
-      T.Data_Dependency_Timestamp_Override := (Seconds => 1, Subseconds => 0);
+      T.Data_Dependency_Timestamp_Override := Input_Time;
 
       -- Send a tick whose time (the stale reference) is far enough ahead of the
       -- data product timestamp to exceed the 1-second stale limit, so the fetch
@@ -141,10 +146,14 @@ package body Css_Comm_Tests.Implementation is
       Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, 1);
       Natural_Assert.Eq (T.Css_Sensor_Output_History.Get_Count, 1);
 
-      -- Output must be all zeros because the stale ADC input was zeroed.
+      -- The stale reading must be processed, not zeroed.
       Output := T.Css_Sensor_Output_History.Get (1);
       Packed_F64x8_Assert.Eq (Output.Data, Expected_Output, Epsilon => 1.0e-10);
 
-   end Test_Stale_Input_Is_Zeroed;
+      -- The output must carry the stale reading's original timestamp, not the
+      -- tick time, so the downstream filter sees the true data age.
+      Sys_Time_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get (1).Header.Time, Input_Time);
+
+   end Test_Stale_Input_Is_Processed;
 
 end Css_Comm_Tests.Implementation;
