@@ -1,0 +1,18 @@
+---
+#  /**
+#   * @brief POD representation of the motor's angular travel range [rad].
+#   */
+#  typedef struct {
+#      float minAngle; /*!< [rad] Lower bound of the motor travel range */
+#      float maxAngle; /*!< [rad] Upper bound of the motor travel range */
+#  } MotorAngleRange_c;
+description: The motor's angular travel range. Maps to MotorAngleRange_c in the stepper motor controller C shim.
+fields:
+  - name: Min_Angle
+    description: "[rad] Lower bound of the motor travel range."
+    type: Short_Float
+    format: F32
+  - name: Max_Angle
+    description: "[rad] Upper bound of the motor travel range."
+    type: Short_Float
+    format: F32

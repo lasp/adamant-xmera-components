@@ -1,0 +1,23 @@
+---
+description: Parameters for the Stepper Motor Controller component
+parameters:
+  - name: Step_Angle
+    description: "[rad/step] Angle traversed per motor step. The C algorithm requires a value in [2*pi/100000, 2*pi]."
+    type: Packed_F32.T
+    default: "(Value => 0.03141593)"
+  - name: Motor_Min_Angle
+    description: "[rad] Lower bound of the motor travel range. The C algorithm requires a value in [-2*pi, 2*pi], strictly less than Motor_Max_Angle."
+    type: Packed_F32.T
+    default: "(Value => 0.0)"
+  - name: Motor_Max_Angle
+    description: "[rad] Upper bound of the motor travel range. The C algorithm requires a value in [-2*pi, 2*pi], strictly greater than Motor_Min_Angle."
+    type: Packed_F32.T
+    default: "(Value => 6.2831853)"
+  - name: Settle_Count_Max
+    description: "[ticks] Number of ticks the algorithm settles for after stepping ends."
+    type: Packed_U32.T
+    default: "(Value => 10)"
+  - name: Min_Step_Command
+    description: "[steps] Minimum step delta magnitude that triggers a move or a stop-and-replan. The C algorithm requires a value greater than zero."
+    type: Packed_U32.T
+    default: "(Value => 1)"

@@ -1,0 +1,17 @@
+---
+description: This is a unit test suite for the Stepper Motor Controller component
+tests:
+  - name: Test_Nominal_Move
+    description: Verify nominal move commands with shortest-path wrapping through the full Ada to C++ path.
+  - name: Test_Below_Min_Step_Command
+    description: Verify no step command is issued while the step delta is below the minimum step command threshold.
+  - name: Test_Interrupt_And_Replan
+    description: Verify a reference change mid-move produces a halt command and the controller re-plans from the settled position after the settle duration.
+  - name: Test_Out_Of_Range_Reference
+    description: Verify references outside a partial motor angle range produce no motion and an in-range reference uses the linear path.
+  - name: Test_Step_Command_Saturation
+    description: Verify step deltas exceeding the Num_Steps field range are saturated and reported via event.
+  - name: Test_Motor_State_Staleness
+    description: Verify a stale motor state is accepted and used, while an unavailable motor state fails an assertion.
+  - name: Test_Parameter_Staging_Errors
+    description: Verify malformed parameter staging requests are rejected by status.

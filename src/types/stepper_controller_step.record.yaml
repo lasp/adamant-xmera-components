@@ -1,0 +1,11 @@
+---
+description: Step command issued by the stepper motor controller to the stepper motor interface.
+fields:
+  - name: Command
+    description: The type of step command to execute.
+    type: Stepper_Enums.Command_Type.E
+    format: E8
+  - name: Num_Steps
+    description: "[steps] Number of steps to move. Only meaningful for Step_Cw and Step_Ccw commands; zero otherwise."
+    type: Interfaces.Unsigned_16
+    format: U16

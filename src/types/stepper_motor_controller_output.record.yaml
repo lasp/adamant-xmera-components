@@ -1,15 +1,19 @@
 ---
-#  /*! structure containing the stepper motor controller algorithm output */
-#  typedef struct {
-#      MotorStepCommandMsgPayload motorStepCommandOut; /*!< Output msg for the number of commanded motor steps */
-#      bool writeOutputMessage;                        /*!< Indicator whether or not output message should be written */
+#  /*! @brief Type of command produced by the stepper motor controller */
+#  typedef enum StepperMotorCommandType { NONE = 0, STOP, MOVE } StepperMotorCommandType;
+#
+#  /*! @brief Output from the stepper motor controller algorithm */
+#  typedef struct StepperMotorControllerOutput {
+#      StepperMotorCommandType commandType; /*!< Type of command to issue */
+#      int32_t stepsToMove;                 /*!< [steps] Number of steps to move (only valid for MOVE command) */
 #  } StepperMotorControllerOutput;
-description: Output data produced by the stepper motor controller algorithm
+description: Output from the stepper motor controller algorithm. Maps to StepperMotorControllerOutput in the C shim.
 fields:
-  - name: Motor_Step_Command_Out
-    type: Motor_Step_Command.T
-    description: Commanded motor step message payload
-  - name: Write_Output_Message
-    type: Interfaces.Unsigned_8
-    format: U8
-    description: Flag indicating whether the output message must be written (1 = True, 0 = False)
+  - name: Command_Type
+    description: Type of command to issue. Values match the C StepperMotorCommandType enumeration (NONE = 0, STOP = 1, MOVE = 2), carried as a 32-bit integer matching the C enum representation.
+    type: Interfaces.Integer_32
+    format: I32
+  - name: Steps_To_Move
+    description: "[steps] Number of steps to move. Only valid for the MOVE command. Positive is clockwise, negative is counter-clockwise."
+    type: Interfaces.Integer_32
+    format: I32
