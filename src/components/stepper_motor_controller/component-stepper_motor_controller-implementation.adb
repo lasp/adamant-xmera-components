@@ -3,7 +3,6 @@
 --------------------------------------------------------------------------------
 
 with Stepper_Enums;
-with Stepper_Motor_Controller_Output.C;
 
 package body Component.Stepper_Motor_Controller.Implementation is
 
@@ -67,7 +66,7 @@ package body Component.Stepper_Motor_Controller.Implementation is
 
          -- Run one tick of the controller state machine against the fetched
          -- motor state and reference angle:
-         Output : constant Stepper_Motor_Controller_Output.C.U_C := Stepper_Motor_Controller_Algorithm_C.Update (
+         Output : constant Update_Result := Stepper_Motor_Controller_Algorithm_C.Update (
             Self.Alg,
             Current_Position => Motor_State.Current_Position,
             Reference_Angle => Reference_Angle.Value,
@@ -79,15 +78,15 @@ package body Component.Stepper_Motor_Controller.Implementation is
          -- a counter-clockwise one; a STOP maps to Halt; a NONE takes no
          -- action. A zero-step move is absorbed as a no-op rather than sent as
          -- an empty command.
-         case Output.Command_Type is
-            when Stepper_Motor_Command_Type'Pos (None) =>
+         case Output.Command is
+            when None =>
                null;
-            when Stepper_Motor_Command_Type'Pos (Stop) =>
+            when Stop =>
                Self.Stepper_Controller_Step_T_Send_If_Connected ((
                   Command => Stepper_Enums.Command_Type.Halt,
                   Num_Steps => 0
                ));
-            when Stepper_Motor_Command_Type'Pos (Move) =>
+            when Move =>
                if Output.Steps_To_Move /= 0 then
                   declare
                      -- Compute the step magnitude in a wider type so that the
@@ -113,11 +112,6 @@ package body Component.Stepper_Motor_Controller.Implementation is
                      Self.Stepper_Controller_Step_T_Send_If_Connected (Step_Command);
                   end;
                end if;
-            when others =>
-               -- The C++ algorithm produces only the three command values, so
-               -- anything else indicates ABI corruption. This should never
-               -- happen, so we assert.
-               pragma Assert (False);
          end case;
       end;
    end Tick_T_Recv_Sync;
