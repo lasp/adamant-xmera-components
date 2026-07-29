@@ -38,9 +38,12 @@ package body Component.Stepper_Motor_Controller.Implementation is
 
       -- Grab data dependencies:
       --
-      -- The motor interface publishes an initial motor state at Set_Up, so a
-      -- current or stale value is always available. Stale is acceptable: the
-      -- state may simply not have been republished since the last tick.
+      -- The motor interface publishes the motor state when the device answers a
+      -- status copy, and seeds an initial value at Set_Up -- the timestamp ages
+      -- while the device is quiet, so Stale is a legitimate runtime state, not
+      -- a defect. The last stored position remains the best estimate: a step
+      -- commanded against slightly-old state self-corrects on later cycles, and
+      -- the motor interface rejects commands its axis cannot accept.
       -- Not_Available or Error indicates the component is not wired up
       -- correctly in the algorithm execution order. This should never happen,
       -- so we assert.
@@ -49,9 +52,11 @@ package body Component.Stepper_Motor_Controller.Implementation is
          Self.Get_Motor_State (Value => Motor_State, Stale_Reference => Arg.Time);
       pragma Assert (Motor_State_Status in Success | Stale);
 
-      -- The reference angle comes from the upstream pointing algorithm under
-      -- the same contract: the producer seeds an initial value at Set_Up, so
-      -- only Not_Available or Error indicates a wiring defect.
+      -- The reference angle is a goal from the upstream pointing algorithm and
+      -- persists until replaced, so tracking the last commanded value while the
+      -- product is stale is the intended behavior. The producer seeds an
+      -- initial value at Set_Up; only Not_Available or Error indicates a
+      -- wiring defect.
       Reference_Angle : Packed_F32.T;
       Reference_Angle_Status : constant Data_Dependency_Status.E :=
          Self.Get_Reference_Angle (Value => Reference_Angle, Stale_Reference => Arg.Time);
