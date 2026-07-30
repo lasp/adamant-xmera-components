@@ -178,10 +178,10 @@ package body Thr_Firing_Remainder_Tests.Implementation is
    end Test;
 
    -- A byte outside the pulsing regime enumeration must be rejected at
-   -- staging by E8 type validation, before it can reach the Ada 'Val
-   -- conversion (which would raise Constraint_Error) or the C algorithm.
-   -- The out-of-range raw byte is injected by overwriting the parameter
-   -- buffer, mimicking a ground upload.
+   -- staging by E8 type validation, before it can reach the component's
+   -- enum case mapping (which would raise Constraint_Error on the invalid
+   -- value) or the C algorithm. The out-of-range raw byte is injected by
+   -- overwriting the parameter buffer, mimicking a ground upload.
    overriding procedure Test_Pulsing_Regime_Validation (Self : in out Instance) is
       T : Component.Thr_Firing_Remainder.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Thr_Firing_Remainder_Parameters.Instance;

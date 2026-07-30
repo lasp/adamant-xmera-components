@@ -111,13 +111,13 @@ package body Component.Thr_Firing_Remainder.Implementation is
       Set_Thr_Min_Fire_Time (Self.Alg, Self.Thr_Min_Fire_Time.Value);
       Set_Control_Period (Self.Alg, Self.Control_Period.Value);
       Set_On_Time_Saturation_Factor (Self.Alg, Self.On_Time_Saturation_Factor.Value);
-      -- The parameter's enumeration and the binding's enumeration both match
-      -- the C ThrFiringRemainderPulsingRegime values, so a position-based
-      -- conversion is safe; the parameter's E8 type validation rejects any
-      -- other value during staging.
+      -- Map the parameter's enumeration to the binding's C mirror enumeration
+      -- with an exhaustive case, keeping the mapping robust to literal
+      -- reordering in either type.
       Set_Thrust_Pulsing_Regime (Self.Alg,
-         Thr_Firing_Remainder_Pulsing_Regime'Val (
-            Thr_Firing_Remainder_Enums.Pulsing_Regime.E'Pos (Self.Thrust_Pulsing_Regime.Value)));
+         (case Self.Thrust_Pulsing_Regime.Value is
+             when Thr_Firing_Remainder_Enums.Pulsing_Regime.On_Pulsing => On_Pulsing,
+             when Thr_Firing_Remainder_Enums.Pulsing_Regime.Off_Pulsing => Off_Pulsing));
    end Update_Parameters_Action;
 
    -----------------------------------------------
