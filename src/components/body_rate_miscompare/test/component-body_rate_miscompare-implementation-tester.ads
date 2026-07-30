@@ -35,11 +35,14 @@ package Component.Body_Rate_Miscompare.Implementation.Tester is
 
    -- Event history packages:
    package Use_Imu_Rates_Set_History_Package is new Printable_History (Packed_Boolean.T, Packed_Boolean.Representation.Image);
+   package Body_Rate_Fault_Latched_History_Package is new Printable_History (Natural, Natural'Image);
+   package Body_Rate_Fault_Cleared_History_Package is new Printable_History (Natural, Natural'Image);
    package Invalid_Command_Received_History_Package is new Printable_History (Invalid_Command_Info.T, Invalid_Command_Info.Representation.Image);
 
    -- Data product history packages:
    package Body_Rate_History_Package is new Printable_History (Packed_F32x3.T, Packed_F32x3.Representation.Image);
    package Rate_Fault_Status_History_Package is new Printable_History (Body_Rate_Fault.T, Body_Rate_Fault.Representation.Image);
+   package Fault_Latch_Time_History_Package is new Printable_History (Sys_Time.T, Sys_Time.Representation.Image);
 
    -- Component class instance:
    type Instance is new Component.Body_Rate_Miscompare_Reciprocal.Base_Instance with record
@@ -53,10 +56,13 @@ package Component.Body_Rate_Miscompare.Implementation.Tester is
       Sys_Time_T_Return_History : Sys_Time_T_Return_History_Package.Instance;
       -- Event histories:
       Use_Imu_Rates_Set_History : Use_Imu_Rates_Set_History_Package.Instance;
+      Body_Rate_Fault_Latched_History : Body_Rate_Fault_Latched_History_Package.Instance;
+      Body_Rate_Fault_Cleared_History : Body_Rate_Fault_Cleared_History_Package.Instance;
       Invalid_Command_Received_History : Invalid_Command_Received_History_Package.Instance;
       -- Data product histories:
       Body_Rate_History : Body_Rate_History_Package.Instance;
       Rate_Fault_Status_History : Rate_Fault_Status_History_Package.Instance;
+      Fault_Latch_Time_History : Fault_Latch_Time_History_Package.Instance;
       -- Data dependency return values. These can be set during unit test
       -- and will be returned to the component when a data dependency call
       -- is made.
@@ -89,6 +95,13 @@ package Component.Body_Rate_Miscompare.Implementation.Tester is
    -- Test initialization functions:
    ---------------------------------------
    procedure Connect (Self : in out Instance);
+   -- Reset the component's fault transition tracking state. On targets where
+   -- the tester is statically allocated and reused across tests (bareboard),
+   -- the component instance's record defaults are not re-applied between
+   -- tests, so the fixture resets this state explicitly. The tester is a
+   -- child of the implementation package and so has visibility into the
+   -- private instance record.
+   procedure Reset_Prev_Fault_Latched (Self : in out Instance);
 
    ---------------------------------------
    -- Invokee connector primitives:
@@ -111,6 +124,12 @@ package Component.Body_Rate_Miscompare.Implementation.Tester is
    --    Events for the Body Rate Miscompare component.
    -- The use IMU rates override was set via command.
    overriding procedure Use_Imu_Rates_Set (Self : in out Instance; Arg : in Packed_Boolean.T);
+   -- The body rate fault flag set and IMU rates are now selected, either because the
+   -- rates disagreed for the persistence limit or because the Use_Imu_Rates override
+   -- was commanded.
+   overriding procedure Body_Rate_Fault_Latched (Self : in out Instance);
+   -- The body rate fault flag cleared and normal rate selection resumed.
+   overriding procedure Body_Rate_Fault_Cleared (Self : in out Instance);
    -- A command was received with invalid arguments.
    overriding procedure Invalid_Command_Received (Self : in out Instance; Arg : in Invalid_Command_Info.T);
 
@@ -124,6 +143,8 @@ package Component.Body_Rate_Miscompare.Implementation.Tester is
    overriding procedure Body_Rate (Self : in out Instance; Arg : in Packed_F32x3.T);
    -- Body rate fault detection status
    overriding procedure Rate_Fault_Status (Self : in out Instance; Arg : in Body_Rate_Fault.T);
+   -- Time at which the body rate miscompare fault most recently latched.
+   overriding procedure Fault_Latch_Time (Self : in out Instance; Arg : in Sys_Time.T);
 
    -----------------------------------------------
    -- Special primitives for aiding in the staging,

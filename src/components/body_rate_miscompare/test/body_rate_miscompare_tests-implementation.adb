@@ -14,6 +14,7 @@ with Parameter_Enums.Assertion;
 with Command;
 with Command_Enums;
 with Command_Response.Assertion; use Command_Response.Assertion;
+with Sys_Time.Assertion; use Sys_Time.Assertion;
 use Parameter_Enums.Parameter_Update_Status;
 use Parameter_Enums.Assertion;
 
@@ -33,6 +34,12 @@ package body Body_Rate_Miscompare_Tests.Implementation is
 
       -- Call component init here.
       Self.Tester.Component_Instance.Init;
+
+      -- Reset the component's fault transition tracking state: on targets
+      -- where the tester is statically allocated and reused across tests
+      -- (bareboard), the instance record defaults are not re-applied between
+      -- tests.
+      Self.Tester.Reset_Prev_Fault_Latched;
 
       -- Call the component set up method that the assembly would normally call.
       Self.Tester.Component_Instance.Set_Up;
@@ -81,6 +88,8 @@ package body Body_Rate_Miscompare_Tests.Implementation is
           Expected_Angular_Velocity => [-0.1, 0.2, -0.3],
           Expected_Fault => True)
       ];
+
+      Expected_Dp_Count : Natural := 0;
    begin
       -- Stage and apply the threshold parameter:
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Body_Rate_Threshold (Threshold)), Success);
@@ -104,8 +113,14 @@ package body Body_Rate_Miscompare_Tests.Implementation is
          -- Call algorithm:
          T.Tick_T_Send ((Time => T.System_Time, Count => 0));
 
-         -- Make sure data products produced:
-         Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, I * 2);
+         -- Make sure data products produced. Every tick publishes the body rate and
+         -- fault status products; the tick where the fault first latches (case 2)
+         -- additionally publishes the Fault_Latch_Time product.
+         Expected_Dp_Count := @ + 2;
+         if Test_Cases (I).Expected_Fault then
+            Expected_Dp_Count := @ + 1;
+         end if;
+         Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, Expected_Dp_Count);
          Natural_Assert.Eq (T.Body_Rate_History.Get_Count, I);
          Natural_Assert.Eq (T.Rate_Fault_Status_History.Get_Count, I);
 
@@ -228,6 +243,81 @@ package body Body_Rate_Miscompare_Tests.Implementation is
       -- One more disagreement: counter reaches 3 -> fault latches:
       Tick_Disagree (5, True);
    end Test_Reset;
+
+   -- Verify fault flag transitions publish the latch-time data product and
+   -- latched/cleared events exactly once per transition, for both the miscompare
+   -- latch and the commanded override.
+   overriding procedure Test_Fault_Latch_Transition (Self : in out Instance) is
+      T : Component.Body_Rate_Miscompare.Implementation.Tester.Instance_Access renames Self.Tester;
+      Params : Body_Rate_Miscompare_Parameters.Instance;
+
+      Imu_Rate : constant Packed_F32x3.T := [0.0, 0.0, 0.0];
+      -- Difference well under/over the 1.0 rad/s threshold:
+      Agreeing_St_Rate : constant Packed_F32x3.T := [0.1, 0.0, 0.0];
+      Disagreeing_St_Rate : constant Packed_F32x3.T := [2.0, 0.0, 0.0];
+      Latch_Time : constant Sys_Time.T := (Seconds => 100, Subseconds => 0);
+   begin
+      -- Stage the threshold and persistence limit explicitly rather than
+      -- relying on defaults: on targets where the tester is statically
+      -- allocated and reused across tests (bareboard), parameter values
+      -- staged by earlier tests would otherwise leak into this one.
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Body_Rate_Threshold ((Value => 1.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Fault_Persistence_Limit ((Value => 1))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+
+      T.Imu_Body := (Avg_Ang_Vel_Body => Imu_Rate, Fault_Detected => 0, Mimu_Index_Faulted => -1);
+
+      -- Agreeing tick: no fault, no transition reports.
+      T.Star_Tracker_Attitude := (Time_Tag => 0, Sigma_Bn => [0.0, 0.0, 0.0], Omega_Bn_B => Agreeing_St_Rate);
+      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+      Natural_Assert.Eq (T.Body_Rate_Fault_Latched_History.Get_Count, 0);
+      Natural_Assert.Eq (T.Fault_Latch_Time_History.Get_Count, 0);
+
+      -- Disagreeing tick (default persistence limit of 1): the fault latches, and the
+      -- transition is reported exactly once, stamped with the tick time.
+      T.Star_Tracker_Attitude := (Time_Tag => 0, Sigma_Bn => [0.0, 0.0, 0.0], Omega_Bn_B => Disagreeing_St_Rate);
+      T.Tick_T_Send ((Time => Latch_Time, Count => 0));
+      Natural_Assert.Eq (T.Body_Rate_Fault_Latched_History.Get_Count, 1);
+      Natural_Assert.Eq (T.Fault_Latch_Time_History.Get_Count, 1);
+      Sys_Time_Assert.Eq (T.Fault_Latch_Time_History.Get (1), Latch_Time);
+
+      -- Another disagreeing tick: still latched -> no new transition report.
+      T.Tick_T_Send ((Time => (Seconds => 101, Subseconds => 0), Count => 0));
+      Natural_Assert.Eq (T.Body_Rate_Fault_Latched_History.Get_Count, 1);
+      Natural_Assert.Eq (T.Fault_Latch_Time_History.Get_Count, 1);
+      Natural_Assert.Eq (T.Body_Rate_Fault_Cleared_History.Get_Count, 0);
+
+      -- Agreeing rates do NOT unlatch the fault (only the command does), so still no
+      -- cleared report and the fault status remains set:
+      T.Star_Tracker_Attitude := (Time_Tag => 0, Sigma_Bn => [0.0, 0.0, 0.0], Omega_Bn_B => Agreeing_St_Rate);
+      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+      Natural_Assert.Eq (T.Body_Rate_Fault_Cleared_History.Get_Count, 0);
+      Body_Rate_Fault_Assert.Eq (T.Rate_Fault_Status_History.Get (4), (Fault_Detected => True));
+
+      -- Clear the latch by command; the next tick reports the fault cleared exactly once:
+      T.Command_T_Send (T.Commands.Use_Imu_Rates ((Value => False)));
+      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+      Natural_Assert.Eq (T.Body_Rate_Fault_Cleared_History.Get_Count, 1);
+      Natural_Assert.Eq (T.Body_Rate_Fault_Latched_History.Get_Count, 1);
+      Body_Rate_Fault_Assert.Eq (T.Rate_Fault_Status_History.Get (5), (Fault_Detected => False));
+
+      -- Engage the commanded override with agreeing rates: the fault flag sets, and
+      -- the transition is reported just like a miscompare latch.
+      T.Command_T_Send (T.Commands.Use_Imu_Rates ((Value => True)));
+      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+      Body_Rate_Fault_Assert.Eq (T.Rate_Fault_Status_History.Get (6), (Fault_Detected => True));
+      Natural_Assert.Eq (T.Body_Rate_Fault_Latched_History.Get_Count, 2);
+      Natural_Assert.Eq (T.Fault_Latch_Time_History.Get_Count, 2);
+      Natural_Assert.Eq (T.Body_Rate_Fault_Cleared_History.Get_Count, 1);
+
+      -- Disengage the override: the fault flag clears and the transition is reported
+      -- exactly once.
+      T.Command_T_Send (T.Commands.Use_Imu_Rates ((Value => False)));
+      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+      Body_Rate_Fault_Assert.Eq (T.Rate_Fault_Status_History.Get (7), (Fault_Detected => False));
+      Natural_Assert.Eq (T.Body_Rate_Fault_Latched_History.Get_Count, 2);
+      Natural_Assert.Eq (T.Body_Rate_Fault_Cleared_History.Get_Count, 2);
+   end Test_Fault_Latch_Transition;
 
    -- Verify a malformed command is rejected and reported via the Invalid_Command_Received event.
    overriding procedure Test_Invalid_Command (Self : in out Instance) is

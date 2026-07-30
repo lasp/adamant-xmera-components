@@ -7,3 +7,6 @@ data_products:
   - name: Rate_Fault_Status
     type: Body_Rate_Fault.T
     description: Body rate fault detection status
+  - name: Fault_Latch_Time
+    type: Sys_Time.T
+    description: Time at which the body rate fault flag most recently set. Published once on the transition into the fault state.
