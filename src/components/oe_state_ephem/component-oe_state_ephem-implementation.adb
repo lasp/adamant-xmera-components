@@ -38,7 +38,10 @@ package body Component.Oe_State_Ephem.Implementation is
       Set_Arc_Number_Of_Coefficients (Alg, Arc_Number, Arc.Number_Of_Coefficients.Value);
       Set_Arc_Middle_Time (Alg, Arc_Number, Arc.Middle_Time);
       Set_Arc_Radius_Time (Alg, Arc_Number, Arc.Radius_Time);
-      Set_Arc_Anomaly_Flag (Alg, Arc_Number, Unsigned_32 (Anomaly_Type.E'Pos (Arc.Anomaly_Flag)));
+      Set_Arc_Anomaly_Flag (Alg, Arc_Number,
+         (case Arc.Anomaly_Flag is
+             when Anomaly_Type.True_Anomaly => True_Anomaly,
+             when Anomaly_Type.Mean_Anomaly => Mean_Anomaly));
       Set_Arc_Radius_Periapsis_Coefficients (Alg, Arc_Number, Rp_C'Access);
       Set_Arc_Eccentricity_Coefficients (Alg, Arc_Number, Ec_C'Access);
       Set_Arc_Inclination_Coefficients (Alg, Arc_Number, Inc_C'Access);
@@ -95,7 +98,9 @@ package body Component.Oe_State_Ephem.Implementation is
          Number_Of_Coefficients => (Value => Get_Arc_Number_Of_Coefficients (Alg, Arc_Number)),
          Middle_Time => Get_Arc_Middle_Time (Alg, Arc_Number),
          Radius_Time => Get_Arc_Radius_Time (Alg, Arc_Number),
-         Anomaly_Flag => Anomaly_Type.E'Val (Natural (Get_Arc_Anomaly_Flag (Alg, Arc_Number))),
+         Anomaly_Flag => (case Get_Arc_Anomaly_Flag (Alg, Arc_Number) is
+                             when True_Anomaly => Anomaly_Type.True_Anomaly,
+                             when Mean_Anomaly => Anomaly_Type.Mean_Anomaly),
          Radius_Periapsis => Oe_Coefficients.C.Pack (Get_Arc_Radius_Periapsis_Coefficients (Alg, Arc_Number)),
          Eccentricity => Oe_Coefficients.C.Pack (Get_Arc_Eccentricity_Coefficients (Alg, Arc_Number)),
          Inclination => Oe_Coefficients.C.Pack (Get_Arc_Inclination_Coefficients (Alg, Arc_Number)),

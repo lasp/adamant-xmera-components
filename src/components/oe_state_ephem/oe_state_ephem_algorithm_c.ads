@@ -10,6 +10,13 @@ with Packed_F64x20.C;
 
 package Oe_State_Ephem_Algorithm_C is
 
+   --* Anomaly representation carried by an arc's anomaly coefficients.
+   --* Mirrors the C AnomalyType enumeration (TRUE_ANOMALY, MEAN_ANOMALY).
+   type Arc_Anomaly_Type is
+     (True_Anomaly,
+      Mean_Anomaly)
+     with Convention => C;
+
    --* Opaque handle for an OEStateEphemAlgorithm instance.
    type Oe_State_Ephem_Algorithm is limited private;
    type Oe_State_Ephem_Algorithm_Access is access all Oe_State_Ephem_Algorithm;
@@ -201,7 +208,7 @@ package Oe_State_Ephem_Algorithm_C is
    procedure Set_Arc_Anomaly_Flag
      (Self         : Oe_State_Ephem_Algorithm_Access;
       Arc_Number   : Unsigned_32;
-      Anomaly_Flag : Unsigned_32)
+      Anomaly_Flag : Arc_Anomaly_Type)
      with Import       => True,
           Convention   => C,
           External_Name => "OEStateEphemAlgorithm_setArcAnomalyFlag";
@@ -210,7 +217,7 @@ package Oe_State_Ephem_Algorithm_C is
    function Get_Arc_Anomaly_Flag
      (Self       : Oe_State_Ephem_Algorithm_Access;
       Arc_Number : Unsigned_32)
-     return Unsigned_32
+     return Arc_Anomaly_Type
      with Import       => True,
           Convention   => C,
           External_Name => "OEStateEphemAlgorithm_getArcAnomalyFlag";
