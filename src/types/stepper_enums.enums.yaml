@@ -4,9 +4,6 @@ enums:
   - name: Command_Type
     description: Type of step command issued to the stepper motor interface.
     literals:
-      - name: None
-        value: 0
-        description: No command. The motor remains in its current state.
       - name: Step_Cw
         value: 1
         description: Step in the clockwise direction (positive step delta).
