@@ -21,6 +21,10 @@ private
    overriding procedure Test_Use_Imu_Rates_Command (Self : in out Instance);
    -- Verify the reset connector clears the algorithm's fault persistence counter.
    overriding procedure Test_Reset (Self : in out Instance);
+   -- Verify fault flag transitions publish the latch-time data product and
+   -- latched/cleared events exactly once per transition, for both the miscompare
+   -- latch and the commanded override.
+   overriding procedure Test_Fault_Latch_Transition (Self : in out Instance);
    -- Verify a malformed command is rejected and reported via the
    -- Invalid_Command_Received event.
    overriding procedure Test_Invalid_Command (Self : in out Instance);

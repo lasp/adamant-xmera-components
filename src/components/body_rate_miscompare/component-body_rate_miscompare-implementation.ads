@@ -25,6 +25,9 @@ private
    -- The component class instance record:
    type Instance is new Body_Rate_Miscompare.Base_Instance with record
       Alg : Body_Rate_Miscompare_Algorithm_Access := null;
+      -- Whether the fault flag was set on the previous tick, used to detect
+      -- latch/clear transitions.
+      Prev_Fault_Latched : Boolean := False;
    end record;
 
    ---------------------------------------

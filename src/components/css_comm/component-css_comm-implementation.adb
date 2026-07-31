@@ -42,25 +42,21 @@ package body Component.Css_Comm.Implementation is
       use Data_Product_Enums.Data_Dependency_Status;
 
       -- We assume the CSS sensor data dependency is available at startup, so a
-      -- fetch returns Success or Stale. On Stale the last received value may be
-      -- arbitrarily old, so we zero the ADC input below rather than feed a stale
-      -- reading to the algorithm. Not_Available (no value was ever made available)
-      -- and Error (ID/length mismatch) indicate an assembly/configuration defect,
-      -- so we assert. (Error additionally trips Invalid_Data_Dependency below
-      -- before returning.)
+      -- fetch returns Success or Stale. A stale reading is processed just like a
+      -- fresh one and published with the reading's original timestamp, so the
+      -- downstream filter receives the old data and can judge it by its age.
+      -- Not_Available (no value was ever made available) and Error (ID/length
+      -- mismatch) indicate an assembly/configuration defect, so we assert.
+      -- (Error additionally trips Invalid_Data_Dependency below before
+      -- returning.)
       Css_Adc_Input : Css_Array_Adc_8.T;
+      Css_Input_Time : Sys_Time.T;
       Css_Input_Status : constant Data_Product_Enums.Data_Dependency_Status.E :=
-         Self.Get_Css_Sensor_Input (Value => Css_Adc_Input, Stale_Reference => Arg.Time);
+         Self.Get_Css_Sensor_Input (Value => Css_Adc_Input, Timestamp => Css_Input_Time, Stale_Reference => Arg.Time);
       pragma Assert (Css_Input_Status = Success or else Css_Input_Status = Stale);
    begin
       -- Update the parameters:
       Self.Update_Parameters;
-
-      -- If the data dependency is stale, zero the ADC input so the algorithm
-      -- processes zeros rather than an arbitrarily old reading.
-      if Css_Input_Status = Stale then
-         Css_Adc_Input := (Adc_Value => [others => 0]);
-      end if;
 
       -- Pass the raw ADC counts to the C algorithm, which normalizes each
       -- reading by the Max_Sensor_Value parameter, applies the Chebyshev
@@ -76,9 +72,11 @@ package body Component.Css_Comm.Implementation is
          end loop;
 
          -- Call the algorithm and publish the corrected cosine values as the
-         -- data product. Css_Sensor_Values.T is narrower than the C
-         -- algorithm's MAX_NUM_CSS_SENSORS bound; the trailing entries of the
-         -- C output correspond to no physical sensor and are not published.
+         -- data product, stamped with the timestamp of the fetched ADC reading
+         -- (not the tick time) so downstream consumers see the true data age.
+         -- Css_Sensor_Values.T is narrower than the C algorithm's
+         -- MAX_NUM_CSS_SENSORS bound; the trailing entries of the C output
+         -- correspond to no physical sensor and are not published.
          declare
             Css_Output : constant Css_Sensor_Values_C := Update (
                Self.Alg,
@@ -89,7 +87,7 @@ package body Component.Css_Comm.Implementation is
             for I in Out_Product.Data'Range loop
                Out_Product.Data (I) := Css_Output.Data (Css_Output.Data'First + Natural (I - Out_Product.Data'First));
             end loop;
-            Self.Data_Product_T_Send (Self.Data_Products.Css_Sensor_Output (Arg.Time, Out_Product));
+            Self.Data_Product_T_Send (Self.Data_Products.Css_Sensor_Output (Css_Input_Time, Out_Product));
          end;
       end;
    end Tick_T_Recv_Sync;

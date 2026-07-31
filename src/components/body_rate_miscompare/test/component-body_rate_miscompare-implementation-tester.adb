@@ -21,10 +21,13 @@ package body Component.Body_Rate_Miscompare.Implementation.Tester is
       Self.Sys_Time_T_Return_History.Init (Depth => 100);
       -- Event histories:
       Self.Use_Imu_Rates_Set_History.Init (Depth => 100);
+      Self.Body_Rate_Fault_Latched_History.Init (Depth => 100);
+      Self.Body_Rate_Fault_Cleared_History.Init (Depth => 100);
       Self.Invalid_Command_Received_History.Init (Depth => 100);
       -- Data product histories:
       Self.Body_Rate_History.Init (Depth => 100);
       Self.Rate_Fault_Status_History.Init (Depth => 100);
+      Self.Fault_Latch_Time_History.Init (Depth => 100);
    end Init_Base;
 
    procedure Final_Base (Self : in out Instance) is
@@ -38,10 +41,13 @@ package body Component.Body_Rate_Miscompare.Implementation.Tester is
       Self.Sys_Time_T_Return_History.Destroy;
       -- Event histories:
       Self.Use_Imu_Rates_Set_History.Destroy;
+      Self.Body_Rate_Fault_Latched_History.Destroy;
+      Self.Body_Rate_Fault_Cleared_History.Destroy;
       Self.Invalid_Command_Received_History.Destroy;
       -- Data product histories:
       Self.Body_Rate_History.Destroy;
       Self.Rate_Fault_Status_History.Destroy;
+      Self.Fault_Latch_Time_History.Destroy;
    end Final_Base;
 
    ---------------------------------------
@@ -59,6 +65,13 @@ package body Component.Body_Rate_Miscompare.Implementation.Tester is
       Self.Attach_Reset_Tick_T_Send (To_Component => Self.Component_Instance'Unchecked_Access, Hook => Self.Component_Instance.Reset_Tick_T_Recv_Sync_Access);
       Self.Attach_Command_T_Send (To_Component => Self.Component_Instance'Unchecked_Access, Hook => Self.Component_Instance.Command_T_Recv_Sync_Access);
    end Connect;
+
+   -- Reset the component's fault transition tracking state, for test
+   -- isolation on targets that reuse a statically allocated tester.
+   procedure Reset_Prev_Fault_Latched (Self : in out Instance) is
+   begin
+      Self.Component_Instance.Prev_Fault_Latched := False;
+   end Reset_Prev_Fault_Latched;
 
    -- Helper function for returning data dependencies:
    function Return_Data_Dependency (Self : in out Instance; Arg : in Data_Product_Fetch.T) return Data_Product_Return.T is
@@ -198,6 +211,24 @@ package body Component.Body_Rate_Miscompare.Implementation.Tester is
       Self.Use_Imu_Rates_Set_History.Push (Arg);
    end Use_Imu_Rates_Set;
 
+   -- The body rate fault flag set and IMU rates are now selected, either because the
+   -- rates disagreed for the persistence limit or because the Use_Imu_Rates override
+   -- was commanded.
+   overriding procedure Body_Rate_Fault_Latched (Self : in out Instance) is
+      Arg : constant Natural := 0;
+   begin
+      -- Push the argument onto the test history for looking at later:
+      Self.Body_Rate_Fault_Latched_History.Push (Arg);
+   end Body_Rate_Fault_Latched;
+
+   -- The body rate fault flag cleared and normal rate selection resumed.
+   overriding procedure Body_Rate_Fault_Cleared (Self : in out Instance) is
+      Arg : constant Natural := 0;
+   begin
+      -- Push the argument onto the test history for looking at later:
+      Self.Body_Rate_Fault_Cleared_History.Push (Arg);
+   end Body_Rate_Fault_Cleared;
+
    -- A command was received with invalid arguments.
    overriding procedure Invalid_Command_Received (Self : in out Instance; Arg : in Invalid_Command_Info.T) is
    begin
@@ -224,6 +255,13 @@ package body Component.Body_Rate_Miscompare.Implementation.Tester is
       -- Push the argument onto the test history for looking at later:
       Self.Rate_Fault_Status_History.Push (Arg);
    end Rate_Fault_Status;
+
+   -- Time at which the body rate miscompare fault most recently latched.
+   overriding procedure Fault_Latch_Time (Self : in out Instance; Arg : in Sys_Time.T) is
+   begin
+      -- Push the argument onto the test history for looking at later:
+      Self.Fault_Latch_Time_History.Push (Arg);
+   end Fault_Latch_Time;
 
    -----------------------------------------------
    -- Special primitives for aiding in the staging,

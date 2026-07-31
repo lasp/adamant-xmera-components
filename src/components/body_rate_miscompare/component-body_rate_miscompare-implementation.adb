@@ -2,7 +2,6 @@
 -- Body_Rate_Miscompare Component Implementation Body
 --------------------------------------------------------------------------------
 
-with Body_Rate_Miscompare_Output.C;
 with Packed_F32x3.C;
 with Packed_F32x3_Record.C;
 
@@ -61,22 +60,29 @@ package body Component.Body_Rate_Miscompare.Implementation is
          Imu_Omega : constant Packed_F32x3_Record.C.U_C := (Value => Packed_F32x3.C.Unpack (Imu_Body.Avg_Ang_Vel_Body));
          St_Omega : constant Packed_F32x3_Record.C.U_C := (Value => Packed_F32x3.C.Unpack (St_Body.Omega_Bn_B));
 
-         Output : constant Body_Rate_Miscompare_Output.C.U_C := Update (
+         Output : constant Update_Result := Update (
             Self.Alg,
             Imu_Omega => Imu_Omega,
             St_Omega  => St_Omega
          );
       begin
          -- Send out body rate data product (omega_BN_B only):
-         Self.Data_Product_T_Send (Self.Data_Products.Body_Rate (
-            Arg.Time,
-            Packed_F32x3.C.Pack (Output.Omega_Bn_B)
-         ));
+         Self.Data_Product_T_Send (Self.Data_Products.Body_Rate (Arg.Time, Output.Omega_Bn_B));
          -- Send out body rate fault data product:
-         Self.Data_Product_T_Send (Self.Data_Products.Rate_Fault_Status (
-            Arg.Time,
-            (Fault_Detected => Interfaces."/=" (Output.Body_Rate_Fault_Detected, 0))
-         ));
+         Self.Data_Product_T_Send (Self.Data_Products.Rate_Fault_Status (Arg.Time, (Fault_Detected => Output.Fault_Detected)));
+
+         -- Report transitions of the fault flag. The flag is set whenever IMU
+         -- rates are selected, whether by an organic miscompare latch or by the
+         -- commanded Use_Imu_Rates override.
+         if Output.Fault_Detected and then not Self.Prev_Fault_Latched then
+            -- Record when the fault latched so the ground can recover the
+            -- transition time from a single sample.
+            Self.Data_Product_T_Send (Self.Data_Products.Fault_Latch_Time (Arg.Time, Arg.Time));
+            Self.Event_T_Send_If_Connected (Self.Events.Body_Rate_Fault_Latched (Arg.Time));
+         elsif not Output.Fault_Detected and then Self.Prev_Fault_Latched then
+            Self.Event_T_Send_If_Connected (Self.Events.Body_Rate_Fault_Cleared (Arg.Time));
+         end if;
+         Self.Prev_Fault_Latched := Output.Fault_Detected;
       end;
    end Tick_T_Recv_Sync;
 

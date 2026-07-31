@@ -7,5 +7,7 @@ tests:
     description: Verify the Use_Imu_Rates command forces and releases IMU-rate output and reports the new setting.
   - name: Test_Reset
     description: Verify the reset connector clears the algorithm's fault persistence counter.
+  - name: Test_Fault_Latch_Transition
+    description: Verify fault flag transitions publish the latch-time data product and latched/cleared events exactly once per transition, for both the miscompare latch and the commanded override.
   - name: Test_Invalid_Command
     description: Verify a malformed command is rejected and reported via the Invalid_Command_Received event.

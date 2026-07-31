@@ -4,6 +4,10 @@ events:
   - name: Use_Imu_Rates_Set
     description: The use IMU rates override was set via command.
     param_type: Packed_Boolean.T
+  - name: Body_Rate_Fault_Latched
+    description: The body rate fault flag set and IMU rates are now selected, either because the rates disagreed for the persistence limit or because the Use_Imu_Rates override was commanded.
+  - name: Body_Rate_Fault_Cleared
+    description: The body rate fault flag cleared and normal rate selection resumed.
   - name: Invalid_Command_Received
     description: A command was received with invalid arguments.
     param_type: Invalid_Command_Info.T
