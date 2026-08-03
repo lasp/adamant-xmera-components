@@ -36,10 +36,10 @@ package body Component.Ephemerides_Recenter.Implementation is
       -- the populated body list immediately (it does NOT defer validation
       -- to Reset). The C++ algorithm orders bodies by insertion; the data
       -- dependency index matches that ordering.
-      Add_Body_Ephemeris_To_Recenter (Self.Alg, Body_0'Unchecked_Access);
-      Add_Body_Ephemeris_To_Recenter (Self.Alg, Body_1'Unchecked_Access);
-      Add_Body_Ephemeris_To_Recenter (Self.Alg, Body_2'Unchecked_Access);
-      Add_Body_Ephemeris_To_Recenter (Self.Alg, Body_3'Unchecked_Access);
+      Add_Body_Ephemeris_To_Recenter (Self.Alg, Body_0'Access);
+      Add_Body_Ephemeris_To_Recenter (Self.Alg, Body_1'Access);
+      Add_Body_Ephemeris_To_Recenter (Self.Alg, Body_2'Access);
+      Add_Body_Ephemeris_To_Recenter (Self.Alg, Body_3'Access);
 
       -- Configure central bodies. Set_Previous_Common_Zero_Base validates
       -- the given SPICE ID exists in the body list and throws otherwise.
@@ -152,7 +152,7 @@ package body Component.Ephemerides_Recenter.Implementation is
 
          -- Run the C algorithm.
          Output : constant Body_Ephemeris_Payload_X20_Record.C.U_C :=
-            Update_State (Self.Alg, Input'Unchecked_Access);
+            Update_State (Self.Alg, Input'Access);
 
          -- Helper to construct an output Cartesian_State.T from one body's
          -- algorithm output (r/v).

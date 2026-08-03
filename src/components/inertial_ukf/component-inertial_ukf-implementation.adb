@@ -83,11 +83,11 @@ package body Component.Inertial_Ukf.Implementation is
 
          -- Call the stateless UKF algorithm:
          Output : constant Inertial_UKF_Output := Update_State (
-            St_Att     => St_Att_C'Unchecked_Access,
-            Gyro       => Gyro_C'Unchecked_Access,
-            Rw_Speeds  => Rw_C'Unchecked_Access,
-            Rw_Config  => Rw_Config_C'Unchecked_Access,
-            Veh_Config => Veh_Config_C'Unchecked_Access
+            St_Att     => St_Att_C'Access,
+            Gyro       => Gyro_C'Access,
+            Rw_Speeds  => Rw_C'Access,
+            Rw_Config  => Rw_Config_C'Access,
+            Veh_Config => Veh_Config_C'Access
          );
       begin
          -- Publish navigation attitude estimate:
