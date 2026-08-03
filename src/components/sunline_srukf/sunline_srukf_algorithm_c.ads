@@ -32,7 +32,7 @@ package Sunline_Srukf_Algorithm_C is
    --* @param Input Pointer to the input structure (read-only).
    --* @return The computed output.
    function Update_State
-     (Input : Sunline_Srukf_Input.C.U_C_Access)
+     (Input : access constant Sunline_Srukf_Input.C.U_C)
      return Sunline_Srukf_Output.C.U_C
      with Import       => True,
           Convention   => C,

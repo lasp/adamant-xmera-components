@@ -67,7 +67,7 @@ package body Component.Average_Mimu_Data.Implementation is
    begin
       declare
          Output : constant Averaged_Imu_Data.C.U_C :=
-            Update (Self.Alg, Self.Input'Unchecked_Access);
+            Update (Self.Alg, Self.Input'Access);
       begin
          Self.Data_Product_T_Send (Self.Data_Products.Imu_Body_Data (
             Arg.Time,

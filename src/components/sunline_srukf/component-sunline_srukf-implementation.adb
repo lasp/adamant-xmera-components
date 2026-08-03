@@ -71,7 +71,7 @@ package body Component.Sunline_Srukf.Implementation is
 
       -- Call the C algorithm:
       Output_C : constant Sunline_Srukf_Output.C.U_C := Update_State (
-         Input => Input_C'Unchecked_Access
+         Input => Input_C'Access
       );
    begin
       -- Send out data product:

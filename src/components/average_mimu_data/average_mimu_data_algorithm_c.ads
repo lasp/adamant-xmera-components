@@ -62,7 +62,7 @@ package Average_Mimu_Data_Algorithm_C is
    --* @return Averaged body-frame accel and angular velocity.
    function Update
      (Self  : Average_Mimu_Data_Algorithm_Access;
-      Input : Mimu_Input_Packets.C.U_C_Access)
+      Input : access constant Mimu_Input_Packets.C.U_C)
      return Averaged_Imu_Data.C.U_C
      with Import       => True,
           Convention   => C,

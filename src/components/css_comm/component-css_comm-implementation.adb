@@ -80,7 +80,7 @@ package body Component.Css_Comm.Implementation is
          declare
             Css_Output : constant Css_Sensor_Values_C := Update (
                Self.Alg,
-               Input_Values => Css_Input_C'Unchecked_Access
+               Input_Values => Css_Input_C'Access
             );
             Out_Product : Css_Sensor_Values.T := (Data => [others => 0.0]);
          begin
@@ -111,7 +111,7 @@ package body Component.Css_Comm.Implementation is
    begin
       Set_Max_Sensor_Value (Self.Alg, Self.Max_Sensor_Value.Value);
       Set_Cheby_Count (Self.Alg, Self.Cheby_Count.Value);
-      Set_Cheby_Polynomials (Self.Alg, Cheby_Poly_C'Unchecked_Access);
+      Set_Cheby_Polynomials (Self.Alg, Cheby_Poly_C'Access);
    end Update_Parameters_Action;
 
    -----------------------------------------------

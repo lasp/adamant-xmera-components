@@ -33,7 +33,6 @@ package Css_Comm_Algorithm_C is
       Data : aliased Css_Values_Array_C;
    end record
       with Convention => C_Pass_By_Copy;
-   type Css_Sensor_Values_C_Access is access all Css_Sensor_Values_C;
 
    --* Opaque handle for a CssCommAlgorithm instance.
    type Css_Comm_Algorithm is limited private;
@@ -59,7 +58,7 @@ package Css_Comm_Algorithm_C is
    --* @return The corrected CSS sensor values.
    function Update
      (Self         : Css_Comm_Algorithm_Access;
-      Input_Values : Css_Sensor_Values_C_Access)
+      Input_Values : access constant Css_Sensor_Values_C)
      return Css_Sensor_Values_C
      with Import       => True,
           Convention   => C,
@@ -130,7 +129,7 @@ package Css_Comm_Algorithm_C is
    --* @param Polynomials Pointer to the polynomial coefficients.
    procedure Set_Cheby_Polynomials
      (Self        : Css_Comm_Algorithm_Access;
-      Polynomials : Cheby_Polynomials.C.U_C_Access)
+      Polynomials : access constant Cheby_Polynomials.C.U_C)
      with Import       => True,
           Convention   => C,
           External_Name => "CssCommAlgorithm_setChebyPolynomials";
