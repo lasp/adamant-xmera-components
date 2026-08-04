@@ -63,6 +63,8 @@ package body Component.Inertial_Ukf.Implementation is
                Sigma_Bn => Packed_F32x3.Unpack (St_Tracker_Att.Sigma_Bn),
                Omega_Bn_B    => Packed_F32x3.Unpack (St_Tracker_Att.Omega_Bn_B)
             ));
+            pragma Annotate (GNATSAS, False_Positive, "validity check",
+               "The fetched value is only read when the fetch status indicates success.");
 
          -- Hard-code gyro measurement to zero (gyro dependency removed):
          Gyro_C : aliased Gyro_Input.C.U_C := (
@@ -74,6 +76,8 @@ package body Component.Inertial_Ukf.Implementation is
             Wheel_Speeds => [Rw_Speeds_Dep.Rwa_1, Rw_Speeds_Dep.Rwa_2,
                               Rw_Speeds_Dep.Rwa_3, Rw_Speeds_Dep.Rwa_4]
          );
+         pragma Annotate (GNATSAS, False_Positive, "validity check",
+            "The fetched value is only read when the fetch status indicates success.");
 
          -- Convert parameters to C types:
          Rw_Config_C : aliased Rw_Array_Config_Input.C.U_C :=
