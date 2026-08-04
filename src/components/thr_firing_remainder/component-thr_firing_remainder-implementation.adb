@@ -78,7 +78,7 @@ package body Component.Thr_Firing_Remainder.Implementation is
          declare
             -- Call the C algorithm
             On_Time_36 : constant Thr_Firing_Remainder_On_Time_Cmd.C.U_C :=
-               Update (Self.Alg, Force_36'Unchecked_Access);
+               Update (Self.Alg, Force_36'Access);
 
             -- Extract first 8 elements for output
             On_Time_Result : Thr_On_Time_Cmd.T := (On_Time_Request => [others => 0.0]);

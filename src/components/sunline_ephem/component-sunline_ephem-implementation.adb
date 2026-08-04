@@ -67,10 +67,10 @@ package body Component.Sunline_Ephem.Implementation is
       -- into Sunline (avoids by-value struct passing across the C boundary).
       Update (
          Self.Alg,
-         Sun_Pos  => Sun_R'Unchecked_Access,
-         Sc_Pos   => Sc_R'Unchecked_Access,
-         Sigma_Bn => Sigma_C'Unchecked_Access,
-         Result   => Sunline'Unchecked_Access
+         Sun_Pos  => Sun_R'Access,
+         Sc_Pos   => Sc_R'Access,
+         Sigma_Bn => Sigma_C'Access,
+         Result   => Sunline'Access
       );
       -- Send out data product:
       Self.Data_Product_T_Send (Self.Data_Products.Sunline_Body_Frame (

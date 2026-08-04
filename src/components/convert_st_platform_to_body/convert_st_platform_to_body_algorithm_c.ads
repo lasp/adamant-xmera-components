@@ -36,8 +36,8 @@ package Convert_St_Platform_To_Body_Algorithm_C is
    --* @return Star tracker attitude output in body frame.
    function Update
      (Self                       : Convert_St_Platform_To_Body_Algorithm_Access;
-      Platform_Attitude          : St_Platform_Attitude.C.U_C_Access;
-      Platform_Angular_Velocity  : St_Platform_Angular_Velocity.C.U_C_Access)
+      Platform_Attitude          : access constant St_Platform_Attitude.C.U_C;
+      Platform_Angular_Velocity  : access constant St_Platform_Angular_Velocity.C.U_C)
      return St_Att.C.U_C
      with Import        => True,
           Convention    => C,

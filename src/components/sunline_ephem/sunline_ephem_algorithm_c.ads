@@ -35,10 +35,10 @@ package Sunline_Ephem_Algorithm_C is
    --* @param Result   Out: sunline direction (unit vector) in body frame (Vector3f_c).
    procedure Update
      (Self     : Sunline_Ephem_Algorithm_Access;
-      Sun_Pos  : Packed_F64x3_Record.C.U_C_Access;
-      Sc_Pos   : Packed_F64x3_Record.C.U_C_Access;
-      Sigma_Bn : Packed_F32x3_Record.C.U_C_Access;
-      Result   : Packed_F32x3_Record.C.U_C_Access)
+      Sun_Pos  : access constant Packed_F64x3_Record.C.U_C;
+      Sc_Pos   : access constant Packed_F64x3_Record.C.U_C;
+      Sigma_Bn : access constant Packed_F32x3_Record.C.U_C;
+      Result   : access Packed_F32x3_Record.C.U_C)
      with Import       => True,
           Convention   => C,
           External_Name => "SunlineEphemAlgorithm_update";

@@ -70,8 +70,8 @@ package body Component.Convert_St_Platform_To_Body.Implementation is
          Arg.Time,
          St_Att.Pack (St_Att.C.To_Ada (Update (
             Self.Alg,
-            Platform_Attitude          => Platform_Attitude_C'Unchecked_Access,
-            Platform_Angular_Velocity  => Platform_Angular_Velocity_C'Unchecked_Access
+            Platform_Attitude          => Platform_Attitude_C'Access,
+            Platform_Angular_Velocity  => Platform_Angular_Velocity_C'Access
          )))
       ));
    end Tick_T_Recv_Sync;
