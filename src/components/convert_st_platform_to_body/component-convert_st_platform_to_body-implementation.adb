@@ -17,14 +17,10 @@ package body Component.Convert_St_Platform_To_Body.Implementation is
    --------------------------------------------------
    -- Initializes the convert star tracker platform to body algorithm.
    overriding procedure Init (Self : in out Instance) is
+      -- Build the initial DCM configuration from the component's parameter default.
+      Dcm_Cb_C : constant Packed_F32x9_Record.C.U_C := (Value => Packed_F32x9.C.To_C (Self.Dcm_Cb));
    begin
-      -- Allocate C++ class on the heap
-      Self.Alg := Create;
-      -- Apply the Ada parameter defaults to the algorithm: the framework
-      -- invokes Update_Parameters_Action only after a ground parameter
-      -- update, and the C++ constructor defaults do not match the Ada
-      -- defaults.
-      Self.Update_Parameters_Action;
+      Self.Alg := Create (Dcm_Cb_C);
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -94,7 +90,9 @@ package body Component.Convert_St_Platform_To_Body.Implementation is
          Value => Packed_F32x9.C.To_C (Self.Dcm_Cb)
       );
    begin
-      Set_Dcm_Cb (Self.Alg, Dcm_Cb_C);
+      -- Rebuild the algorithm configuration from the updated DCM parameter. The value was
+      -- checked by Validate_Parameters at staging, so Set_Config will not reject it.
+      Set_Config (Self.Alg, Dcm_Cb_C);
    end Update_Parameters_Action;
 
    -----------------------------------------------
