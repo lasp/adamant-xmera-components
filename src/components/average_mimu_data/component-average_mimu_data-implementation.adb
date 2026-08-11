@@ -6,6 +6,7 @@ with Mimu_Input_Packet.C;
 with Mimu_Sample_X10.C;
 with Averaged_Imu_Data.C;
 with Packed_F32x9.C;
+with Packed_F32x9_Record.C;
 
 package body Component.Average_Mimu_Data.Implementation is
 
@@ -14,14 +15,16 @@ package body Component.Average_Mimu_Data.Implementation is
    --------------------------------------------------
    -- Initializes the AverageMimuData algorithm.
    overriding procedure Init (Self : in out Instance) is
+      -- Build the initial configuration from the component's parameter defaults.
+      Gyro_Window  : constant Long_Float := Long_Float (Self.Gyro_Time_Delta.Value);
+      Accel_Window : constant Long_Float := Long_Float (Self.Accel_Time_Delta.Value);
+      Dcm_Bc_C     : constant Packed_F32x9_Record.C.U_C :=
+         (Value => Packed_F32x9.C.To_C (Self.Dcm_Pltf_To_Bdy));
    begin
-      -- Allocate C++ class on the heap
-      Self.Alg := Create;
-      -- Apply the Ada parameter defaults to the algorithm: the framework
-      -- invokes Update_Parameters_Action only after a ground parameter
-      -- update, and the C++ constructor defaults do not match the Ada
-      -- defaults.
-      Self.Update_Parameters_Action;
+      Self.Alg := Create (
+         Gyro_Averaging_Window  => Gyro_Window,
+         Accel_Averaging_Window => Accel_Window,
+         Dcm_Bc                 => Dcm_Bc_C);
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -98,11 +101,13 @@ package body Component.Average_Mimu_Data.Implementation is
    -- Apply parameter values to the C++ algorithm when parameters change.
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
    begin
-      -- Set the gyro and accel averaging windows (validated to [0.0, 2.0] s):
-      Set_Gyro_Averaging_Window (Self.Alg, Long_Float (Self.Gyro_Time_Delta.Value));
-      Set_Accel_Averaging_Window (Self.Alg, Long_Float (Self.Accel_Time_Delta.Value));
-      -- Set the platform-to-body DCM:
-      Set_Dcm_Pltf_To_Bdy (Self.Alg, (Value => Packed_F32x9.C.To_C (Self.Dcm_Pltf_To_Bdy)));
+      -- Rebuild the algorithm configuration from the updated parameters. The values were
+      -- checked by Validate_Parameters at staging, so Set_Config will not reject them.
+      Set_Config (
+         Self.Alg,
+         Gyro_Averaging_Window  => Long_Float (Self.Gyro_Time_Delta.Value),
+         Accel_Averaging_Window => Long_Float (Self.Accel_Time_Delta.Value),
+         Dcm_Bc                 => (Value => Packed_F32x9.C.To_C (Self.Dcm_Pltf_To_Bdy)));
    end Update_Parameters_Action;
 
 end Component.Average_Mimu_Data.Implementation;
