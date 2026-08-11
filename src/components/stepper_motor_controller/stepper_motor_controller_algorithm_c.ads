@@ -39,6 +39,25 @@ package Stepper_Motor_Controller_Algorithm_C is
    type Stepper_Motor_Controller_Algorithm is limited private;
    type Stepper_Motor_Controller_Algorithm_Access is access all Stepper_Motor_Controller_Algorithm;
 
+   --* @brief Report whether a configuration would be accepted by Create/Set_Config.
+   --* @param Step_Angle       [rad/step] Motor step angle, must be in [2*pi/100000, 2*pi].
+   --* @param Min_Angle        [rad] Lower bound of the motor travel range, must be in [-2*pi, 2*pi].
+   --* @param Max_Angle        [rad] Upper bound, must be in [-2*pi, 2*pi] and strictly greater than Min_Angle.
+   --* @param Settle_Count_Max [ticks] Settling duration after stepping ends (unconstrained).
+   --* @param Min_Step_Command [steps] Minimum step delta magnitude that warrants a command, must be > 0.
+   --* @return True if the configuration is valid. Never throws, so it can guard the
+   --* throwing Create/Set_Config from an invalid configuration.
+   function Validate_Config
+     (Step_Angle       : Short_Float;
+      Min_Angle        : Short_Float;
+      Max_Angle        : Short_Float;
+      Settle_Count_Max : Unsigned_32;
+      Min_Step_Command : Unsigned_32)
+     return Boolean
+     with Import       => True,
+          Convention   => C,
+          External_Name => "StepperMotorControllerAlgorithm_validateConfig";
+
    --* @brief Construct a new StepperMotorControllerAlgorithm from a configuration.
    --* Validate the values with Validate_Config before calling; throws on invalid input.
    --* @param Step_Angle       [rad/step] Motor step angle, must be in [2*pi/100000, 2*pi].

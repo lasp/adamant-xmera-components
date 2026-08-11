@@ -26,6 +26,12 @@ package body Component.Stepper_Motor_Controller.Implementation is
    -- Initializes the stepper motor controller algorithm.
    overriding procedure Init (Self : in out Instance) is
    begin
+      pragma Assert (Validate_Config (
+         Step_Angle       => Self.Step_Angle.Value,
+         Min_Angle        => Self.Motor_Min_Angle.Value,
+         Max_Angle        => Self.Motor_Max_Angle.Value,
+         Settle_Count_Max => Self.Settle_Count_Max.Value,
+         Min_Step_Command => Self.Min_Step_Command.Value));
       Self.Alg := Create (
          Step_Angle       => Self.Step_Angle.Value,
          Min_Angle        => Self.Motor_Min_Angle.Value,
@@ -149,6 +155,33 @@ package body Component.Stepper_Motor_Controller.Implementation is
    begin
       Apply_Config (Self);
    end Update_Parameters_Action;
+
+   -- Validate a staged parameter set before it is applied by asking the algorithm's
+   -- own non-throwing Validate_Config predicate, so the config rules live solely in
+   -- the algorithm. Rejecting an invalid update here at staging keeps it from reaching
+   -- the throwing Create/Set_Config across the FFI boundary.
+   overriding function Validate_Parameters (
+      Self : in out Instance;
+      Step_Angle : in Packed_F32.U;
+      Motor_Min_Angle : in Packed_F32.U;
+      Motor_Max_Angle : in Packed_F32.U;
+      Settle_Count_Max : in Packed_U32.U;
+      Min_Step_Command : in Packed_U32.U
+   ) return Parameter_Validation_Status.E is
+      pragma Unreferenced (Self);
+   begin
+      if Validate_Config (
+         Step_Angle       => Step_Angle.Value,
+         Min_Angle        => Motor_Min_Angle.Value,
+         Max_Angle        => Motor_Max_Angle.Value,
+         Settle_Count_Max => Settle_Count_Max.Value,
+         Min_Step_Command => Min_Step_Command.Value)
+      then
+         return Parameter_Validation_Status.Valid;
+      else
+         return Parameter_Validation_Status.Invalid;
+      end if;
+   end Validate_Parameters;
 
    -----------------------------------------------
    -- Data dependency handlers:
