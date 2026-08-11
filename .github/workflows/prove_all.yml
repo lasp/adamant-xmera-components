@@ -1,0 +1,58 @@
+name: Prove All SPARK Packages
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+jobs:
+  compile_job:
+    name: prove_all
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/lasp/adamant:0.2
+      options: --user root
+    steps:
+      - run: echo "Starting job triggered by a ${{ github.event_name }} event on a ${{ runner.os }} server hosted by GitHub."
+      - run: echo "Checking out ${{ github.repository }} on branch ${{ github.ref }}."
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          set-safe-directory: true
+          path: adamant-xmera-components
+      - name: Check out fp32-fsw-xmera code
+        uses: actions/checkout@v4
+        with:
+          set-safe-directory: true
+          repository: lasp/fp32-fsw-xmera
+          path: fp32-fsw-xmera
+          # The C shims move in lockstep with the Ada bindings, so CI must
+          # build the fp32 revision the bindings were written against rather
+          # than the develop tip.
+          ref: 26d19cbbc1f00bb2d3cdbfc74e7ce1f1c37ab9d2
+      - name: Clone adamant repository
+        uses: actions/checkout@v4
+        with:
+          set-safe-directory: true
+          repository: lasp/adamant
+          path: adamant
+      - name: Clone Eigen with freestanding support
+        uses: actions/checkout@v4
+        with:
+          set-safe-directory: true
+          repository: lasp/eigen
+          path: eigen
+          ref: feature/freestanding
+      - name: Prove all SPARK packages
+        run: bash adamant-xmera-components/env/github_run.sh "redo adamant-xmera-components/prove_all"
+      - name: Archive prove logs
+        if: always() # Make sure this runs even if `redo prove_all` fails
+        uses: actions/upload-artifact@v4
+        with:
+          name: prove_logs
+          path: ${{ github.workspace }}/adamant-xmera-components/build
+          if-no-files-found: ignore
+      - run: echo "Finished with status - ${{ job.status }}."
+        if: always()
