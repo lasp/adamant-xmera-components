@@ -3,7 +3,8 @@
 --------------------------------------------------------------------------------
 
 -- Includes:
-with Thruster_Array_Config.C;
+with Packed_F32x36;
+with Packed_F32x36.C;
 with Tick;
 with Thr_Firing_Remainder_Algorithm_C; use Thr_Firing_Remainder_Algorithm_C;
 
@@ -27,14 +28,23 @@ package Component.Thr_Firing_Remainder.Implementation is
    -- configuration; the caller integrating this component into an assembly
    -- owns invoking it.
    not overriding procedure Configure_Thrusters (
-      Self   : in out Instance;
-      Config : access constant Thruster_Array_Config.C.U_C);
+      Self          : in out Instance;
+      Num_Thrusters : in Unsigned_32;
+      Max_Thrust    : in Packed_F32x36.U);
 
 private
 
    -- The component class instance record:
    type Instance is new Thr_Firing_Remainder.Base_Instance with record
       Alg : Thr_Firing_Remainder_Algorithm_Access := null;
+      -- The thruster array half of the algorithm configuration, held here as the
+      -- Ada-side source of truth because the flattened shim exposes no getters.
+      -- The defaults keep the initial configuration valid -- Num_Thrusters => 0
+      -- skips the per-thruster maximum-thrust validation -- but the algorithm
+      -- cannot produce usable on-times until Configure_Thrusters supplies the
+      -- real maximum thrusts.
+      Num_Thrusters : Unsigned_32 := 0;
+      Max_Thrust : aliased Packed_F32x36.C.U_C := [others => 0.0];
    end record;
 
    ---------------------------------------

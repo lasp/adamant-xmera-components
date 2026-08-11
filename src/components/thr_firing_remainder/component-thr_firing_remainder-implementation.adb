@@ -10,8 +10,40 @@ with Thr_Firing_Remainder_On_Time_Cmd.C;
 
 package body Component.Thr_Firing_Remainder.Implementation is
 
-   -- Number of thrusters in the system (8-element data products vs 36-element C API)
-   Num_Thrusters : constant := 8;
+   -- Number of thrusters carried by the 8-element data products, which the
+   -- component zero-pads into (and truncates back out of) the 36-element C API.
+   Num_Dp_Thrusters : constant := 8;
+
+   ------------------------------------------------------------------------
+   -- Local Helpers
+   ------------------------------------------------------------------------
+
+   -- Convert the parameter's pulsing-regime enumeration into the binding's C
+   -- enumeration. Both carry the C ThrFiringRemainderPulsingRegime values in
+   -- their representation clauses, so going through 'Enum_Rep and 'Enum_Val
+   -- honors those values rather than relying on literal position, and makes
+   -- 'Enum_Val the single validity gate: an undefined value raises
+   -- Constraint_Error instead of silently mapping onto a valid regime.
+   function To_C_Pulsing_Regime (Value : in Thr_Firing_Remainder_Enums.Pulsing_Regime.E)
+      return Thr_Firing_Remainder_Pulsing_Regime
+   is (Thr_Firing_Remainder_Pulsing_Regime'Enum_Val (
+         Thr_Firing_Remainder_Enums.Pulsing_Regime.E'Enum_Rep (Value)));
+
+   -- Push the component's current configuration -- the applied parameters plus
+   -- the thruster array held as instance state -- into the C++ algorithm. Every
+   -- reconfiguration path goes through here so the configuration is assembled in
+   -- exactly one place.
+   procedure Apply_Config (Self : in out Instance) is
+   begin
+      Set_Config (
+         Self.Alg,
+         Num_Thrusters             => Self.Num_Thrusters,
+         Max_Thrust                => Self.Max_Thrust'Unchecked_Access,
+         Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time.Value,
+         Control_Period            => Self.Control_Period.Value,
+         On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor.Value,
+         Pulsing_Regime            => To_C_Pulsing_Regime (Self.Thrust_Pulsing_Regime.Value));
+   end Apply_Config;
 
    --------------------------------------------------
    -- Subprogram for implementation init method:
@@ -19,13 +51,13 @@ package body Component.Thr_Firing_Remainder.Implementation is
    -- Initializes the thruster firing remainder algorithm.
    overriding procedure Init (Self : in out Instance) is
    begin
-      -- Allocate C++ class on the heap
-      Self.Alg := Create;
-      -- Apply the Ada parameter defaults to the algorithm: the framework
-      -- invokes Update_Parameters_Action only after a ground parameter
-      -- update, and the C++ constructor defaults do not match the Ada
-      -- defaults.
-      Self.Update_Parameters_Action;
+      Self.Alg := Create (
+         Num_Thrusters             => Self.Num_Thrusters,
+         Max_Thrust                => Self.Max_Thrust'Unchecked_Access,
+         Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time.Value,
+         Control_Period            => Self.Control_Period.Value,
+         On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor.Value,
+         Pulsing_Regime            => To_C_Pulsing_Regime (Self.Thrust_Pulsing_Regime.Value));
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -35,11 +67,19 @@ package body Component.Thr_Firing_Remainder.Implementation is
    end Destroy;
 
    not overriding procedure Configure_Thrusters (
-      Self   : in out Instance;
-      Config : access constant Thruster_Array_Config.C.U_C)
+      Self          : in out Instance;
+      Num_Thrusters : in Unsigned_32;
+      Max_Thrust    : in Packed_F32x36.U)
    is
    begin
-      Set_Thrusters (Self.Alg, Config);
+      -- Record the thruster array as the Ada-side source of truth, then swap the
+      -- full configuration into the algorithm.
+      Self.Num_Thrusters := Num_Thrusters;
+      Self.Max_Thrust := Packed_F32x36.C.To_C (Max_Thrust);
+      -- The assembly owns this call, so an out-of-range thruster count or a
+      -- non-finite maximum thrust is a wiring error rather than ground input:
+      -- assert instead of reporting, and keep it out of the throwing Set_Config.
+      Apply_Config (Self);
    end Configure_Thrusters;
 
    ---------------------------------------
@@ -71,7 +111,7 @@ package body Component.Thr_Firing_Remainder.Implementation is
          -- Build 36-element C input (zeroed, then copy 8 thruster values)
          Force_36 : aliased Thr_Firing_Remainder_Force_Cmd.C.U_C := (Thr_Force => [others => 0.0]);
       begin
-         for I in 0 .. Num_Thrusters - 1 loop
+         for I in 0 .. Num_Dp_Thrusters - 1 loop
             Force_36.Thr_Force (I) := Force_Dep_U.Thr_Force (I);
          end loop;
 
@@ -83,7 +123,7 @@ package body Component.Thr_Firing_Remainder.Implementation is
             -- Extract first 8 elements for output
             On_Time_Result : Thr_On_Time_Cmd.T := (On_Time_Request => [others => 0.0]);
          begin
-            for I in 0 .. Num_Thrusters - 1 loop
+            for I in 0 .. Num_Dp_Thrusters - 1 loop
                On_Time_Result.On_Time_Request (I) := On_Time_36.On_Time_Request (I);
             end loop;
 
@@ -107,17 +147,10 @@ package body Component.Thr_Firing_Remainder.Implementation is
    -- This procedure is called when the parameters of a component have been updated.
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
    begin
-      -- Set algorithm configuration from parameters.
-      Set_Thr_Min_Fire_Time (Self.Alg, Self.Thr_Min_Fire_Time.Value);
-      Set_Control_Period (Self.Alg, Self.Control_Period.Value);
-      Set_On_Time_Saturation_Factor (Self.Alg, Self.On_Time_Saturation_Factor.Value);
-      -- Map the parameter's enumeration to the binding's C mirror enumeration
-      -- with an exhaustive case, keeping the mapping robust to literal
-      -- reordering in either type.
-      Set_Thrust_Pulsing_Regime (Self.Alg,
-         (case Self.Thrust_Pulsing_Regime.Value is
-             when Thr_Firing_Remainder_Enums.Pulsing_Regime.On_Pulsing => On_Pulsing,
-             when Thr_Firing_Remainder_Enums.Pulsing_Regime.Off_Pulsing => Off_Pulsing));
+      -- Rebuild the algorithm configuration from the updated parameters. The values
+      -- were checked by Validate_Parameters at staging, so Set_Config will not
+      -- reject them. The accumulated pulse remainder state is preserved.
+      Apply_Config (Self);
    end Update_Parameters_Action;
 
    -----------------------------------------------
