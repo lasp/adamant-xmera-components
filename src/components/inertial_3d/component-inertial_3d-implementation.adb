@@ -24,6 +24,7 @@ package body Component.Inertial_3d.Implementation is
    -- Initializes the inertial 3D algorithm instance.
    overriding procedure Init (Self : in out Instance) is
    begin
+      pragma Assert (Validate_Config (Sigma_Rn => To_Config (Self.Sigma_Rn)));
       Self.Alg := Create (Sigma_Rn => To_Config (Self.Sigma_Rn));
    end Init;
 
@@ -78,5 +79,30 @@ package body Component.Inertial_3d.Implementation is
       -- checked by Validate_Parameters at staging, so Set_Config will not reject it.
       Set_Config (Self.Alg, Sigma_Rn => To_Config (Self.Sigma_Rn));
    end Update_Parameters_Action;
+
+   -- Validate a staged parameter set before it is applied by asking the algorithm's own
+   -- non-throwing Validate_Config predicate, so the config rules live solely in the
+   -- algorithm. Rejecting an invalid update here at staging keeps it from reaching the
+   -- throwing Create/Set_Config across the FFI boundary.
+   overriding function Validate_Parameters (
+      Self : in out Instance;
+      Sigma_Rn : in Packed_F32x3.U
+   ) return Parameter_Validation_Status.E is
+      pragma Unreferenced (Self);
+   begin
+      if Validate_Config (Sigma_Rn => To_Config (Sigma_Rn)) then
+         return Parameter_Validation_Status.Valid;
+      else
+         return Parameter_Validation_Status.Invalid;
+      end if;
+   exception
+      -- Packed_F32x3.C.To_C range-checks each element, so a non-finite MRP raises
+      -- here rather than reaching Validate_Config. Either way the value is invalid
+      -- configuration: reject it instead of letting the exception propagate out of
+      -- the parameter staging path. This is also what keeps Update_Parameters_Action,
+      -- which marshals through the same helper, from ever seeing a non-finite value.
+      when Constraint_Error =>
+         return Parameter_Validation_Status.Invalid;
+   end Validate_Parameters;
 
 end Component.Inertial_3d.Implementation;

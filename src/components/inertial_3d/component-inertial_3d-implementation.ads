@@ -81,6 +81,6 @@ private
    overriding function Validate_Parameters (
       Self : in out Instance;
       Sigma_Rn : in Packed_F32x3.U
-   ) return Parameter_Validation_Status.E is (Parameter_Validation_Status.Valid);
+   ) return Parameter_Validation_Status.E;
 
 end Component.Inertial_3d.Implementation;

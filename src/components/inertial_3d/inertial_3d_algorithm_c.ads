@@ -18,6 +18,17 @@ package Inertial_3d_Algorithm_C is
    --* Access type to manipulate Inertial3DAlgorithm instances.
    type Inertial_3d_Algorithm_Access is access all Inertial_3d_Algorithm;
 
+   --* @brief Report whether a configuration would be accepted by Create/Set_Config.
+   --* @param Sigma_Rn POD three-vector holding the MRP from inertial frame N to
+   --* reference frame R; must be finite.
+   --* @return True if the configuration is valid. Never throws, so it can guard the
+   --* throwing Create/Set_Config from an invalid configuration.
+   function Validate_Config (Sigma_Rn : Packed_F32x3_Record.C.U_C)
+     return Boolean
+     with Import => True,
+          Convention => C,
+          External_Name => "Inertial3DAlgorithm_validateConfig";
+
    --* @brief Construct a new Inertial3DAlgorithm from a configuration.
    --* Validate the value with Validate_Config before calling; throws on invalid input.
    --* @param Sigma_Rn POD three-vector representing sigma_RN; must be finite.
