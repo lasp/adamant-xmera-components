@@ -7,7 +7,6 @@ with Interfaces; use Interfaces;
 with Body_Ephemeris_Payload.C;
 with Body_Ephemeris_Payload_X20.C;
 with Body_Ephemeris_Payload_X20_Record.C;
-with Body_To_Recenter.C;
 with Int32_X20.C;
 with Int32_X20_Record.C;
 
@@ -37,27 +36,51 @@ package Ephemerides_Recenter_Algorithm_C is
    type Ephemerides_Recenter_Algorithm is limited private;
    type Ephemerides_Recenter_Algorithm_Access is access all Ephemerides_Recenter_Algorithm;
 
-   --* @brief Construct a new EphemeridesRecenterAlgorithm.
+   --* @brief Construct a new EphemeridesRecenterAlgorithm from a configuration.
+   --* Validate the values with Validate_Config before calling; throws on invalid topology.
+   --* @param New_Central_Body_Id       SPICE ID of the new central body.
+   --* @param Previous_Central_Body_Id  SPICE ID of the previous common central body.
+   --* @param Body_Ids                  SPICE IDs of every configured body (first Body_Count used).
+   --* @param Original_Central_Body_Ids Original central-body SPICE ID for each configured body.
+   --* @param Body_Count                Number of configured bodies (<= MAX_NUM_CHANGE_BODIES).
+   --* @return The new algorithm instance, which must be released with Destroy.
    function Create
+     (New_Central_Body_Id       : Interfaces.Integer_32;
+      Previous_Central_Body_Id  : Interfaces.Integer_32;
+      Body_Ids                  : access constant Int32_X20_Record.C.U_C;
+      Original_Central_Body_Ids : access constant Int32_X20_Record.C.U_C;
+      Body_Count                : Unsigned_32)
      return Ephemerides_Recenter_Algorithm_Access
      with Import       => True,
           Convention   => C,
           External_Name => "EphemeridesRecenterAlgorithm_create";
 
    --* @brief Destroy an EphemeridesRecenterAlgorithm.
+   --* @param Self The algorithm instance to destroy.
    procedure Destroy
      (Self : Ephemerides_Recenter_Algorithm_Access)
      with Import       => True,
           Convention   => C,
           External_Name => "EphemeridesRecenterAlgorithm_destroy";
 
-   --* @brief Validate the configured topology and pre-compute moon hierarchy.
-   --* @param Self The algorithm instance.
-   procedure Reset
-     (Self : Ephemerides_Recenter_Algorithm_Access)
+   --* @brief Apply a new configuration and recompute the moon hierarchy
+   --* (validated; throws on invalid topology).
+   --* @param Self                      The algorithm instance.
+   --* @param New_Central_Body_Id       SPICE ID of the new central body.
+   --* @param Previous_Central_Body_Id  SPICE ID of the previous common central body.
+   --* @param Body_Ids                  SPICE IDs of every configured body (first Body_Count used).
+   --* @param Original_Central_Body_Ids Original central-body SPICE ID for each configured body.
+   --* @param Body_Count                Number of configured bodies (<= MAX_NUM_CHANGE_BODIES).
+   procedure Set_Config
+     (Self                      : Ephemerides_Recenter_Algorithm_Access;
+      New_Central_Body_Id       : Interfaces.Integer_32;
+      Previous_Central_Body_Id  : Interfaces.Integer_32;
+      Body_Ids                  : access constant Int32_X20_Record.C.U_C;
+      Original_Central_Body_Ids : access constant Int32_X20_Record.C.U_C;
+      Body_Count                : Unsigned_32)
      with Import       => True,
           Convention   => C,
-          External_Name => "EphemeridesRecenterAlgorithm_reset";
+          External_Name => "EphemeridesRecenterAlgorithm_setConfig";
 
    --* @brief Run the recentering update.
    --* @param Self       The algorithm instance.
@@ -70,96 +93,6 @@ package Ephemerides_Recenter_Algorithm_C is
      with Import       => True,
           Convention   => C,
           External_Name => "EphemeridesRecenterAlgorithm_updateState";
-
-   --* @brief Set the SPICE ID of the new central body.
-   --* @param Self          The algorithm instance.
-   --* @param Body_Spice_Id SPICE ID of the new central body.
-   procedure Set_New_Zero_Base_Id
-     (Self          : Ephemerides_Recenter_Algorithm_Access;
-      Body_Spice_Id : Interfaces.Integer_32)
-     with Import       => True,
-          Convention   => C,
-          External_Name => "EphemeridesRecenterAlgorithm_setNewZeroBaseId";
-
-   --* @brief Get the SPICE ID of the new central body.
-   --* @param Self The algorithm instance.
-   --* @return SPICE ID of the new central body.
-   function Get_New_Zero_Base
-     (Self : Ephemerides_Recenter_Algorithm_Access)
-     return Interfaces.Integer_32
-     with Import       => True,
-          Convention   => C,
-          External_Name => "EphemeridesRecenterAlgorithm_getNewZeroBase";
-
-   --* @brief Set the SPICE ID of the previous common central body.
-   --* @param Self          The algorithm instance.
-   --* @param Body_Spice_Id SPICE ID of the previous common central body.
-   procedure Set_Previous_Common_Zero_Base
-     (Self          : Ephemerides_Recenter_Algorithm_Access;
-      Body_Spice_Id : Interfaces.Integer_32)
-     with Import       => True,
-          Convention   => C,
-          External_Name => "EphemeridesRecenterAlgorithm_setPreviousCommonZeroBase";
-
-   --* @brief Get the SPICE ID of the previous common central body.
-   --* @param Self The algorithm instance.
-   --* @return SPICE ID of the previous common central body.
-   function Get_Previous_Common_Zero_Base
-     (Self : Ephemerides_Recenter_Algorithm_Access)
-     return Interfaces.Integer_32
-     with Import       => True,
-          Convention   => C,
-          External_Name => "EphemeridesRecenterAlgorithm_getPreviousCommonZeroBase";
-
-   --* @brief Get the number of bodies that have been added.
-   --* @param Self The algorithm instance.
-   --* @return The number of configured bodies.
-   function Get_Number_Of_Bodies
-     (Self : Ephemerides_Recenter_Algorithm_Access)
-     return Unsigned_32
-     with Import       => True,
-          Convention   => C,
-          External_Name => "EphemeridesRecenterAlgorithm_getNumberOfBodies";
-
-   --* @brief Get the SPICE IDs of every configured body.
-   --* @param Self The algorithm instance.
-   --* @return SPICE IDs in insertion order, with trailing entries zero.
-   function Get_All_Ids
-     (Self : Ephemerides_Recenter_Algorithm_Access)
-     return Int32_X20_Record.C.U_C
-     with Import       => True,
-          Convention   => C,
-          External_Name => "EphemeridesRecenterAlgorithm_getAllIds";
-
-   --* @brief Add a body to the recenter list.
-   --* @param Self The algorithm instance.
-   --* @param Body_Item Pointer to a single Body_To_Recenter describing the body.
-   procedure Add_Body_Ephemeris_To_Recenter
-     (Self      : Ephemerides_Recenter_Algorithm_Access;
-      Body_Item : access constant Body_To_Recenter.C.U_C)
-     with Import       => True,
-          Convention   => C,
-          External_Name => "EphemeridesRecenterAlgorithm_addBodyEphemerisToRecenter";
-
-   --* @brief Remove every body from the recenter list.
-   --* @param Self The algorithm instance.
-   procedure Clear_All_Bodies
-     (Self : Ephemerides_Recenter_Algorithm_Access)
-     with Import       => True,
-          Convention   => C,
-          External_Name => "EphemeridesRecenterAlgorithm_clearAllBodies";
-
-   --* @brief Look up the index of a body by its SPICE ID.
-   --* @param Self          The algorithm instance.
-   --* @param Body_Spice_Id SPICE ID to look up.
-   --* @return The body's index in the configured list.
-   function Find_Body_Index
-     (Self          : Ephemerides_Recenter_Algorithm_Access;
-      Body_Spice_Id : Interfaces.Integer_32)
-     return Unsigned_32
-     with Import       => True,
-          Convention   => C,
-          External_Name => "EphemeridesRecenterAlgorithm_findBodyIndex";
 
 private
 

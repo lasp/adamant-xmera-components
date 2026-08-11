@@ -4,10 +4,11 @@
 
 with Body_Ephemeris_Payload.C;
 with Body_Ephemeris_Payload_X20_Record.C;
-with Body_To_Recenter;
-with Body_To_Recenter.C;
 with Cartesian_State;
 with Cartesian_State.C;
+with Int32_X20;
+with Int32_X20_Record;
+with Int32_X20_Record.C;
 
 package body Component.Ephemerides_Recenter.Implementation is
 
@@ -15,39 +16,31 @@ package body Component.Ephemerides_Recenter.Implementation is
    -- Subprogram for implementation init method:
    --------------------------------------------------
    overriding procedure Init (Self : in out Instance; New_Zero_Base_Id : in Interfaces.Integer_32; Previous_Common_Zero_Base_Id : in Interfaces.Integer_32; Body_0_Spice_Id : in Interfaces.Integer_32; Body_0_Original_Central_Body_Id : in Interfaces.Integer_32; Body_1_Spice_Id : in Interfaces.Integer_32; Body_1_Original_Central_Body_Id : in Interfaces.Integer_32; Body_2_Spice_Id : in Interfaces.Integer_32; Body_2_Original_Central_Body_Id : in Interfaces.Integer_32; Body_3_Spice_Id : in Interfaces.Integer_32; Body_3_Original_Central_Body_Id : in Interfaces.Integer_32) is
-      Body_0 : aliased Body_To_Recenter.C.U_C := (
-         Body_Spice_Id => Body_0_Spice_Id,
-         Original_Central_Body_Id => Body_0_Original_Central_Body_Id);
-      Body_1 : aliased Body_To_Recenter.C.U_C := (
-         Body_Spice_Id => Body_1_Spice_Id,
-         Original_Central_Body_Id => Body_1_Original_Central_Body_Id);
-      Body_2 : aliased Body_To_Recenter.C.U_C := (
-         Body_Spice_Id => Body_2_Spice_Id,
-         Original_Central_Body_Id => Body_2_Original_Central_Body_Id);
-      Body_3 : aliased Body_To_Recenter.C.U_C := (
-         Body_Spice_Id => Body_3_Spice_Id,
-         Original_Central_Body_Id => Body_3_Original_Central_Body_Id);
+      -- Place the four configured bodies into the first slots of the C-boundary ID
+      -- arrays (the algorithm indexes by position; trailing slots are unused). The
+      -- component always configures exactly four bodies.
+      Body_Ids : aliased Int32_X20_Record.C.U_C := Int32_X20_Record.C.Unpack (
+         (Id => [0 => Body_0_Spice_Id,
+                 1 => Body_1_Spice_Id,
+                 2 => Body_2_Spice_Id,
+                 3 => Body_3_Spice_Id,
+                 others => 0]));
+      Original_Central_Body_Ids : aliased Int32_X20_Record.C.U_C := Int32_X20_Record.C.Unpack (
+         (Id => [0 => Body_0_Original_Central_Body_Id,
+                 1 => Body_1_Original_Central_Body_Id,
+                 2 => Body_2_Original_Central_Body_Id,
+                 3 => Body_3_Original_Central_Body_Id,
+                 others => 0]));
    begin
-      -- Allocate C++ class on the heap
-      Self.Alg := Create;
-
-      -- Add the four bodies in order. Bodies must be added before
-      -- Set_Previous_Common_Zero_Base, which validates its argument against
-      -- the populated body list immediately (it does NOT defer validation
-      -- to Reset). The C++ algorithm orders bodies by insertion; the data
-      -- dependency index matches that ordering.
-      Add_Body_Ephemeris_To_Recenter (Self.Alg, Body_0'Access);
-      Add_Body_Ephemeris_To_Recenter (Self.Alg, Body_1'Access);
-      Add_Body_Ephemeris_To_Recenter (Self.Alg, Body_2'Access);
-      Add_Body_Ephemeris_To_Recenter (Self.Alg, Body_3'Access);
-
-      -- Configure central bodies. Set_Previous_Common_Zero_Base validates
-      -- the given SPICE ID exists in the body list and throws otherwise.
-      Set_Previous_Common_Zero_Base (Self.Alg, Previous_Common_Zero_Base_Id);
-      Set_New_Zero_Base_Id (Self.Alg, New_Zero_Base_Id);
-
-      -- Validate the topology and pre-compute moon hierarchy.
-      Reset (Self.Alg);
+      -- Construct the C++ algorithm with the full configuration in one flattened call.
+      -- Create validates the topology and pre-computes the moon hierarchy; the assembly's
+      -- default Init values are valid, so it will not reject them.
+      Self.Alg := Create (
+         New_Central_Body_Id       => New_Zero_Base_Id,
+         Previous_Central_Body_Id  => Previous_Common_Zero_Base_Id,
+         Body_Ids                  => Body_Ids'Unchecked_Access,
+         Original_Central_Body_Ids => Original_Central_Body_Ids'Unchecked_Access,
+         Body_Count                => 4);
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
