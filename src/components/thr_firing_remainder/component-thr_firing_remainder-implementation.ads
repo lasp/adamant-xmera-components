@@ -104,7 +104,7 @@ private
       Control_Period : in Packed_F32.U;
       On_Time_Saturation_Factor : in Packed_F32.U;
       Thrust_Pulsing_Regime : in Packed_Pulsing_Regime.U
-   ) return Parameter_Validation_Status.E is (Parameter_Validation_Status.Valid);
+   ) return Parameter_Validation_Status.E;
 
    -----------------------------------------------
    -- Data dependency primitives:

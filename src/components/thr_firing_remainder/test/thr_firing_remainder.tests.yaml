@@ -5,3 +5,5 @@ tests:
     description: Run algorithm to ensure integration is sound.
   - name: Test_Pulsing_Regime_Validation
     description: A byte outside the pulsing regime enumeration is rejected at parameter staging by E8 type validation.
+  - name: Test_Invalid_Parameter
+    description: A staged parameter set the algorithm's config validators would reject is refused by Validate_Parameters, one field at a time.

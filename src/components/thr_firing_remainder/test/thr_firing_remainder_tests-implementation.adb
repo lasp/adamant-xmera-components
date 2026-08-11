@@ -2,7 +2,8 @@
 -- Thr_Firing_Remainder Tests Body
 --------------------------------------------------------------------------------
 
-with Thruster_Array_Config.C;
+with Interfaces;
+with Packed_F32x36;
 with Basic_Assertions; use Basic_Assertions;
 with Thr_On_Time_Cmd;
 with Thr_On_Time_Cmd.Assertion; use Thr_On_Time_Cmd.Assertion;
@@ -51,14 +52,8 @@ package body Thr_Firing_Remainder_Tests.Implementation is
       Params : Thr_Firing_Remainder_Parameters.Instance;
 
       -- Thruster configuration: 2 thrusters with maxThrust = 1.0
-      Thr_Config : aliased Thruster_Array_Config.C.U_C := (
-         Num_Thrusters => 2,
-         Thrusters => [
-            0 => (R_Thrust_B => [0.0, 0.0, 0.0], T_Hat_Thrust_B => [0.0, 0.0, 1.0], Max_Thrust => 1.0),
-            1 => (R_Thrust_B => [0.0, 0.0, 0.0], T_Hat_Thrust_B => [0.0, 0.0, 1.0], Max_Thrust => 1.0),
-            others => (R_Thrust_B => [0.0, 0.0, 0.0], T_Hat_Thrust_B => [0.0, 0.0, 0.0], Max_Thrust => 0.0)
-         ]
-      );
+      Thr_Count : constant Interfaces.Unsigned_32 := 2;
+      Max_Thrust : constant Packed_F32x36.U := [0 => 1.0, 1 => 1.0, others => 0.0];
 
       -- Control parameters
       Min_Fire_Time : constant Packed_F32.T := (Value => 0.02);
@@ -88,7 +83,7 @@ package body Thr_Firing_Remainder_Tests.Implementation is
       T.Component_Instance.Set_Up;
 
       -- Configure thrusters
-      T.Component_Instance.Configure_Thrusters (Thr_Config'Unchecked_Access);
+      T.Component_Instance.Configure_Thrusters (Num_Thrusters => Thr_Count, Max_Thrust => Max_Thrust);
 
       -- Stage and apply parameters
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thr_Min_Fire_Time (Min_Fire_Time)), Success);
@@ -137,7 +132,7 @@ package body Thr_Firing_Remainder_Tests.Implementation is
       T.Component_Instance.Set_Up;
 
       -- Configure thrusters
-      T.Component_Instance.Configure_Thrusters (Thr_Config'Unchecked_Access);
+      T.Component_Instance.Configure_Thrusters (Num_Thrusters => Thr_Count, Max_Thrust => Max_Thrust);
 
       -- Stage and apply parameters with OFF_PULSING regime
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thr_Min_Fire_Time (Min_Fire_Time)), Success);
@@ -203,5 +198,58 @@ package body Thr_Firing_Remainder_Tests.Implementation is
             Thr_Firing_Remainder_Enums.Pulsing_Regime.E'Last));
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Param), Success);
    end Test_Pulsing_Regime_Validation;
+
+   -- A staged parameter set that the C++ ThrFiringRemainderConfig would reject must
+   -- be refused by Validate_Parameters, so it never reaches the throwing Set_Config
+   -- across the FFI boundary. Each field is perturbed on its own and then restored,
+   -- proving the rejection is attributable to that field. The values here pass the
+   -- staging type/range checks and are caught only by the algorithm's validators.
+   overriding procedure Test_Invalid_Parameter (Self : in out Instance) is
+      T : Component.Thr_Firing_Remainder.Implementation.Tester.Instance_Access renames Self.Tester;
+      Params : Thr_Firing_Remainder_Parameters.Instance;
+
+      Valid_Min_Fire_Time : constant Packed_F32.T := (Value => 0.02);
+      Valid_Control_Period : constant Packed_F32.T := (Value => 0.5);
+      Valid_Saturation_Factor : constant Packed_F32.T := (Value => 1.0);
+      Valid_Regime : constant Packed_Pulsing_Regime.T :=
+         (Value => Thr_Firing_Remainder_Enums.Pulsing_Regime.On_Pulsing);
+
+      -- Stage the full valid set. Every case below starts from this baseline so a
+      -- rejection can only come from the single field that was perturbed.
+      procedure Stage_Valid_Set is
+      begin
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thr_Min_Fire_Time (Valid_Min_Fire_Time)), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Period (Valid_Control_Period)), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.On_Time_Saturation_Factor (Valid_Saturation_Factor)), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thrust_Pulsing_Regime (Valid_Regime)), Success);
+      end Stage_Valid_Set;
+   begin
+      T.Component_Instance.Init;
+
+      -- The baseline set is accepted:
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
+
+      -- A negative minimum fire time is rejected (must be finite and >= 0):
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thr_Min_Fire_Time ((Value => -1.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- A zero control period is rejected (must be finite and strictly > 0):
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Period ((Value => 0.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- An on-time saturation factor below one is rejected (must be finite and >= 1):
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.On_Time_Saturation_Factor ((Value => 0.5))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- Restoring validity makes the set acceptable again, so the rejections above
+      -- were caused by the perturbed values rather than by sticky staging state:
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
+      Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+   end Test_Invalid_Parameter;
 
 end Thr_Firing_Remainder_Tests.Implementation;

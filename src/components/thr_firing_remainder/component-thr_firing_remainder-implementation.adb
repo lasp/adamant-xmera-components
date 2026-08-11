@@ -51,6 +51,13 @@ package body Component.Thr_Firing_Remainder.Implementation is
    -- Initializes the thruster firing remainder algorithm.
    overriding procedure Init (Self : in out Instance) is
    begin
+      pragma Assert (Validate_Config (
+         Num_Thrusters             => Self.Num_Thrusters,
+         Max_Thrust                => Self.Max_Thrust'Unchecked_Access,
+         Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time.Value,
+         Control_Period            => Self.Control_Period.Value,
+         On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor.Value,
+         Pulsing_Regime            => To_C_Pulsing_Regime (Self.Thrust_Pulsing_Regime.Value)));
       Self.Alg := Create (
          Num_Thrusters             => Self.Num_Thrusters,
          Max_Thrust                => Self.Max_Thrust'Unchecked_Access,
@@ -79,6 +86,13 @@ package body Component.Thr_Firing_Remainder.Implementation is
       -- The assembly owns this call, so an out-of-range thruster count or a
       -- non-finite maximum thrust is a wiring error rather than ground input:
       -- assert instead of reporting, and keep it out of the throwing Set_Config.
+      pragma Assert (Validate_Config (
+         Num_Thrusters             => Self.Num_Thrusters,
+         Max_Thrust                => Self.Max_Thrust'Unchecked_Access,
+         Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time.Value,
+         Control_Period            => Self.Control_Period.Value,
+         On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor.Value,
+         Pulsing_Regime            => To_C_Pulsing_Regime (Self.Thrust_Pulsing_Regime.Value)));
       Apply_Config (Self);
    end Configure_Thrusters;
 
@@ -152,6 +166,40 @@ package body Component.Thr_Firing_Remainder.Implementation is
       -- reject them. The accumulated pulse remainder state is preserved.
       Apply_Config (Self);
    end Update_Parameters_Action;
+
+   -- Validate a staged parameter set before it is applied by asking the algorithm's
+   -- own non-throwing Validate_Config predicate, so the configuration rules live
+   -- solely in the algorithm. Rejecting an invalid update here at staging keeps it
+   -- from reaching the throwing Create/Set_Config across the FFI boundary. The
+   -- thruster array is not staged, so the candidate configuration pairs the staged
+   -- parameters with the currently configured thruster array.
+   overriding function Validate_Parameters (
+      Self : in out Instance;
+      Thr_Min_Fire_Time : in Packed_F32.U;
+      Control_Period : in Packed_F32.U;
+      On_Time_Saturation_Factor : in Packed_F32.U;
+      Thrust_Pulsing_Regime : in Packed_Pulsing_Regime.U
+   ) return Parameter_Validation_Status.E is
+   begin
+      if Validate_Config (
+            Num_Thrusters             => Self.Num_Thrusters,
+            Max_Thrust                => Self.Max_Thrust'Unchecked_Access,
+            Thr_Min_Fire_Time         => Thr_Min_Fire_Time.Value,
+            Control_Period            => Control_Period.Value,
+            On_Time_Saturation_Factor => On_Time_Saturation_Factor.Value,
+            Pulsing_Regime            => To_C_Pulsing_Regime (Thrust_Pulsing_Regime.Value))
+      then
+         return Parameter_Validation_Status.Valid;
+      else
+         return Parameter_Validation_Status.Invalid;
+      end if;
+   exception
+      -- To_C_Pulsing_Regime's 'Enum_Val raises Constraint_Error for a staged byte
+      -- that is not a defined pulsing regime. Reject the update rather than let it
+      -- propagate out of the parameter staging path.
+      when Constraint_Error =>
+         return Parameter_Validation_Status.Invalid;
+   end Validate_Parameters;
 
    -----------------------------------------------
    -- Data dependency handlers:
