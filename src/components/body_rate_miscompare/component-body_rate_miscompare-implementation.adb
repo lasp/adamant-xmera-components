@@ -7,20 +7,28 @@ with Packed_F32x3_Record.C;
 
 package body Component.Body_Rate_Miscompare.Implementation is
 
+   -- Push the component's current configuration -- the applied parameters plus the
+   -- Use_Imu_Rates override held as instance state -- into the C++ algorithm. Every
+   -- reconfiguration path goes through here.
+   procedure Apply_Config (Self : in out Instance) is
+   begin
+      Set_Config (
+         Self.Alg,
+         Body_Rate_Threshold     => Self.Body_Rate_Threshold.Value,
+         Fault_Persistence_Limit => Self.Fault_Persistence_Limit.Value,
+         Use_Imu_Rates           => Self.Use_Imu_Rates);
+   end Apply_Config;
+
    --------------------------------------------------
    -- Subprogram for implementation init method:
    --------------------------------------------------
    -- Initializes the body rate miscompare algorithm.
    overriding procedure Init (Self : in out Instance) is
    begin
-      -- Allocate C++ class on the heap
-      Self.Alg := Create;
-
-      -- Apply the Ada parameter defaults to the algorithm: the framework
-      -- invokes Update_Parameters_Action only after a ground parameter
-      -- update, and the C++ constructor defaults do not match the Ada
-      -- defaults.
-      Self.Update_Parameters_Action;
+      Self.Alg := Create (
+         Body_Rate_Threshold     => Self.Body_Rate_Threshold.Value,
+         Fault_Persistence_Limit => Self.Fault_Persistence_Limit.Value,
+         Use_Imu_Rates           => Self.Use_Imu_Rates);
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -98,8 +106,8 @@ package body Component.Body_Rate_Miscompare.Implementation is
       Ignore : Tick.T renames Arg;
    begin
       -- Clear the algorithm's fault persistence counter so rate disagreement must
-      -- re-accumulate from zero after a state change.
-      Reset (Self.Alg);
+      -- re-accumulate from zero after a state change. A latched fault is preserved.
+      Re_Initialize_Except_Persistent_States (Self.Alg);
    end Reset_Tick_T_Recv_Sync;
 
    -- This is the command receive connector.
@@ -120,8 +128,14 @@ package body Component.Body_Rate_Miscompare.Implementation is
    overriding function Use_Imu_Rates (Self : in out Instance; Arg : in Packed_Boolean.T) return Command_Execution_Status.E is
       use Command_Execution_Status;
    begin
-      -- Push the override into the C algorithm:
-      Set_Use_Imu_Rates (Self.Alg, Arg.Value);
+      -- Record the override as the Ada-side source of truth, then push it into the C
+      -- algorithm via a config swap. Threshold and persistence come from the already-
+      -- applied parameters, so the config is always valid here.
+      Self.Use_Imu_Rates := Arg.Value;
+      Apply_Config (Self);
+      -- Re-seed the latched fault state from the new Use_Imu_Rates: forces IMU rates
+      -- when True, and clears a latched fault when set False.
+      Re_Initialize (Self.Alg);
       -- Report the new setting:
       Self.Event_T_Send_If_Connected (Self.Events.Use_Imu_Rates_Set (Self.Sys_Time_T_Get, Arg));
       return Success;
@@ -142,9 +156,9 @@ package body Component.Body_Rate_Miscompare.Implementation is
    -----------------------------------------------
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
    begin
-      -- Set algorithm tunables when parameters update:
-      Set_Body_Rate_Threshold (Self.Alg, Self.Body_Rate_Threshold.Value);
-      Set_Fault_Persistence_Limit (Self.Alg, Self.Fault_Persistence_Limit.Value);
+      -- Rebuild the algorithm configuration from the updated parameters. The values were
+      -- checked by Validate_Parameters at staging, so Set_Config will not reject them.
+      Apply_Config (Self);
    end Update_Parameters_Action;
 
    -----------------------------------------------

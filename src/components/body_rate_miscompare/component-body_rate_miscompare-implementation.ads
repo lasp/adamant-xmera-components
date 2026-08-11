@@ -28,6 +28,8 @@ private
       -- Whether the fault flag was set on the previous tick, used to detect
       -- latch/clear transitions.
       Prev_Fault_Latched : Boolean := False;
+      -- folded into the config alongside the threshold/persistence parameters.
+      Use_Imu_Rates : Boolean := False;
    end record;
 
    ---------------------------------------
