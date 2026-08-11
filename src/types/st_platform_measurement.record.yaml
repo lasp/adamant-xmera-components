@@ -1,0 +1,20 @@
+---
+#  /*! @brief Star tracker case-frame attitude and rate solution consumed by the platform-to-body
+#   *         conversion algorithm. */
+#  typedef struct {
+#      uint64_t timeTag; /*!< [ns] time tag of the measurement, passed through to the output */
+#      float q_CN[4];    /*!< [-] quaternion from inertial to case frame (scalar-first) */
+#      float dq_CN[4];   /*!< [-] case-frame delta quaternion w.r.t. inertial (scalar-last) */
+#  } StPlatformMeasurement_c;
+description: Star tracker case-frame attitude and rate solution passed to the platform-to-body conversion algorithm.
+fields:
+  - name: Time_Tag
+    description: "[ns] Time tag of the measurement in nanoseconds since epoch."
+    type: Interfaces.Unsigned_64
+    format: U64
+  - name: Platform_Attitude
+    description: "Platform attitude quaternion [s, v0, v1, v2] (scalar first) from inertial to case frame."
+    type: Packed_F32x4.T
+  - name: Platform_Angular_Velocity
+    description: "Case-frame delta quaternion [v0, v1, v2, s] (scalar last) encoding angular rate."
+    type: Packed_F32x4.T

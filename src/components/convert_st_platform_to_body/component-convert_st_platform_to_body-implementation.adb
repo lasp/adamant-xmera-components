@@ -3,9 +3,9 @@
 --------------------------------------------------------------------------------
 
 with St_Platform_Attitude;
-with St_Platform_Attitude.C;
 with St_Platform_Angular_Velocity;
-with St_Platform_Angular_Velocity.C;
+with St_Platform_Measurement;
+with St_Platform_Measurement.C;
 with St_Att.C;
 with Packed_F32x9.C;
 with Packed_F32x9_Record.C;
@@ -53,11 +53,18 @@ package body Component.Convert_St_Platform_To_Body.Implementation is
       pragma Assert (Platform_Attitude_Status = Success or else Platform_Attitude_Status = Stale);
       pragma Assert (Platform_Angular_Velocity_Status = Success or else Platform_Angular_Velocity_Status = Stale);
 
-      -- Convert Ada types to C types:
-      Platform_Attitude_C : aliased St_Platform_Attitude.C.U_C :=
-         St_Platform_Attitude.C.To_C (St_Platform_Attitude.Unpack (Platform_Attitude_Dep));
-      Platform_Angular_Velocity_C : aliased St_Platform_Angular_Velocity.C.U_C :=
-         St_Platform_Angular_Velocity.C.To_C (St_Platform_Angular_Velocity.Unpack (Platform_Angular_Velocity_Dep));
+      Platform_Attitude_U : constant St_Platform_Attitude.U :=
+         St_Platform_Attitude.Unpack (Platform_Attitude_Dep);
+      Platform_Angular_Velocity_U : constant St_Platform_Angular_Velocity.U :=
+         St_Platform_Angular_Velocity.Unpack (Platform_Angular_Velocity_Dep);
+
+      -- Join the two star-tracker solutions into the single measurement the algorithm takes.
+      -- The attitude solution supplies the time tag that is passed through to the output.
+      Measurement_C : aliased St_Platform_Measurement.C.U_C := St_Platform_Measurement.C.To_C ((
+         Time_Tag                  => Platform_Attitude_U.Time_Tag,
+         Platform_Attitude         => Platform_Attitude_U.Platform_Attitude,
+         Platform_Angular_Velocity => Platform_Angular_Velocity_U.Platform_Angular_Velocity
+      ));
    begin
       -- Apply any pending parameter update (e.g. new Dcm_Cb):
       Self.Update_Parameters;
@@ -65,11 +72,7 @@ package body Component.Convert_St_Platform_To_Body.Implementation is
       -- Call the C algorithm and publish the resulting body-frame attitude:
       Self.Data_Product_T_Send (Self.Data_Products.Star_Tracker_Body_Attitude (
          Arg.Time,
-         St_Att.Pack (St_Att.C.To_Ada (Update (
-            Self.Alg,
-            Platform_Attitude          => Platform_Attitude_C'Access,
-            Platform_Angular_Velocity  => Platform_Angular_Velocity_C'Access
-         )))
+         St_Att.Pack (St_Att.C.To_Ada (Update (Self.Alg, Measurement => Measurement_C'Access)))
       ));
    end Tick_T_Recv_Sync;
 

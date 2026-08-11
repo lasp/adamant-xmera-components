@@ -8,8 +8,7 @@ pragma Warnings (Off, "-gnatwu");
 pragma Warnings (Off, "-gnatwx");
 
 with Interfaces; use Interfaces;
-with St_Platform_Attitude.C;
-with St_Platform_Angular_Velocity.C;
+with St_Platform_Measurement.C;
 with St_Att.C;
 with Packed_F32x9_Record.C;
 
@@ -60,14 +59,13 @@ package Convert_St_Platform_To_Body_Algorithm_C is
           External_Name => "ConvertStPlatformToBodyAlgorithm_setConfig";
 
    --* @brief Convert star tracker case-frame attitude and rate to body frame.
-   --* @param Self                       The algorithm instance.
-   --* @param Platform_Attitude          Inertial-to-case attitude quaternion input.
-   --* @param Platform_Angular_Velocity  Case-frame delta quaternion rate input.
+   --* @param Self        The algorithm instance.
+   --* @param Measurement Time-tagged inertial-to-case attitude quaternion and case-frame
+   --* delta quaternion.
    --* @return Star tracker attitude output in body frame.
    function Update
-     (Self                       : Convert_St_Platform_To_Body_Algorithm_Access;
-      Platform_Attitude          : access constant St_Platform_Attitude.C.U_C;
-      Platform_Angular_Velocity  : access constant St_Platform_Angular_Velocity.C.U_C)
+     (Self        : Convert_St_Platform_To_Body_Algorithm_Access;
+      Measurement : access constant St_Platform_Measurement.C.U_C)
      return St_Att.C.U_C
      with Import        => True,
           Convention    => C,
