@@ -26,6 +26,21 @@ package Body_Rate_Miscompare_Algorithm_C is
    type Body_Rate_Miscompare_Algorithm is limited private;
    type Body_Rate_Miscompare_Algorithm_Access is access all Body_Rate_Miscompare_Algorithm;
 
+   --* @brief Report whether a configuration would be accepted by Create/Set_Config.
+   --* @param Body_Rate_Threshold     Rate threshold to trigger a body rate miscompare fault.
+   --* @param Fault_Persistence_Limit Consecutive update calls above threshold to trigger the fault.
+   --* @param Use_Imu_Rates           Force the IMU rate output even when the rates agree.
+   --* @return True if the configuration is valid. Never throws, so it can guard the
+   --* throwing Create/Set_Config from an invalid configuration.
+   function Validate_Config
+     (Body_Rate_Threshold     : Short_Float;
+      Fault_Persistence_Limit : Unsigned_32;
+      Use_Imu_Rates           : Boolean)
+     return Boolean
+     with Import       => True,
+          Convention   => C,
+          External_Name => "BodyRateMiscompareAlgorithm_validateConfig";
+
    --* @brief Construct a new BodyRateMiscompareAlgorithm from a configuration.
    --* Validate the values with Validate_Config before calling; throws on invalid input.
    --* @param Body_Rate_Threshold     Rate threshold to trigger a body rate miscompare fault.

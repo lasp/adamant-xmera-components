@@ -106,7 +106,7 @@ private
       Self : in out Instance;
       Body_Rate_Threshold : in Packed_F32.U;
       Fault_Persistence_Limit : in Packed_U32.U
-   ) return Parameter_Validation_Status.E is (Parameter_Validation_Status.Valid);
+   ) return Parameter_Validation_Status.E;
 
    -----------------------------------------------
    -- Data dependency primitives:
