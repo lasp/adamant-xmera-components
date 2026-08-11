@@ -6,7 +6,6 @@ with Body_Ephemeris_Payload.C;
 with Body_Ephemeris_Payload_X20_Record.C;
 with Cartesian_State;
 with Cartesian_State.C;
-with Int32_X20;
 with Int32_X20_Record;
 with Int32_X20_Record.C;
 
@@ -19,27 +18,39 @@ package body Component.Ephemerides_Recenter.Implementation is
       -- Place the four configured bodies into the first slots of the C-boundary ID
       -- arrays (the algorithm indexes by position; trailing slots are unused). The
       -- component always configures exactly four bodies.
-      Body_Ids : aliased Int32_X20_Record.C.U_C := Int32_X20_Record.C.Unpack (
+      Body_Ids : aliased Int32_X20_Record.C.U_C :=
          (Id => [0 => Body_0_Spice_Id,
                  1 => Body_1_Spice_Id,
                  2 => Body_2_Spice_Id,
                  3 => Body_3_Spice_Id,
-                 others => 0]));
-      Original_Central_Body_Ids : aliased Int32_X20_Record.C.U_C := Int32_X20_Record.C.Unpack (
+                 others => 0]);
+      Original_Central_Body_Ids : aliased Int32_X20_Record.C.U_C :=
          (Id => [0 => Body_0_Original_Central_Body_Id,
                  1 => Body_1_Original_Central_Body_Id,
                  2 => Body_2_Original_Central_Body_Id,
                  3 => Body_3_Original_Central_Body_Id,
-                 others => 0]));
+                 others => 0]);
    begin
       -- Construct the C++ algorithm with the full configuration in one flattened call.
-      -- Create validates the topology and pre-computes the moon hierarchy; the assembly's
-      -- default Init values are valid, so it will not reject them.
+      -- Create validates the topology and pre-computes the moon hierarchy.
+      --
+      -- Gate the construction on the algorithm's own non-throwing predicate first.
+      -- These values come from the assembly rather than the ground, so a
+      -- configuration the algorithm would reject is a wiring error: assert instead
+      -- of reporting, which turns a C++ exception escaping Init into a clean Ada
+      -- assertion failure. The component has no parameters and no reconfiguration
+      -- path, so Init is the only place this configuration can be refused.
+      pragma Assert (Validate_Config (
+         New_Central_Body_Id       => New_Zero_Base_Id,
+         Previous_Central_Body_Id  => Previous_Common_Zero_Base_Id,
+         Body_Ids                  => Body_Ids'Access,
+         Original_Central_Body_Ids => Original_Central_Body_Ids'Access,
+         Body_Count                => 4));
       Self.Alg := Create (
          New_Central_Body_Id       => New_Zero_Base_Id,
          Previous_Central_Body_Id  => Previous_Common_Zero_Base_Id,
-         Body_Ids                  => Body_Ids'Unchecked_Access,
-         Original_Central_Body_Ids => Original_Central_Body_Ids'Unchecked_Access,
+         Body_Ids                  => Body_Ids'Access,
+         Original_Central_Body_Ids => Original_Central_Body_Ids'Access,
          Body_Count                => 4);
    end Init;
 

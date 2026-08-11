@@ -2,6 +2,10 @@ pragma Ada_2012;
 
 pragma Style_Checks (Off);
 pragma Warnings     (Off, "-gnatwu");
+-- Boolean is used at the C boundary to match the shim's C99 bool (_Bool):
+-- 1-byte, 0/1 representation, interoperable under Convention => C. Suppress
+-- the -gnatwx advisory about using a C "char"-style type for the mapping.
+pragma Warnings     (Off, "-gnatwx");
 
 with Interfaces; use Interfaces;
 with Body_Ephemeris_Payload.C;
@@ -35,6 +39,25 @@ package Ephemerides_Recenter_Algorithm_C is
    --* Opaque handle for an EphemeridesRecenterAlgorithm instance.
    type Ephemerides_Recenter_Algorithm is limited private;
    type Ephemerides_Recenter_Algorithm_Access is access all Ephemerides_Recenter_Algorithm;
+
+   --* @brief Report whether a configuration would be accepted by Create/Set_Config.
+   --* @param New_Central_Body_Id       SPICE ID of the new central body.
+   --* @param Previous_Central_Body_Id  SPICE ID of the previous common central body.
+   --* @param Body_Ids                  SPICE IDs of every configured body (first Body_Count used).
+   --* @param Original_Central_Body_Ids Original central-body SPICE ID for each configured body.
+   --* @param Body_Count                Number of configured bodies (<= MAX_NUM_CHANGE_BODIES).
+   --* @return True if the configuration is valid. Never throws, so it can guard the
+   --* throwing Create/Set_Config from an invalid configuration.
+   function Validate_Config
+     (New_Central_Body_Id       : Interfaces.Integer_32;
+      Previous_Central_Body_Id  : Interfaces.Integer_32;
+      Body_Ids                  : access constant Int32_X20_Record.C.U_C;
+      Original_Central_Body_Ids : access constant Int32_X20_Record.C.U_C;
+      Body_Count                : Unsigned_32)
+     return Boolean
+     with Import       => True,
+          Convention   => C,
+          External_Name => "EphemeridesRecenterAlgorithm_validateConfig";
 
    --* @brief Construct a new EphemeridesRecenterAlgorithm from a configuration.
    --* Validate the values with Validate_Config before calling; throws on invalid topology.
@@ -103,3 +126,4 @@ end Ephemerides_Recenter_Algorithm_C;
 
 pragma Style_Checks (On);
 pragma Warnings     (On, "-gnatwu");
+pragma Warnings     (On, "-gnatwx");
