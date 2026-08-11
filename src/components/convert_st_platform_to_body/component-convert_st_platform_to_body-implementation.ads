@@ -80,7 +80,7 @@ private
    overriding function Validate_Parameters (
       Self : in out Instance;
       Dcm_Cb : in Packed_F32x9.U
-   ) return Parameter_Validation_Status.E is (Parameter_Validation_Status.Valid);
+   ) return Parameter_Validation_Status.E;
 
    -----------------------------------------------
    -- Data dependency primitives:

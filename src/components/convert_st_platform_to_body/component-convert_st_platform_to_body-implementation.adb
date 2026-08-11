@@ -20,6 +20,7 @@ package body Component.Convert_St_Platform_To_Body.Implementation is
       -- Build the initial DCM configuration from the component's parameter default.
       Dcm_Cb_C : constant Packed_F32x9_Record.C.U_C := (Value => Packed_F32x9.C.To_C (Self.Dcm_Cb));
    begin
+      pragma Assert (Validate_Config (Dcm_Cb_C));
       Self.Alg := Create (Dcm_Cb_C);
    end Init;
 
@@ -94,6 +95,24 @@ package body Component.Convert_St_Platform_To_Body.Implementation is
       -- checked by Validate_Parameters at staging, so Set_Config will not reject it.
       Set_Config (Self.Alg, Dcm_Cb_C);
    end Update_Parameters_Action;
+
+   -- Validate a staged Dcm_Cb before it is applied by asking the algorithm's own
+   -- non-throwing Validate_Config predicate (a valid DCM is orthonormal with det +1), so
+   -- the config rules live solely in the algorithm. Rejecting an invalid update here at
+   -- staging keeps it from reaching the throwing Create/Set_Config across the FFI boundary.
+   overriding function Validate_Parameters (
+      Self : in out Instance;
+      Dcm_Cb : in Packed_F32x9.U
+   ) return Parameter_Validation_Status.E is
+      pragma Unreferenced (Self);
+      Dcm_Cb_C : constant Packed_F32x9_Record.C.U_C := (Value => Packed_F32x9.C.To_C (Dcm_Cb));
+   begin
+      if Validate_Config (Dcm_Cb_C) then
+         return Parameter_Validation_Status.Valid;
+      else
+         return Parameter_Validation_Status.Invalid;
+      end if;
+   end Validate_Parameters;
 
    -----------------------------------------------
    -- Data dependency handlers:

@@ -3,3 +3,5 @@ description: This is a unit test suite for the Convert St Platform To Body compo
 tests:
   - name: Test
     description: Run algorithm to ensure integration is sound.
+  - name: Test_Invalid_Parameter
+    description: Ensure a staged mounting DCM the algorithm would reject is refused at validation.

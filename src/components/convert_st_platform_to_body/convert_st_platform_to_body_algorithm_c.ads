@@ -19,6 +19,17 @@ package Convert_St_Platform_To_Body_Algorithm_C is
    type Convert_St_Platform_To_Body_Algorithm is limited private;
    type Convert_St_Platform_To_Body_Algorithm_Access is access all Convert_St_Platform_To_Body_Algorithm;
 
+   --* @brief Report whether a configuration would be accepted by Create/Set_Config.
+   --* @param Dcm_Cb 3x3 row-major DCM from body to case frame (orthonormal, det +1).
+   --* @return True if the configuration is valid. Never throws, so it can guard the
+   --* throwing Create/Set_Config from an invalid configuration.
+   function Validate_Config
+     (Dcm_Cb : Packed_F32x9_Record.C.U_C)
+     return Boolean
+     with Import        => True,
+          Convention    => C,
+          External_Name => "ConvertStPlatformToBodyAlgorithm_validateConfig";
+
    --* @brief Construct a new ConvertStPlatformToBodyAlgorithm from a configuration.
    --* Validate the DCM with Validate_Config before calling; throws on invalid input.
    --* @param Dcm_Cb 3x3 row-major DCM from body to case frame (orthonormal, det +1).
