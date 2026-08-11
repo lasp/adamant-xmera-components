@@ -21,3 +21,5 @@ tests:
     description: Independent gyro and accel averaging windows select different sample sets from one packet.
   - name: Test_Zero_Window
     description: A 0.0 s averaging window keeps only the single newest sample.
+  - name: Test_Invalid_Config_Parameter
+    description: Ensure staged parameter values the algorithm would reject are refused at validation.

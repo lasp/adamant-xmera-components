@@ -21,6 +21,10 @@ package body Component.Average_Mimu_Data.Implementation is
       Dcm_Bc_C     : constant Packed_F32x9_Record.C.U_C :=
          (Value => Packed_F32x9.C.To_C (Self.Dcm_Pltf_To_Bdy));
    begin
+      pragma Assert (Validate_Config (
+         Gyro_Averaging_Window  => Gyro_Window,
+         Accel_Averaging_Window => Accel_Window,
+         Dcm_Bc                 => Dcm_Bc_C));
       Self.Alg := Create (
          Gyro_Averaging_Window  => Gyro_Window,
          Accel_Averaging_Window => Accel_Window,
@@ -109,5 +113,28 @@ package body Component.Average_Mimu_Data.Implementation is
          Accel_Averaging_Window => Long_Float (Self.Accel_Time_Delta.Value),
          Dcm_Bc                 => (Value => Packed_F32x9.C.To_C (Self.Dcm_Pltf_To_Bdy)));
    end Update_Parameters_Action;
+
+   -- Validate a staged parameter set before it is applied by asking the algorithm's own
+   -- non-throwing Validate_Config predicate, so the config rules live solely in the
+   -- algorithm. Rejecting an invalid update here at staging keeps it from reaching the
+   -- throwing Create/Set_Config across the FFI boundary.
+   overriding function Validate_Parameters (
+      Self : in out Instance;
+      Gyro_Time_Delta : in Packed_F32.U;
+      Accel_Time_Delta : in Packed_F32.U;
+      Dcm_Pltf_To_Bdy : in Packed_F32x9.U
+   ) return Parameter_Validation_Status.E is
+      pragma Unreferenced (Self);
+   begin
+      if Validate_Config (
+            Gyro_Averaging_Window  => Long_Float (Gyro_Time_Delta.Value),
+            Accel_Averaging_Window => Long_Float (Accel_Time_Delta.Value),
+            Dcm_Bc                 => (Value => Packed_F32x9.C.To_C (Dcm_Pltf_To_Bdy)))
+      then
+         return Parameter_Validation_Status.Valid;
+      else
+         return Parameter_Validation_Status.Invalid;
+      end if;
+   end Validate_Parameters;
 
 end Component.Average_Mimu_Data.Implementation;

@@ -390,4 +390,66 @@ package body Average_Mimu_Data_Tests.Implementation is
       end;
    end Test_Zero_Window;
 
+   -- The averaging windows must lie in [0, 2] seconds and the mounting DCM must be
+   -- orthonormal with determinant +1. A zero window is valid -- see Test_Zero_Window --
+   -- so the rejections below use negative and over-range values instead.
+   overriding procedure Test_Invalid_Config_Parameter (Self : in out Instance) is
+      T : Tester_Ref renames Self.Tester;
+      Params : Average_Mimu_Data_Parameters.Instance;
+
+      -- Stage the full valid set. Every case below starts from this baseline so a
+      -- rejection can only come from the single field that was perturbed.
+      procedure Stage_Valid_Set is
+      begin
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
+            Params.Gyro_Time_Delta ((Value => 0.1))), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
+            Params.Accel_Time_Delta ((Value => 0.1))), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
+            Params.Dcm_Pltf_To_Bdy ([
+               1.0, 0.0, 0.0,
+               0.0, 1.0, 0.0,
+               0.0, 0.0, 1.0
+            ])), Success);
+      end Stage_Valid_Set;
+   begin
+      -- The baseline set is accepted:
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
+
+      -- A negative gyro window is rejected (must be in [0, 2] seconds):
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
+         Params.Gyro_Time_Delta ((Value => -0.1))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- A gyro window beyond the two-second ceiling is rejected:
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
+         Params.Gyro_Time_Delta ((Value => 3.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- A negative accel window is rejected:
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
+         Params.Accel_Time_Delta ((Value => -0.1))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- An all-zero mounting DCM is rejected (singular, so not orthonormal):
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
+         Params.Dcm_Pltf_To_Bdy ([
+            0.0, 0.0, 0.0,
+            0.0, 0.0, 0.0,
+            0.0, 0.0, 0.0
+         ])), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- Restoring validity makes the set acceptable again, so the rejections above
+      -- were caused by the perturbed values rather than by sticky staging state:
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
+      Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+   end Test_Invalid_Config_Parameter;
+
 end Average_Mimu_Data_Tests.Implementation;

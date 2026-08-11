@@ -48,6 +48,21 @@ package Average_Mimu_Data_Algorithm_C is
    pragma Assert (Unsigned_32 (Mimu_Sample_X10.Length) = Get_Max_Mimu_Samples_Per_Pkt);
    pragma Assert (Unsigned_32 (Mimu_Sample_X10.C.U_C'Object_Size / Mimu_Sample.C.U_C'Object_Size) = Get_Max_Mimu_Samples_Per_Pkt);
 
+   --* @brief Report whether a configuration would be accepted by Create/Set_Config.
+   --* @param Gyro_Averaging_Window  [s] gyro averaging window, in [0.0, 2.0].
+   --* @param Accel_Averaging_Window [s] accel averaging window, in [0.0, 2.0].
+   --* @param Dcm_Bc                 CHU-to-body DCM (row-major 3x3, orthonormal, det +1).
+   --* @return True if the configuration is valid. Never throws, so it can guard the
+   --* throwing Create/Set_Config from an invalid configuration.
+   function Validate_Config
+     (Gyro_Averaging_Window  : Long_Float;
+      Accel_Averaging_Window : Long_Float;
+      Dcm_Bc                 : Packed_F32x9_Record.C.U_C)
+     return Boolean
+     with Import       => True,
+          Convention   => C,
+          External_Name => "AverageMimuDataAlgorithm_validateConfig";
+
    --* @brief Construct a new AverageMimuDataAlgorithm from a configuration.
    --* Validate the values with Validate_Config before calling; throws on invalid input.
    --* @param Gyro_Averaging_Window  [s] gyro averaging window, in [0.0, 2.0].

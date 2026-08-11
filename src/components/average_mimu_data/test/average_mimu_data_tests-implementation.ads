@@ -35,6 +35,9 @@ private
    -- A 0.0 s averaging window keeps only the single newest sample.
    overriding procedure Test_Zero_Window (Self : in out Instance);
 
+   -- Ensure staged parameter values the algorithm would reject are refused at validation.
+   overriding procedure Test_Invalid_Config_Parameter (Self : in out Instance);
+
    -- Test data and state:
    type Instance is new Average_Mimu_Data_Tests.Base_Instance with record
       null;
