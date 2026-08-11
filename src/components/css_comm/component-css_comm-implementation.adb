@@ -40,6 +40,8 @@ package body Component.Css_Comm.Implementation is
       Max_Sensor_Values : aliased Css_Values_Array_C := Make_Max_Sensor_Values (Self.Max_Sensor_Value.Value);
       Cheby_Poly_C : aliased Cheby_Polynomials_C_Type := (Data => Packed_F64x11.C.To_C (Self.Cheby_Polynomials));
    begin
+      pragma Assert (Validate_Config (
+         Num_Sensors, Max_Sensor_Values'Unchecked_Access, Cheby_Poly_C'Unchecked_Access));
       Self.Alg := Create (Num_Sensors, Max_Sensor_Values'Unchecked_Access, Cheby_Poly_C'Unchecked_Access);
    end Init;
 
@@ -131,6 +133,29 @@ package body Component.Css_Comm.Implementation is
    begin
       Set_Config (Self.Alg, Num_Sensors, Max_Sensor_Values'Unchecked_Access, Cheby_Poly_C'Unchecked_Access);
    end Update_Parameters_Action;
+
+   -- Validate a staged parameter set before it is applied by asking the algorithm's
+   -- own non-throwing Validate_Config predicate, so the config rules live solely in
+   -- the algorithm. Rejecting an invalid update here at staging keeps it from reaching
+   -- the throwing Create/Set_Config across the FFI boundary. Cheby_Count does not
+   -- participate in the flattened config and is not validated here.
+   overriding function Validate_Parameters (
+      Self : in out Instance;
+      Max_Sensor_Value : in Packed_F64.U;
+      Cheby_Count : in Packed_U32.U;
+      Cheby_Polynomials : in Packed_F64x11.U
+   ) return Parameter_Validation_Status.E is
+      pragma Unreferenced (Self, Cheby_Count);
+      Num_Sensors : constant Interfaces.Unsigned_32 := Interfaces.Unsigned_32 (Css_Adc_U16_8.Length);
+      Max_Sensor_Values : aliased Css_Values_Array_C := Make_Max_Sensor_Values (Max_Sensor_Value.Value);
+      Cheby_Poly_C : aliased Cheby_Polynomials_C_Type := (Data => Packed_F64x11.C.To_C (Cheby_Polynomials));
+   begin
+      if Validate_Config (Num_Sensors, Max_Sensor_Values'Unchecked_Access, Cheby_Poly_C'Unchecked_Access) then
+         return Parameter_Validation_Status.Valid;
+      else
+         return Parameter_Validation_Status.Invalid;
+      end if;
+   end Validate_Parameters;
 
    -----------------------------------------------
    -- Data dependency handlers:

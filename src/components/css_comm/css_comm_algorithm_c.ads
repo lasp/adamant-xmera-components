@@ -34,13 +34,24 @@ package Css_Comm_Algorithm_C is
    end record
       with Convention => C_Pass_By_Copy;
 
-   --* Access-to-constant of the 32-wide double array, used to pass the flattened
-   --* maxSensorValues configuration array across the FFI boundary as double*.
-   type Css_Values_Array_C_Access is access constant Css_Values_Array_C;
-
    --* Opaque handle for a CssCommAlgorithm instance.
    type Css_Comm_Algorithm is limited private;
    type Css_Comm_Algorithm_Access is access all Css_Comm_Algorithm;
+
+   --* @brief Report whether a configuration would be accepted by Create/Set_Config.
+   --* @param Num_Sensors       Number of active CSS sensors, in [1, MAX_NUM_CSS_SENSORS].
+   --* @param Max_Sensor_Values Per-sensor scale factors (each active entry finite and > 0).
+   --* @param Polynomials       Chebyshev polynomial coefficients.
+   --* @return True if the configuration is valid. Never throws, so it can guard the
+   --* throwing Create/Set_Config from an invalid configuration.
+   function Validate_Config
+     (Num_Sensors       : Unsigned_32;
+      Max_Sensor_Values : access constant Css_Values_Array_C;
+      Polynomials       : access constant Cheby_Polynomials.C.U_C)
+     return Boolean
+     with Import       => True,
+          Convention   => C,
+          External_Name => "CssCommAlgorithm_validateConfig";
 
    --* @brief Construct a new CssCommAlgorithm from a configuration.
    --* Validate the values with Validate_Config before calling; throws on invalid input.
@@ -50,8 +61,8 @@ package Css_Comm_Algorithm_C is
    --* @return The new algorithm instance, which must be released with Destroy.
    function Create
      (Num_Sensors       : Unsigned_32;
-      Max_Sensor_Values : Css_Values_Array_C_Access;
-      Polynomials       : Cheby_Polynomials.C.U_C_Access)
+      Max_Sensor_Values : access constant Css_Values_Array_C;
+      Polynomials       : access constant Cheby_Polynomials.C.U_C)
      return Css_Comm_Algorithm_Access
      with Import       => True,
           Convention   => C,
@@ -73,8 +84,8 @@ package Css_Comm_Algorithm_C is
    procedure Set_Config
      (Self              : Css_Comm_Algorithm_Access;
       Num_Sensors       : Unsigned_32;
-      Max_Sensor_Values : Css_Values_Array_C_Access;
-      Polynomials       : Cheby_Polynomials.C.U_C_Access)
+      Max_Sensor_Values : access constant Css_Values_Array_C;
+      Polynomials       : access constant Cheby_Polynomials.C.U_C)
      with Import       => True,
           Convention   => C,
           External_Name => "CssCommAlgorithm_setConfig";

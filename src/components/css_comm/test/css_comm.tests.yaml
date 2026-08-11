@@ -5,3 +5,5 @@ tests:
     description: With zero Chebyshev coefficients, output equals input/maxSensorValue clamped to [0, 1].
   - name: Test_Stale_Input_Is_Processed
     description: When the CSS sensor data dependency is stale, the reading is processed like a fresh one and the output is published with the reading's original timestamp.
+  - name: Test_Invalid_Parameter
+    description: Ensure a staged max sensor value the algorithm would reject is refused at validation.

@@ -156,4 +156,48 @@ package body Css_Comm_Tests.Implementation is
 
    end Test_Stale_Input_Is_Processed;
 
+   -- Each active sensor's maximum value must be finite and strictly positive.
+   -- Cheby_Count does not take part in validation, so only Max_Sensor_Value and the
+   -- polynomial coefficients can be rejected here.
+   overriding procedure Test_Invalid_Parameter (Self : in out Instance) is
+      T : Component.Css_Comm.Implementation.Tester.Instance_Access renames Self.Tester;
+      Params : Css_Comm_Parameters.Instance;
+
+      Valid_Polys : constant Packed_F64x11.T := [others => 0.0];
+
+      -- Stage the full valid set. Every case below starts from this baseline so a
+      -- rejection can only come from the single field that was perturbed.
+      procedure Stage_Valid_Set is
+      begin
+         Parameter_Update_Status_Assert.Eq
+           (T.Stage_Parameter (Params.Max_Sensor_Value ((Value => 5.0))), Success);
+         Parameter_Update_Status_Assert.Eq
+           (T.Stage_Parameter (Params.Cheby_Count ((Value => 1))), Success);
+         Parameter_Update_Status_Assert.Eq
+           (T.Stage_Parameter (Params.Cheby_Polynomials (Valid_Polys)), Success);
+      end Stage_Valid_Set;
+   begin
+      -- The baseline set is accepted:
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
+
+      -- A zero maximum sensor value is rejected (must be finite and > 0):
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq
+        (T.Stage_Parameter (Params.Max_Sensor_Value ((Value => 0.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- A negative maximum sensor value is rejected:
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq
+        (T.Stage_Parameter (Params.Max_Sensor_Value ((Value => -1.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- Restoring validity makes the set acceptable again, so the rejections above
+      -- were caused by the perturbed values rather than by sticky staging state:
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
+      Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+   end Test_Invalid_Parameter;
+
 end Css_Comm_Tests.Implementation;

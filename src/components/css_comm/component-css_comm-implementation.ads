@@ -76,7 +76,7 @@ private
       Max_Sensor_Value : in Packed_F64.U;
       Cheby_Count : in Packed_U32.U;
       Cheby_Polynomials : in Packed_F64x11.U
-   ) return Parameter_Validation_Status.E is (Parameter_Validation_Status.Valid);
+   ) return Parameter_Validation_Status.E;
 
    -----------------------------------------------
    -- Data dependency primitives:
