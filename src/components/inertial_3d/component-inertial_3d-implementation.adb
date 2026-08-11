@@ -2,11 +2,21 @@
 -- Inertial_3d Component Implementation Body
 --------------------------------------------------------------------------------
 
-with Att_Ref.C;
-with Packed_F32x3_Record;
+with Att_Ref;
+with Packed_F32x3;
+with Packed_F32x3.C;
 with Packed_F32x3_Record.C;
 
 package body Component.Inertial_3d.Implementation is
+
+   ------------------------------------------------------------------------
+   -- Local Helpers
+   ------------------------------------------------------------------------
+
+   -- Marshal an unpacked MRP parameter value into the Vector3f_c mirror the
+   -- flattened shim expects as its single configuration argument.
+   function To_Config (Sigma_Rn : in Packed_F32x3.U) return Packed_F32x3_Record.C.U_C
+   is ((Value => Packed_F32x3.C.To_C (Sigma_Rn)));
 
    --------------------------------------------------
    -- Subprogram for implementation init method:
@@ -14,8 +24,7 @@ package body Component.Inertial_3d.Implementation is
    -- Initializes the inertial 3D algorithm instance.
    overriding procedure Init (Self : in out Instance) is
    begin
-      -- Allocate C++ class on the heap
-      Self.Alg := Create;
+      Self.Alg := Create (Sigma_Rn => To_Config (Self.Sigma_Rn));
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -29,47 +38,45 @@ package body Component.Inertial_3d.Implementation is
    ---------------------------------------
    -- Run the algorithm up to the current time.
    overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
-      use Data_Product_Enums;
-      use Data_Product_Enums.Data_Dependency_Status;
-
-      -- Grab data dependencies:
-      --
-      -- Data_Dependency_Status.E can be Success, Not_Available, Error, or Stale.
-      -- All return values besides Success indicate that this component is not
-      -- wired up correctly in the algorithm execution order and received errant,
-      -- stale, or no data. This should never happen, so we assert.
-      Sigma : Packed_F32x3_Record.T;
-      Sigma_Status : constant Data_Dependency_Status.E :=
-         Self.Get_Sigma_Reference (Value => Sigma, Stale_Reference => Arg.Time);
-      pragma Assert (Sigma_Status = Success);
    begin
-      Set_Sigma_Rn (
-         Self.Alg,
-         Packed_F32x3_Record.C.To_C (Packed_F32x3_Record.Unpack (Sigma))
-      );
+      -- Update the parameters:
+      Self.Update_Parameters;
 
       declare
-         Attitude_Reference_C : constant Att_Ref.C.U_C := Update (Self.Alg);
+         -- The algorithm holds the reference attitude as configuration and returns
+         -- it unchanged, so Update takes no per-tick input.
+         Sigma_Rn_C : constant Packed_F32x3_Record.C.U_C := Update (Self.Alg);
       begin
-         -- Send out data product:
+         -- Build the attitude reference message around the MRP. The algorithm
+         -- produces the MRP alone; the reference rates are zero for a fixed
+         -- inertial attitude, matching the C++ adapter, which zero-initializes the
+         -- payload and writes only sigma_RN.
          Self.Data_Product_T_Send (Self.Data_Products.Attitude_Reference (
             Arg.Time,
-            Att_Ref.Pack (Att_Ref.C.To_Ada (Attitude_Reference_C))
+            Att_Ref.Pack ((
+               Sigma_Rn => Packed_F32x3.C.To_Ada (Sigma_Rn_C.Value),
+               Omega_Rn_N => [others => 0.0],
+               Domega_Rn_N => [others => 0.0]
+            ))
          ));
       end;
    end Tick_T_Recv_Sync;
 
-   -----------------------------------------------
-   -- Data dependency handlers:
-   -----------------------------------------------
-   -- Description:
-   --    Data dependencies for the Inertial 3D component.
-   -- Invalid data dependency handler. This procedure is called when a data dependency's id or length are found to be invalid:
-   overriding procedure Invalid_Data_Dependency (Self : in out Instance; Id : in Data_Product_Types.Data_Product_Id; Ret : in Data_Product_Return.T) is
-      pragma Annotate (GNATSAS, Intentional, "subp always fails", "intentional assertion");
+   -- The parameter update connector.
+   overriding procedure Parameter_Update_T_Modify (Self : in out Instance; Arg : in out Parameter_Update.T) is
    begin
-      -- None of the data dependencies should be invalid in this case.
-      pragma Assert (False);
-   end Invalid_Data_Dependency;
+      -- Process the parameter update, staging or fetching parameters as requested.
+      Self.Process_Parameter_Update (Arg);
+   end Parameter_Update_T_Modify;
+
+   -----------------------------------------------
+   -- Parameter handlers:
+   -----------------------------------------------
+   overriding procedure Update_Parameters_Action (Self : in out Instance) is
+   begin
+      -- Rebuild the algorithm configuration from the updated parameter. The value was
+      -- checked by Validate_Parameters at staging, so Set_Config will not reject it.
+      Set_Config (Self.Alg, Sigma_Rn => To_Config (Self.Sigma_Rn));
+   end Update_Parameters_Action;
 
 end Component.Inertial_3d.Implementation;

@@ -1,5 +1,5 @@
 ---
-description: Inertial 3D algorithm produces a fixed inertial attitude reference message.
+description: Inertial 3D algorithm produces a fixed inertial attitude reference message. The algorithm holds the reference attitude as immutable configuration and returns it unchanged on every tick, so it is configured once rather than supplied per tick. It is currently sourced from a component parameter; whether the GNC state manager should instead supply it at the inertial-hold transition is an open design question.
 execution: passive
 init:
   description: Initializes the inertial 3D algorithm instance.
@@ -7,10 +7,9 @@ connectors:
   - description: Run the algorithm up to the current time.
     type: Tick.T
     kind: recv_sync
-  - description: Fetch a data product item from the database.
-    type: Data_Product_Fetch.T
-    return_type: Data_Product_Return.T
-    kind: request
   - description: The data product invoker connector.
     type: Data_Product.T
     kind: send
+  - description: The parameter update connector.
+    type: Parameter_Update.T
+    kind: modify
