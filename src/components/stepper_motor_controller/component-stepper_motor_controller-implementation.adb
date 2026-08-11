@@ -6,20 +6,32 @@ with Stepper_Enums;
 
 package body Component.Stepper_Motor_Controller.Implementation is
 
+   -- Push the component's current parameter values into the C++ algorithm.
+   -- Every reconfiguration path goes through here so the configuration is
+   -- assembled in exactly one place.
+   procedure Apply_Config (Self : in out Instance) is
+   begin
+      Set_Config (
+         Self.Alg,
+         Step_Angle       => Self.Step_Angle.Value,
+         Min_Angle        => Self.Motor_Min_Angle.Value,
+         Max_Angle        => Self.Motor_Max_Angle.Value,
+         Settle_Count_Max => Self.Settle_Count_Max.Value,
+         Min_Step_Command => Self.Min_Step_Command.Value);
+   end Apply_Config;
+
    --------------------------------------------------
    -- Subprogram for implementation init method:
    --------------------------------------------------
    -- Initializes the stepper motor controller algorithm.
    overriding procedure Init (Self : in out Instance) is
    begin
-      -- Allocate C++ class on the heap
-      Self.Alg := Create;
-
-      -- Apply the Ada parameter defaults to the algorithm: the framework
-      -- invokes Update_Parameters_Action only after a ground parameter
-      -- update, and the C++ constructor defaults do not match the Ada
-      -- defaults.
-      Self.Update_Parameters_Action;
+      Self.Alg := Create (
+         Step_Angle       => Self.Step_Angle.Value,
+         Min_Angle        => Self.Motor_Min_Angle.Value,
+         Max_Angle        => Self.Motor_Max_Angle.Value,
+         Settle_Count_Max => Self.Settle_Count_Max.Value,
+         Min_Step_Command => Self.Min_Step_Command.Value);
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -131,15 +143,11 @@ package body Component.Stepper_Motor_Controller.Implementation is
    -----------------------------------------------
    -- Parameter handlers:
    -----------------------------------------------
+   -- Apply parameters to the C algorithm when they are updated. The values were
+   -- checked by Validate_Parameters at staging, so Set_Config will not reject them.
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
    begin
-      -- Set algorithm configuration from parameters:
-      Set_Step_Angle (Self.Alg, Self.Step_Angle.Value);
-      Set_Motor_Angle_Range (Self.Alg,
-         Min_Angle => Self.Motor_Min_Angle.Value,
-         Max_Angle => Self.Motor_Max_Angle.Value);
-      Set_Settle_Count_Max (Self.Alg, Self.Settle_Count_Max.Value);
-      Set_Min_Step_Command (Self.Alg, Self.Min_Step_Command.Value);
+      Apply_Config (Self);
    end Update_Parameters_Action;
 
    -----------------------------------------------
