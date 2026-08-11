@@ -37,11 +37,10 @@ package body Sunline_Srukf_Tests.Implementation is
    -- Tests:
    -------------------------------------------------------------------------
 
-   -- Run algorithm to ensure integration is sound. The sunlineSRuKF
-   -- algorithm is a pass-through. Only omega_BN_B is supplied to the
-   -- component (from body_rate_miscompare); sigma_BN, vehSunPntBdy, and
-   -- timeTag have no upstream producer and are zeroed by the wrapper, so the
-   -- output carries the input omega and zeros for the other fields.
+   -- Run the component to ensure the pass-through is sound. Only omega_BN_B is
+   -- supplied (from body_rate_miscompare); sigma_BN, vehSunPntBdy, and timeTag
+   -- have no upstream producer and are zeroed, so the output carries the input
+   -- omega and zeros for the other fields.
    overriding procedure Test (Self : in out Instance) is
       T : Component.Sunline_Srukf.Implementation.Tester.Instance_Access renames Self.Tester;
 
@@ -54,10 +53,8 @@ package body Sunline_Srukf_Tests.Implementation is
          [-2.0, 3.0, -1.5]
       ];
    begin
-      -- Provide a defined CSS input. The current sunline_srukf algorithm
-      -- copies attitude fields straight through (Cos_Values are not yet
-      -- consumed), but the wrapper now down-casts each F64 cosine to F32
-      -- and any uninitialized bit pattern would raise Constraint_Error.
+      -- Provide a defined CSS input. The component fetches it so a wiring
+      -- defect is still caught, but publishes no CSS-derived field.
       T.Css_Sensor_Input := (Data => [others => 0.0]);
 
       -- Run each test case

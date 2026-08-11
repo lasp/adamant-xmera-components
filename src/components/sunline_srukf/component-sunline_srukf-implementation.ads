@@ -5,7 +5,8 @@
 -- Includes:
 with Tick;
 
--- Sunline SRuKF pass-through algorithm wrapping the C++ SunlineSRuKFAlgorithm.
+-- Sunline SRuKF state pass-through. Publishes the spacecraft body rate as the
+-- sunline state; the remaining state fields have no upstream producer and are zeroed.
 package Component.Sunline_Srukf.Implementation is
 
    -- The component class instance record:
