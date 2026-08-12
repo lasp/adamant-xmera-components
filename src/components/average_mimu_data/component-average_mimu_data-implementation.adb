@@ -5,6 +5,7 @@
 with Mimu_Input_Packet.C;
 with Mimu_Sample_X10.C;
 with Averaged_Imu_Data.C;
+with Packed_F32.C;
 with Packed_F32x9.C;
 with Packed_F32x9_Record.C;
 
@@ -16,19 +17,21 @@ package body Component.Average_Mimu_Data.Implementation is
    -- Initializes the AverageMimuData algorithm.
    overriding procedure Init (Self : in out Instance) is
       -- Build the initial configuration from the component's parameter defaults.
-      Gyro_Window  : constant Long_Float := Long_Float (Self.Gyro_Time_Delta.Value);
-      Accel_Window : constant Long_Float := Long_Float (Self.Accel_Time_Delta.Value);
+      Gyro_Window  : constant Packed_F32.C.U_C := Packed_F32.C.U_C (Self.Gyro_Time_Delta.Value);
+      Accel_Window : constant Packed_F32.C.U_C := Packed_F32.C.U_C (Self.Accel_Time_Delta.Value);
       Dcm_Bc_C     : constant Packed_F32x9_Record.C.U_C :=
          (Value => Packed_F32x9.C.To_C (Self.Dcm_Pltf_To_Bdy));
    begin
       pragma Assert (Validate_Config (
          Gyro_Averaging_Window  => Gyro_Window,
          Accel_Averaging_Window => Accel_Window,
-         Dcm_Bc                 => Dcm_Bc_C));
+         Dcm_Bc                 => Dcm_Bc_C)
+      );
       Self.Alg := Create (
          Gyro_Averaging_Window  => Gyro_Window,
          Accel_Averaging_Window => Accel_Window,
-         Dcm_Bc                 => Dcm_Bc_C);
+         Dcm_Bc                 => Dcm_Bc_C
+      );
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -111,7 +114,8 @@ package body Component.Average_Mimu_Data.Implementation is
          Self.Alg,
          Gyro_Averaging_Window  => Long_Float (Self.Gyro_Time_Delta.Value),
          Accel_Averaging_Window => Long_Float (Self.Accel_Time_Delta.Value),
-         Dcm_Bc                 => (Value => Packed_F32x9.C.To_C (Self.Dcm_Pltf_To_Bdy)));
+         Dcm_Bc                 => (Value => Packed_F32x9.C.To_C (Self.Dcm_Pltf_To_Bdy))
+      );
    end Update_Parameters_Action;
 
    -- Validate a staged parameter set before it is applied by asking the algorithm's own
@@ -127,9 +131,9 @@ package body Component.Average_Mimu_Data.Implementation is
       pragma Unreferenced (Self);
    begin
       if Validate_Config (
-            Gyro_Averaging_Window  => Long_Float (Gyro_Time_Delta.Value),
-            Accel_Averaging_Window => Long_Float (Accel_Time_Delta.Value),
-            Dcm_Bc                 => (Value => Packed_F32x9.C.To_C (Dcm_Pltf_To_Bdy)))
+         Gyro_Averaging_Window  => Long_Float (Gyro_Time_Delta.Value),
+         Accel_Averaging_Window => Long_Float (Accel_Time_Delta.Value),
+         Dcm_Bc                 => (Value => Packed_F32x9.C.To_C (Dcm_Pltf_To_Bdy)))
       then
          return Parameter_Validation_Status.Valid;
       else
