@@ -2,7 +2,6 @@
 -- Thr_Firing_Remainder Component Implementation Body
 --------------------------------------------------------------------------------
 
-with Thr_Firing_Remainder_Enums;
 with Thr_Force_Cmd;
 with Thr_On_Time_Cmd;
 with Thr_Firing_Remainder_Force_Cmd.C;
@@ -14,21 +13,6 @@ package body Component.Thr_Firing_Remainder.Implementation is
    -- component zero-pads into (and truncates back out of) the 36-element C API.
    Num_Dp_Thrusters : constant := 8;
 
-   ------------------------------------------------------------------------
-   -- Local Helpers
-   ------------------------------------------------------------------------
-
-   -- Convert the parameter's pulsing-regime enumeration into the binding's C
-   -- enumeration. Both carry the C ThrFiringRemainderPulsingRegime values in
-   -- their representation clauses, so going through 'Enum_Rep and 'Enum_Val
-   -- honors those values rather than relying on literal position, and makes
-   -- 'Enum_Val the single validity gate: an undefined value raises
-   -- Constraint_Error instead of silently mapping onto a valid regime.
-   function To_C_Pulsing_Regime (Value : in Thr_Firing_Remainder_Enums.Pulsing_Regime.E)
-      return Thr_Firing_Remainder_Pulsing_Regime
-   is (Thr_Firing_Remainder_Pulsing_Regime'Enum_Val (
-         Thr_Firing_Remainder_Enums.Pulsing_Regime.E'Enum_Rep (Value)));
-
    -- Push the component's current configuration -- the applied parameters plus
    -- the thruster array held as instance state -- into the C++ algorithm. Every
    -- reconfiguration path goes through here so the configuration is assembled in
@@ -38,11 +22,11 @@ package body Component.Thr_Firing_Remainder.Implementation is
       Set_Config (
          Self.Alg,
          Num_Thrusters             => Self.Num_Thrusters,
-         Max_Thrust                => Self.Max_Thrust'Unchecked_Access,
+         Max_Thrust                => Self.Max_Thrust'Access,
          Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time.Value,
          Control_Period            => Self.Control_Period.Value,
          On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor.Value,
-         Pulsing_Regime            => To_C_Pulsing_Regime (Self.Thrust_Pulsing_Regime.Value));
+         Pulsing_Regime            => To_C (Self.Thrust_Pulsing_Regime.Value));
    end Apply_Config;
 
    --------------------------------------------------
@@ -59,11 +43,11 @@ package body Component.Thr_Firing_Remainder.Implementation is
          Thrust_Pulsing_Regime     => Self.Thrust_Pulsing_Regime) = Valid);
       Self.Alg := Create (
          Num_Thrusters             => Self.Num_Thrusters,
-         Max_Thrust                => Self.Max_Thrust'Unchecked_Access,
+         Max_Thrust                => Self.Max_Thrust'Access,
          Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time.Value,
          Control_Period            => Self.Control_Period.Value,
          On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor.Value,
-         Pulsing_Regime            => To_C_Pulsing_Regime (Self.Thrust_Pulsing_Regime.Value));
+         Pulsing_Regime            => To_C (Self.Thrust_Pulsing_Regime.Value));
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -183,22 +167,16 @@ package body Component.Thr_Firing_Remainder.Implementation is
    begin
       if Validate_Config (
             Num_Thrusters             => Self.Num_Thrusters,
-            Max_Thrust                => Self.Max_Thrust'Unchecked_Access,
+            Max_Thrust                => Self.Max_Thrust'Access,
             Thr_Min_Fire_Time         => Thr_Min_Fire_Time.Value,
             Control_Period            => Control_Period.Value,
             On_Time_Saturation_Factor => On_Time_Saturation_Factor.Value,
-            Pulsing_Regime            => To_C_Pulsing_Regime (Thrust_Pulsing_Regime.Value))
+            Pulsing_Regime            => To_C (Thrust_Pulsing_Regime.Value))
       then
          return Parameter_Validation_Status.Valid;
       else
          return Parameter_Validation_Status.Invalid;
       end if;
-   exception
-      -- To_C_Pulsing_Regime's 'Enum_Val raises Constraint_Error for a staged byte
-      -- that is not a defined pulsing regime. Reject the update rather than let it
-      -- propagate out of the parameter staging path.
-      when Constraint_Error =>
-         return Parameter_Validation_Status.Invalid;
    end Validate_Parameters;
 
    -----------------------------------------------
