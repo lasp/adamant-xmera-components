@@ -13,8 +13,13 @@ package body Component.Inertial_3d.Implementation is
    -- Local Helpers
    ------------------------------------------------------------------------
 
-   -- Marshal an unpacked MRP parameter value into the Vector3f_c mirror the
-   -- flattened shim expects as its single configuration argument.
+   -- Marshal an unpacked MRP value into the Vector3f_c mirror the flattened shim
+   -- expects as its single configuration argument. Every path that configures the
+   -- algorithm -- Init, Update_Parameters_Action, Validate_Parameters -- marshals
+   -- through here, so where the value comes from is a question this component
+   -- answers in exactly three call sites. That matters because the source is still
+   -- under discussion: the reference attitude may move from a parameter to a value
+   -- the GNC state manager supplies at the inertial-hold transition.
    function To_Config (Sigma_Rn : in Packed_F32x3.U) return Packed_F32x3_Record.C.U_C
    is ((Value => Packed_F32x3.C.To_C (Sigma_Rn)));
 
@@ -100,11 +105,12 @@ package body Component.Inertial_3d.Implementation is
          return Parameter_Validation_Status.Invalid;
       end if;
    exception
-      -- Packed_F32x3.C.To_C range-checks each element, so a non-finite MRP raises
-      -- here rather than reaching Validate_Config. Either way the value is invalid
-      -- configuration: reject it instead of letting the exception propagate out of
-      -- the parameter staging path. This is also what keeps Update_Parameters_Action,
-      -- which marshals through the same helper, from ever seeing a non-finite value.
+      -- Reached only under -gnatVa, which the test and debug targets set: the validity
+      -- check on a non-finite Short_Float raises inside Packed_F32x3.C.To_C ("invalid
+      -- data") before Validate_Config can answer. To_C itself checks nothing -- it is a
+      -- plain element-wise copy. Production sets no -gnatVa; there the value reaches
+      -- Validate_Config, whose allFinite predicate rejects it with no exception at all.
+      -- Keep the handler so the debug-only raise cannot escape parameter staging.
       when Constraint_Error =>
          return Parameter_Validation_Status.Invalid;
    end Validate_Parameters;
