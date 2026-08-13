@@ -36,9 +36,8 @@ package body Component.Css_Comm.Implementation is
    overriding procedure Init (Self : in out Instance) is
       use Parameter_Validation_Status;
 
-      -- The number of CSS sensors is fixed by the hardware interface: the ADC data
-      -- dependency carries exactly Css_Adc_U16_8.Length channels.
-      Num_Sensors : constant Interfaces.Unsigned_32 := Interfaces.Unsigned_32 (Css_Adc_U16_8.Length);
+      -- The array arguments cross by reference, so they need aliased objects to
+      -- point at and cannot be marshalled inline.
       Max_Sensor_Values : aliased Css_Values_Array_C := Make_Max_Sensor_Values (Self.Max_Sensor_Value.Value);
       Cheby_Poly_C : aliased Cheby_Polynomials_C_Type := (Data => Packed_F64x11.C.To_C (Self.Cheby_Polynomials));
    begin
@@ -49,7 +48,12 @@ package body Component.Css_Comm.Implementation is
          Max_Sensor_Value  => Self.Max_Sensor_Value,
          Cheby_Count       => Self.Cheby_Count,
          Cheby_Polynomials => Self.Cheby_Polynomials) = Valid);
-      Self.Alg := Create (Num_Sensors, Max_Sensor_Values'Unchecked_Access, Cheby_Poly_C'Unchecked_Access);
+      -- The number of CSS sensors is fixed by the hardware interface: the ADC data
+      -- dependency carries exactly Css_Adc_U16_8.Length channels.
+      Self.Alg := Create (
+         Num_Sensors       => Interfaces.Unsigned_32 (Css_Adc_U16_8.Length),
+         Max_Sensor_Values => Max_Sensor_Values'Access,
+         Polynomials       => Cheby_Poly_C'Access);
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -132,13 +136,16 @@ package body Component.Css_Comm.Implementation is
       -- were checked by Validate_Parameters at staging, so Set_Config will not reject
       -- them. Cheby_Count has no counterpart in the flattened config (the algorithm
       -- uses all MAX_NUM_CHEBY_POLYS coefficients) and is intentionally not applied.
-      Num_Sensors : constant Interfaces.Unsigned_32 := Interfaces.Unsigned_32 (Css_Adc_U16_8.Length);
       Max_Sensor_Values : aliased Css_Values_Array_C := Make_Max_Sensor_Values (Self.Max_Sensor_Value.Value);
       Cheby_Poly_C : aliased Cheby_Polynomials_C_Type := (
          Data => Packed_F64x11.C.To_C (Self.Cheby_Polynomials)
       );
    begin
-      Set_Config (Self.Alg, Num_Sensors, Max_Sensor_Values'Unchecked_Access, Cheby_Poly_C'Unchecked_Access);
+      Set_Config (
+         Self.Alg,
+         Num_Sensors       => Interfaces.Unsigned_32 (Css_Adc_U16_8.Length),
+         Max_Sensor_Values => Max_Sensor_Values'Access,
+         Polynomials       => Cheby_Poly_C'Access);
    end Update_Parameters_Action;
 
    -- Validate a staged parameter set before it is applied by asking the algorithm's
@@ -153,11 +160,14 @@ package body Component.Css_Comm.Implementation is
       Cheby_Polynomials : in Packed_F64x11.U
    ) return Parameter_Validation_Status.E is
       pragma Unreferenced (Self, Cheby_Count);
-      Num_Sensors : constant Interfaces.Unsigned_32 := Interfaces.Unsigned_32 (Css_Adc_U16_8.Length);
       Max_Sensor_Values : aliased Css_Values_Array_C := Make_Max_Sensor_Values (Max_Sensor_Value.Value);
       Cheby_Poly_C : aliased Cheby_Polynomials_C_Type := (Data => Packed_F64x11.C.To_C (Cheby_Polynomials));
    begin
-      if Validate_Config (Num_Sensors, Max_Sensor_Values'Unchecked_Access, Cheby_Poly_C'Unchecked_Access) then
+      if Validate_Config (
+            Num_Sensors       => Interfaces.Unsigned_32 (Css_Adc_U16_8.Length),
+            Max_Sensor_Values => Max_Sensor_Values'Access,
+            Polynomials       => Cheby_Poly_C'Access)
+      then
          return Parameter_Validation_Status.Valid;
       else
          return Parameter_Validation_Status.Invalid;
