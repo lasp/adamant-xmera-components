@@ -5,9 +5,7 @@
 with Mimu_Input_Packet.C;
 with Mimu_Sample_X10.C;
 with Averaged_Imu_Data.C;
-with Packed_F32.C;
 with Packed_F32x9.C;
-with Packed_F32x9_Record.C;
 
 package body Component.Average_Mimu_Data.Implementation is
 
@@ -16,21 +14,19 @@ package body Component.Average_Mimu_Data.Implementation is
    --------------------------------------------------
    -- Initializes the AverageMimuData algorithm.
    overriding procedure Init (Self : in out Instance) is
-      -- Build the initial configuration from the component's parameter defaults.
-      Gyro_Window  : constant Packed_F32.C.U_C := Packed_F32.C.U_C (Self.Gyro_Time_Delta.Value);
-      Accel_Window : constant Packed_F32.C.U_C := Packed_F32.C.U_C (Self.Accel_Time_Delta.Value);
-      Dcm_Bc_C     : constant Packed_F32x9_Record.C.U_C :=
-         (Value => Packed_F32x9.C.To_C (Self.Dcm_Pltf_To_Bdy));
+      use Parameter_Validation_Status;
    begin
-      pragma Assert (Validate_Config (
-         Gyro_Averaging_Window  => Gyro_Window,
-         Accel_Averaging_Window => Accel_Window,
-         Dcm_Bc                 => Dcm_Bc_C)
-      );
+      -- Create throws on an invalid configuration, so the parameter defaults must form
+      -- a valid one. Assert through Validate_Parameters, the component's single
+      -- validation gate, rather than calling Validate_Config a second time here.
+      pragma Assert (Self.Validate_Parameters (
+         Gyro_Time_Delta  => Self.Gyro_Time_Delta,
+         Accel_Time_Delta => Self.Accel_Time_Delta,
+         Dcm_Pltf_To_Bdy  => Self.Dcm_Pltf_To_Bdy) = Valid);
       Self.Alg := Create (
-         Gyro_Averaging_Window  => Gyro_Window,
-         Accel_Averaging_Window => Accel_Window,
-         Dcm_Bc                 => Dcm_Bc_C
+         Gyro_Averaging_Window  => Self.Gyro_Time_Delta.Value,
+         Accel_Averaging_Window => Self.Accel_Time_Delta.Value,
+         Dcm_Bc                 => (Value => Packed_F32x9.C.To_C (Self.Dcm_Pltf_To_Bdy))
       );
    end Init;
 
@@ -112,8 +108,8 @@ package body Component.Average_Mimu_Data.Implementation is
       -- checked by Validate_Parameters at staging, so Set_Config will not reject them.
       Set_Config (
          Self.Alg,
-         Gyro_Averaging_Window  => Long_Float (Self.Gyro_Time_Delta.Value),
-         Accel_Averaging_Window => Long_Float (Self.Accel_Time_Delta.Value),
+         Gyro_Averaging_Window  => Self.Gyro_Time_Delta.Value,
+         Accel_Averaging_Window => Self.Accel_Time_Delta.Value,
          Dcm_Bc                 => (Value => Packed_F32x9.C.To_C (Self.Dcm_Pltf_To_Bdy))
       );
    end Update_Parameters_Action;
@@ -131,8 +127,8 @@ package body Component.Average_Mimu_Data.Implementation is
       pragma Unreferenced (Self);
    begin
       if Validate_Config (
-         Gyro_Averaging_Window  => Long_Float (Gyro_Time_Delta.Value),
-         Accel_Averaging_Window => Long_Float (Accel_Time_Delta.Value),
+         Gyro_Averaging_Window  => Gyro_Time_Delta.Value,
+         Accel_Averaging_Window => Accel_Time_Delta.Value,
          Dcm_Bc                 => (Value => Packed_F32x9.C.To_C (Dcm_Pltf_To_Bdy)))
       then
          return Parameter_Validation_Status.Valid;

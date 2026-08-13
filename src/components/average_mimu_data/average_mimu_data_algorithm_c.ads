@@ -13,7 +13,6 @@ with Mimu_Sample_X10.C;
 with Mimu_Input_Packet.C;
 with Mimu_Input_Packet_X4.C;
 with Mimu_Input_Packets.C;
-with Packed_F32.C;
 with Packed_F32x9_Record.C;
 with Averaged_Imu_Data.C;
 
@@ -56,8 +55,8 @@ package Average_Mimu_Data_Algorithm_C is
    --* @return True if the configuration is valid. Never throws, so it can guard the
    --* throwing Create/Set_Config from an invalid configuration.
    function Validate_Config
-     (Gyro_Averaging_Window  : Packed_F32.C.U_C;
-      Accel_Averaging_Window : Packed_F32.C.U_C;
+     (Gyro_Averaging_Window  : Short_Float;
+      Accel_Averaging_Window : Short_Float;
       Dcm_Bc                 : Packed_F32x9_Record.C.U_C)
      return Boolean
      with Import       => True,
@@ -71,8 +70,8 @@ package Average_Mimu_Data_Algorithm_C is
    --* @param Dcm_Bc                 CHU-to-body DCM (row-major 3x3, orthonormal, det +1).
    --* @return The new algorithm instance, which must be released with Destroy.
    function Create
-     (Gyro_Averaging_Window  : Packed_F32.C.U_C;
-      Accel_Averaging_Window : Packed_F32.C.U_C;
+     (Gyro_Averaging_Window  : Short_Float;
+      Accel_Averaging_Window : Short_Float;
       Dcm_Bc                 : Packed_F32x9_Record.C.U_C)
      return Average_Mimu_Data_Algorithm_Access
      with Import       => True,
@@ -95,8 +94,8 @@ package Average_Mimu_Data_Algorithm_C is
    --* @param Dcm_Bc                 CHU-to-body DCM (row-major 3x3, orthonormal, det +1).
    procedure Set_Config
      (Self                   : Average_Mimu_Data_Algorithm_Access;
-      Gyro_Averaging_Window  : Packed_F32.C.U_C;
-      Accel_Averaging_Window : Packed_F32.C.U_C;
+      Gyro_Averaging_Window  : Short_Float;
+      Accel_Averaging_Window : Short_Float;
       Dcm_Bc                 : Packed_F32x9_Record.C.U_C)
      with Import       => True,
           Convention   => C,
