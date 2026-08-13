@@ -23,8 +23,12 @@ package body Component.Inertial_3d.Implementation is
    --------------------------------------------------
    -- Initializes the inertial 3D algorithm instance.
    overriding procedure Init (Self : in out Instance) is
+      use Parameter_Validation_Status;
    begin
-      pragma Assert (Validate_Config (Sigma_Rn => To_Config (Self.Sigma_Rn)));
+      -- Create throws on an invalid configuration, so the parameter default must form a
+      -- valid one. Assert through Validate_Parameters, the component's single validation
+      -- gate, rather than calling Validate_Config a second time here.
+      pragma Assert (Self.Validate_Parameters (Sigma_Rn => Self.Sigma_Rn) = Valid);
       Self.Alg := Create (Sigma_Rn => To_Config (Self.Sigma_Rn));
    end Init;
 

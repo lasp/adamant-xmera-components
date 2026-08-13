@@ -50,14 +50,13 @@ package body Component.Thr_Firing_Remainder.Implementation is
    --------------------------------------------------
    -- Initializes the thruster firing remainder algorithm.
    overriding procedure Init (Self : in out Instance) is
+      use Parameter_Validation_Status;
    begin
-      pragma Assert (Validate_Config (
-         Num_Thrusters             => Self.Num_Thrusters,
-         Max_Thrust                => Self.Max_Thrust'Unchecked_Access,
-         Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time.Value,
-         Control_Period            => Self.Control_Period.Value,
-         On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor.Value,
-         Pulsing_Regime            => To_C_Pulsing_Regime (Self.Thrust_Pulsing_Regime.Value)));
+      pragma Assert (Self.Validate_Parameters (
+         Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time,
+         Control_Period            => Self.Control_Period,
+         On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor,
+         Thrust_Pulsing_Regime     => Self.Thrust_Pulsing_Regime) = Valid);
       Self.Alg := Create (
          Num_Thrusters             => Self.Num_Thrusters,
          Max_Thrust                => Self.Max_Thrust'Unchecked_Access,
@@ -78,6 +77,7 @@ package body Component.Thr_Firing_Remainder.Implementation is
       Num_Thrusters : in Unsigned_32;
       Max_Thrust    : in Packed_F32x36.U)
    is
+      use Parameter_Validation_Status;
    begin
       -- Record the thruster array as the Ada-side source of truth, then swap the
       -- full configuration into the algorithm.
@@ -86,13 +86,13 @@ package body Component.Thr_Firing_Remainder.Implementation is
       -- The assembly owns this call, so an out-of-range thruster count or a
       -- non-finite maximum thrust is a wiring error rather than ground input:
       -- assert instead of reporting, and keep it out of the throwing Set_Config.
-      pragma Assert (Validate_Config (
-         Num_Thrusters             => Self.Num_Thrusters,
-         Max_Thrust                => Self.Max_Thrust'Unchecked_Access,
-         Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time.Value,
-         Control_Period            => Self.Control_Period.Value,
-         On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor.Value,
-         Pulsing_Regime            => To_C_Pulsing_Regime (Self.Thrust_Pulsing_Regime.Value)));
+      -- Validate_Parameters reads the thruster array assigned just above, so this
+      -- checks the whole configuration through the component's single gate.
+      pragma Assert (Self.Validate_Parameters (
+         Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time,
+         Control_Period            => Self.Control_Period,
+         On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor,
+         Thrust_Pulsing_Regime     => Self.Thrust_Pulsing_Regime) = Valid);
       Apply_Config (Self);
    end Configure_Thrusters;
 

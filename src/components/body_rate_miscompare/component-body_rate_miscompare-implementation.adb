@@ -24,11 +24,14 @@ package body Component.Body_Rate_Miscompare.Implementation is
    --------------------------------------------------
    -- Initializes the body rate miscompare algorithm.
    overriding procedure Init (Self : in out Instance) is
+      use Parameter_Validation_Status;
    begin
-      pragma Assert (Validate_Config (
-         Body_Rate_Threshold     => Self.Body_Rate_Threshold.Value,
-         Fault_Persistence_Limit => Self.Fault_Persistence_Limit.Value,
-         Use_Imu_Rates           => Self.Use_Imu_Rates));
+      -- Create throws on an invalid configuration, so the parameter defaults must form
+      -- a valid one. Assert through Validate_Parameters, the component's single
+      -- validation gate, rather than calling Validate_Config a second time here.
+      pragma Assert (Self.Validate_Parameters (
+         Body_Rate_Threshold     => Self.Body_Rate_Threshold,
+         Fault_Persistence_Limit => Self.Fault_Persistence_Limit) = Valid);
       Self.Alg := Create (
          Body_Rate_Threshold     => Self.Body_Rate_Threshold.Value,
          Fault_Persistence_Limit => Self.Fault_Persistence_Limit.Value,

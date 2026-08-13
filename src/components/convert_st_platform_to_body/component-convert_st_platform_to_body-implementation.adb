@@ -17,11 +17,13 @@ package body Component.Convert_St_Platform_To_Body.Implementation is
    --------------------------------------------------
    -- Initializes the convert star tracker platform to body algorithm.
    overriding procedure Init (Self : in out Instance) is
-      -- Build the initial DCM configuration from the component's parameter default.
-      Dcm_Cb_C : constant Packed_F32x9_Record.C.U_C := (Value => Packed_F32x9.C.To_C (Self.Dcm_Cb));
+      use Parameter_Validation_Status;
    begin
-      pragma Assert (Validate_Config (Dcm_Cb_C));
-      Self.Alg := Create (Dcm_Cb_C);
+      -- Create throws on an invalid configuration, so the parameter default must form a
+      -- valid one. Assert through Validate_Parameters, the component's single validation
+      -- gate, rather than calling Validate_Config a second time here.
+      pragma Assert (Self.Validate_Parameters (Dcm_Cb => Self.Dcm_Cb) = Valid);
+      Self.Alg := Create ((Value => Packed_F32x9.C.To_C (Self.Dcm_Cb)));
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -108,9 +110,8 @@ package body Component.Convert_St_Platform_To_Body.Implementation is
       Dcm_Cb : in Packed_F32x9.U
    ) return Parameter_Validation_Status.E is
       pragma Unreferenced (Self);
-      Dcm_Cb_C : constant Packed_F32x9_Record.C.U_C := (Value => Packed_F32x9.C.To_C (Dcm_Cb));
    begin
-      if Validate_Config (Dcm_Cb_C) then
+      if Validate_Config ((Value => Packed_F32x9.C.To_C (Dcm_Cb))) then
          return Parameter_Validation_Status.Valid;
       else
          return Parameter_Validation_Status.Invalid;
