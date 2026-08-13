@@ -8,7 +8,6 @@ with St_Platform_Measurement;
 with St_Platform_Measurement.C;
 with St_Att.C;
 with Packed_F32x9.C;
-with Packed_F32x9_Record.C;
 
 package body Component.Convert_St_Platform_To_Body.Implementation is
 
@@ -23,7 +22,7 @@ package body Component.Convert_St_Platform_To_Body.Implementation is
       -- valid one. Assert through Validate_Parameters, the component's single validation
       -- gate, rather than calling Validate_Config a second time here.
       pragma Assert (Self.Validate_Parameters (Dcm_Cb => Self.Dcm_Cb) = Valid);
-      Self.Alg := Create ((Value => Packed_F32x9.C.To_C (Self.Dcm_Cb)));
+      Self.Alg := Create (Dcm_Cb => (Value => Packed_F32x9.C.To_C (Self.Dcm_Cb)));
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -92,13 +91,10 @@ package body Component.Convert_St_Platform_To_Body.Implementation is
    -- push the body-to-case DCM into the C algorithm so subsequent updates use the new platform
    -- alignment.
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
-      Dcm_Cb_C : constant Packed_F32x9_Record.C.U_C := (
-         Value => Packed_F32x9.C.To_C (Self.Dcm_Cb)
-      );
    begin
       -- Rebuild the algorithm configuration from the updated DCM parameter. The value was
       -- checked by Validate_Parameters at staging, so Set_Config will not reject it.
-      Set_Config (Self.Alg, Dcm_Cb_C);
+      Set_Config (Self.Alg, Dcm_Cb => (Value => Packed_F32x9.C.To_C (Self.Dcm_Cb)));
    end Update_Parameters_Action;
 
    -- Validate a staged Dcm_Cb before it is applied by asking the algorithm's own
@@ -111,7 +107,7 @@ package body Component.Convert_St_Platform_To_Body.Implementation is
    ) return Parameter_Validation_Status.E is
       pragma Unreferenced (Self);
    begin
-      if Validate_Config ((Value => Packed_F32x9.C.To_C (Dcm_Cb))) then
+      if Validate_Config (Dcm_Cb => (Value => Packed_F32x9.C.To_C (Dcm_Cb))) then
          return Parameter_Validation_Status.Valid;
       else
          return Parameter_Validation_Status.Invalid;
