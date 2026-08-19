@@ -1,0 +1,58 @@
+# Single source of truth for the sibling-repo revisions and toolchain image
+# that this repo's CI builds against.
+#
+# Edit the "outputs:" block at the bottom. 
+# 
+# Every workflow in .github/workflows reads these values, so a ref changes 
+# in exactly one place.
+#
+name: CI dependency refs
+
+on:
+  workflow_call:
+    outputs:
+      adamant_ref:
+        description: "Ref for lasp/adamant (empty = default branch)"
+        value: ${{ jobs.refs.outputs.adamant_ref }}
+      fp32_fsw_xmera_ref:
+        description: "Ref for lasp/fp32-fsw-xmera"
+        value: ${{ jobs.refs.outputs.fp32_fsw_xmera_ref }}
+      eigen_ref:
+        description: "Ref for lasp/eigen"
+        value: ${{ jobs.refs.outputs.eigen_ref }}
+      image:
+        description: "Adamant toolchain container image, including tag"
+        value: ${{ jobs.refs.outputs.image }}
+
+# This workflow reads nothing and writes nothing.
+permissions: {}
+
+jobs:
+  refs:
+    runs-on: ubuntu-latest
+    # ===== EDIT HERE ==================================================
+    # These are literal strings rather than values written to $GITHUB_OUTPUT
+    # by a step: a workflow_call output must reference a *job* output, and
+    # routing an empty value through $GITHUB_OUTPUT has been observed to go
+    # stale across job re-runs. Literals avoid both hazards.
+    outputs:
+      # The C shims move in lockstep with the Ada bindings, so CI must build
+      # the fp32 revision the bindings were written against rather than the
+      # develop tip. trigger_jenkins_renode.yml POSTs this same value to
+      # Jenkins, so the Renode build and the GitHub builds cannot disagree
+      # about which fp32 revision they test.
+      fp32_fsw_xmera_ref: '26d19cbbc1f00bb2d3cdbfc74e7ce1f1c37ab9d2'
+      # Eigen fork carrying freestanding-build support.
+      eigen_ref: 'feature/freestanding'
+      # Empty string means "follow lasp/adamant's default branch". 
+      # Set to a branch/tag/SHA to pin. Keep the quotes a bare 
+      # `adamant_ref:` is YAML null, not an empty string.
+      adamant_ref: ''
+      # Used by the amd64 jobs (job-level container:) and by the arm64 jobs
+      # (docker run under QEMU).
+      image: 'ghcr.io/lasp/adamant:0.2'
+    steps:
+      # A job must declare at least one step. Everything this workflow
+      # provides lives in outputs: above.
+      - name: Emit shared refs
+        run: 'true'
