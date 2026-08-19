@@ -1,7 +1,0 @@
----
-description: Parameters for the Inertial 3D component
-parameters:
-  - name: Sigma_Rn
-    description: "[-] MRP from inertial frame N to reference frame R. This is the fixed attitude the component points to; the algorithm holds it as immutable configuration and returns it unchanged on every tick. Must be finite."
-    type: Packed_F32x3.T
-    default: "[0.0, 0.0, 0.0]"

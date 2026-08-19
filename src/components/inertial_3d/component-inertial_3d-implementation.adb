@@ -3,38 +3,28 @@
 --------------------------------------------------------------------------------
 
 with Att_Ref;
-with Packed_F32x3;
 with Packed_F32x3.C;
 with Packed_F32x3_Record.C;
 
 package body Component.Inertial_3d.Implementation is
-
-   ------------------------------------------------------------------------
-   -- Local Helpers
-   ------------------------------------------------------------------------
-
-   -- Marshal an unpacked MRP value into the Vector3f_c mirror the flattened shim
-   -- expects as its single configuration argument. Every path that configures the
-   -- algorithm -- Init, Update_Parameters_Action, Validate_Parameters -- marshals
-   -- through here, so where the value comes from is a question this component
-   -- answers in exactly three call sites. That matters because the source is still
-   -- under discussion: the reference attitude may move from a parameter to a value
-   -- the GNC state manager supplies at the inertial-hold transition.
-   function To_Config (Sigma_Rn : in Packed_F32x3.U) return Packed_F32x3_Record.C.U_C
-   is ((Value => Packed_F32x3.C.To_C (Sigma_Rn)));
 
    --------------------------------------------------
    -- Subprogram for implementation init method:
    --------------------------------------------------
    -- Initializes the inertial 3D algorithm instance.
    overriding procedure Init (Self : in out Instance) is
-      use Parameter_Validation_Status;
+      -- The reference attitude arrives as a data dependency, which cannot be
+      -- fetched until the assembly is running. Construct the algorithm with the
+      -- zero MRP so a tick landing before the first fetch still produces
+      -- deterministic output. Applied_Sigma_Reference carries the same value, so
+      -- the first fetch of a non-zero attitude is correctly seen as a change.
+      Sigma_Rn_C : constant Packed_F32x3_Record.C.U_C :=
+         Packed_F32x3_Record.C.Unpack (Self.Applied_Sigma_Reference);
    begin
-      -- Create throws on an invalid configuration, so the parameter default must form a
-      -- valid one. Assert through Validate_Parameters, the component's single validation
-      -- gate, rather than calling Validate_Config a second time here.
-      pragma Assert (Self.Validate_Parameters (Sigma_Rn => Self.Sigma_Rn) = Valid);
-      Self.Alg := Create (Sigma_Rn => To_Config (Self.Sigma_Rn));
+      -- Create throws on an invalid configuration. The zero MRP is a valid one, so
+      -- this asserts a property of the default rather than checking runtime input.
+      pragma Assert (Validate_Config (Sigma_Rn => Sigma_Rn_C));
+      Self.Alg := Create (Sigma_Rn => Sigma_Rn_C);
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -48,9 +38,48 @@ package body Component.Inertial_3d.Implementation is
    ---------------------------------------
    -- Run the algorithm up to the current time.
    overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
+      use Data_Product_Enums;
+      use Data_Product_Enums.Data_Dependency_Status;
+      -- Change detection below compares the packed representations directly, which
+      -- is bitwise identity of the MRP -- exactly the question being asked.
+      use type Packed_F32x3_Record.T;
+
+      -- Grab data dependencies:
+      --
+      -- Data_Dependency_Status.E can be Success, Not_Available, Error, or Stale.
+      -- All return values besides Success indicate that this component is not
+      -- wired up correctly in the algorithm execution order and received errant,
+      -- stale, or no data. This should never happen, so we assert.
+      Sigma : Packed_F32x3_Record.T;
+      Sigma_Status : constant Data_Dependency_Status.E :=
+         Self.Get_Sigma_Reference (Value => Sigma, Stale_Reference => Arg.Time);
+      pragma Assert (Sigma_Status = Success);
    begin
-      -- Update the parameters:
-      Self.Update_Parameters;
+      -- The algorithm holds the reference attitude as immutable configuration, so
+      -- reconfigure only when the fetched value has actually moved. Re-pushing an
+      -- unchanged attitude would be a pointless trip across the FFI boundary.
+      if Sigma /= Self.Applied_Sigma_Reference then
+         declare
+            Sigma_Rn_C : constant Packed_F32x3_Record.C.U_C := Packed_F32x3_Record.C.Unpack (Sigma);
+         begin
+            -- Set_Config throws on an invalid configuration, so gate it on the
+            -- algorithm's own non-throwing predicate. This has to be an "if" rather
+            -- than an assertion: a non-finite MRP is not expressible as a
+            -- packed-record field range, so it survives the generated
+            -- data-dependency validation, and a build with assertions disabled must
+            -- still keep it away from the throwing Set_Config.
+            if Validate_Config (Sigma_Rn => Sigma_Rn_C) then
+               Set_Config (Self.Alg, Sigma_Rn => Sigma_Rn_C);
+               Self.Applied_Sigma_Reference := Sigma;
+            else
+               -- Keep running on the last accepted attitude. The dependency is
+               -- published inside the FSW, so a configuration the algorithm rejects
+               -- is a defect rather than ground input -- assert so it surfaces in
+               -- test instead of being silently absorbed.
+               pragma Assert (False, "Inertial_3d: algorithm rejected the fetched reference attitude");
+            end if;
+         end;
+      end if;
 
       declare
          -- The algorithm holds the reference attitude as configuration and returns
@@ -72,47 +101,17 @@ package body Component.Inertial_3d.Implementation is
       end;
    end Tick_T_Recv_Sync;
 
-   -- The parameter update connector.
-   overriding procedure Parameter_Update_T_Modify (Self : in out Instance; Arg : in out Parameter_Update.T) is
-   begin
-      -- Process the parameter update, staging or fetching parameters as requested.
-      Self.Process_Parameter_Update (Arg);
-   end Parameter_Update_T_Modify;
-
    -----------------------------------------------
-   -- Parameter handlers:
+   -- Data dependency handlers:
    -----------------------------------------------
-   overriding procedure Update_Parameters_Action (Self : in out Instance) is
+   -- Description:
+   --    Data dependencies for the Inertial 3D component.
+   -- Invalid data dependency handler. This procedure is called when a data dependency's id or length are found to be invalid:
+   overriding procedure Invalid_Data_Dependency (Self : in out Instance; Id : in Data_Product_Types.Data_Product_Id; Ret : in Data_Product_Return.T) is
+      pragma Annotate (GNATSAS, Intentional, "subp always fails", "intentional assertion");
    begin
-      -- Rebuild the algorithm configuration from the updated parameter. The value was
-      -- checked by Validate_Parameters at staging, so Set_Config will not reject it.
-      Set_Config (Self.Alg, Sigma_Rn => To_Config (Self.Sigma_Rn));
-   end Update_Parameters_Action;
-
-   -- Validate a staged parameter set before it is applied by asking the algorithm's own
-   -- non-throwing Validate_Config predicate, so the config rules live solely in the
-   -- algorithm. Rejecting an invalid update here at staging keeps it from reaching the
-   -- throwing Create/Set_Config across the FFI boundary.
-   overriding function Validate_Parameters (
-      Self : in out Instance;
-      Sigma_Rn : in Packed_F32x3.U
-   ) return Parameter_Validation_Status.E is
-      pragma Unreferenced (Self);
-   begin
-      if Validate_Config (Sigma_Rn => To_Config (Sigma_Rn)) then
-         return Parameter_Validation_Status.Valid;
-      else
-         return Parameter_Validation_Status.Invalid;
-      end if;
-   exception
-      -- Reached only under -gnatVa, which the test and debug targets set: the validity
-      -- check on a non-finite Short_Float raises inside Packed_F32x3.C.To_C ("invalid
-      -- data") before Validate_Config can answer. To_C itself checks nothing -- it is a
-      -- plain element-wise copy. Production sets no -gnatVa; there the value reaches
-      -- Validate_Config, whose allFinite predicate rejects it with no exception at all.
-      -- Keep the handler so the debug-only raise cannot escape parameter staging.
-      when Constraint_Error =>
-         return Parameter_Validation_Status.Invalid;
-   end Validate_Parameters;
+      -- None of the data dependencies should be invalid in this case.
+      pragma Assert (False);
+   end Invalid_Data_Dependency;
 
 end Component.Inertial_3d.Implementation;

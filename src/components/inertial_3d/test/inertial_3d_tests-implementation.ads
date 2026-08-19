@@ -16,9 +16,9 @@ private
 
    -- Run algorithm to ensure integration is sound.
    overriding procedure Test (Self : in out Instance);
-   -- A non-finite reference MRP survives parameter staging but is refused by
-   -- Validate_Parameters, keeping it out of the throwing Set_Config.
-   overriding procedure Test_Invalid_Parameter (Self : in out Instance);
+   -- Drive the changed and unchanged reference-attitude paths, checking the
+   -- published reference in both cases.
+   overriding procedure Test_Reconfigures_Only_On_Change (Self : in out Instance);
 
    -- Test data and state:
    type Instance is new Inertial_3d_Tests.Base_Instance with record

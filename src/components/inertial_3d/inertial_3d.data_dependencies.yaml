@@ -1,0 +1,6 @@
+---
+description: Data dependencies for the Inertial 3D component.
+data_dependencies:
+  - name: Sigma_Reference
+    type: Packed_F32x3_Record.T
+    description: MRP vector from inertial frame N to corrected reference frame R.

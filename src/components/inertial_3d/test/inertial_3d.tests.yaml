@@ -2,6 +2,6 @@
 description: This is a unit test suite for the Inertial 3D component.
 tests:
   - name: Test
-    description: Run algorithm to ensure integration is sound. The reference attitude is configured as a parameter and the published reference echoes it with zero reference rates.
-  - name: Test_Invalid_Parameter
-    description: A non-finite reference MRP survives parameter staging but is refused by Validate_Parameters, keeping it out of the throwing Set_Config.
+    description: Run algorithm to ensure integration is sound. The reference attitude is supplied as a data dependency and the published reference echoes it with zero reference rates.
+  - name: Test_Reconfigures_Only_On_Change
+    description: Drive the changed and unchanged reference-attitude paths, checking that the published reference carries the fetched attitude in both cases. Whether the reconfiguration itself was skipped is visible in branch coverage rather than in the published output.
