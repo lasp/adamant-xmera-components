@@ -33,7 +33,7 @@ on:
         required: false
         type: string
       fp32_fsw_xmera_ref:
-        description: "fp32-fsw-xmera ref (default: Jenkins job's hardcoded fallback)"
+        description: "fp32-fsw-xmera sourced from _refs.yml (default: Jenkins job's hardcoded fallback)"
         required: false
         type: string
       project_ref:
@@ -47,8 +47,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  refs:
+    uses: ./.github/workflows/_refs.yml
   trigger_job:
     name: trigger_jenkins_renode
+    needs: refs
     runs-on: ubuntu-latest
     timeout-minutes: 120
     env:
@@ -56,13 +59,17 @@ jobs:
       CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
       CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
       # === Per-CI-run pins ============================================
-      # Uncomment a line below to pin a sibling repo's ref for THIS
-      # branch's CI runs (e.g. one-off DROP / integration testing without
-      # touching Jenkins UI). workflow_dispatch inputs still win over a
-      # PIN; revert (or comment back) before merging.
-      # ADAMANT_REF_PIN: 'feature/your-branch-here'
+      # These pins are shared with the build workflows, so they are edited
+      # in _refs.yml rather than here. An empty value falls through to the
+      # Jenkins job's own fallback, matching the previous commented-out state.
+      ADAMANT_REF_PIN: ${{ needs.refs.outputs.adamant_ref }}
+      FP32_FSW_XMERA_REF_PIN: ${{ needs.refs.outputs.fp32_fsw_xmera_ref }}
+      # The pins below name repos no build workflow checks out, so they stay
+      # local. Uncomment one to pin a sibling repo's ref for THIS branch's CI
+      # runs (e.g. one-off DROP / integration testing without touching the
+      # Jenkins UI). workflow_dispatch inputs still win over a PIN; revert
+      # (or comment back) before merging.
       # ADAMANT_EXAMPLE_REF_PIN: 'feature/your-branch-here'
-      # FP32_FSW_XMERA_REF_PIN: 'feature/your-branch-here'
       PROJECT_REF_PIN: 'feature/safe-state-algorithm-topic'
     steps:
       - run: echo "Starting job triggered by a ${{ github.event_name }} event on a ${{ runner.os }} server hosted by GitHub."

@@ -8,11 +8,14 @@ on:
       - main
   workflow_dispatch:
 jobs:
+  refs:
+    uses: ./.github/workflows/_refs.yml
   compile_job:
     name: prove_all
+    needs: refs
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/lasp/adamant:0.2
+      image: ${{ needs.refs.outputs.image }}
       options: --user root
     steps:
       - run: echo "Starting job triggered by a ${{ github.event_name }} event on a ${{ runner.os }} server hosted by GitHub."
@@ -28,23 +31,21 @@ jobs:
           set-safe-directory: true
           repository: lasp/fp32-fsw-xmera
           path: fp32-fsw-xmera
-          # The C shims move in lockstep with the Ada bindings, so CI must
-          # build the fp32 revision the bindings were written against rather
-          # than the develop tip.
-          ref: 26d19cbbc1f00bb2d3cdbfc74e7ce1f1c37ab9d2
+          ref: ${{ needs.refs.outputs.fp32_fsw_xmera_ref }}
       - name: Clone adamant repository
         uses: actions/checkout@v4
         with:
           set-safe-directory: true
           repository: lasp/adamant
           path: adamant
+          ref: ${{ needs.refs.outputs.adamant_ref }}
       - name: Clone Eigen with freestanding support
         uses: actions/checkout@v4
         with:
           set-safe-directory: true
           repository: lasp/eigen
           path: eigen
-          ref: feature/freestanding
+          ref: ${{ needs.refs.outputs.eigen_ref }}
       - name: Prove all SPARK packages
         run: bash adamant-xmera-components/env/github_run.sh "redo adamant-xmera-components/prove_all"
       - name: Archive prove logs

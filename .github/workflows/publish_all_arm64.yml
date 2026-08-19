@@ -4,8 +4,11 @@ on:
     types: [published]
   workflow_dispatch:
 jobs:
+  refs:
+    uses: ./.github/workflows/_refs.yml
   compile_job:
     name: publish_all (arm64)
+    needs: refs
     runs-on: ubuntu-latest
     steps:
       - run: echo "Starting job triggered by a ${{ github.event_name }} event on a ${{ runner.os }} server hosted by GitHub."
@@ -26,6 +29,7 @@ jobs:
           set-safe-directory: true
           repository: lasp/adamant
           path: adamant
+          ref: ${{ needs.refs.outputs.adamant_ref }}
 
       - name: Clone fp32-fsw-xmera repository
         uses: actions/checkout@v4
@@ -33,10 +37,7 @@ jobs:
           set-safe-directory: true
           repository: lasp/fp32-fsw-xmera
           path: fp32-fsw-xmera
-          # The C shims move in lockstep with the Ada bindings, so CI must
-          # build the fp32 revision the bindings were written against rather
-          # than the develop tip.
-          ref: 26d19cbbc1f00bb2d3cdbfc74e7ce1f1c37ab9d2
+          ref: ${{ needs.refs.outputs.fp32_fsw_xmera_ref }}
 
       - name: Clone Eigen with freestanding support
         uses: actions/checkout@v4
@@ -44,7 +45,7 @@ jobs:
           set-safe-directory: true
           repository: lasp/eigen
           path: eigen
-          ref: feature/freestanding
+          ref: ${{ needs.refs.outputs.eigen_ref }}
 
       - name: Build all documentation
         run: |
@@ -53,7 +54,7 @@ jobs:
             -w /workspace \
             -e TMPDIR=/tmp \
             -e ADAMANT_TMP_DIR=/tmp/.adamant \
-            ghcr.io/lasp/adamant:0.2 \
+            ${{ needs.refs.outputs.image }} \
             bash adamant-xmera-components/env/github_run.sh "redo adamant-xmera-components/publish"
         # NOTE: TMPDIR and ADAMANT_TMP_DIR must be set to the container's native filesystem (/tmp)
         # rather than the volume-mounted workspace. This prevents cross-device I/O errors with the
