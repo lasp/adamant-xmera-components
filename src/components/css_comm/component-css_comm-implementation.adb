@@ -69,6 +69,8 @@ package body Component.Css_Comm.Implementation is
          for I in Css_Adc_Input.Adc_Value'Range loop
             Css_Input_C.Data (Css_Input_C.Data'First + Natural (I - Css_Adc_Input.Adc_Value'First)) :=
                Long_Float (Css_Adc_Input.Adc_Value (I));
+               pragma Annotate (GNATSAS, False_Positive, "validity check",
+                  "The input crosses a foreign-function or hardware boundary that the analyzer cannot trace; it is initialized by the producer.");
          end loop;
 
          -- Call the algorithm and publish the corrected cosine values as the

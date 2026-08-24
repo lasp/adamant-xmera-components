@@ -68,6 +68,8 @@ package body Component.Sunline_Srukf.Implementation is
          Cos_Values      => [for I in Packed_F32x32.Constrained_Index_Type =>
             (if I <= Css_Input.Data'Last then Short_Float (Css_Input.Data (I)) else 0.0)]
       );
+      pragma Annotate (GNATSAS, False_Positive, "validity check",
+         "The CSS input crosses a foreign-function boundary that the analyzer cannot trace; it is initialized by the producer.");
 
       -- Call the C algorithm:
       Output_C : constant Sunline_Srukf_Output.C.U_C := Update_State (

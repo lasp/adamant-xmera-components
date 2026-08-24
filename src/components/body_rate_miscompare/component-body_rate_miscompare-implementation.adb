@@ -47,10 +47,14 @@ package body Component.Body_Rate_Miscompare.Implementation is
       Imu_Body_Status : constant Data_Dependency_Status.E :=
          Self.Get_Imu_Body (Value => Imu_Body, Stale_Reference => Arg.Time);
       pragma Assert (Imu_Body_Status = Success);
+      pragma Annotate (GNATSAS, False_Positive, "assertion",
+         "The assembly guarantees these data dependencies are available.");
       St_Body : St_Att.T;
       St_Body_Status : constant Data_Dependency_Status.E :=
          Self.Get_Star_Tracker_Attitude (Value => St_Body, Stale_Reference => Arg.Time);
       pragma Assert (St_Body_Status = Success);
+      pragma Annotate (GNATSAS, False_Positive, "assertion",
+         "The assembly guarantees these data dependencies are available.");
    begin
       -- Update the parameters:
       Self.Update_Parameters;
