@@ -20,6 +20,10 @@ private
    -- Upload a single-arc Chebyshev fit via Set; the next tick applies it and the
    -- algorithm reconstructs a known circular equatorial orbit within 0.1 percent.
    overriding procedure Test_Cheby_Fit_Via_Set (Self : in out Instance);
+   -- A single-coefficient arc with a distinct non-zero value in every one of the six
+   -- element coefficient arrays reconstructs the closed-form Cartesian state, so any
+   -- permutation of those arrays across the C boundary fails.
+   overriding procedure Test_All_Coefficient_Arrays_Map_Correctly (Self : in out Instance);
    -- A memory region with an out-of-range Anomaly_Type is rejected before
    -- deserialization; release returns Parameter_Error and an
    -- Invalid_Parameter_Table_Format event fires.
@@ -46,6 +50,11 @@ private
    -- Dump_Buffer is overwritten on each Get_Pointer; back-to-back calls each
    -- reflect the algorithm's current state at the time of the call.
    overriding procedure Test_Get_Pointer_Reflects_Current_State (Self : in out Instance);
+   -- An eccentric arc evaluated once with True_Anomaly and once with Mean_Anomaly
+   -- produces different Cartesian states, proving the Anomaly_Flag value reaches the
+   -- algorithm across the C boundary. Guards the one Oe_Arc field whose position and
+   -- width the ChebyshevFitArc_c POD layout depends on.
+   overriding procedure Test_Anomaly_Flag_Selects_Anomaly_Type (Self : in out Instance);
    -- Two Set calls without an intervening tick: only the latest table is
    -- applied. Mirrors the Generic_Staged_Variable "latest wins" contract.
    overriding procedure Test_Repeated_Set_Without_Tick (Self : in out Instance);
