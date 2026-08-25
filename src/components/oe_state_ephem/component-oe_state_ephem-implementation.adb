@@ -6,10 +6,7 @@ with Basic_Types;
 with Cartesian_State;
 with Cartesian_State.C;
 with Interfaces;
-with Oe_Arc;
-with Oe_Coefficients;
-with Oe_Coefficients.C;
-with Oe_State_Ephem_Enums;
+with Oe_Arc.C;
 with Oe_State_Ephem_Parameter_Table.Validation;
 with Parameter_Enums;
 
@@ -18,115 +15,115 @@ use Interfaces;
 package body Component.Oe_State_Ephem.Implementation is
 
    ------------------------------------------------------------------------
+   -- Protected staging area
+   ------------------------------------------------------------------------
+
+   protected body Staged_Table is
+
+      procedure Init (Default_Table : in Oe_State_Ephem_Parameter_Table.T; Alg : out Oe_State_Ephem_Algorithm_Access) is
+         Valid : Boolean := False;
+      begin
+         -- Allocate the config staging object once; it is reused (via reset)
+         -- for every subsequent upload.
+         Config := Config_Create;
+         -- Stage the default through the same path uploads take. The default
+         -- comes from the assembly rather than the ground, so a configuration
+         -- the algorithm would reject is a wiring error: assert instead of
+         -- reporting. The staged flag is cleared since the configuration is
+         -- applied right here via Create.
+         Stage_If_Valid (Default_Table, Valid);
+         pragma Assert (Valid);
+         Alg := Create (Config);
+         Is_Staged := False;
+      end Init;
+
+      procedure Stage_If_Valid (Table : in Oe_State_Ephem_Parameter_Table.T; Valid : out Boolean) is
+      begin
+         Is_Staged := False;
+         Config_Reset (Config);
+         -- The wire count must address slots that exist in the fixed-size wire
+         -- table before it can drive the conversion loop below; a count outside
+         -- that range can pass format validation (Number_Of_Arcs is an
+         -- unconstrained Packed_U32) but never denotes a convertible table.
+         Valid := Table.Number_Of_Arcs.Value in 1 .. Unsigned_32 (Table.Arcs'Length);
+         if Valid then
+            Valid := Config_Set_Scalars (Config,
+               Central_Body_Mu => Table.Central_Body_Mu,
+               Ephemeris_Time  => Table.Ephemeris_Time,
+               Vehicle_Time    => Table.Vehicle_Clock_Time);
+         end if;
+         if Valid then
+            -- Convert and append the active arcs one at a time; each Add_Arc
+            -- validates the arc it is handed, so an unpacked arc never costs
+            -- more than this ~1 KB local and a rejected arc rejects the table.
+            for I in 0 .. Natural (Table.Number_Of_Arcs.Value) - 1 loop
+               declare
+                  Arc_C : aliased constant Oe_Arc.C.U_C := Oe_Arc.C.Unpack (Table.Arcs (I));
+               begin
+                  Valid := Config_Add_Arc (Config, Arc_C'Access);
+               end;
+               exit when not Valid;
+            end loop;
+         end if;
+         if Valid then
+            -- Defense in depth: with every build step validated above, the only
+            -- state Config_Validate can reject here is an empty config, which
+            -- the count check already precludes.
+            Valid := Config_Validate (Config);
+         end if;
+         Is_Staged := Valid;
+      end Stage_If_Valid;
+
+      procedure Apply_If_Staged (Alg : in Oe_State_Ephem_Algorithm_Access; Applied : out Boolean) is
+      begin
+         if Is_Staged then
+            -- Only configurations Stage_If_Valid accepted are ever staged, so
+            -- the throwing path of Set_Config is unreachable.
+            Set_Config (Alg, Config);
+            Is_Staged := False;
+            Applied := True;
+         else
+            Applied := False;
+         end if;
+      end Apply_If_Staged;
+
+      procedure Destroy is
+      begin
+         Config_Destroy (Config);
+         Config := null;
+      end Destroy;
+
+   end Staged_Table;
+
+   ------------------------------------------------------------------------
    -- Local Helpers
    ------------------------------------------------------------------------
 
-   -- Push one packed Oe_Arc.T to the C++ algorithm.
-   procedure Apply_Arc_To_Algorithm (
-      Alg : in Oe_State_Ephem_Algorithm_Access;
-      Arc_Number : in Unsigned_32;
-      Arc : in Oe_Arc.T
-   ) is
-      use Oe_State_Ephem_Enums;
-      Rp_C : aliased constant Oe_Coefficients.C.U_C := Oe_Coefficients.C.Unpack (Arc.Radius_Periapsis);
-      Ec_C : aliased constant Oe_Coefficients.C.U_C := Oe_Coefficients.C.Unpack (Arc.Eccentricity);
-      Inc_C : aliased constant Oe_Coefficients.C.U_C := Oe_Coefficients.C.Unpack (Arc.Inclination);
-      Ap_C : aliased constant Oe_Coefficients.C.U_C := Oe_Coefficients.C.Unpack (Arc.Arg_Periapsis);
-      Ra_C : aliased constant Oe_Coefficients.C.U_C := Oe_Coefficients.C.Unpack (Arc.Raan);
-      Ta_C : aliased constant Oe_Coefficients.C.U_C := Oe_Coefficients.C.Unpack (Arc.True_Anomaly);
-   begin
-      Set_Arc_Number_Of_Coefficients (Alg, Arc_Number, Arc.Number_Of_Coefficients.Value);
-      Set_Arc_Middle_Time (Alg, Arc_Number, Arc.Middle_Time);
-      Set_Arc_Radius_Time (Alg, Arc_Number, Arc.Radius_Time);
-      Set_Arc_Anomaly_Flag (Alg, Arc_Number,
-         (case Arc.Anomaly_Flag is
-             when Anomaly_Type.True_Anomaly => True_Anomaly,
-             when Anomaly_Type.Mean_Anomaly => Mean_Anomaly));
-      Set_Arc_Radius_Periapsis_Coefficients (Alg, Arc_Number, Rp_C'Access);
-      Set_Arc_Eccentricity_Coefficients (Alg, Arc_Number, Ec_C'Access);
-      Set_Arc_Inclination_Coefficients (Alg, Arc_Number, Inc_C'Access);
-      Set_Arc_Arg_Periapsis_Coefficients (Alg, Arc_Number, Ap_C'Access);
-      Set_Arc_Raan_Coefficients (Alg, Arc_Number, Ra_C'Access);
-      Set_Arc_True_Anomaly_Coefficients (Alg, Arc_Number, Ta_C'Access);
-   end Apply_Arc_To_Algorithm;
-
-   -- Push a packed Oe_State_Ephem_Parameter_Table.T to the C++ algorithm.
-   procedure Apply_Table_To_Algorithm (
-      Alg : in Oe_State_Ephem_Algorithm_Access;
-      Table : in Oe_State_Ephem_Parameter_Table.T
-   ) is
-   begin
-      Set_Ephemeris_Time_J2000 (Alg, Table.Ephemeris_Time);
-      Set_Vehicle_Time_Offset (Alg, Table.Vehicle_Clock_Time);
-      Set_Central_Body_Gravitational_Parameter (Alg, Table.Central_Body_Mu);
-      Set_Number_Of_Arcs (Alg, Table.Number_Of_Arcs.Value);
-      -- Push only the active arcs (the C++ algorithm asserts every per-arc
-      -- Number_Of_Coefficients is positive, so we cannot push trailing
-      -- zero-coefficient slots even though Update() would ignore them).
-      -- Trailing slots retain whatever the algorithm had previously.
-      for I in 0 .. Natural (Table.Number_Of_Arcs.Value) - 1 loop
-         Apply_Arc_To_Algorithm (Alg, Unsigned_32 (I), Table.Arcs (I));
-      end loop;
-   end Apply_Table_To_Algorithm;
-
-   -- Copy the staged parameter table into the C++ algorithm. Isolated
-   -- into a separate procedure so the ~10 KB Oe_State_Ephem_Parameter_
-   -- Table.T lives only on this helper's stack frame which is not
-   -- frequently called.
-   procedure Drain_Staged_To_Algorithm (
-      Staged : in out Staged_Table_Pkg.Staged_Variable;
-      Alg : in Oe_State_Ephem_Algorithm_Access
-   ) is
-      New_Table_T : Oe_State_Ephem_Parameter_Table.T;
-   begin
-      Staged.Copy_From_Staged (New_Table_T);
-      Apply_Table_To_Algorithm (Alg, New_Table_T);
-   end Drain_Staged_To_Algorithm;
-
-   -- Read one arc from the C++ algorithm directly into the caller's
-   -- packed Oe_Arc.T slot. Written as a single aggregate so the compiler
-   -- enforces that every field is filled; 'out' parameter keeps the
-   -- aggregate write in-place on the caller's slot (no temporary).
-   procedure Read_Arc_From_Algorithm (
-      Alg : in Oe_State_Ephem_Algorithm_Access;
-      Arc_Number : in Unsigned_32;
-      Out_Arc : out Oe_Arc.T
-   ) is
-      use Oe_State_Ephem_Enums;
-   begin
-      Out_Arc := (
-         Number_Of_Coefficients => (Value => Get_Arc_Number_Of_Coefficients (Alg, Arc_Number)),
-         Middle_Time => Get_Arc_Middle_Time (Alg, Arc_Number),
-         Radius_Time => Get_Arc_Radius_Time (Alg, Arc_Number),
-         Anomaly_Flag => (case Get_Arc_Anomaly_Flag (Alg, Arc_Number) is
-                             when True_Anomaly => Anomaly_Type.True_Anomaly,
-                             when Mean_Anomaly => Anomaly_Type.Mean_Anomaly),
-         Radius_Periapsis => Oe_Coefficients.C.Pack (Get_Arc_Radius_Periapsis_Coefficients (Alg, Arc_Number)),
-         Eccentricity => Oe_Coefficients.C.Pack (Get_Arc_Eccentricity_Coefficients (Alg, Arc_Number)),
-         Inclination => Oe_Coefficients.C.Pack (Get_Arc_Inclination_Coefficients (Alg, Arc_Number)),
-         Arg_Periapsis => Oe_Coefficients.C.Pack (Get_Arc_Arg_Periapsis_Coefficients (Alg, Arc_Number)),
-         Raan => Oe_Coefficients.C.Pack (Get_Arc_Raan_Coefficients (Alg, Arc_Number)),
-         True_Anomaly => Oe_Coefficients.C.Pack (Get_Arc_True_Anomaly_Coefficients (Alg, Arc_Number))
-      );
-   end Read_Arc_From_Algorithm;
-
-   -- Read the full algorithm state directly into the caller's table.
-   -- The scalar fields are written individually rather than as a single
-   -- full-record aggregate: an aggregate covering the 10-element Arcs
-   -- field would require building a ~10 KB Oe_Arc_Records.T value on the
-   -- stack and then copying it into Out_T, which is exactly what the
-   -- 'out' parameter form is meant to avoid here.
+   -- Read the algorithm's active configuration into the caller's packed table
+   -- without large stack temporaries: scalars individually, arcs one at a time
+   -- through a ~1 KB C-layout local. The per-arc read-back API exists precisely
+   -- so no caller needs a table-sized conversion buffer.
    procedure Read_Table_From_Algorithm (
       Alg : in Oe_State_Ephem_Algorithm_Access;
       Out_T : out Oe_State_Ephem_Parameter_Table.T
    ) is
+      Central_Body_Mu : Long_Float;
+      Number_Of_Arcs : Unsigned_32;
+      Ephemeris_Time : Long_Float;
+      Vehicle_Time : Long_Float;
    begin
-      Out_T.Ephemeris_Time := Get_Ephemeris_Time_J2000 (Alg);
-      Out_T.Vehicle_Clock_Time := Get_Vehicle_Time_Offset (Alg);
-      Out_T.Central_Body_Mu := Get_Central_Body_Gravitational_Parameter (Alg);
-      Out_T.Number_Of_Arcs := (Value => Get_Number_Of_Arcs (Alg));
+      Get_Config_Scalars (Alg, Central_Body_Mu, Number_Of_Arcs, Ephemeris_Time, Vehicle_Time);
+      Out_T.Ephemeris_Time := Ephemeris_Time;
+      Out_T.Vehicle_Clock_Time := Vehicle_Time;
+      Out_T.Central_Body_Mu := Central_Body_Mu;
+      Out_T.Number_Of_Arcs := (Value => Number_Of_Arcs);
       for I in Out_T.Arcs'Range loop
-         Read_Arc_From_Algorithm (Alg, Unsigned_32 (I), Out_T.Arcs (I));
+         declare
+            Arc_C : aliased Oe_Arc.C.U_C;
+         begin
+            Get_Config_Arc (Alg, Unsigned_32 (I), Arc_C'Access);
+            Out_T.Arcs (I) := Oe_Arc.C.Pack (Arc_C);
+         end;
       end loop;
    end Read_Table_From_Algorithm;
 
@@ -135,18 +132,17 @@ package body Component.Oe_State_Ephem.Implementation is
    --------------------------------------------------
    overriding procedure Init (Self : in out Instance; Default_Table : not null Oe_State_Ephem_Parameter_Table.T_Access) is
    begin
-      -- Allocate the C++ algorithm on the heap.
-      Self.Alg := Create;
-      -- Apply the default table immediately so any tick arriving before
-      -- an uploaded table is received still produces deterministic
-      -- output. Default_Table is a pointer to an aliased packed-T value
-      -- declared in the assembly's defaults file. We pass by access to
-      -- avoid large stack usage by the environment task.
-      Apply_Table_To_Algorithm (Self.Alg, Default_Table.all);
+      -- Stage the default table and construct the algorithm from it, through
+      -- the same protected path uploads take, so any tick arriving before an
+      -- uploaded table is received still produces deterministic output.
+      -- Default_Table is passed by access (and dereferenced into a by-reference
+      -- parameter) to avoid a large by-value copy on the env task's stack.
+      Self.Staged_Parameters.Init (Default_Table.all, Self.Alg);
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
    begin
+      Self.Staged_Parameters.Destroy;
       Destroy (Self.Alg);
    end Destroy;
 
@@ -154,12 +150,14 @@ package body Component.Oe_State_Ephem.Implementation is
    -- Invokee connector primitives:
    ---------------------------------------
    overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
+      Applied : Boolean := False;
    begin
-      -- Apply staged parameter table BEFORE running the algorithm so the
-      -- algorithm operates on the freshest values starting this tick. But
-      -- only do this is a new table is staged.
-      if Self.Staged_Parameters.Is_Staged then
-         Drain_Staged_To_Algorithm (Self.Staged_Parameters, Self.Alg);
+      -- Apply any staged parameter table BEFORE running the algorithm so it
+      -- operates on the freshest values starting this tick. The staged
+      -- configuration was validated when it was uploaded, so applying cannot
+      -- fail.
+      Self.Staged_Parameters.Apply_If_Staged (Self.Alg, Applied);
+      if Applied then
          Self.Event_T_Send_If_Connected (Self.Events.Parameter_Table_Applied (Self.Sys_Time_T_Get));
       end if;
 
@@ -183,8 +181,7 @@ package body Component.Oe_State_Ephem.Implementation is
    begin
       case Arg.Operation is
          when Set =>
-            -- Forwarder hands us a payload-only region. Let's overlay and
-            -- validate before using.
+            -- Forwarder hands us a payload-only region. Overlay and validate before use.
             declare
                Bytes : constant Basic_Types.Byte_Array (0 .. Arg.Region.Length - 1)
                   with Import, Convention => Ada, Address => Arg.Region.Address;
@@ -198,15 +195,19 @@ package body Component.Oe_State_Ephem.Implementation is
                   Status := Parameter_Error;
                else
                   declare
-                     -- Validation succeeded.
-                     -- TODO - call C++ side validation checks.
-                     --
-                     -- Overlay the packed .T directly on the upstream
-                     -- buffer, and then stage this parameter set.
+                     -- Overlay the packed .T directly on the upstream buffer, then
+                     -- stage it. Stage_If_Valid also runs the algorithm's own
+                     -- configuration validator, so a semantically bad table is
+                     -- rejected here, synchronously on the upload, and never
+                     -- reaches the tick.
                      Table_T : constant Oe_State_Ephem_Parameter_Table.T
                         with Import, Convention => Ada, Address => Arg.Region.Address;
+                     Valid : Boolean := False;
                   begin
-                     Self.Staged_Parameters.Stage (Table_T);
+                     Self.Staged_Parameters.Stage_If_Valid (Table_T, Valid);
+                     if not Valid then
+                        Status := Parameter_Error;
+                     end if;
                   end;
                end if;
             end;
@@ -226,11 +227,12 @@ package body Component.Oe_State_Ephem.Implementation is
             Status := Parameter_Error;
 
          when Get_Pointer =>
-            -- Snapshot the algorithm's current state into the component's
-            -- dedicated Dump_Buffer in-place and expose its address. This
-            -- works fine as long as the table is not being updated while
-            -- this operation is called. We expect operators to what for
-            -- table upload success before trying to dump.
+            -- Snapshot the algorithm's current configuration into the component's
+            -- dedicated Dump_Buffer in-place and expose its address, so a dump
+            -- serves the algorithm's actual state (the single source of truth)
+            -- rather than a component-side copy. This works fine as long as no
+            -- table is being applied while this operation is called; operators
+            -- wait for table upload success before trying to dump.
             Read_Table_From_Algorithm (Self.Alg, Self.Dump_Buffer);
             return (
                Region => (
