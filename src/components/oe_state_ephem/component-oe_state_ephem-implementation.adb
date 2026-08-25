@@ -206,6 +206,9 @@ package body Component.Oe_State_Ephem.Implementation is
                   begin
                      Self.Staged_Parameters.Stage_If_Valid (Table_T, Valid);
                      if not Valid then
+                        Self.Event_T_Send_If_Connected (Self.Events.Invalid_Parameter_Table_Config (
+                           Self.Sys_Time_T_Get
+                        ));
                         Status := Parameter_Error;
                      end if;
                   end;

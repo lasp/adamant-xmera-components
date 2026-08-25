@@ -24,6 +24,11 @@ private
    -- deserialization; release returns Parameter_Error and an
    -- Invalid_Parameter_Table_Format event fires.
    overriding procedure Test_Set_Invalid_Format (Self : in out Instance);
+   -- A format-valid table that the algorithm's configuration rules reject (bad
+   -- scalar, oversized arc count, or invalid arc) is refused synchronously on the
+   -- upload (Parameter_Error plus an Invalid_Parameter_Table_Config event, nothing
+   -- staged); the previously applied configuration is retained.
+   overriding procedure Test_Set_Invalid_Config (Self : in out Instance);
    -- Validate is unsupported; release returns Parameter_Error and a
    -- Validate_Not_Supported event is emitted. No table is staged or applied.
    overriding procedure Test_Validate_Returns_Parameter_Error (Self : in out Instance);

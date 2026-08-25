@@ -17,6 +17,7 @@ package body Component.Oe_State_Ephem.Implementation.Tester is
       -- Event histories:
       Self.Invalid_Parameter_Table_Format_History.Init (Depth => 100);
       Self.Parameter_Table_Applied_History.Init (Depth => 100);
+      Self.Invalid_Parameter_Table_Config_History.Init (Depth => 100);
       Self.Get_Copy_Not_Supported_History.Init (Depth => 100);
       Self.Validate_Not_Supported_History.Init (Depth => 100);
       -- Data product histories:
@@ -33,6 +34,7 @@ package body Component.Oe_State_Ephem.Implementation.Tester is
       -- Event histories:
       Self.Invalid_Parameter_Table_Format_History.Destroy;
       Self.Parameter_Table_Applied_History.Destroy;
+      Self.Invalid_Parameter_Table_Config_History.Destroy;
       Self.Get_Copy_Not_Supported_History.Destroy;
       Self.Validate_Not_Supported_History.Destroy;
       -- Data product histories:
@@ -107,6 +109,16 @@ package body Component.Oe_State_Ephem.Implementation.Tester is
       -- Push the argument onto the test history for looking at later:
       Self.Parameter_Table_Applied_History.Push (Arg);
    end Parameter_Table_Applied;
+
+   -- A staged parameter table passed type-level validation but was rejected by the
+   -- algorithm's own configuration validator; the previously applied configuration
+   -- was kept.
+   overriding procedure Invalid_Parameter_Table_Config (Self : in out Instance) is
+      Arg : constant Natural := 0;
+   begin
+      -- Push the argument onto the test history for looking at later:
+      Self.Invalid_Parameter_Table_Config_History.Push (Arg);
+   end Invalid_Parameter_Table_Config;
 
    -- A Get_Copy operation was requested on the parameters memory region
    -- interface; the component does not support Get_Copy. The request was

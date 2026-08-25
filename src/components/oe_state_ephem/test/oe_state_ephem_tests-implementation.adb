@@ -17,6 +17,7 @@ with Packed_F64x20;
 with Packed_F64x3;
 with Packed_F64x3.Assertion; use Packed_F64x3.Assertion;
 with Parameter_Enums;
+with Parameter_Enums.Assertion; use Parameter_Enums.Assertion;
 with Parameters_Memory_Region_Release;
 with Parameters_Memory_Region_Release.Assertion; use Parameters_Memory_Region_Release.Assertion;
 with System;
@@ -256,6 +257,97 @@ package body Oe_State_Ephem_Tests.Implementation is
       Natural_Assert.Eq (T.Parameter_Table_Applied_History.Get_Count, 0);
    end Test_Set_Invalid_Format;
 
+   -- A table can satisfy every type-level check in the table YAML and still be a
+   -- configuration the C++ algorithm refuses: OEStateEphemConfig requires
+   -- Number_Of_Arcs >= 1 and a non-negative Central_Body_Mu, and neither
+   -- constraint is expressible as a packed-record field range. Such a table must be
+   -- rejected synchronously on the upload itself (Parameter_Error plus an
+   -- Invalid_Parameter_Table_Config event, nothing staged), so the applying tick
+   -- only ever sees configurations the algorithm accepts and the throwing
+   -- Set_Config is never reached.
+   overriding procedure Test_Set_Invalid_Config (Self : in out Instance) is
+      use Parameter_Enums.Parameter_Table_Update_Status;
+      T : Component.Oe_State_Ephem.Implementation.Tester.Instance_Access renames Self.Tester;
+
+      -- Zero arcs: passes format validation (Number_Of_Arcs is an unconstrained
+      -- Packed_U32) but the algorithm requires at least one active arc.
+      No_Arcs_Table : constant Oe_State_Ephem_Parameter_Table.T :=
+         Oe_State_Ephem_Parameter_Table.Pack ((
+            Ephemeris_Time => 0.0,
+            Vehicle_Clock_Time => 0.0,
+            Central_Body_Mu => 0.0,
+            Number_Of_Arcs => (Value => 0),
+            Arcs => [others => Zero_Arc]));
+
+      -- Negative gravitational parameter: a legal Long_Float, but the algorithm
+      -- requires it to be non-negative.
+      Negative_Mu_Table : constant Oe_State_Ephem_Parameter_Table.T :=
+         Oe_State_Ephem_Parameter_Table.Pack ((
+            Ephemeris_Time => 0.0,
+            Vehicle_Clock_Time => 0.0,
+            Central_Body_Mu => -1.0,
+            Number_Of_Arcs => (Value => 1),
+            Arcs => [others => Zero_Arc]));
+
+      -- More arcs than the wire table has slots: passes format validation
+      -- (Number_Of_Arcs is an unconstrained Packed_U32) but cannot even drive
+      -- the arc conversion loop; the staging path must bound it first.
+      Too_Many_Arcs_Table : constant Oe_State_Ephem_Parameter_Table.T :=
+         Oe_State_Ephem_Parameter_Table.Pack ((
+            Ephemeris_Time => 0.0,
+            Vehicle_Clock_Time => 0.0,
+            Central_Body_Mu => 0.0,
+            Number_Of_Arcs => (Value => 12),
+            Arcs => [others => Zero_Arc]));
+
+      -- An arc with a zero middle time: format-valid (0.0 is a legal
+      -- Long_Float) but the algorithm requires strictly positive arc times, so
+      -- the per-arc Add_Arc validation must reject it.
+      Zero_Time_Arc : constant Oe_Arc.U :=
+         (Zero_Arc with delta Middle_Time => 0.0);
+      Zero_Time_Table : constant Oe_State_Ephem_Parameter_Table.T :=
+         Oe_State_Ephem_Parameter_Table.Pack ((
+            Ephemeris_Time => 0.0,
+            Vehicle_Clock_Time => 0.0,
+            Central_Body_Mu => 0.0,
+            Number_Of_Arcs => (Value => 1),
+            Arcs => [0 => Zero_Time_Arc, others => Zero_Arc]));
+   begin
+      -- The upload is refused on the spot: the Set handler stages the table and
+      -- consults the algorithm's configuration validator before acknowledging.
+      Parameter_Table_Update_Status_Assert.Eq (Send_Set_Table (T, No_Arcs_Table), Parameter_Error);
+      Natural_Assert.Eq (T.Invalid_Parameter_Table_Config_History.Get_Count, 1);
+
+      -- Nothing was staged, so the next tick applies nothing.
+      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+      Natural_Assert.Eq (T.Parameter_Table_Applied_History.Get_Count, 0);
+
+      -- Same contract for a negative gravitational parameter.
+      Parameter_Table_Update_Status_Assert.Eq (Send_Set_Table (T, Negative_Mu_Table), Parameter_Error);
+      Natural_Assert.Eq (T.Invalid_Parameter_Table_Config_History.Get_Count, 2);
+      T.Tick_T_Send ((Time => T.System_Time, Count => 1));
+      Natural_Assert.Eq (T.Parameter_Table_Applied_History.Get_Count, 0);
+
+      -- Same contract for a count that exceeds the wire table's slots.
+      Parameter_Table_Update_Status_Assert.Eq (Send_Set_Table (T, Too_Many_Arcs_Table), Parameter_Error);
+      Natural_Assert.Eq (T.Invalid_Parameter_Table_Config_History.Get_Count, 3);
+      T.Tick_T_Send ((Time => T.System_Time, Count => 2));
+      Natural_Assert.Eq (T.Parameter_Table_Applied_History.Get_Count, 0);
+
+      -- Same contract for an arc the per-arc validation rejects.
+      Parameter_Table_Update_Status_Assert.Eq (Send_Set_Table (T, Zero_Time_Table), Parameter_Error);
+      Natural_Assert.Eq (T.Invalid_Parameter_Table_Config_History.Get_Count, 4);
+      T.Tick_T_Send ((Time => T.System_Time, Count => 3));
+      Natural_Assert.Eq (T.Parameter_Table_Applied_History.Get_Count, 0);
+
+      -- A valid table is still accepted afterwards, so a rejection leaves the
+      -- staging path usable rather than wedging it.
+      Parameter_Table_Update_Status_Assert.Eq (Send_Set_Table (T, Zero_Table), Success);
+      T.Tick_T_Send ((Time => T.System_Time, Count => 4));
+      Natural_Assert.Eq (T.Parameter_Table_Applied_History.Get_Count, 1);
+      Natural_Assert.Eq (T.Invalid_Parameter_Table_Config_History.Get_Count, 4);
+   end Test_Set_Invalid_Config;
+
    overriding procedure Test_Validate_Returns_Parameter_Error (Self : in out Instance) is
       use Parameter_Enums.Parameter_Table_Operation_Type;
       use Parameter_Enums.Parameter_Table_Update_Status;
@@ -492,7 +584,7 @@ package body Oe_State_Ephem_Tests.Implementation is
 
    -- Dump_Buffer is overwritten on every Get_Pointer call, so back-to-back
    -- Get_Pointers must each reflect the algorithm's current state at the
-   -- time of the call. The new dump-buffer design (separate from staging)
+   -- time of the call. The dump-buffer design (separate from staging)
    -- relies on this for correctness; a regression to a write-once /
    -- cached-dump strategy would slip past Test_Get_Pointer_*_Current /
    -- _Succeeds_While_Staged because those only inspect one snapshot.
