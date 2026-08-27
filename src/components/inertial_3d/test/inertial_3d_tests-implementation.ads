@@ -16,6 +16,9 @@ private
 
    -- Run algorithm to ensure integration is sound.
    overriding procedure Test (Self : in out Instance);
+   -- Drive the changed and unchanged reference-attitude paths, checking the
+   -- published reference in both cases.
+   overriding procedure Test_Reconfigures_Only_On_Change (Self : in out Instance);
 
    -- Test data and state:
    type Instance is new Inertial_3d_Tests.Base_Instance with record

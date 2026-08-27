@@ -176,4 +176,47 @@ package body Convert_St_Platform_To_Body_Tests.Implementation is
       end loop;
    end Test;
 
+   -- The mounting DCM is the component's only parameter, and the algorithm requires
+   -- it to be orthonormal with determinant +1. Validation is the only guard keeping a
+   -- rejected value out of the throwing Set_Config, so exercise it directly.
+   overriding procedure Test_Invalid_Parameter (Self : in out Instance) is
+      T : Component.Convert_St_Platform_To_Body.Implementation.Tester.Instance_Access renames Self.Tester;
+      Params : Convert_St_Platform_To_Body_Parameters.Instance;
+
+      Valid_Dcm : constant Packed_F32x9.T := [1.0, 0.0, 0.0,
+                                              0.0, 1.0, 0.0,
+                                              0.0, 0.0, 1.0];
+   begin
+      -- The identity mounting DCM is accepted:
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Dcm_Cb (Valid_Dcm)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
+
+      -- An all-zero matrix is rejected (singular, so not orthonormal):
+      Parameter_Update_Status_Assert.Eq
+        (T.Stage_Parameter (Params.Dcm_Cb ([0.0, 0.0, 0.0,
+                                            0.0, 0.0, 0.0,
+                                            0.0, 0.0, 0.0])), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- A scaled identity is rejected (orthogonal columns, but determinant 8):
+      Parameter_Update_Status_Assert.Eq
+        (T.Stage_Parameter (Params.Dcm_Cb ([2.0, 0.0, 0.0,
+                                            0.0, 2.0, 0.0,
+                                            0.0, 0.0, 2.0])), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- A reflection is rejected (orthonormal, but determinant -1):
+      Parameter_Update_Status_Assert.Eq
+        (T.Stage_Parameter (Params.Dcm_Cb ([1.0, 0.0,  0.0,
+                                            0.0, 1.0,  0.0,
+                                            0.0, 0.0, -1.0])), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- Restoring a valid DCM makes the set acceptable again, so the rejections above
+      -- were caused by the perturbed values rather than by sticky staging state:
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Dcm_Cb (Valid_Dcm)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
+      Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+   end Test_Invalid_Parameter;
+
 end Convert_St_Platform_To_Body_Tests.Implementation;

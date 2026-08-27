@@ -15,3 +15,5 @@ tests:
     description: Verify a stale motor state is accepted and used, while an unavailable motor state fails an assertion.
   - name: Test_Parameter_Staging_Errors
     description: Verify malformed parameter staging requests are rejected by status.
+  - name: Test_Invalid_Parameter
+    description: A staged parameter set the algorithm's config validators would reject is refused by Validate_Parameters, one field at a time.

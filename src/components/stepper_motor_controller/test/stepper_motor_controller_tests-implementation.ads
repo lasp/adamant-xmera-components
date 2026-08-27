@@ -34,6 +34,9 @@ private
    overriding procedure Test_Motor_State_Staleness (Self : in out Instance);
    -- Verify malformed parameter staging requests are rejected by status.
    overriding procedure Test_Parameter_Staging_Errors (Self : in out Instance);
+   -- A staged parameter set the algorithm's config validators would reject is refused
+   -- by Validate_Parameters, one field at a time.
+   overriding procedure Test_Invalid_Parameter (Self : in out Instance);
 
    -- Test data and state:
    type Instance is new Stepper_Motor_Controller_Tests.Base_Instance with record

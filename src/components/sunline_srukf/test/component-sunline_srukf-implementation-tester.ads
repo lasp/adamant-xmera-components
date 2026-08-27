@@ -13,7 +13,8 @@ with Sunline_Srukf_Output.Representation;
 with Packed_F32x3;
 with Css_Sensor_Values;
 
--- Sunline SRuKF pass-through algorithm wrapping the C++ SunlineSRuKFAlgorithm.
+-- Sunline SRuKF state pass-through. Publishes the spacecraft body rate as the
+-- sunline state; the remaining state fields have no upstream producer and are zeroed.
 package Component.Sunline_Srukf.Implementation.Tester is
 
    use Component.Sunline_Srukf_Reciprocal;

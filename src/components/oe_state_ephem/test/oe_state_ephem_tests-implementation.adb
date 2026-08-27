@@ -17,6 +17,7 @@ with Packed_F64x20;
 with Packed_F64x3;
 with Packed_F64x3.Assertion; use Packed_F64x3.Assertion;
 with Parameter_Enums;
+with Parameter_Enums.Assertion; use Parameter_Enums.Assertion;
 with Parameters_Memory_Region_Release;
 with Parameters_Memory_Region_Release.Assertion; use Parameters_Memory_Region_Release.Assertion;
 with System;
@@ -222,6 +223,111 @@ package body Oe_State_Ephem_Tests.Implementation is
       end;
    end Test_Cheby_Fit_Via_Set;
 
+   overriding procedure Test_All_Coefficient_Arrays_Map_Correctly (Self : in out Instance) is
+      use Ada.Numerics.Long_Elementary_Functions;
+      use Oe_State_Ephem_Enums;
+      use Parameter_Enums.Parameter_Table_Update_Status;
+      T : Component.Oe_State_Ephem.Implementation.Tester.Instance_Access renames Self.Tester;
+
+      -- Every element carries a distinct non-zero value, so any permutation of the six
+      -- coefficient arrays on the way across the C boundary yields a different state
+      -- vector. Test_Cheby_Fit_Via_Set cannot catch such a swap: it leaves five of the
+      -- six arrays zero.
+      Mu : constant Long_Float := 3.986004418E14;
+      R_P_M : constant Long_Float := 7.0E6;
+      Ecc : constant Long_Float := 0.1;
+      Incl_Rad : constant Long_Float := 0.4;
+      Argp_Rad : constant Long_Float := 0.7;
+      Raan_Rad : constant Long_Float := 1.1;
+      Ta_Rad : constant Long_Float := 0.3;
+
+      Middle_Time_S : constant Long_Float := 1000.0;
+      Radius_Time_S : constant Long_Float := 500.0;
+
+      function Constant_Coeff (Value : in Long_Float) return Oe_Coefficients.U is
+         Data : Packed_F64x20.U := [others => 0.0];
+      begin
+         Data (0) := Value;
+         return (Data => Data);
+      end Constant_Coeff;
+
+      -- One coefficient means every element equals its constant term at any scaled
+      -- time, so the expected state below is exact rather than tick-time dependent.
+      Arc_0 : constant Oe_Arc.U := (
+         Number_Of_Coefficients => (Value => 1),
+         Middle_Time => Middle_Time_S,
+         Radius_Time => Radius_Time_S,
+         Anomaly_Flag => Anomaly_Type.True_Anomaly,
+         Radius_Periapsis => Constant_Coeff (R_P_M),
+         Eccentricity => Constant_Coeff (Ecc),
+         Inclination => Constant_Coeff (Incl_Rad),
+         Arg_Periapsis => Constant_Coeff (Argp_Rad),
+         Raan => Constant_Coeff (Raan_Rad),
+         True_Anomaly => Constant_Coeff (Ta_Rad)
+      );
+
+      Arcs : constant Oe_Arc_Records.U := [0 => Arc_0, others => Zero_Arc];
+      Table : constant Oe_State_Ephem_Parameter_Table.T :=
+         Oe_State_Ephem_Parameter_Table.Pack ((
+            Ephemeris_Time => Middle_Time_S,
+            Vehicle_Clock_Time => 0.0,
+            Central_Body_Mu => Mu,
+            Number_Of_Arcs => (Value => 1),
+            Arcs => Arcs));
+
+      -- Closed-form classical-elements to Cartesian conversion, mirroring
+      -- orbitalMotion::elementsToCartesianState in
+      -- fp32-fsw-xmera/algorithms/utilities/fsw/orbitalMotion.hpp. The algorithm reads
+      -- the Radius_Periapsis coefficient as periapsis radius and derives the
+      -- semi-major axis as r_p / (1 - e).
+      Semi_Major_Axis : constant Long_Float := R_P_M / (1.0 - Ecc);
+      Semi_Latus_Rectum : constant Long_Float := Semi_Major_Axis * (1.0 - Ecc * Ecc);
+      Radius : constant Long_Float := Semi_Latus_Rectum / (1.0 + Ecc * Cos (Ta_Rad));
+      Ang_Momentum : constant Long_Float := Sqrt (Mu * Semi_Latus_Rectum);
+
+      Cos_Raan : constant Long_Float := Cos (Raan_Rad);
+      Sin_Raan : constant Long_Float := Sin (Raan_Rad);
+      Cos_Argp : constant Long_Float := Cos (Argp_Rad);
+      Sin_Argp : constant Long_Float := Sin (Argp_Rad);
+      Cos_Incl : constant Long_Float := Cos (Incl_Rad);
+      Sin_Incl : constant Long_Float := Sin (Incl_Rad);
+
+      Cos_Theta : constant Long_Float := Cos_Argp * Cos (Ta_Rad) - Sin_Argp * Sin (Ta_Rad);
+      Sin_Theta : constant Long_Float := Sin_Argp * Cos (Ta_Rad) + Cos_Argp * Sin (Ta_Rad);
+
+      Expected_Position : constant Packed_F64x3.T := [
+         Radius * (Cos_Raan * Cos_Theta - Sin_Raan * Sin_Theta * Cos_Incl),
+         Radius * (Sin_Raan * Cos_Theta + Cos_Raan * Sin_Theta * Cos_Incl),
+         Radius * (Sin_Theta * Sin_Incl)];
+      Expected_Velocity : constant Packed_F64x3.T := [
+         -Mu / Ang_Momentum * (Cos_Raan * (Sin_Theta + Ecc * Sin_Argp)
+            + Sin_Raan * (Cos_Theta + Ecc * Cos_Argp) * Cos_Incl),
+         -Mu / Ang_Momentum * (Sin_Raan * (Sin_Theta + Ecc * Sin_Argp)
+            - Cos_Raan * (Cos_Theta + Ecc * Cos_Argp) * Cos_Incl),
+         Mu / Ang_Momentum * (Cos_Theta + Ecc * Cos_Argp) * Sin_Incl];
+
+      -- The single-coefficient fit makes the expected state exact, so the tolerance
+      -- only has to cover floating-point operation ordering.
+      Position_Tol : constant Long_Float := Radius * 1.0E-9;
+      Velocity_Tol : constant Long_Float := (Mu / Ang_Momentum) * 1.0E-9;
+
+      Set_Status : constant Parameter_Enums.Parameter_Table_Update_Status.E :=
+         Send_Set_Table (T, Table);
+   begin
+      pragma Assert (Set_Status = Success);
+
+      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+
+      Natural_Assert.Eq (T.Parameter_Table_Applied_History.Get_Count, 1);
+      Natural_Assert.Eq (T.Ephemeris_State_History.Get_Count, 1);
+      declare
+         Output : constant Cartesian_State.T := T.Ephemeris_State_History.Get (1);
+      begin
+         Packed_F64x3_Assert.Eq (Output.Position, Expected_Position, Epsilon => Position_Tol);
+         Packed_F64x3_Assert.Eq (Output.Velocity, Expected_Velocity, Epsilon => Velocity_Tol);
+      end;
+   end Test_All_Coefficient_Arrays_Map_Correctly;
+
    overriding procedure Test_Set_Invalid_Format (Self : in out Instance) is
       use Parameter_Enums.Parameter_Table_Operation_Type;
       use Parameter_Enums.Parameter_Table_Update_Status;
@@ -255,6 +361,97 @@ package body Oe_State_Ephem_Tests.Implementation is
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
       Natural_Assert.Eq (T.Parameter_Table_Applied_History.Get_Count, 0);
    end Test_Set_Invalid_Format;
+
+   -- A table can satisfy every type-level check in the table YAML and still be a
+   -- configuration the C++ algorithm refuses: OEStateEphemConfig requires
+   -- Number_Of_Arcs >= 1 and a non-negative Central_Body_Mu, and neither
+   -- constraint is expressible as a packed-record field range. Such a table must be
+   -- rejected synchronously on the upload itself (Parameter_Error plus an
+   -- Invalid_Parameter_Table_Config event, nothing staged), so the applying tick
+   -- only ever sees configurations the algorithm accepts and the throwing
+   -- Set_Config is never reached.
+   overriding procedure Test_Set_Invalid_Config (Self : in out Instance) is
+      use Parameter_Enums.Parameter_Table_Update_Status;
+      T : Component.Oe_State_Ephem.Implementation.Tester.Instance_Access renames Self.Tester;
+
+      -- Zero arcs: passes format validation (Number_Of_Arcs is an unconstrained
+      -- Packed_U32) but the algorithm requires at least one active arc.
+      No_Arcs_Table : constant Oe_State_Ephem_Parameter_Table.T :=
+         Oe_State_Ephem_Parameter_Table.Pack ((
+            Ephemeris_Time => 0.0,
+            Vehicle_Clock_Time => 0.0,
+            Central_Body_Mu => 0.0,
+            Number_Of_Arcs => (Value => 0),
+            Arcs => [others => Zero_Arc]));
+
+      -- Negative gravitational parameter: a legal Long_Float, but the algorithm
+      -- requires it to be non-negative.
+      Negative_Mu_Table : constant Oe_State_Ephem_Parameter_Table.T :=
+         Oe_State_Ephem_Parameter_Table.Pack ((
+            Ephemeris_Time => 0.0,
+            Vehicle_Clock_Time => 0.0,
+            Central_Body_Mu => -1.0,
+            Number_Of_Arcs => (Value => 1),
+            Arcs => [others => Zero_Arc]));
+
+      -- More arcs than the wire table has slots: passes format validation
+      -- (Number_Of_Arcs is an unconstrained Packed_U32) but cannot even drive
+      -- the arc conversion loop; the staging path must bound it first.
+      Too_Many_Arcs_Table : constant Oe_State_Ephem_Parameter_Table.T :=
+         Oe_State_Ephem_Parameter_Table.Pack ((
+            Ephemeris_Time => 0.0,
+            Vehicle_Clock_Time => 0.0,
+            Central_Body_Mu => 0.0,
+            Number_Of_Arcs => (Value => 12),
+            Arcs => [others => Zero_Arc]));
+
+      -- An arc with a zero middle time: format-valid (0.0 is a legal
+      -- Long_Float) but the algorithm requires strictly positive arc times, so
+      -- the per-arc Add_Arc validation must reject it.
+      Zero_Time_Arc : constant Oe_Arc.U :=
+         (Zero_Arc with delta Middle_Time => 0.0);
+      Zero_Time_Table : constant Oe_State_Ephem_Parameter_Table.T :=
+         Oe_State_Ephem_Parameter_Table.Pack ((
+            Ephemeris_Time => 0.0,
+            Vehicle_Clock_Time => 0.0,
+            Central_Body_Mu => 0.0,
+            Number_Of_Arcs => (Value => 1),
+            Arcs => [0 => Zero_Time_Arc, others => Zero_Arc]));
+   begin
+      -- The upload is refused on the spot: the Set handler stages the table and
+      -- consults the algorithm's configuration validator before acknowledging.
+      Parameter_Table_Update_Status_Assert.Eq (Send_Set_Table (T, No_Arcs_Table), Parameter_Error);
+      Natural_Assert.Eq (T.Invalid_Parameter_Table_Config_History.Get_Count, 1);
+
+      -- Nothing was staged, so the next tick applies nothing.
+      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+      Natural_Assert.Eq (T.Parameter_Table_Applied_History.Get_Count, 0);
+
+      -- Same contract for a negative gravitational parameter.
+      Parameter_Table_Update_Status_Assert.Eq (Send_Set_Table (T, Negative_Mu_Table), Parameter_Error);
+      Natural_Assert.Eq (T.Invalid_Parameter_Table_Config_History.Get_Count, 2);
+      T.Tick_T_Send ((Time => T.System_Time, Count => 1));
+      Natural_Assert.Eq (T.Parameter_Table_Applied_History.Get_Count, 0);
+
+      -- Same contract for a count that exceeds the wire table's slots.
+      Parameter_Table_Update_Status_Assert.Eq (Send_Set_Table (T, Too_Many_Arcs_Table), Parameter_Error);
+      Natural_Assert.Eq (T.Invalid_Parameter_Table_Config_History.Get_Count, 3);
+      T.Tick_T_Send ((Time => T.System_Time, Count => 2));
+      Natural_Assert.Eq (T.Parameter_Table_Applied_History.Get_Count, 0);
+
+      -- Same contract for an arc the per-arc validation rejects.
+      Parameter_Table_Update_Status_Assert.Eq (Send_Set_Table (T, Zero_Time_Table), Parameter_Error);
+      Natural_Assert.Eq (T.Invalid_Parameter_Table_Config_History.Get_Count, 4);
+      T.Tick_T_Send ((Time => T.System_Time, Count => 3));
+      Natural_Assert.Eq (T.Parameter_Table_Applied_History.Get_Count, 0);
+
+      -- A valid table is still accepted afterwards, so a rejection leaves the
+      -- staging path usable rather than wedging it.
+      Parameter_Table_Update_Status_Assert.Eq (Send_Set_Table (T, Zero_Table), Success);
+      T.Tick_T_Send ((Time => T.System_Time, Count => 4));
+      Natural_Assert.Eq (T.Parameter_Table_Applied_History.Get_Count, 1);
+      Natural_Assert.Eq (T.Invalid_Parameter_Table_Config_History.Get_Count, 4);
+   end Test_Set_Invalid_Config;
 
    overriding procedure Test_Validate_Returns_Parameter_Error (Self : in out Instance) is
       use Parameter_Enums.Parameter_Table_Operation_Type;
@@ -492,7 +689,7 @@ package body Oe_State_Ephem_Tests.Implementation is
 
    -- Dump_Buffer is overwritten on every Get_Pointer call, so back-to-back
    -- Get_Pointers must each reflect the algorithm's current state at the
-   -- time of the call. The new dump-buffer design (separate from staging)
+   -- time of the call. The dump-buffer design (separate from staging)
    -- relies on this for correctness; a regression to a write-once /
    -- cached-dump strategy would slip past Test_Get_Pointer_*_Current /
    -- _Succeeds_While_Staged because those only inspect one snapshot.
@@ -569,6 +766,68 @@ package body Oe_State_Ephem_Tests.Implementation is
    -- between them must result in only the latest being applied on the
    -- next tick (one Parameter_Table_Applied event, algorithm holds the
    -- second upload's values).
+   overriding procedure Test_Anomaly_Flag_Selects_Anomaly_Type (Self : in out Instance) is
+      use Oe_State_Ephem_Enums;
+      use Parameter_Enums.Parameter_Table_Update_Status;
+      T : Component.Oe_State_Ephem.Implementation.Tester.Instance_Access renames Self.Tester;
+
+      Radius_M : constant Long_Float := 7.0E6;
+      Mu : constant Long_Float := 3.986004418E14;
+      Middle_Time_S : constant Long_Float := 1000.0;
+      Radius_Time_S : constant Long_Float := 500.0;
+
+      function Constant_Coeff (Value : in Long_Float) return Oe_Coefficients.U is
+         Data : Packed_F64x20.U := [others => 0.0];
+      begin
+         Data (0) := Value;
+         return (Data => Data);
+      end Constant_Coeff;
+
+      Zero_Coeff_U : constant Oe_Coefficients.U := (Data => [others => 0.0]);
+
+      -- Both a non-zero eccentricity and a non-zero anomaly angle are required for
+      -- the flag to change the answer: at e = 0 or angle = 0 the mean and true
+      -- anomaly coincide and the two branches of evaluateCoefficients agree.
+      function Arc (Flag : in Anomaly_Type.E) return Oe_Arc.U is
+        ((Number_Of_Coefficients => (Value => 1),
+          Middle_Time => Middle_Time_S,
+          Radius_Time => Radius_Time_S,
+          Anomaly_Flag => Flag,
+          Radius_Periapsis => Constant_Coeff (Radius_M),
+          Eccentricity => Constant_Coeff (0.5),
+          Inclination => Zero_Coeff_U,
+          Arg_Periapsis => Zero_Coeff_U,
+          Raan => Zero_Coeff_U,
+          True_Anomaly => Constant_Coeff (1.0)));
+
+      function Table (Flag : in Anomaly_Type.E) return Oe_State_Ephem_Parameter_Table.T is
+        (Oe_State_Ephem_Parameter_Table.Pack ((
+            Ephemeris_Time => Middle_Time_S,
+            Vehicle_Clock_Time => 0.0,
+            Central_Body_Mu => Mu,
+            Number_Of_Arcs => (Value => 1),
+            Arcs => [0 => Arc (Flag), others => Zero_Arc])));
+   begin
+      pragma Assert (Send_Set_Table (T, Table (Anomaly_Type.True_Anomaly)) = Success);
+      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+
+      pragma Assert (Send_Set_Table (T, Table (Anomaly_Type.Mean_Anomaly)) = Success);
+      T.Tick_T_Send ((Time => T.System_Time, Count => 1));
+
+      Natural_Assert.Eq (T.Ephemeris_State_History.Get_Count, 2);
+      declare
+         True_State : constant Cartesian_State.T := T.Ephemeris_State_History.Get (1);
+         Mean_State : constant Cartesian_State.T := T.Ephemeris_State_History.Get (2);
+         use type Packed_F64x3.T;
+      begin
+         -- Only Anomaly_Flag differs between the two uploads. Identical output would
+         -- mean the algorithm never saw the Mean_Anomaly value -- which is what a
+         -- misplaced or mis-widened flag byte in ChebyshevFitArc_c would produce,
+         -- since every other test sends True_Anomaly (0) and cannot tell.
+         pragma Assert (True_State.Position /= Mean_State.Position);
+      end;
+   end Test_Anomaly_Flag_Selects_Anomaly_Type;
+
    overriding procedure Test_Repeated_Set_Without_Tick (Self : in out Instance) is
       use Oe_State_Ephem_Enums;
       use Parameter_Enums.Parameter_Table_Operation_Type;

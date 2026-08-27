@@ -11,6 +11,15 @@ events:
     param_type: Packed_U32.T
   - name: Parameter_Table_Applied
     description: A staged parameter table was drained and pushed to the C++ algorithm on this tick.
+  - name: Invalid_Parameter_Table_Config
+    description: |
+      An uploaded parameter table passed type-level validation but was rejected
+      by the algorithm's own configuration validator (e.g. a non-positive
+      Central_Body_Mu, a Number_Of_Arcs above MAX_OE_RECORDS, or a non-finite
+      Chebyshev coefficient). The rejection is synchronous with the upload: the
+      Set operation returns Parameter_Error, nothing is staged, and the
+      algorithm keeps the configuration it already had, so the throwing
+      Set_Config is never reached.
   - name: Get_Copy_Not_Supported
     description: |
       A Get_Copy operation was requested on the parameters memory region

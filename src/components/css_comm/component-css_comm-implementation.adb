@@ -10,22 +10,50 @@ with Interfaces;
 
 package body Component.Css_Comm.Implementation is
 
+   -- Local alias for the Chebyshev-polynomial C record. Validate_Parameters has a
+   -- formal named Cheby_Polynomials which shadows the with'd package of the same
+   -- name, so we refer to the record type through this alias instead.
+   subtype Cheby_Polynomials_C_Type is Cheby_Polynomials.C.U_C;
+
+   -- Build the per-sensor max-value array by broadcasting the single Max_Sensor_Value
+   -- parameter across the active channels. The C algorithm scales each sensor by its
+   -- own maxSensorValues entry; the component uses one shared scale factor, and the
+   -- number of active sensors is fixed by the ADC data dependency width. Trailing
+   -- (non-physical) entries stay zero.
+   function Make_Max_Sensor_Values (Max_Value : Long_Float) return Css_Values_Array_C is
+      Result : Css_Values_Array_C := [others => 0.0];
+   begin
+      for I in 0 .. Css_Adc_U16_8.Length - 1 loop
+         Result (I) := Max_Value;
+      end loop;
+      return Result;
+   end Make_Max_Sensor_Values;
+
    --------------------------------------------------
    -- Subprogram for implementation init method:
    --------------------------------------------------
    -- Initializes the CSS comm algorithm.
    overriding procedure Init (Self : in out Instance) is
+      use Parameter_Validation_Status;
+
+      -- The array arguments cross by reference, so they need aliased objects to
+      -- point at and cannot be marshalled inline.
+      Max_Sensor_Values : aliased Css_Values_Array_C := Make_Max_Sensor_Values (Self.Max_Sensor_Value.Value);
+      Cheby_Poly_C : aliased Cheby_Polynomials_C_Type := (Data => Packed_F64x11.C.To_C (Self.Cheby_Polynomials));
    begin
-      -- Allocate C++ class on the heap
-      Self.Alg := Create;
-      -- The number of CSS sensors is fixed by the hardware interface: the
-      -- ADC data dependency carries exactly Css_Adc_U16_8.Length channels.
-      Set_Num_Sensors (Self.Alg, Interfaces.Unsigned_32 (Css_Adc_U16_8.Length));
-      -- Apply the Ada parameter defaults to the algorithm: the framework
-      -- invokes Update_Parameters_Action only after a ground parameter
-      -- update, and the C++ constructor defaults do not match the Ada
-      -- defaults.
-      Self.Update_Parameters_Action;
+      -- Create throws on an invalid configuration, so the parameter defaults must form
+      -- a valid one. Assert through Validate_Parameters, the component's single
+      -- validation gate, rather than calling Validate_Config a second time here.
+      pragma Assert (Self.Validate_Parameters (
+         Max_Sensor_Value  => Self.Max_Sensor_Value,
+         Cheby_Count       => Self.Cheby_Count,
+         Cheby_Polynomials => Self.Cheby_Polynomials) = Valid);
+      -- The number of CSS sensors is fixed by the hardware interface: the ADC data
+      -- dependency carries exactly Css_Adc_U16_8.Length channels.
+      Self.Alg := Create (
+         Num_Sensors       => Interfaces.Unsigned_32 (Css_Adc_U16_8.Length),
+         Max_Sensor_Values => Max_Sensor_Values'Access,
+         Polynomials       => Cheby_Poly_C'Access);
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -104,15 +132,47 @@ package body Component.Css_Comm.Implementation is
    -----------------------------------------------
    -- Apply parameters to the C algorithm when they are updated.
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
-      -- Construct Chebyshev polynomials C type from parameter:
-      Cheby_Poly_C : aliased Cheby_Polynomials.C.U_C := (
+      -- Rebuild the algorithm configuration from the updated parameters. The values
+      -- were checked by Validate_Parameters at staging, so Set_Config will not reject
+      -- them. Cheby_Count has no counterpart in the flattened config (the algorithm
+      -- uses all MAX_NUM_CHEBY_POLYS coefficients) and is intentionally not applied.
+      Max_Sensor_Values : aliased Css_Values_Array_C := Make_Max_Sensor_Values (Self.Max_Sensor_Value.Value);
+      Cheby_Poly_C : aliased Cheby_Polynomials_C_Type := (
          Data => Packed_F64x11.C.To_C (Self.Cheby_Polynomials)
       );
    begin
-      Set_Max_Sensor_Value (Self.Alg, Self.Max_Sensor_Value.Value);
-      Set_Cheby_Count (Self.Alg, Self.Cheby_Count.Value);
-      Set_Cheby_Polynomials (Self.Alg, Cheby_Poly_C'Access);
+      Set_Config (
+         Self.Alg,
+         Num_Sensors       => Interfaces.Unsigned_32 (Css_Adc_U16_8.Length),
+         Max_Sensor_Values => Max_Sensor_Values'Access,
+         Polynomials       => Cheby_Poly_C'Access);
    end Update_Parameters_Action;
+
+   -- Validate a staged parameter set before it is applied by asking the algorithm's
+   -- own non-throwing Validate_Config predicate, so the config rules live solely in
+   -- the algorithm. Rejecting an invalid update here at staging keeps it from reaching
+   -- the throwing Create/Set_Config across the FFI boundary. Cheby_Count does not
+   -- participate in the flattened config and is not validated here.
+   overriding function Validate_Parameters (
+      Self : in out Instance;
+      Max_Sensor_Value : in Packed_F64.U;
+      Cheby_Count : in Packed_U32.U;
+      Cheby_Polynomials : in Packed_F64x11.U
+   ) return Parameter_Validation_Status.E is
+      pragma Unreferenced (Self, Cheby_Count);
+      Max_Sensor_Values : aliased Css_Values_Array_C := Make_Max_Sensor_Values (Max_Sensor_Value.Value);
+      Cheby_Poly_C : aliased Cheby_Polynomials_C_Type := (Data => Packed_F64x11.C.To_C (Cheby_Polynomials));
+   begin
+      if Validate_Config (
+            Num_Sensors       => Interfaces.Unsigned_32 (Css_Adc_U16_8.Length),
+            Max_Sensor_Values => Max_Sensor_Values'Access,
+            Polynomials       => Cheby_Poly_C'Access)
+      then
+         return Parameter_Validation_Status.Valid;
+      else
+         return Parameter_Validation_Status.Invalid;
+      end if;
+   end Validate_Parameters;
 
    -----------------------------------------------
    -- Data dependency handlers:

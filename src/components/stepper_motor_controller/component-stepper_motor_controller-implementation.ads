@@ -69,12 +69,12 @@ private
    -- we avoid adding per-component event overhead to these algorithm components.
    overriding procedure Invalid_Parameter (Self : in out Instance; Par : in Parameter.T; Errant_Field_Number : in Unsigned_32; Errant_Field : in Basic_Types.Poly_Type) is null;
    -- This procedure is called when the parameters of a component have been updated. It applies
-   -- the parameter values to the C algorithm via its configuration setters.
+   -- the parameter values to the C algorithm as a single configuration.
    overriding procedure Update_Parameters_Action (Self : in out Instance);
    -- This function is called when the parameter operation type is "Validate".
-   -- No custom validation: float garbage (NaN/Inf) is rejected by type
-   -- validation during staging, and out-of-range values are the C algorithm
-   -- setters' contract to reject.
+   -- It defers to the algorithm's non-throwing Validate_Config predicate so the
+   -- configuration rules live solely in the algorithm, and an out-of-range value
+   -- is rejected at staging rather than reaching the throwing Set_Config.
    overriding function Validate_Parameters (
       Self : in out Instance;
       Step_Angle : in Packed_F32.U;
@@ -82,7 +82,7 @@ private
       Motor_Max_Angle : in Packed_F32.U;
       Settle_Count_Max : in Packed_U32.U;
       Min_Step_Command : in Packed_U32.U
-   ) return Parameter_Validation_Status.E is (Parameter_Validation_Status.Valid);
+   ) return Parameter_Validation_Status.E;
 
    -----------------------------------------------
    -- Data dependency primitives:

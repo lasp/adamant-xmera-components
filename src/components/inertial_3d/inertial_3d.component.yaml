@@ -1,5 +1,5 @@
 ---
-description: Inertial 3D algorithm produces a fixed inertial attitude reference message.
+description: Inertial 3D algorithm produces a fixed inertial attitude reference message. The algorithm holds the reference attitude as immutable configuration and returns it unchanged on every tick, so it is reconfigured only when the attitude actually changes rather than driven per tick. The attitude is supplied as a data dependency, published by the GNC state manager when it commands the inertial-hold state.
 execution: passive
 init:
   description: Initializes the inertial 3D algorithm instance.

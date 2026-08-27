@@ -31,6 +31,7 @@ package Component.Oe_State_Ephem.Implementation.Tester is
    -- Event history packages:
    package Invalid_Parameter_Table_Format_History_Package is new Printable_History (Packed_U32.T, Packed_U32.Representation.Image);
    package Parameter_Table_Applied_History_Package is new Printable_History (Natural, Natural'Image);
+   package Invalid_Parameter_Table_Config_History_Package is new Printable_History (Natural, Natural'Image);
    package Get_Copy_Not_Supported_History_Package is new Printable_History (Natural, Natural'Image);
    package Validate_Not_Supported_History_Package is new Printable_History (Natural, Natural'Image);
 
@@ -48,6 +49,7 @@ package Component.Oe_State_Ephem.Implementation.Tester is
       -- Event histories:
       Invalid_Parameter_Table_Format_History : Invalid_Parameter_Table_Format_History_Package.Instance;
       Parameter_Table_Applied_History : Parameter_Table_Applied_History_Package.Instance;
+      Invalid_Parameter_Table_Config_History : Invalid_Parameter_Table_Config_History_Package.Instance;
       Get_Copy_Not_Supported_History : Get_Copy_Not_Supported_History_Package.Instance;
       Validate_Not_Supported_History : Validate_Not_Supported_History_Package.Instance;
       -- Data product histories:
@@ -91,6 +93,10 @@ package Component.Oe_State_Ephem.Implementation.Tester is
    -- A staged parameter table was drained and pushed to the C++ algorithm on this
    -- tick.
    overriding procedure Parameter_Table_Applied (Self : in out Instance);
+   -- A staged parameter table passed type-level validation but was rejected by the
+   -- algorithm's own configuration validator; the previously applied configuration
+   -- was kept.
+   overriding procedure Invalid_Parameter_Table_Config (Self : in out Instance);
    -- A Get_Copy operation was requested on the parameters memory region
    -- interface; the component does not support Get_Copy.
    overriding procedure Get_Copy_Not_Supported (Self : in out Instance);

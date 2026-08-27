@@ -28,6 +28,10 @@ private
       -- Whether the fault flag was set on the previous tick, used to detect
       -- latch/clear transitions.
       Prev_Fault_Latched : Boolean := False;
+      -- Command-settable override forcing IMU rates. It has no parameter, so this
+      -- field is the Ada-side source of truth, folded into the config alongside the
+      -- threshold/persistence parameters.
+      Use_Imu_Rates : Boolean := False;
    end record;
 
    ---------------------------------------
@@ -104,7 +108,7 @@ private
       Self : in out Instance;
       Body_Rate_Threshold : in Packed_F32.U;
       Fault_Persistence_Limit : in Packed_U32.U
-   ) return Parameter_Validation_Status.E is (Parameter_Validation_Status.Valid);
+   ) return Parameter_Validation_Status.E;
 
    -----------------------------------------------
    -- Data dependency primitives:

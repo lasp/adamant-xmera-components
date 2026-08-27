@@ -5,8 +5,12 @@ tests:
     description: Zero coefficients and zero gravitational parameter (Init default) must produce zero Cartesian state.
   - name: Test_Cheby_Fit_Via_Set
     description: Upload a single-arc Chebyshev fit via Set; the next tick applies it and the algorithm reconstructs a known circular equatorial orbit within 0.1 percent.
+  - name: Test_All_Coefficient_Arrays_Map_Correctly
+    description: A single-coefficient arc with a distinct non-zero value in every one of the six element coefficient arrays reconstructs the closed-form Cartesian state, so any permutation of those arrays across the C boundary fails. Test_Cheby_Fit_Via_Set cannot see such a swap because it leaves five of the six arrays zero.
   - name: Test_Set_Invalid_Format
     description: A memory region with an out-of-range Anomaly_Type is rejected before deserialization; release returns Parameter_Error and an Invalid_Parameter_Table_Format event fires.
+  - name: Test_Set_Invalid_Config
+    description: A format-valid table the algorithm's configuration rules reject (zero arcs, negative Central_Body_Mu, a count beyond the wire table's slots, or an invalid arc) is refused synchronously on the upload with Parameter_Error and an Invalid_Parameter_Table_Config event; nothing is staged and the previously applied configuration is retained.
   - name: Test_Validate_Returns_Parameter_Error
     description: Validate is unsupported; release returns Parameter_Error and a Validate_Not_Supported event is emitted; no table is staged or applied.
   - name: Test_Get_Pointer_Returns_Current_Table
@@ -17,5 +21,7 @@ tests:
     description: Get_Pointer always succeeds, even while a Set is staged. The dump buffer reflects the algorithm's current state; the staged Set is preserved and applies on the next tick.
   - name: Test_Get_Pointer_Reflects_Current_State
     description: Dump_Buffer is overwritten on each Get_Pointer call; back-to-back calls each reflect the algorithm's current state at the time of the call.
+  - name: Test_Anomaly_Flag_Selects_Anomaly_Type
+    description: An eccentric arc evaluated once with True_Anomaly and once with Mean_Anomaly produces different Cartesian states, proving the Anomaly_Flag value reaches the algorithm across the C boundary. Guards the one Oe_Arc field whose position and width the ChebyshevFitArc_c POD layout depends on.
   - name: Test_Repeated_Set_Without_Tick
     description: Two Set calls without an intervening tick result in only the latest table being applied on the next tick; mirrors the Generic_Staged_Variable latest-wins contract.

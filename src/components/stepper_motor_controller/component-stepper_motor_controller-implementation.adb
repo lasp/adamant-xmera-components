@@ -11,15 +11,20 @@ package body Component.Stepper_Motor_Controller.Implementation is
    --------------------------------------------------
    -- Initializes the stepper motor controller algorithm.
    overriding procedure Init (Self : in out Instance) is
+      use Parameter_Validation_Status;
    begin
-      -- Allocate C++ class on the heap
-      Self.Alg := Create;
-
-      -- Apply the Ada parameter defaults to the algorithm: the framework
-      -- invokes Update_Parameters_Action only after a ground parameter
-      -- update, and the C++ constructor defaults do not match the Ada
-      -- defaults.
-      Self.Update_Parameters_Action;
+      pragma Assert (Self.Validate_Parameters (
+         Step_Angle       => Self.Step_Angle,
+         Motor_Min_Angle  => Self.Motor_Min_Angle,
+         Motor_Max_Angle  => Self.Motor_Max_Angle,
+         Settle_Count_Max => Self.Settle_Count_Max,
+         Min_Step_Command => Self.Min_Step_Command) = Valid);
+      Self.Alg := Create (
+         Step_Angle       => Self.Step_Angle.Value,
+         Min_Angle        => Self.Motor_Min_Angle.Value,
+         Max_Angle        => Self.Motor_Max_Angle.Value,
+         Settle_Count_Max => Self.Settle_Count_Max.Value,
+         Min_Step_Command => Self.Min_Step_Command.Value);
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -131,16 +136,47 @@ package body Component.Stepper_Motor_Controller.Implementation is
    -----------------------------------------------
    -- Parameter handlers:
    -----------------------------------------------
+   -- Push the updated parameters into the C++ algorithm as one complete
+   -- configuration. This is the component's only reconfiguration path. The values
+   -- were checked by Validate_Parameters at staging, so Set_Config will not reject
+   -- them.
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
    begin
-      -- Set algorithm configuration from parameters:
-      Set_Step_Angle (Self.Alg, Self.Step_Angle.Value);
-      Set_Motor_Angle_Range (Self.Alg,
-         Min_Angle => Self.Motor_Min_Angle.Value,
-         Max_Angle => Self.Motor_Max_Angle.Value);
-      Set_Settle_Count_Max (Self.Alg, Self.Settle_Count_Max.Value);
-      Set_Min_Step_Command (Self.Alg, Self.Min_Step_Command.Value);
+      Set_Config (
+         Self.Alg,
+         Step_Angle       => Self.Step_Angle.Value,
+         Min_Angle        => Self.Motor_Min_Angle.Value,
+         Max_Angle        => Self.Motor_Max_Angle.Value,
+         Settle_Count_Max => Self.Settle_Count_Max.Value,
+         Min_Step_Command => Self.Min_Step_Command.Value);
    end Update_Parameters_Action;
+
+   -- Validate a staged parameter set before it is applied by asking the algorithm's
+   -- own non-throwing Validate_Config predicate, so the config rules live solely in
+   -- the algorithm. Rejecting an invalid update here at staging keeps it from reaching
+   -- the throwing Create/Set_Config across the FFI boundary.
+   overriding function Validate_Parameters (
+      Self : in out Instance;
+      Step_Angle : in Packed_F32.U;
+      Motor_Min_Angle : in Packed_F32.U;
+      Motor_Max_Angle : in Packed_F32.U;
+      Settle_Count_Max : in Packed_U32.U;
+      Min_Step_Command : in Packed_U32.U
+   ) return Parameter_Validation_Status.E is
+      pragma Unreferenced (Self);
+   begin
+      if Validate_Config (
+         Step_Angle       => Step_Angle.Value,
+         Min_Angle        => Motor_Min_Angle.Value,
+         Max_Angle        => Motor_Max_Angle.Value,
+         Settle_Count_Max => Settle_Count_Max.Value,
+         Min_Step_Command => Min_Step_Command.Value)
+      then
+         return Parameter_Validation_Status.Valid;
+      else
+         return Parameter_Validation_Status.Invalid;
+      end if;
+   end Validate_Parameters;
 
    -----------------------------------------------
    -- Data dependency handlers:

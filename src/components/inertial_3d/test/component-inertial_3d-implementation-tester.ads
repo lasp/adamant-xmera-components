@@ -12,7 +12,12 @@ with Data_Product;
 with Att_Ref.Representation;
 with Packed_F32x3_Record;
 
--- Inertial 3D algorithm produces a fixed inertial attitude reference message.
+-- Inertial 3D algorithm produces a fixed inertial attitude reference message. The
+-- algorithm holds the reference attitude as immutable configuration and returns it
+-- unchanged on every tick, so it is reconfigured only when the attitude actually
+-- changes rather than driven per tick. The attitude is supplied as a data
+-- dependency, published by the GNC state manager when it commands the
+-- inertial-hold state.
 package Component.Inertial_3d.Implementation.Tester is
 
    use Component.Inertial_3d_Reciprocal;

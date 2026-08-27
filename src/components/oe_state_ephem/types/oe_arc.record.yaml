@@ -4,6 +4,22 @@ description: |
   for the six classical orbital elements. The OE State Ephem algorithm holds
   a fixed-size array of these arcs (Oe_Arc_Records.T) and evaluates the
   appropriate one for the current vehicle time.
+
+  This record serves two roles at once: it is the ground-uplinked parameter-table
+  format, and its .C.U_C is the C-boundary layout handed to the fp32 shim. The field
+  order below and the 8-bit Anomaly_Flag are therefore mirrored by ChebyshevFitArc_c
+  in fp32-fsw-xmera/algorithms/oeStateEphem/oeStateEphemTypes.h. The arc array crosses
+  by reference, so the C++ side reads it at fixed offsets: reordering a field or
+  changing Anomaly_Flag's width here silently misreads data rather than failing to
+  compile.
+
+  Note what does and does not guard that. Oe_State_Ephem_Algorithm_C asserts
+  Oe_Arc.C.U_C'Object_Size = getFitArcSizeBits(), but that only catches a field added
+  or removed, or a Long_Float narrowed: the seven bytes of padding after Anomaly_Flag
+  absorb any width up to 64 bits, and a size-preserving reorder leaves the total at
+  992 bytes. A separate assert pins Anomaly_Type.E'Object_Size to 8. Field order is
+  guarded only behaviourally, by Test_Anomaly_Flag_Selects_Anomaly_Type and
+  Test_All_Coefficient_Arrays_Map_Correctly in the component test suite.
 fields:
   - name: Number_Of_Coefficients
     description: Number of valid Chebyshev coefficients in each of the six coefficient arrays below.

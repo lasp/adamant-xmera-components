@@ -348,4 +348,51 @@ package body Body_Rate_Miscompare_Tests.Implementation is
       Boolean_Assert.Eq (T.Use_Imu_Rates_Set_History.Is_Empty, True);
    end Test_Invalid_Command;
 
+   -- The threshold must be finite and > 0 and the persistence limit > 0. Validation is
+   -- the only guard keeping a rejected set out of the throwing Set_Config, so exercise
+   -- it directly. Use_Imu_Rates is instance state rather than a parameter and does not
+   -- affect validity.
+   overriding procedure Test_Invalid_Parameter (Self : in out Instance) is
+      T : Component.Body_Rate_Miscompare.Implementation.Tester.Instance_Access renames Self.Tester;
+      Params : Body_Rate_Miscompare_Parameters.Instance;
+
+      -- Stage the full valid set. Every case below starts from this baseline so a
+      -- rejection can only come from the single field that was perturbed.
+      procedure Stage_Valid_Set is
+      begin
+         Parameter_Update_Status_Assert.Eq
+           (T.Stage_Parameter (Params.Body_Rate_Threshold ((Value => 0.01))), Success);
+         Parameter_Update_Status_Assert.Eq
+           (T.Stage_Parameter (Params.Fault_Persistence_Limit ((Value => 5))), Success);
+      end Stage_Valid_Set;
+   begin
+      -- The baseline set is accepted:
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
+
+      -- A zero body rate threshold is rejected (must be finite and > 0):
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq
+        (T.Stage_Parameter (Params.Body_Rate_Threshold ((Value => 0.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- A negative body rate threshold is rejected:
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq
+        (T.Stage_Parameter (Params.Body_Rate_Threshold ((Value => -1.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- A zero fault persistence limit is rejected (must be > 0):
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq
+        (T.Stage_Parameter (Params.Fault_Persistence_Limit ((Value => 0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- Restoring validity makes the set acceptable again, so the rejections above
+      -- were caused by the perturbed values rather than by sticky staging state:
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
+      Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+   end Test_Invalid_Parameter;
+
 end Body_Rate_Miscompare_Tests.Implementation;

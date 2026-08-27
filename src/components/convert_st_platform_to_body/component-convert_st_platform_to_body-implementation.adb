@@ -3,12 +3,11 @@
 --------------------------------------------------------------------------------
 
 with St_Platform_Attitude;
-with St_Platform_Attitude.C;
 with St_Platform_Angular_Velocity;
-with St_Platform_Angular_Velocity.C;
+with St_Platform_Measurement;
+with St_Platform_Measurement.C;
 with St_Att.C;
 with Packed_F32x9.C;
-with Packed_F32x9_Record.C;
 
 package body Component.Convert_St_Platform_To_Body.Implementation is
 
@@ -17,14 +16,13 @@ package body Component.Convert_St_Platform_To_Body.Implementation is
    --------------------------------------------------
    -- Initializes the convert star tracker platform to body algorithm.
    overriding procedure Init (Self : in out Instance) is
+      use Parameter_Validation_Status;
    begin
-      -- Allocate C++ class on the heap
-      Self.Alg := Create;
-      -- Apply the Ada parameter defaults to the algorithm: the framework
-      -- invokes Update_Parameters_Action only after a ground parameter
-      -- update, and the C++ constructor defaults do not match the Ada
-      -- defaults.
-      Self.Update_Parameters_Action;
+      -- Create throws on an invalid configuration, so the parameter default must form a
+      -- valid one. Assert through Validate_Parameters, the component's single validation
+      -- gate, rather than calling Validate_Config a second time here.
+      pragma Assert (Self.Validate_Parameters (Dcm_Cb => Self.Dcm_Cb) = Valid);
+      Self.Alg := Create (Dcm_Cb => (Value => Packed_F32x9.C.To_C (Self.Dcm_Cb)));
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -56,11 +54,18 @@ package body Component.Convert_St_Platform_To_Body.Implementation is
       pragma Assert (Platform_Attitude_Status = Success or else Platform_Attitude_Status = Stale);
       pragma Assert (Platform_Angular_Velocity_Status = Success or else Platform_Angular_Velocity_Status = Stale);
 
-      -- Convert Ada types to C types:
-      Platform_Attitude_C : aliased St_Platform_Attitude.C.U_C :=
-         St_Platform_Attitude.C.To_C (St_Platform_Attitude.Unpack (Platform_Attitude_Dep));
-      Platform_Angular_Velocity_C : aliased St_Platform_Angular_Velocity.C.U_C :=
-         St_Platform_Angular_Velocity.C.To_C (St_Platform_Angular_Velocity.Unpack (Platform_Angular_Velocity_Dep));
+      Platform_Attitude_U : constant St_Platform_Attitude.U :=
+         St_Platform_Attitude.Unpack (Platform_Attitude_Dep);
+      Platform_Angular_Velocity_U : constant St_Platform_Angular_Velocity.U :=
+         St_Platform_Angular_Velocity.Unpack (Platform_Angular_Velocity_Dep);
+
+      -- Join the two star-tracker solutions into the single measurement the algorithm takes.
+      -- The attitude solution supplies the time tag that is passed through to the output.
+      Measurement_C : aliased St_Platform_Measurement.C.U_C := St_Platform_Measurement.C.To_C ((
+         Time_Tag                  => Platform_Attitude_U.Time_Tag,
+         Platform_Attitude         => Platform_Attitude_U.Platform_Attitude,
+         Platform_Angular_Velocity => Platform_Angular_Velocity_U.Platform_Angular_Velocity
+      ));
    begin
       -- Apply any pending parameter update (e.g. new Dcm_Cb):
       Self.Update_Parameters;
@@ -68,11 +73,7 @@ package body Component.Convert_St_Platform_To_Body.Implementation is
       -- Call the C algorithm and publish the resulting body-frame attitude:
       Self.Data_Product_T_Send (Self.Data_Products.Star_Tracker_Body_Attitude (
          Arg.Time,
-         St_Att.Pack (St_Att.C.To_Ada (Update (
-            Self.Alg,
-            Platform_Attitude          => Platform_Attitude_C'Access,
-            Platform_Angular_Velocity  => Platform_Angular_Velocity_C'Access
-         )))
+         St_Att.Pack (St_Att.C.To_Ada (Update (Self.Alg, Measurement => Measurement_C'Access)))
       ));
    end Tick_T_Recv_Sync;
 
@@ -90,12 +91,28 @@ package body Component.Convert_St_Platform_To_Body.Implementation is
    -- push the body-to-case DCM into the C algorithm so subsequent updates use the new platform
    -- alignment.
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
-      Dcm_Cb_C : constant Packed_F32x9_Record.C.U_C := (
-         Value => Packed_F32x9.C.To_C (Self.Dcm_Cb)
-      );
    begin
-      Set_Dcm_Cb (Self.Alg, Dcm_Cb_C);
+      -- Rebuild the algorithm configuration from the updated DCM parameter. The value was
+      -- checked by Validate_Parameters at staging, so Set_Config will not reject it.
+      Set_Config (Self.Alg, Dcm_Cb => (Value => Packed_F32x9.C.To_C (Self.Dcm_Cb)));
    end Update_Parameters_Action;
+
+   -- Validate a staged Dcm_Cb before it is applied by asking the algorithm's own
+   -- non-throwing Validate_Config predicate (a valid DCM is orthonormal with det +1), so
+   -- the config rules live solely in the algorithm. Rejecting an invalid update here at
+   -- staging keeps it from reaching the throwing Create/Set_Config across the FFI boundary.
+   overriding function Validate_Parameters (
+      Self : in out Instance;
+      Dcm_Cb : in Packed_F32x9.U
+   ) return Parameter_Validation_Status.E is
+      pragma Unreferenced (Self);
+   begin
+      if Validate_Config (Dcm_Cb => (Value => Packed_F32x9.C.To_C (Dcm_Cb))) then
+         return Parameter_Validation_Status.Valid;
+      else
+         return Parameter_Validation_Status.Invalid;
+      end if;
+   end Validate_Parameters;
 
    -----------------------------------------------
    -- Data dependency handlers:

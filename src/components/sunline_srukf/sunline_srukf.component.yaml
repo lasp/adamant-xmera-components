@@ -1,5 +1,5 @@
 ---
-description: Sunline SRuKF pass-through algorithm wrapping the C++ SunlineSRuKFAlgorithm.
+description: Sunline SRuKF state pass-through. Publishes the spacecraft body rate as the sunline state; the remaining state fields have no upstream producer and are zeroed.
 execution: passive
 init:
   description: Initializes the sunline SRuKF algorithm.

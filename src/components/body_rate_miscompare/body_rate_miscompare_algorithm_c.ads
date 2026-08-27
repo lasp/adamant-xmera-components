@@ -26,19 +26,77 @@ package Body_Rate_Miscompare_Algorithm_C is
    type Body_Rate_Miscompare_Algorithm is limited private;
    type Body_Rate_Miscompare_Algorithm_Access is access all Body_Rate_Miscompare_Algorithm;
 
-   --* @brief Construct a new BodyRateMiscompareAlgorithm.
+   --* @brief Report whether a configuration would be accepted by Create/Set_Config.
+   --* @param Body_Rate_Threshold     Rate threshold to trigger a body rate miscompare fault.
+   --* @param Fault_Persistence_Limit Consecutive update calls above threshold to trigger the fault.
+   --* @param Use_Imu_Rates           Force the IMU rate output even when the rates agree.
+   --* @return True if the configuration is valid. Never throws, so it can guard the
+   --* throwing Create/Set_Config from an invalid configuration.
+   function Validate_Config
+     (Body_Rate_Threshold     : Short_Float;
+      Fault_Persistence_Limit : Unsigned_32;
+      Use_Imu_Rates           : Boolean)
+     return Boolean
+     with Import       => True,
+          Convention   => C,
+          External_Name => "BodyRateMiscompareAlgorithm_validateConfig";
+
+   --* @brief Construct a new BodyRateMiscompareAlgorithm from a configuration.
+   --* Validate the values with Validate_Config before calling; throws on invalid input.
+   --* @param Body_Rate_Threshold     Rate threshold to trigger a body rate miscompare fault.
+   --* @param Fault_Persistence_Limit Consecutive update calls above threshold to trigger the fault.
+   --* @param Use_Imu_Rates           Force the IMU rate output even when the rates agree.
+   --* @return The new algorithm instance, which must be released with Destroy.
    function Create
+     (Body_Rate_Threshold     : Short_Float;
+      Fault_Persistence_Limit : Unsigned_32;
+      Use_Imu_Rates           : Boolean)
      return Body_Rate_Miscompare_Algorithm_Access
      with Import       => True,
           Convention   => C,
           External_Name => "BodyRateMiscompareAlgorithm_create";
 
    --* @brief Destroy a BodyRateMiscompareAlgorithm.
+   --* @param Self The algorithm instance to destroy.
    procedure Destroy
      (Self : Body_Rate_Miscompare_Algorithm_Access)
      with Import       => True,
           Convention   => C,
           External_Name => "BodyRateMiscompareAlgorithm_destroy";
+
+   --* @brief Apply a new configuration (validated; throws on invalid input).
+   --* Swaps the configured values; the latched fault state is left untouched, so a
+   --* caller needing the new Use_Imu_Rates to take effect on it must follow with
+   --* Re_Initialize.
+   --* @param Self                    The algorithm instance.
+   --* @param Body_Rate_Threshold     Rate threshold to trigger a body rate miscompare fault.
+   --* @param Fault_Persistence_Limit Consecutive update calls above threshold to trigger the fault.
+   --* @param Use_Imu_Rates           Force the IMU rate output even when the rates agree.
+   procedure Set_Config
+     (Self                    : Body_Rate_Miscompare_Algorithm_Access;
+      Body_Rate_Threshold     : Short_Float;
+      Fault_Persistence_Limit : Unsigned_32;
+      Use_Imu_Rates           : Boolean)
+     with Import       => True,
+          Convention   => C,
+          External_Name => "BodyRateMiscompareAlgorithm_setConfig";
+
+   --* @brief Full reset: clear the persistence counter and re-arm the latched
+   --* fault from the configured Use_Imu_Rates.
+   --* @param Self The algorithm instance.
+   procedure Re_Initialize
+     (Self : Body_Rate_Miscompare_Algorithm_Access)
+     with Import       => True,
+          Convention   => C,
+          External_Name => "BodyRateMiscompareAlgorithm_reInitialize";
+
+   --* @brief Clear the persistence counter only; a latched fault is preserved.
+   --* @param Self The algorithm instance.
+   procedure Re_Initialize_Except_Persistent_States
+     (Self : Body_Rate_Miscompare_Algorithm_Access)
+     with Import       => True,
+          Convention   => C,
+          External_Name => "BodyRateMiscompareAlgorithm_reInitializeExceptPersistentStates";
 
    --* @brief Run the update step.
    --* @param Self      The algorithm instance.
@@ -51,74 +109,6 @@ package Body_Rate_Miscompare_Algorithm_C is
       St_Omega  : Packed_F32x3_Record.C.U_C)
      return Update_Result;
 
-   --* @brief Set the body rate threshold.
-   --* @param Self  The algorithm instance.
-   --* @param Value The new body rate threshold value.
-   procedure Set_Body_Rate_Threshold
-     (Self  : Body_Rate_Miscompare_Algorithm_Access;
-      Value : Short_Float)
-     with Import       => True,
-          Convention   => C,
-          External_Name => "BodyRateMiscompareAlgorithm_setBodyRateThreshold";
-
-   --* @brief Get the current body rate threshold.
-   --* @param Self  The algorithm instance.
-   --* @return The current body rate threshold.
-   function Get_Body_Rate_Threshold
-     (Self : Body_Rate_Miscompare_Algorithm_Access)
-     return Short_Float
-     with Import       => True,
-          Convention   => C,
-          External_Name => "BodyRateMiscompareAlgorithm_getBodyRateThreshold";
-
-   --* @brief Reset the persistence counter to zero.
-   --* @param Self  The algorithm instance.
-   procedure Reset
-     (Self : Body_Rate_Miscompare_Algorithm_Access)
-     with Import       => True,
-          Convention   => C,
-          External_Name => "BodyRateMiscompareAlgorithm_reset";
-
-   --* @brief Set the fault persistence limit.
-   --* @param Self  The algorithm instance.
-   --* @param Value Number of consecutive update calls needed to trigger the fault.
-   procedure Set_Fault_Persistence_Limit
-     (Self  : Body_Rate_Miscompare_Algorithm_Access;
-      Value : Unsigned_32)
-     with Import       => True,
-          Convention   => C,
-          External_Name => "BodyRateMiscompareAlgorithm_setFaultPersistenceLimit";
-
-   --* @brief Get the current fault persistence limit.
-   --* @param Self  The algorithm instance.
-   --* @return The current fault persistence limit.
-   function Get_Fault_Persistence_Limit
-     (Self : Body_Rate_Miscompare_Algorithm_Access)
-     return Unsigned_32
-     with Import       => True,
-          Convention   => C,
-          External_Name => "BodyRateMiscompareAlgorithm_getFaultPersistenceLimit";
-
-   --* @brief Set the useImuRates flag.
-   --* @param Self  The algorithm instance.
-   --* @param Value If True, always output IMU rates regardless of miscompare.
-   procedure Set_Use_Imu_Rates
-     (Self  : Body_Rate_Miscompare_Algorithm_Access;
-      Value : Boolean)
-     with Import       => True,
-          Convention   => C,
-          External_Name => "BodyRateMiscompareAlgorithm_setUseImuRates";
-
-   --* @brief Get the current useImuRates flag.
-   --* @param Self  The algorithm instance.
-   --* @return The current useImuRates flag (True if IMU rates are forced).
-   function Get_Use_Imu_Rates
-     (Self : Body_Rate_Miscompare_Algorithm_Access)
-     return Boolean
-     with Import       => True,
-          Convention   => C,
-          External_Name => "BodyRateMiscompareAlgorithm_getUseImuRates";
-
 private
 
    -- Private representation: opaque null record
@@ -126,6 +116,10 @@ private
 
    -- Raw C entry point. The public Update wraps this so callers receive
    -- native Ada types while the C ABI keeps its output struct.
+   --* @param Self      The algorithm instance.
+   --* @param Imu_Omega IMU body rate vector (Vector3f_c).
+   --* @param St_Omega  Star tracker body rate vector (Vector3f_c).
+   --* @return The raw C output struct.
    function Update_C
      (Self      : Body_Rate_Miscompare_Algorithm_Access;
       Imu_Omega : Packed_F32x3_Record.C.U_C;
@@ -136,6 +130,8 @@ private
           External_Name => "BodyRateMiscompareAlgorithm_update";
 
    -- Convert the raw update output to the idiomatic result.
+   --* @param Output The raw C output struct.
+   --* @return The selected body rate and fault flag as native Ada types.
    function To_Result (Output : Body_Rate_Miscompare_Output.C.U_C) return Update_Result
    is ((Omega_Bn_B => Packed_F32x3.C.Pack (Output.Omega_Bn_B),
         Fault_Detected => Output.Body_Rate_Fault_Detected /= 0));

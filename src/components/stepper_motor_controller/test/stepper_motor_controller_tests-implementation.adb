@@ -90,9 +90,9 @@ package body Stepper_Motor_Controller_Tests.Implementation is
       -- Make necessary connections between tester and component:
       Self.Tester.Connect;
 
-      -- Call component init here. The parameter defaults are valid for the C
-      -- algorithm setters, so Init applies them safely; each test then stages
-      -- its own configuration through the parameter interface.
+      -- Call component init here. The parameter defaults form a valid configuration,
+      -- so Init constructs the algorithm with them safely; each test then stages its
+      -- own configuration through the parameter interface.
       Self.Tester.Component_Instance.Init;
 
       -- Call the component set up method that the assembly would normally call.
@@ -399,5 +399,62 @@ package body Stepper_Motor_Controller_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Step_Angle ((Value => 0.03))), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
    end Test_Parameter_Staging_Errors;
+
+   -- A staged parameter set that the C++ StepperMotorControllerConfig would reject must
+   -- be refused by Validate_Parameters, so it never reaches the throwing Set_Config
+   -- across the FFI boundary. Each field is perturbed on its own from a valid baseline
+   -- and then restored, proving the rejection is attributable to that field. The values
+   -- here pass the staging type/range checks and are caught only by the algorithm's
+   -- validators. Settle_Count_Max has no invalid case: every tick count is accepted.
+   overriding procedure Test_Invalid_Parameter (Self : in out Instance) is
+      T : Tester_Access renames Self.Tester;
+      Params : Stepper_Motor_Controller_Parameters.Instance;
+
+      -- Stage the full valid set. Every case below starts from this baseline so a
+      -- rejection can only come from the single field that was perturbed.
+      procedure Stage_Valid_Set is
+      begin
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Step_Angle ((Value => Deg))), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Motor_Min_Angle ((Value => 0.0))), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Motor_Max_Angle ((Value => Two_Pi))), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Settle_Count_Max ((Value => 10))), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Min_Step_Command ((Value => 1))), Success);
+      end Stage_Valid_Set;
+   begin
+      -- The baseline set is accepted:
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
+
+      -- A zero step angle is rejected (must be in [2*pi/100000, 2*pi]):
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Step_Angle ((Value => 0.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- A step angle beyond a full revolution is rejected:
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Step_Angle ((Value => Two_Pi * 2.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- A minimum angle equal to the maximum is rejected (must be strictly less):
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Motor_Min_Angle ((Value => Two_Pi))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- A maximum angle outside [-2*pi, 2*pi] is rejected:
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Motor_Max_Angle ((Value => Two_Pi * 2.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- A zero minimum step command is rejected (must be greater than zero):
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Min_Step_Command ((Value => 0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- Restoring validity makes the set acceptable again, so the rejections above
+      -- were caused by the perturbed values rather than by sticky staging state:
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
+      Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+   end Test_Invalid_Parameter;
 
 end Stepper_Motor_Controller_Tests.Implementation;

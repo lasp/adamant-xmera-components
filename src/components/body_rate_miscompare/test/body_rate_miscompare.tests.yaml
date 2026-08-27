@@ -11,3 +11,5 @@ tests:
     description: Verify fault flag transitions publish the latch-time data product and latched/cleared events exactly once per transition, for both the miscompare latch and the commanded override.
   - name: Test_Invalid_Command
     description: Verify a malformed command is rejected and reported via the Invalid_Command_Received event.
+  - name: Test_Invalid_Parameter
+    description: Ensure staged parameter values the algorithm would reject are refused at validation.

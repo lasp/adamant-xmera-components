@@ -2,6 +2,10 @@ pragma Ada_2012;
 
 pragma Style_Checks (Off);
 pragma Warnings     (Off, "-gnatwu");
+-- Boolean is used at the C boundary to match the shim's C99 bool (_Bool):
+-- 1-byte, 0/1 representation, interoperable under Convention => C. Suppress
+-- the -gnatwx advisory about using a C "char"-style type for the mapping.
+pragma Warnings     (Off, "-gnatwx");
 
 with Interfaces; use Interfaces;
 with Mimu_Sample.C;
@@ -19,6 +23,7 @@ package Average_Mimu_Data_Algorithm_C is
    type Average_Mimu_Data_Algorithm_Access is access all Average_Mimu_Data_Algorithm;
 
    --* @brief Get the MAX_MIMU_PKT constant for Ada validation.
+   --* @return The C-side MAX_MIMU_PKT packet-ring depth.
    function Get_Max_Mimu_Pkt
      return Unsigned_32
      with Import       => True,
@@ -26,6 +31,7 @@ package Average_Mimu_Data_Algorithm_C is
           External_Name => "AverageMimuDataAlgorithm_getMaxMimuPkt";
 
    --* @brief Get the MAX_MIMU_SAMPLES_PER_PKT constant for Ada validation.
+   --* @return The C-side MAX_MIMU_SAMPLES_PER_PKT samples-per-packet count.
    function Get_Max_Mimu_Samples_Per_Pkt
      return Unsigned_32
      with Import       => True,
@@ -42,19 +48,59 @@ package Average_Mimu_Data_Algorithm_C is
    pragma Assert (Unsigned_32 (Mimu_Sample_X10.Length) = Get_Max_Mimu_Samples_Per_Pkt);
    pragma Assert (Unsigned_32 (Mimu_Sample_X10.C.U_C'Object_Size / Mimu_Sample.C.U_C'Object_Size) = Get_Max_Mimu_Samples_Per_Pkt);
 
-   --* @brief Construct a new AverageMimuDataAlgorithm.
+   --* @brief Report whether a configuration would be accepted by Create/Set_Config.
+   --* @param Gyro_Averaging_Window  [s] gyro averaging window, in [0.0, 2.0].
+   --* @param Accel_Averaging_Window [s] accel averaging window, in [0.0, 2.0].
+   --* @param Dcm_Bc                 CHU-to-body DCM (row-major 3x3, orthonormal, det +1).
+   --* @return True if the configuration is valid. Never throws, so it can guard the
+   --* throwing Create/Set_Config from an invalid configuration.
+   function Validate_Config
+     (Gyro_Averaging_Window  : Short_Float;
+      Accel_Averaging_Window : Short_Float;
+      Dcm_Bc                 : Packed_F32x9_Record.C.U_C)
+     return Boolean
+     with Import       => True,
+          Convention   => C,
+          External_Name => "AverageMimuDataAlgorithm_validateConfig";
+
+   --* @brief Construct a new AverageMimuDataAlgorithm from a configuration.
+   --* Validate the values with Validate_Config before calling; throws on invalid input.
+   --* @param Gyro_Averaging_Window  [s] gyro averaging window, in [0.0, 2.0].
+   --* @param Accel_Averaging_Window [s] accel averaging window, in [0.0, 2.0].
+   --* @param Dcm_Bc                 CHU-to-body DCM (row-major 3x3, orthonormal, det +1).
+   --* @return The new algorithm instance, which must be released with Destroy.
    function Create
+     (Gyro_Averaging_Window  : Short_Float;
+      Accel_Averaging_Window : Short_Float;
+      Dcm_Bc                 : Packed_F32x9_Record.C.U_C)
      return Average_Mimu_Data_Algorithm_Access
      with Import       => True,
           Convention   => C,
           External_Name => "AverageMimuDataAlgorithm_create";
 
    --* @brief Destroy an AverageMimuDataAlgorithm.
+   --* @param Self The algorithm instance to destroy.
    procedure Destroy
      (Self : Average_Mimu_Data_Algorithm_Access)
      with Import       => True,
           Convention   => C,
           External_Name => "AverageMimuDataAlgorithm_destroy";
+
+   --* @brief Apply a new configuration (validated; throws on invalid input).
+   --* The accumulated sample ring is untouched.
+   --* @param Self                   The algorithm instance.
+   --* @param Gyro_Averaging_Window  [s] gyro averaging window, in [0.0, 2.0].
+   --* @param Accel_Averaging_Window [s] accel averaging window, in [0.0, 2.0].
+   --* @param Dcm_Bc                 CHU-to-body DCM (row-major 3x3, orthonormal, det +1).
+   procedure Set_Config
+     (Self                   : Average_Mimu_Data_Algorithm_Access;
+      Gyro_Averaging_Window  : Short_Float;
+      Accel_Averaging_Window : Short_Float;
+      Dcm_Bc                 : Packed_F32x9_Record.C.U_C)
+     with Import       => True,
+          Convention   => C,
+          External_Name => "AverageMimuDataAlgorithm_setConfig";
+
 
    --* @brief Run the update step to compute averaged MIMU data.
    --* @param Self  The algorithm instance.
@@ -68,66 +114,6 @@ package Average_Mimu_Data_Algorithm_C is
           Convention   => C,
           External_Name => "AverageMimuDataAlgorithm_update";
 
-   --* @brief Set the gyro averaging window duration.
-   --* @param Self   The algorithm instance.
-   --* @param Window Gyro averaging window in seconds (valid range [0.0, 2.0]).
-   procedure Set_Gyro_Averaging_Window
-     (Self   : Average_Mimu_Data_Algorithm_Access;
-      Window : Long_Float)
-     with Import       => True,
-          Convention   => C,
-          External_Name => "AverageMimuDataAlgorithm_setGyroAveragingWindow";
-
-   --* @brief Get the current gyro averaging window duration.
-   --* @param Self The algorithm instance.
-   --* @return The current gyro averaging window in seconds.
-   function Get_Gyro_Averaging_Window
-     (Self : Average_Mimu_Data_Algorithm_Access)
-     return Long_Float
-     with Import       => True,
-          Convention   => C,
-          External_Name => "AverageMimuDataAlgorithm_getGyroAveragingWindow";
-
-   --* @brief Set the accel averaging window duration.
-   --* @param Self   The algorithm instance.
-   --* @param Window Accel averaging window in seconds (valid range [0.0, 2.0]).
-   procedure Set_Accel_Averaging_Window
-     (Self   : Average_Mimu_Data_Algorithm_Access;
-      Window : Long_Float)
-     with Import       => True,
-          Convention   => C,
-          External_Name => "AverageMimuDataAlgorithm_setAccelAveragingWindow";
-
-   --* @brief Get the current accel averaging window duration.
-   --* @param Self The algorithm instance.
-   --* @return The current accel averaging window in seconds.
-   function Get_Accel_Averaging_Window
-     (Self : Average_Mimu_Data_Algorithm_Access)
-     return Long_Float
-     with Import       => True,
-          Convention   => C,
-          External_Name => "AverageMimuDataAlgorithm_getAccelAveragingWindow";
-
-   --* @brief Set the DCM from platform frame to body frame.
-   --* @param Self   The algorithm instance.
-   --* @param Dcm_Bp 3x3 rotation matrix in row-major POD format.
-   procedure Set_Dcm_Pltf_To_Bdy
-     (Self   : Average_Mimu_Data_Algorithm_Access;
-      Dcm_Bp : Packed_F32x9_Record.C.U_C)
-     with Import       => True,
-          Convention   => C,
-          External_Name => "AverageMimuDataAlgorithm_setDcmPltfToBdy";
-
-   --* @brief Get the current DCM from platform frame to body frame.
-   --* @param Self The algorithm instance.
-   --* @return 3x3 rotation matrix in row-major POD format.
-   function Get_Dcm_Pltf_To_Bdy
-     (Self : Average_Mimu_Data_Algorithm_Access)
-     return Packed_F32x9_Record.C.U_C
-     with Import       => True,
-          Convention   => C,
-          External_Name => "AverageMimuDataAlgorithm_getDcmPltfToBdy";
-
 private
 
    -- Private representation: opaque null record
@@ -137,3 +123,4 @@ end Average_Mimu_Data_Algorithm_C;
 
 pragma Style_Checks (On);
 pragma Warnings     (On, "-gnatwu");
+pragma Warnings     (On, "-gnatwx");

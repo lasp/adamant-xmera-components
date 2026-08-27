@@ -22,6 +22,9 @@ private
    -- fresh one and the output is published with the reading's original timestamp.
    overriding procedure Test_Stale_Input_Is_Processed (Self : in out Instance);
 
+   -- Ensure a staged max sensor value the algorithm would reject is refused at validation.
+   overriding procedure Test_Invalid_Parameter (Self : in out Instance);
+
    -- Test data and state:
    type Instance is new Css_Comm_Tests.Base_Instance with record
       null;

@@ -112,6 +112,6 @@ private
       Gyro_Time_Delta : in Packed_F32.U;
       Accel_Time_Delta : in Packed_F32.U;
       Dcm_Pltf_To_Bdy : in Packed_F32x9.U
-   ) return Parameter_Validation_Status.E is (Parameter_Validation_Status.Valid);
+   ) return Parameter_Validation_Status.E;
 
 end Component.Average_Mimu_Data.Implementation;

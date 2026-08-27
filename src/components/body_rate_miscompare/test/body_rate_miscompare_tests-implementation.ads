@@ -29,6 +29,9 @@ private
    -- Invalid_Command_Received event.
    overriding procedure Test_Invalid_Command (Self : in out Instance);
 
+   -- Ensure staged parameter values the algorithm would reject are refused at validation.
+   overriding procedure Test_Invalid_Parameter (Self : in out Instance);
+
    -- Test data and state:
    type Instance is new Body_Rate_Miscompare_Tests.Base_Instance with record
       null;

@@ -4,9 +4,12 @@
 
 -- Includes:
 with Tick;
+with Packed_F32x3_Record;
 with Inertial_3d_Algorithm_C; use Inertial_3d_Algorithm_C;
 
--- Inertial 3D algorithm produces a fixed inertial attitude reference message.
+-- Inertial 3D algorithm produces a fixed inertial attitude reference message. The
+-- reference attitude is immutable algorithm configuration, supplied as a data
+-- dependency and pushed into the algorithm only when it changes.
 package Component.Inertial_3d.Implementation is
 
    -- The component class instance record:
@@ -24,6 +27,11 @@ private
    -- The component class instance record:
    type Instance is new Inertial_3d.Base_Instance with record
       Alg : Inertial_3d_Algorithm_Access := null;
+      -- The reference attitude currently held by the algorithm. The flattened shim
+      -- exposes no getters, so the component tracks it here to tell a changed
+      -- dependency value from an unchanged one. The zero default matches the
+      -- configuration Init constructs the algorithm with.
+      Applied_Sigma_Reference : Packed_F32x3_Record.T := (Value => [0.0, 0.0, 0.0]);
    end record;
 
    ---------------------------------------
