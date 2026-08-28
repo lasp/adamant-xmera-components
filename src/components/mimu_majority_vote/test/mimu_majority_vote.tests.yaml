@@ -7,3 +7,5 @@ tests:
     description: Test that a malformed parameter is rejected with an error status.
   - name: Test_Validate_Parameters
     description: Test that an out-of-range parameter is rejected by the config validator.
+  - name: Test_Fault_Persistence
+    description: Test that each vote confirms its fault at its own persistence limit and that a parameter update clears the counters.

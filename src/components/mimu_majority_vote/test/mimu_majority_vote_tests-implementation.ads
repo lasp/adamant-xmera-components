@@ -20,6 +20,9 @@ private
    overriding procedure Test_Invalid_Parameter (Self : in out Instance);
    -- Test that an out-of-range parameter is rejected by the config validator.
    overriding procedure Test_Validate_Parameters (Self : in out Instance);
+   -- Test that each vote confirms its fault at its own persistence limit and that
+   -- a parameter update clears the counters.
+   overriding procedure Test_Fault_Persistence (Self : in out Instance);
 
    -- Test data and state:
    type Instance is new Mimu_Majority_Vote_Tests.Base_Instance with record

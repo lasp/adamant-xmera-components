@@ -237,4 +237,68 @@ package body Mimu_Majority_Vote_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
    end Test_Validate_Parameters;
 
+   -- Drive a steady outlier on each quantity and confirm the gyro and accel votes
+   -- confirm their faults at their own persistence limits, then that a parameter
+   -- update clears both counters. The two limits differ, so a transposed pair in
+   -- Create/Set_Config inverts which vote faults first.
+   overriding procedure Test_Fault_Persistence (Self : in out Instance) is
+      T : Component.Mimu_Majority_Vote.Implementation.Tester.Instance_Access renames Self.Tester;
+      Params : Mimu_Majority_Vote_Parameters.Instance;
+
+      -- The gyro vote needs three consecutive outlier ticks to confirm a fault; the
+      -- accel vote needs one. Re-staging this set is also what clears the counters.
+      procedure Stage_Config is
+      begin
+         Parameter_Update_Status_Assert.Eq
+            (T.Stage_Parameter (Params.Omega_Threshold ((Value => 0.05))), Success);
+         Parameter_Update_Status_Assert.Eq
+            (T.Stage_Parameter (Params.Accel_Threshold ((Value => 0.05))), Success);
+         Parameter_Update_Status_Assert.Eq
+            (T.Stage_Parameter (Params.Gyro_Fault_Persistence_Limit ((Value => 3))), Success);
+         Parameter_Update_Status_Assert.Eq
+            (T.Stage_Parameter (Params.Accel_Fault_Persistence_Limit ((Value => 1))), Success);
+         Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      end Stage_Config;
+
+      -- IMU 2 is a steady gyro outlier; IMU 3 is a steady accel outlier.
+      procedure Send_Outlier_Tick is
+      begin
+         T.Imu_1_Body := (Ang_Vel_Body => [-0.1, 0.25, 0.3], Accel_Body => [0.0, 0.0, 9.8]);
+         T.Imu_2_Body := (Ang_Vel_Body => [1.9, 2.25, 2.3], Accel_Body => [0.0, 0.0, 9.8]);
+         T.Imu_3_Body := (Ang_Vel_Body => [-0.1, 0.25, 0.3], Accel_Body => [2.0, 2.0, 11.8]);
+         T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+      end Send_Outlier_Tick;
+
+      -- The most recent published vote result.
+      function Latest return Mimu_Majority_Vote_Output.T is
+         (T.Majority_Vote_Result_History.Get (T.Majority_Vote_Result_History.Get_Count));
+   begin
+      Stage_Config;
+
+      -- Tick 1: the accel fault confirms immediately, the gyro fault does not.
+      Send_Outlier_Tick;
+      Boolean_Assert.Eq (Latest.Gyro.Fault_Detected, False);
+      Packed_Bool_X3_Assert.Eq (Latest.Gyro.Imu_Valid, [True, True, True]);
+      Boolean_Assert.Eq (Latest.Accel.Fault_Detected, True);
+      Packed_Bool_X3_Assert.Eq (Latest.Accel.Imu_Valid, [True, True, False]);
+
+      -- Tick 2: the gyro counter is at two of three, still under the limit.
+      Send_Outlier_Tick;
+      Boolean_Assert.Eq (Latest.Gyro.Fault_Detected, False);
+      Packed_Bool_X3_Assert.Eq (Latest.Gyro.Imu_Valid, [True, True, True]);
+
+      -- Tick 3: the gyro counter reaches the limit and IMU 2 is rejected.
+      Send_Outlier_Tick;
+      Boolean_Assert.Eq (Latest.Gyro.Fault_Detected, True);
+      Packed_Bool_X3_Assert.Eq (Latest.Gyro.Imu_Valid, [True, False, True]);
+      Packed_F32x3_Assert.Eq (Latest.Gyro.Average, [-0.1, 0.25, 0.3], Epsilon => 0.0001);
+
+      -- A parameter update re-applies the configuration and clears both persistence
+      -- counters, so the very next outlier tick starts counting from one again.
+      Stage_Config;
+      Send_Outlier_Tick;
+      Boolean_Assert.Eq (Latest.Gyro.Fault_Detected, False);
+      Packed_Bool_X3_Assert.Eq (Latest.Gyro.Imu_Valid, [True, True, True]);
+   end Test_Fault_Persistence;
+
 end Mimu_Majority_Vote_Tests.Implementation;
