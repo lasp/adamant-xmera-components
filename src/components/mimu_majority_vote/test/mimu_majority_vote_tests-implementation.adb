@@ -3,8 +3,8 @@
 --------------------------------------------------------------------------------
 
 with Basic_Assertions; use Basic_Assertions;
-with Interfaces; use Interfaces;
 with Packed_F32x3.Assertion; use Packed_F32x3.Assertion;
+with Packed_Bool_X3.Assertion; use Packed_Bool_X3.Assertion;
 with Mimu_Majority_Vote_Output;
 with Mimu_Majority_Vote_Parameters;
 with Parameter;
@@ -44,77 +44,108 @@ package body Mimu_Majority_Vote_Tests.Implementation is
    -- Tests:
    -------------------------------------------------------------------------
 
-   -- Run algorithm to ensure integration is sound.
-   -- Two test cases matching the Python unit test:
-   --   1. Nominal: 3 IMUs within threshold -> simple average, no fault
-   --   2. Off-nominal: 1 outlier rejected -> fault-excluded average, fault detected
+   -- Run the algorithm to ensure the Ada -> C -> C++ integration is sound.
+   -- The algorithm votes independently on angular velocity (gyro) and
+   -- acceleration (accel), each producing an averaged measurement, a fault
+   -- flag, and per-IMU validity. Two cases (values ground-truthed against the
+   -- fp32 mimuMajorityVote C++ unit tests):
+   --   1. Nominal: gyro and accel both agree within threshold -> full averages,
+   --      no fault on either vote.
+   --   2. Independent thresholds: IMU 2 is a gyro outlier and IMU 3 is an accel
+   --      outlier, but only the gyro threshold rejects its own.
    overriding procedure Test (Self : in out Instance) is
       T : Component.Mimu_Majority_Vote.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Mimu_Majority_Vote_Parameters.Instance;
    begin
       -----------------------------------------------------------------------
-      -- Test Case 1: Nominal - all IMUs within threshold
-      --   threshold = 1.0 rad/s
-      --   IMU diffs ~0.173 rad/s (well below threshold)
-      --   Expected: simple average, no fault
+      -- Test Case 1: Nominal - all IMUs within threshold (gyro and accel).
+      --   thresholds = 1.0; symmetric perturbations -> exact averages, no fault.
       -----------------------------------------------------------------------
 
-      -- Set omega threshold parameter
+      -- Set thresholds high so nothing faults. The gyro and accel values are deliberately
+      -- different from each other, here and below, so that a transposed argument pair in
+      -- Create/Set_Config changes the result rather than passing unnoticed.
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Omega_Threshold ((Value => 1.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Accel_Threshold ((Value => 3.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Gyro_Fault_Persistence_Limit ((Value => 1))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Accel_Fault_Persistence_Limit ((Value => 2))), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
 
-      -- Set IMU data dependencies (symmetric perturbations -> exact average)
-      T.Imu_1_Body := (Accel_Body => [others => 0.0], Ang_Vel_Body => [1.0, 2.0, 3.0]);
-      T.Imu_2_Body := (Accel_Body => [others => 0.0], Ang_Vel_Body => [1.1, 2.1, 3.1]);
-      T.Imu_3_Body := (Accel_Body => [others => 0.0], Ang_Vel_Body => [0.9, 1.9, 2.9]);
+      -- Set IMU data dependencies (symmetric perturbations -> exact averages):
+      T.Imu_1_Body := (Ang_Vel_Body => [1.0, 2.0, 3.0], Accel_Body => [0.0, 0.0, 9.8]);
+      T.Imu_2_Body := (Ang_Vel_Body => [1.1, 2.1, 3.1], Accel_Body => [0.1, 0.1, 9.9]);
+      T.Imu_3_Body := (Ang_Vel_Body => [0.9, 1.9, 2.9], Accel_Body => [-0.1, -0.1, 9.7]);
 
-      -- Send tick to trigger algorithm
+      -- Send tick to trigger algorithm:
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
 
       -- Verify data product was produced:
       Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, 1);
       Natural_Assert.Eq (T.Majority_Vote_Result_History.Get_Count, 1);
 
-      -- Check output: simple average, no fault
+      -- Check output: full averages, no fault on either vote:
       declare
          Output : constant Mimu_Majority_Vote_Output.T := T.Majority_Vote_Result_History.Get (1);
       begin
-         Packed_F32x3_Assert.Eq (Output.Avg_Ang_Vel_Body, [1.0, 2.0, 3.0], Epsilon => 0.0001);
-         Unsigned_8_Assert.Eq (Output.Fault_Detected, 0);
-         Integer_32_Assert.Eq (Output.Mimu_Index_Faulted, -1);
+         -- Gyro vote:
+         Packed_F32x3_Assert.Eq (Output.Gyro.Average, [1.0, 2.0, 3.0], Epsilon => 0.0001);
+         Boolean_Assert.Eq (Output.Gyro.Fault_Detected, False);
+         Packed_Bool_X3_Assert.Eq (Output.Gyro.Imu_Valid, [True, True, True]);
+         Packed_F32x3_Assert.Eq
+            (Output.Gyro.Imu_Difference_Mag, [0.0, 0.173_205, 0.173_205], Epsilon => 0.0001);
+         -- Accel vote:
+         Packed_F32x3_Assert.Eq (Output.Accel.Average, [0.0, 0.0, 9.8], Epsilon => 0.0001);
+         Boolean_Assert.Eq (Output.Accel.Fault_Detected, False);
+         Packed_Bool_X3_Assert.Eq (Output.Accel.Imu_Valid, [True, True, True]);
+         Packed_F32x3_Assert.Eq
+            (Output.Accel.Imu_Difference_Mag, [0.0, 0.173_205, 0.173_205], Epsilon => 0.0001);
       end;
 
       -----------------------------------------------------------------------
-      -- Test Case 2: Off-nominal - IMU 2 is an outlier
-      --   threshold = 0.5 rad/s
-      --   IMU 2 diff ~1.1 rad/s (exceeds threshold, largest)
-      --   Expected: fault-excluded average of IMU 1 & 3, fault at index 1
+      -- Test Case 2: Independent votes, gyro faults and accel does not.
+      --   IMU 2 is a gyro outlier and IMU 3 is an accel outlier, but only the
+      --   gyro threshold is tight enough to reject its outlier. This separates
+      --   the two votes: each one answers to its own threshold alone.
       -----------------------------------------------------------------------
 
-      -- Update omega threshold parameter
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Omega_Threshold ((Value => 0.5))), Success);
+      -- Tighten the gyro threshold so its outlier faults, and hold the accel threshold
+      -- above its own outlier's 2.31 difference so the accel vote does not. Swapping the
+      -- two thresholds inverts both outcomes below.
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Omega_Threshold ((Value => 0.05))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Accel_Threshold ((Value => 5.0))), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
 
-      -- Set IMU data dependencies (IMU 2 is outlier)
-      T.Imu_1_Body := (Accel_Body => [others => 0.0], Ang_Vel_Body => [1.0, 2.0, 3.0]);
-      T.Imu_2_Body := (Accel_Body => [others => 0.0], Ang_Vel_Body => [2.0, 3.0, 4.0]);
-      T.Imu_3_Body := (Accel_Body => [others => 0.0], Ang_Vel_Body => [1.1, 2.1, 3.1]);
+      -- IMU 2 (index 1) angular velocity is base + 2.0; IMU 3 (index 2)
+      -- acceleration is base + 2.0. All other quantities agree on base.
+      T.Imu_1_Body := (Ang_Vel_Body => [-0.1, 0.25, 0.3], Accel_Body => [0.0, 0.0, 9.8]);
+      T.Imu_2_Body := (Ang_Vel_Body => [1.9, 2.25, 2.3], Accel_Body => [0.0, 0.0, 9.8]);
+      T.Imu_3_Body := (Ang_Vel_Body => [-0.1, 0.25, 0.3], Accel_Body => [2.0, 2.0, 11.8]);
 
-      -- Send tick to trigger algorithm
+      -- Send tick to trigger algorithm:
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
 
       -- Verify second data product was produced:
       Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, 2);
       Natural_Assert.Eq (T.Majority_Vote_Result_History.Get_Count, 2);
 
-      -- Check output: fault-excluded average of IMU 1 and IMU 3
-      -- corrected = (IMU1 + IMU3) / 2 = [1.05, 2.05, 3.05]
+      -- Check output: the gyro vote rejects its outlier, the accel vote keeps all three:
       declare
          Output : constant Mimu_Majority_Vote_Output.T := T.Majority_Vote_Result_History.Get (2);
       begin
-         Packed_F32x3_Assert.Eq (Output.Avg_Ang_Vel_Body, [1.05, 2.05, 3.05], Epsilon => 0.0001);
-         Unsigned_8_Assert.Eq (Output.Fault_Detected, 1);
-         Integer_32_Assert.Eq (Output.Mimu_Index_Faulted, 1);
+         -- Gyro vote: IMU 2 (index 1) excluded; average of IMU 1 and IMU 3 = base:
+         Packed_F32x3_Assert.Eq (Output.Gyro.Average, [-0.1, 0.25, 0.3], Epsilon => 0.0001);
+         Boolean_Assert.Eq (Output.Gyro.Fault_Detected, True);
+         Packed_Bool_X3_Assert.Eq (Output.Gyro.Imu_Valid, [True, False, True]);
+         -- Difference magnitudes stay relative to the all-three average:
+         Packed_F32x3_Assert.Eq
+            (Output.Gyro.Imu_Difference_Mag, [1.154_701, 2.309_401, 1.154_701], Epsilon => 0.0001);
+         -- Accel vote: 2.31 is under the 5.0 threshold, so all three IMUs remain valid
+         -- and the average is over all three:
+         Packed_F32x3_Assert.Eq (Output.Accel.Average, [0.666_667, 0.666_667, 10.466_667], Epsilon => 0.0001);
+         Boolean_Assert.Eq (Output.Accel.Fault_Detected, False);
+         Packed_Bool_X3_Assert.Eq (Output.Accel.Imu_Valid, [True, True, True]);
+         Packed_F32x3_Assert.Eq
+            (Output.Accel.Imu_Difference_Mag, [1.154_701, 1.154_701, 2.309_401], Epsilon => 0.0001);
       end;
 
    end Test;
