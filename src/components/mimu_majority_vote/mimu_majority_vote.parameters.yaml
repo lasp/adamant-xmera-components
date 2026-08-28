@@ -2,10 +2,18 @@
 description: Parameters for the MIMU Majority Vote component
 parameters:
   - name: Omega_Threshold
-    description: "[rad/s] Angular rate difference threshold for fault detection"
+    description: "[rad/s] Gyro angular rate difference threshold for fault detection"
     type: Packed_F32.T
     default: "(Value => 1.0)"
-  - name: Fault_Persistence_Limit
-    description: "Number of consecutive faulted ticks before a fault is confirmed"
+  - name: Gyro_Fault_Persistence_Limit
+    description: "Number of consecutive gyro-faulted ticks before a fault is confirmed"
+    type: Packed_U32.T
+    default: "(Value => 1)"
+  - name: Accel_Threshold
+    description: "[m/s^2] Accel difference threshold for fault detection"
+    type: Packed_F32.T
+    default: "(Value => 1.0)"
+  - name: Accel_Fault_Persistence_Limit
+    description: "Number of consecutive accel-faulted ticks before a fault is confirmed"
     type: Packed_U32.T
     default: "(Value => 1)"

@@ -8,19 +8,44 @@ with Mimu_Majority_Vote_Output.C;
 
 package body Component.Mimu_Majority_Vote.Implementation is
 
+   -- Push the component's current parameter values into the C++ algorithm. Every
+   -- reconfiguration path goes through here so the configuration is assembled in
+   -- exactly one place. Init cannot use it, because it constructs the handle rather
+   -- than reconfiguring one.
+   procedure Apply_Config (Self : in out Instance) is
+   begin
+      Set_Config (
+         Self.Alg,
+         Omega_Threshold => Self.Omega_Threshold.Value,
+         Gyro_Fault_Persistence_Limit => Self.Gyro_Fault_Persistence_Limit.Value,
+         Accel_Threshold => Self.Accel_Threshold.Value,
+         Accel_Fault_Persistence_Limit => Self.Accel_Fault_Persistence_Limit.Value);
+   end Apply_Config;
+
    --------------------------------------------------
    -- Subprogram for implementation init method:
    --------------------------------------------------
    -- Initializes the MIMU majority vote algorithm.
    overriding procedure Init (Self : in out Instance) is
+      use Parameter_Validation_Status;
    begin
-      -- Allocate C++ class on the heap
-      Self.Alg := Create;
-      -- Apply the Ada parameter defaults to the algorithm: the framework
-      -- invokes Update_Parameters_Action only after a ground parameter
-      -- update, and the C++ constructor defaults do not match the Ada
-      -- defaults.
-      Self.Update_Parameters_Action;
+      -- The parameter defaults must satisfy the algorithm's validator, since Create
+      -- throws across the FFI boundary and Ada cannot catch it. Assert through the
+      -- component's own gate so Init checks the defaults by the same route a ground
+      -- parameter update takes.
+      pragma Assert (Self.Validate_Parameters (
+         Omega_Threshold => Self.Omega_Threshold,
+         Gyro_Fault_Persistence_Limit => Self.Gyro_Fault_Persistence_Limit,
+         Accel_Threshold => Self.Accel_Threshold,
+         Accel_Fault_Persistence_Limit => Self.Accel_Fault_Persistence_Limit) = Valid);
+
+      -- Allocate the C++ algorithm on the heap with the initial configuration built
+      -- from the component's parameter defaults.
+      Self.Alg := Create (
+         Omega_Threshold => Self.Omega_Threshold.Value,
+         Gyro_Fault_Persistence_Limit => Self.Gyro_Fault_Persistence_Limit.Value,
+         Accel_Threshold => Self.Accel_Threshold.Value,
+         Accel_Fault_Persistence_Limit => Self.Accel_Fault_Persistence_Limit.Value);
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -62,20 +87,28 @@ package body Component.Mimu_Majority_Vote.Implementation is
       Self.Update_Parameters;
 
       declare
-         -- Extract angular velocity from each IMU and build C input array:
-         Imu_Inputs : constant Packed_F32x3_X3.C.U_C := [
+         -- Extract angular velocity and acceleration from each IMU and build the C
+         -- input arrays. These are aliased so their addresses can be passed to the C
+         -- shim, which takes each array by reference (const Vector3fArray3_c*).
+         Imu_Omegas : aliased Packed_F32x3_X3.C.U_C := [
             Packed_F32x3.C.Unpack (Imu_1_T.Ang_Vel_Body),
             Packed_F32x3.C.Unpack (Imu_2_T.Ang_Vel_Body),
             Packed_F32x3.C.Unpack (Imu_3_T.Ang_Vel_Body)
          ];
+         Imu_Accels : aliased Packed_F32x3_X3.C.U_C := [
+            Packed_F32x3.C.Unpack (Imu_1_T.Accel_Body),
+            Packed_F32x3.C.Unpack (Imu_2_T.Accel_Body),
+            Packed_F32x3.C.Unpack (Imu_3_T.Accel_Body)
+         ];
 
-         -- Call the C algorithm:
+         -- Call the C algorithm with both quantities:
          Result : constant Mimu_Majority_Vote_Output.C.U_C := Update (
             Self.Alg,
-            Imu_Inputs => Imu_Inputs
+            Imu_Omegas => Imu_Omegas'Access,
+            Imu_Accels => Imu_Accels'Access
          );
       begin
-         -- Publish result with fault status:
+         -- Publish result with independent gyro and accel votes:
          Self.Data_Product_T_Send (Self.Data_Products.Majority_Vote_Result (
             Arg.Time,
             Mimu_Majority_Vote_Output.Pack (Mimu_Majority_Vote_Output.C.To_Ada (Result))
@@ -96,12 +129,35 @@ package body Component.Mimu_Majority_Vote.Implementation is
    -- Description:
    --    Parameters for the MIMU Majority Vote component
    -- This procedure is called when the parameters of a component have been updated.
-   -- Apply the omega threshold parameter to the C algorithm.
+   -- Apply the staged configuration to the C algorithm. The values were checked by
+   -- Validate_Parameters at staging, so Set_Config will not reject them.
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
    begin
-      Set_Omega_Threshold (Self.Alg, Self.Omega_Threshold.Value);
-      Set_Fault_Persistence_Limit (Self.Alg, Self.Fault_Persistence_Limit.Value);
+      Apply_Config (Self);
    end Update_Parameters_Action;
+
+   -- Validate staged parameters against the algorithm's own (non-throwing) config
+   -- rules so an invalid configuration never reaches the throwing Set_Config.
+   overriding function Validate_Parameters (
+      Self : in out Instance;
+      Omega_Threshold : in Packed_F32.U;
+      Gyro_Fault_Persistence_Limit : in Packed_U32.U;
+      Accel_Threshold : in Packed_F32.U;
+      Accel_Fault_Persistence_Limit : in Packed_U32.U
+   ) return Parameter_Validation_Status.E is
+      pragma Unreferenced (Self);
+   begin
+      if Validate_Config (
+            Omega_Threshold => Omega_Threshold.Value,
+            Gyro_Fault_Persistence_Limit => Gyro_Fault_Persistence_Limit.Value,
+            Accel_Threshold => Accel_Threshold.Value,
+            Accel_Fault_Persistence_Limit => Accel_Fault_Persistence_Limit.Value)
+      then
+         return Parameter_Validation_Status.Valid;
+      else
+         return Parameter_Validation_Status.Invalid;
+      end if;
+   end Validate_Parameters;
 
    -----------------------------------------------
    -- Data dependency handlers:

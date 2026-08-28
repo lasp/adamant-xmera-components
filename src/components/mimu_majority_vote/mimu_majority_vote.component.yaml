@@ -1,5 +1,5 @@
 ---
-description: MIMU majority vote algorithm detects faulted IMUs by comparing individual angular velocity measurements and computes a fault-excluded average.
+description: MIMU majority vote algorithm detects faulted IMUs by comparing individual angular velocity and acceleration measurements and computes a fault-excluded average of each.
 execution: passive
 init:
   description: Initializes the MIMU majority vote algorithm.
