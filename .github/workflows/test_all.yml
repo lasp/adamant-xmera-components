@@ -7,6 +7,10 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      fp32_ref:
+        description: 'fp32-fsw-xmera branch, tag, or commit SHA to test against (defaults to the pin below, then to the repo default branch)'
+        required: false
 jobs:
   refs:
     uses: ./.github/workflows/_refs.yml
@@ -17,6 +21,13 @@ jobs:
     container:
       image: ${{ needs.refs.outputs.image }}
       options: --user root
+    env:
+      # === Per-CI-run pin ==========================================
+      # Set to a fp32-fsw-xmera branch/tag/SHA to test coupled changes
+      # on THIS branch's push/PR runs (adamant-xmera-components and
+      # fp32-fsw-xmera are often changed together). workflow_dispatch's
+      # fp32_ref input still wins; revert to '' before merging.
+      FP32_FSW_XMERA_REF_PIN: 'feature/2267-add-accel-to-mimuMajorityVote'
     steps:
       - run: echo "Starting job triggered by a ${{ github.event_name }} event on a ${{ runner.os }} server hosted by GitHub."
       - run: echo "Checking out ${{ github.repository }} on branch ${{ github.ref }}."
