@@ -25,8 +25,10 @@ package body Component.Mimu_Majority_Vote.Implementation is
 
    not overriding procedure Destroy (Self : in out Instance) is
    begin
-      -- Free the C++ heap data.
+      -- Free the C++ heap data. Clear the handle so a second Destroy, or any use
+      -- after teardown, cannot reach freed memory.
       Destroy (Self.Alg);
+      Self.Alg := null;
    end Destroy;
 
    ---------------------------------------
