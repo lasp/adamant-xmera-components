@@ -4,4 +4,6 @@ tests:
   - name: Test
     description: Run algorithm to ensure integration is sound.
   - name: Test_Invalid_Parameter
-    description: Test that an invalid parameter throws the appropriate event.
+    description: Test that a malformed parameter is rejected with an error status.
+  - name: Test_Validate_Parameters
+    description: Test that an out-of-range parameter is rejected by the config validator.
