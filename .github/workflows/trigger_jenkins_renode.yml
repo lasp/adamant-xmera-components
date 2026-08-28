@@ -70,7 +70,7 @@ jobs:
       # Jenkins UI). workflow_dispatch inputs still win over a PIN; revert
       # (or comment back) before merging.
       # ADAMANT_EXAMPLE_REF_PIN: 'feature/your-branch-here'
-      PROJECT_REF_PIN: 'feature/safe-state-algorithm-topic'
+      PROJECT_REF_PIN: 'feature/EMAGNCFSW-783-add-thr-firing-schmitt-trigger'
     steps:
       - run: echo "Starting job triggered by a ${{ github.event_name }} event on a ${{ runner.os }} server hosted by GitHub."
       - name: Resolve commit SHA
