@@ -8,10 +8,13 @@ with Mimu_Majority_Vote_Output.C;
 
 package body Component.Mimu_Majority_Vote.Implementation is
 
-   -- Push the component's current parameter values into the C++ algorithm. Every
-   -- reconfiguration path goes through here so the configuration is assembled in
-   -- exactly one place. Init cannot use it, because it constructs the handle rather
-   -- than reconfiguring one.
+   -- Push the component's current parameter values into the C++ algorithm and clear the
+   -- fault-persistence counters. Set_Config deliberately preserves those counters, so a
+   -- threshold or limit change must not leave a stale count behind: lowering a persistence
+   -- limit below a count already in flight would otherwise confirm a fault immediately.
+   -- Every reconfiguration path goes through here so the configuration is assembled in
+   -- exactly one place. Init cannot use it, because it constructs the handle rather than
+   -- reconfiguring one.
    procedure Apply_Config (Self : in out Instance) is
    begin
       Set_Config (
@@ -20,6 +23,7 @@ package body Component.Mimu_Majority_Vote.Implementation is
          Gyro_Fault_Persistence_Limit => Self.Gyro_Fault_Persistence_Limit.Value,
          Accel_Threshold => Self.Accel_Threshold.Value,
          Accel_Fault_Persistence_Limit => Self.Accel_Fault_Persistence_Limit.Value);
+      Re_Initialize (Self.Alg);
    end Apply_Config;
 
    --------------------------------------------------
