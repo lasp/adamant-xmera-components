@@ -154,8 +154,9 @@ package body Component.Mimu_Majority_Vote.Implementation.Tester is
    -----------------------------------------------
    -- Description:
    --    Data products for the MIMU Majority Vote component.
-   -- Majority vote output containing averaged angular velocity and fault detection
-   -- status.
+   -- Majority vote output containing independent gyro and accel votes (averaged
+   -- measurement, fault status, and per-IMU difference magnitude and validity for
+   -- each).
    overriding procedure Majority_Vote_Result (Self : in out Instance; Arg : in Mimu_Majority_Vote_Output.T) is
    begin
       -- Push the argument onto the test history for looking at later:

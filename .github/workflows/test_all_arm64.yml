@@ -3,6 +3,10 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      fp32_ref:
+        description: 'fp32-fsw-xmera branch, tag, or commit SHA to test against (defaults to the pin below, then to the repo default branch)'
+        required: false
 jobs:
   refs:
     uses: ./.github/workflows/_refs.yml
@@ -10,6 +14,16 @@ jobs:
     name: test_all (arm64)
     needs: refs
     runs-on: ubuntu-latest
+    env:
+      # === Per-CI-run pin ==========================================
+      # Set to a fp32-fsw-xmera branch/tag/SHA to test coupled changes
+      # on THIS branch's push/PR runs (adamant-xmera-components and
+      # fp32-fsw-xmera are often changed together). workflow_dispatch's
+      # fp32_ref input still wins; revert to '' before merging.
+      # The C shims move in lockstep with the Ada bindings, so CI must
+      # build the fp32 revision the bindings were written against rather
+      # than the develop tip.
+      FP32_FSW_XMERA_REF_PIN: 'feature/2267-add-accel-to-mimuMajorityVote'
     steps:
       - run: echo "Starting job triggered by a ${{ github.event_name }} event on a ${{ runner.os }} server hosted by GitHub."
       - run: echo "Checking out ${{ github.repository }} on branch ${{ github.ref }}."
@@ -38,7 +52,6 @@ jobs:
           repository: lasp/fp32-fsw-xmera
           path: fp32-fsw-xmera
           ref: ${{ needs.refs.outputs.fp32_fsw_xmera_ref }}
-
       - name: Clone Eigen with freestanding support
         uses: actions/checkout@v4
         with:
