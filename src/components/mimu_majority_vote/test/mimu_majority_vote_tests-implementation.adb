@@ -168,4 +168,73 @@ package body Mimu_Majority_Vote_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Param), Id_Error);
    end Test_Invalid_Parameter;
 
+   -- Stage a candidate configuration one field at a time and confirm the component's
+   -- Validate_Parameters gate rejects every value the C++ MimuMajorityVoteConfig would
+   -- throw on. This gate is the only thing keeping ground input out of the throwing
+   -- Set_Config, whose exception could not be caught on the Ada side.
+   overriding procedure Test_Validate_Parameters (Self : in out Instance) is
+      T : Component.Mimu_Majority_Vote.Implementation.Tester.Instance_Access renames Self.Tester;
+      Params : Mimu_Majority_Vote_Parameters.Instance;
+
+      -- Stage the full valid set. Every case below starts from this baseline so a
+      -- rejection can only come from the single field that was perturbed.
+      procedure Stage_Valid_Set is
+      begin
+         Parameter_Update_Status_Assert.Eq
+            (T.Stage_Parameter (Params.Omega_Threshold ((Value => 0.05))), Success);
+         Parameter_Update_Status_Assert.Eq
+            (T.Stage_Parameter (Params.Gyro_Fault_Persistence_Limit ((Value => 3))), Success);
+         Parameter_Update_Status_Assert.Eq
+            (T.Stage_Parameter (Params.Accel_Threshold ((Value => 0.5))), Success);
+         Parameter_Update_Status_Assert.Eq
+            (T.Stage_Parameter (Params.Accel_Fault_Persistence_Limit ((Value => 1))), Success);
+      end Stage_Valid_Set;
+   begin
+      -- The baseline set is accepted:
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
+
+      -- A zero gyro threshold is rejected (must be finite and > 0):
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq
+         (T.Stage_Parameter (Params.Omega_Threshold ((Value => 0.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- A negative gyro threshold is rejected:
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq
+         (T.Stage_Parameter (Params.Omega_Threshold ((Value => -1.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- A zero gyro fault persistence limit is rejected (must be > 0):
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq
+         (T.Stage_Parameter (Params.Gyro_Fault_Persistence_Limit ((Value => 0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- A zero accel threshold is rejected:
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq
+         (T.Stage_Parameter (Params.Accel_Threshold ((Value => 0.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- A negative accel threshold is rejected:
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq
+         (T.Stage_Parameter (Params.Accel_Threshold ((Value => -1.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- A zero accel fault persistence limit is rejected:
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq
+         (T.Stage_Parameter (Params.Accel_Fault_Persistence_Limit ((Value => 0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- Restoring validity makes the set acceptable again, so the rejections above
+      -- were caused by the perturbed values rather than by sticky staging state:
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
+      Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+   end Test_Validate_Parameters;
+
 end Mimu_Majority_Vote_Tests.Implementation;
