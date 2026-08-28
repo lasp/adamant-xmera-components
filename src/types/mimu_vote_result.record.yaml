@@ -1,0 +1,22 @@
+---
+#  typedef struct {
+#      Vector3f_c average;                   /*!< Averaged measurement */
+#      bool faultDetected;                   /*!< Whether an IMU was rejected (0/1) */
+#      float imuDifferenceMag[3];            /*!< Each IMU's difference magnitude */
+#      bool imuValid[3];                     /*!< Whether each IMU is valid (0/1) */
+#  } MimuVoteResult_c;
+description: Result of one MIMU majority vote (gyro or accel), mirroring the C++ MimuVoteResult.
+fields:
+  - name: Average
+    type: Packed_F32x3.T
+    description: "Averaged measurement (outlier-excluded once a fault persists)"
+  - name: Fault_Detected
+    type: Boolean
+    format: E8
+    description: "Whether an IMU was rejected for this quantity (matches the C99 bool in MimuVoteResult_c)"
+  - name: Imu_Difference_Mag
+    type: Packed_F32x3.T
+    description: "Each IMU's difference magnitude from the 3-IMU average"
+  - name: Imu_Valid
+    type: Packed_Bool_X3.T
+    description: "Whether each IMU is valid for this quantity (one boolean per IMU)"

@@ -1,18 +1,13 @@
 ---
 #  typedef struct {
-#      Vector3f_c avgOmega_BN_B; /*!< [rad/s] Averaged angular velocity in body frame */
-#      uint8_t faultDetected;    /*!< Whether a MIMU fault was detected */
-#      int32_t mimuIndexFaulted; /*!< Index of faulted MIMU (-1 if no fault) */
+#      MimuVoteResult_c gyro;   /*!< [rad/s] angular-velocity vote */
+#      MimuVoteResult_c accel;  /*!< [m/s^2] acceleration vote */
 #  } MimuMajorityVoteOutput_c;
+description: "MIMU majority vote output: independent gyro and accel votes (gyro first, then accel)."
 fields:
-  - name: Avg_Ang_Vel_Body
-    type: Packed_F32x3.T
-    description: "[rad/s] Averaged angular velocity in body frame"
-  - name: Fault_Detected
-    type: Interfaces.Unsigned_8
-    format: U8
-    description: "Whether a MIMU fault was detected (0 = false, nonzero = true)"
-  - name: Mimu_Index_Faulted
-    type: Interfaces.Integer_32
-    format: I32
-    description: "Index of faulted MIMU (-1 if no fault)"
+  - name: Gyro
+    type: Mimu_Vote_Result.T
+    description: "[rad/s] Angular-velocity vote"
+  - name: Accel
+    type: Mimu_Vote_Result.T
+    description: "[m/s^2] Acceleration vote"
