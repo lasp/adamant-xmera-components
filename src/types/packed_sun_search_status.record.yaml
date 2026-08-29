@@ -1,0 +1,7 @@
+---
+description: Sun search and pointing status, packed as an 8-bit enumeration.
+fields:
+  - name: Value
+    description: The sun search and pointing status.
+    type: Sun_Search_Point_Enums.Sun_Search_Status.E
+    format: E8

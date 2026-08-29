@@ -1,0 +1,24 @@
+---
+description: Enumerations for the Sun Search Point component.
+enums:
+  - name: Body_Axis
+    description: Body axis about which a sun-search rotation is commanded. Values match the C RotationAxis_c enumeration.
+    literals:
+      - name: B1_Hat_B
+        value: 0
+        description: Rotate about the first body axis.
+      - name: B2_Hat_B
+        value: 1
+        description: Rotate about the second body axis.
+      - name: B3_Hat_B
+        value: 2
+        description: Rotate about the third body axis.
+  - name: Sun_Search_Status
+    description: Outcome of the sun search sequence, latched once the sequence ends and cleared by the reset connector.
+    literals:
+      - name: Sun_Found
+        value: 0
+        description: The sun was acquired, or the search is still running.
+      - name: Sun_Not_Found
+        value: 1
+        description: The search sequence elapsed without acquiring the sun and pointing was forced.

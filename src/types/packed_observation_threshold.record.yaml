@@ -1,0 +1,12 @@
+---
+preamble: |
+  -- The threshold counts coarse sun sensors observing the sun, so it can never usefully exceed the
+  -- number of sensors in the system. The upper bound mirrors MAX_NUM_CSS_SENSORS on the C side, and
+  -- Sun_Search_Point_Algorithm_C asserts at elaboration that the two still agree.
+  subtype Observation_Threshold_Type is Natural range 0 .. 8;
+description: Coarse sun sensor observation count threshold, bounded by the number of sensors in the system. Values outside the range fail type validation during parameter staging.
+fields:
+  - name: Value
+    description: The observation count threshold.
+    type: Observation_Threshold_Type
+    format: U8
