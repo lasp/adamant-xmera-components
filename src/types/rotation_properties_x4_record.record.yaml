@@ -1,0 +1,6 @@
+---
+description: Record wrapping the sun-search rotation sequence. Maps to RotationPropertiesArray4_c in the sunSearchPoint C shim, which passes it by pointer.
+fields:
+  - name: Rotations
+    description: The sun-search rotation sequence.
+    type: Rotation_Properties_X4.T
