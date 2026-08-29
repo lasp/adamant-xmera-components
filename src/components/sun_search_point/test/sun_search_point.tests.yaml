@@ -1,0 +1,13 @@
+---
+description: This is a unit test suite for the Sun Search Point component
+tests:
+  - name: Test
+    description: Run the search phase to ensure integration is sound.
+  - name: Test_Search_To_Point_Transition
+    description: Verify the search phase transitions to pointing once the observation count reaches the threshold after the first rotation.
+  - name: Test_Forced_Transition_Sets_Fault
+    description: Verify the full rotation sequence elapsing without acquiring the sun forces pointing and latches the search-failure flag.
+  - name: Test_Reset
+    description: Verify the reset connector re-arms the search sequence after the terminal pointing phase.
+  - name: Test_Invalid_Parameter
+    description: Ensure staged parameter values the algorithm would reject are refused at validation.
