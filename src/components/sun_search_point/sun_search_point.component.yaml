@@ -1,0 +1,23 @@
+---
+description: Safe-mode sun search and pointing guidance. Runs a scripted sun-search rotation sequence, then transitions to closed-loop sun pointing once the sun is acquired or the sequence elapses.
+execution: passive
+init:
+  description: Initializes the sun search point algorithm.
+connectors:
+  - description: Run the algorithm up to the current time.
+    type: Tick.T
+    kind: recv_sync
+  - description: Fetch a data product item from the database.
+    type: Data_Product_Fetch.T
+    return_type: Data_Product_Return.T
+    kind: request
+  - description: The data product invoker connector
+    type: Data_Product.T
+    kind: send
+  - description: The parameter update connector.
+    type: Parameter_Update.T
+    kind: modify
+  - description: Re-arm the sun search sequence so the next tick restarts at the first rotation. Called on GNC state change.
+    name: Reset_Tick_T_Recv_Sync
+    type: Tick.T
+    kind: recv_sync

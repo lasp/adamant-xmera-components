@@ -1,0 +1,15 @@
+---
+description: Data products for the Sun Search Point component.
+data_products:
+  - name: Sigma_Br
+    type: Packed_F32x3.T
+    description: Attitude error (MRPs) of the body frame relative to the reference frame.
+  - name: Omega_Br_B
+    type: Packed_F32x3.T
+    description: "[rad/s] Body rate error of B relative to R, in B frame components."
+  - name: Omega_Rn_B
+    type: Packed_F32x3.T
+    description: "[rad/s] Reference frame rate of R relative to N, in B frame components."
+  - name: Fault_Detected
+    type: Packed_Boolean.T
+    description: True once the search sequence elapsed without acquiring the sun and pointing was forced.

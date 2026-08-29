@@ -1,0 +1,27 @@
+---
+description: Parameters for the Sun Search Point component
+parameters:
+  - name: Rotations
+    description: "[-] The sun-search rotation sequence, in the order commanded. Each duration must be finite and greater than zero."
+    type: Rotation_Properties_X4_Record.T
+    default: "(Rotations => [others => (Rotation_Duration => 1.0, Rotation_Rate => 0.0, Rotation_Axis => Sun_Search_Point_Enums.Body_Axis.B1_Hat_B)])"
+  - name: S_Hat_Bdy_Cmd
+    description: "[-] Commanded body vector to point at the sun. Norm must be within 1e-3 of 1.0."
+    type: Packed_F32x3.T
+    default: "[0.0, 0.0, 1.0]"
+  - name: Sun_Axis_Spin_Rate
+    description: "[rad/s] Constant spin rate commanded about the sun heading vector while pointing. Must be finite."
+    type: Packed_F32.T
+    default: "(Value => 0.0)"
+  - name: Omega_Rn_B_Cfg
+    description: "[rad/s] Fallback body rate commanded while pointing when no sun direction is available. Must be finite."
+    type: Packed_F32x3.T
+    default: "[0.0, 0.0, 0.0]"
+  - name: Observation_Threshold
+    description: "[-] Coarse sun sensor count at or above which the sun is considered acquired."
+    type: Packed_U32.T
+    default: "(Value => 4)"
+  - name: Control_Period
+    description: "[s] Per-update time step; advances the search timeline by one step per tick. Must be finite and greater than zero."
+    type: Packed_F32.T
+    default: "(Value => 0.5)"
