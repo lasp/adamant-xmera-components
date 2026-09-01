@@ -1,0 +1,6 @@
+---
+description: Data products for the Thr Firing Schmitt component.
+data_products:
+  - name: On_Time_Cmd
+    type: Thr_On_Time_Cmd.T
+    description: Thruster on-time command (8 thrusters)
