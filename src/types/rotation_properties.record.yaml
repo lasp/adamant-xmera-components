@@ -1,0 +1,20 @@
+---
+#  typedef struct {
+#      float rotationDuration;      /*!< [s]    duration of this rotation */
+#      float rotationRate;          /*!< [rad/s] signed scalar body rate during this rotation */
+#      RotationAxis_c rotationAxis; /*!< [-]    axis about which to rotate */
+#  } RotationProperties_c;
+description: Properties of a single sun-search rotation maneuver. Maps to RotationProperties_c in the sunSearchPoint C shim.
+fields:
+  - name: Rotation_Duration
+    description: "[s] Duration of this rotation. Must be finite and greater than zero."
+    type: Short_Float
+    format: F32
+  - name: Rotation_Rate
+    description: "[rad/s] Signed scalar body rate commanded during this rotation. Must be finite."
+    type: Short_Float
+    format: F32
+  - name: Rotation_Axis
+    description: "[-] Body axis about which to rotate. Sized to the fixed-width uint8_t the C shim carries it in."
+    type: Sun_Search_Point_Enums.Body_Axis.E
+    format: E8
