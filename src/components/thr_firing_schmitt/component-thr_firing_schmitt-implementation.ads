@@ -3,6 +3,8 @@
 --------------------------------------------------------------------------------
 
 -- Includes:
+with Packed_F32x36;
+with Packed_F32x36.C;
 with Tick;
 with Parameter_Update;
 with Thr_Firing_Schmitt_Algorithm_C; use Thr_Firing_Schmitt_Algorithm_C;
@@ -20,15 +22,29 @@ package Component.Thr_Firing_Schmitt.Implementation is
    -- Initializes the thruster firing Schmitt algorithm.
    overriding procedure Init (Self : in out Instance);
    not overriding procedure Destroy (Self : in out Instance);
+   -- Configures the thruster count and maximum thrusts. MUST be called before
+   -- the first tick: with unconfigured (zero) maximum thrusts the C algorithm's
+   -- on-time division produces Inf (commanding a thruster full-on) or NaN. No
+   -- parameter or data dependency supplies this configuration; the caller
+   -- integrating this component into an assembly owns invoking it.
    not overriding procedure Configure_Thrusters (
-      Self   : in out Instance;
-      Config : access constant Thr_Firing_Schmitt_Array_Config);
+      Self          : in out Instance;
+      Num_Thrusters : in Unsigned_32;
+      Max_Thrust    : in Packed_F32x36.U);
 
 private
 
    -- The component class instance record:
    type Instance is new Thr_Firing_Schmitt.Base_Instance with record
       Alg : Thr_Firing_Schmitt_Algorithm_Access := null;
+      -- The thruster array half of the algorithm configuration, held here as the
+      -- Ada-side source of truth because the flattened shim exposes no getters.
+      -- The defaults keep the initial configuration valid -- Num_Thrusters => 0
+      -- skips the per-thruster maximum-thrust validation -- but the algorithm
+      -- cannot produce usable on-times until Configure_Thrusters supplies the
+      -- real maximum thrusts.
+      Num_Thrusters : Unsigned_32 := 0;
+      Max_Thrust : aliased Packed_F32x36.C.U_C := [others => 0.0];
    end record;
 
    ---------------------------------------
@@ -67,7 +83,10 @@ private
    --    Parameters for the Thr Firing Schmitt component
 
    -- Invalid parameter handler. This procedure is called when a parameter's type is found to be invalid:
-   overriding procedure Invalid_Parameter (Self : in out Instance; Par : in Parameter.T; Errant_Field_Number : in Unsigned_32; Errant_Field : in Basic_Types.Poly_Type);
+   -- Null: the staging code rejects the value and returns an error status to the Parameters
+   -- component, which reports the offending parameter ID to the ground. That is sufficient, and
+   -- we avoid adding per-component event overhead to these algorithm components.
+   overriding procedure Invalid_Parameter (Self : in out Instance; Par : in Parameter.T; Errant_Field_Number : in Unsigned_32; Errant_Field : in Basic_Types.Poly_Type) is null;
    -- This procedure is called when the parameters of a component have been updated. The default implementation of this
    -- subprogram in the implementation package is a null procedure. However, this procedure can, and should be implemented if
    -- something special needs to happen after a parameter update. Examples of this might be copying certain parameters to
@@ -86,8 +105,8 @@ private
       Thr_Min_Fire_Time : in Packed_F32.U;
       Control_Period : in Packed_F32.U;
       On_Time_Saturation_Factor : in Packed_F32.U;
-      Thrust_Pulsing_Regime : in Packed_Byte.U
-   ) return Parameter_Validation_Status.E is (Parameter_Validation_Status.Valid);
+      Thrust_Pulsing_Regime : in Packed_Pulsing_Regime.U
+   ) return Parameter_Validation_Status.E;
 
    -----------------------------------------------
    -- Data dependency primitives:
