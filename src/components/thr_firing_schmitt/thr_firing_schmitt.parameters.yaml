@@ -4,20 +4,20 @@ parameters:
   - name: Levels
     description: "[-] Schmitt-trigger ON and OFF duty cycle fractions"
     type: Levels_On_Off.T
-    default: "(Level_On => 0.0, Level_Off => 0.0)"
+    default: "(Level_On => 0.75, Level_Off => 0.25)"
   - name: Thr_Min_Fire_Time
     description: "[s] Minimum thruster fire time"
     type: Packed_F32.T
-    default: "(Value => 0.0)"
+    default: "(Value => 0.02)"
   - name: Control_Period
     description: "[s] Control period for thruster firing"
     type: Packed_F32.T
-    default: "(Value => 0.0)"
+    default: "(Value => 0.2)"
   - name: On_Time_Saturation_Factor
     description: "On-time saturation factor"
     type: Packed_F32.T
-    default: "(Value => 0.0)"
+    default: "(Value => 1.0)"
   - name: Thrust_Pulsing_Regime
-    description: "Thrust pulsing regime (0 = on-pulsing, 1 = off-pulsing)"
-    type: Packed_Byte.T
-    default: "(Value => 0)"
+    description: "Thrust pulsing regime"
+    type: Packed_Pulsing_Regime.T
+    default: "(Value => Thr_Firing_Remainder_Enums.Pulsing_Regime.On_Pulsing)"

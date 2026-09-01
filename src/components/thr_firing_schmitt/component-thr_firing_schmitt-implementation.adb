@@ -9,17 +9,50 @@ with Thr_Firing_Schmitt_On_Time_Cmd.C;
 
 package body Component.Thr_Firing_Schmitt.Implementation is
 
-   -- Number of thrusters in the system (8-element data products vs 36-element C API)
-   Num_Thrusters : constant := 8;
+   -- Number of thrusters carried by the 8-element data products, which the
+   -- component zero-pads into (and truncates back out of) the 36-element C API.
+   Num_Dp_Thrusters : constant := 8;
+
+   -- Push the component's current configuration -- the applied parameters plus
+   -- the thruster array held as instance state -- into the C++ algorithm. Every
+   -- reconfiguration path goes through here so the configuration is assembled in
+   -- exactly one place.
+   procedure Apply_Config (Self : in out Instance) is
+   begin
+      Set_Config (
+         Self.Alg,
+         Num_Thrusters             => Self.Num_Thrusters,
+         Max_Thrust                => Self.Max_Thrust'Access,
+         Level_On                  => Self.Levels.Level_On,
+         Level_Off                 => Self.Levels.Level_Off,
+         Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time.Value,
+         Control_Period            => Self.Control_Period.Value,
+         On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor.Value,
+         Pulsing_Regime            => To_C (Self.Thrust_Pulsing_Regime.Value));
+   end Apply_Config;
 
    --------------------------------------------------
    -- Subprogram for implementation init method:
    --------------------------------------------------
    -- Initializes the thruster firing Schmitt algorithm.
    overriding procedure Init (Self : in out Instance) is
+      use Parameter_Validation_Status;
    begin
-      -- Allocate C++ class on the heap
-      Self.Alg := Create;
+      pragma Assert (Self.Validate_Parameters (
+         Levels                    => Self.Levels,
+         Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time,
+         Control_Period            => Self.Control_Period,
+         On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor,
+         Thrust_Pulsing_Regime     => Self.Thrust_Pulsing_Regime) = Valid);
+      Self.Alg := Create (
+         Num_Thrusters             => Self.Num_Thrusters,
+         Max_Thrust                => Self.Max_Thrust'Access,
+         Level_On                  => Self.Levels.Level_On,
+         Level_Off                 => Self.Levels.Level_Off,
+         Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time.Value,
+         Control_Period            => Self.Control_Period.Value,
+         On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor.Value,
+         Pulsing_Regime            => To_C (Self.Thrust_Pulsing_Regime.Value));
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -29,11 +62,28 @@ package body Component.Thr_Firing_Schmitt.Implementation is
    end Destroy;
 
    not overriding procedure Configure_Thrusters (
-      Self   : in out Instance;
-      Config : access constant Thr_Firing_Schmitt_Array_Config)
+      Self          : in out Instance;
+      Num_Thrusters : in Unsigned_32;
+      Max_Thrust    : in Packed_F32x36.U)
    is
+      use Parameter_Validation_Status;
    begin
-      Set_Thrusters (Self.Alg, Config);
+      -- Record the thruster array as the Ada-side source of truth, then swap the
+      -- full configuration into the algorithm.
+      Self.Num_Thrusters := Num_Thrusters;
+      Self.Max_Thrust := Packed_F32x36.C.To_C (Max_Thrust);
+      -- The assembly owns this call, so an out-of-range thruster count or a
+      -- non-finite maximum thrust is a wiring error rather than ground input:
+      -- assert instead of reporting, and keep it out of the throwing Set_Config.
+      -- Validate_Parameters reads the thruster array assigned just above, so this
+      -- checks the whole configuration through the component's single gate.
+      pragma Assert (Self.Validate_Parameters (
+         Levels                    => Self.Levels,
+         Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time,
+         Control_Period            => Self.Control_Period,
+         On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor,
+         Thrust_Pulsing_Regime     => Self.Thrust_Pulsing_Regime) = Valid);
+      Apply_Config (Self);
    end Configure_Thrusters;
 
    ---------------------------------------
@@ -65,19 +115,19 @@ package body Component.Thr_Firing_Schmitt.Implementation is
          -- Build 36-element C input (zeroed, then copy 8 thruster values)
          Force_36 : aliased Thr_Firing_Schmitt_Force_Cmd.C.U_C := (Thr_Force => [others => 0.0]);
       begin
-         for I in 0 .. Num_Thrusters - 1 loop
+         for I in 0 .. Num_Dp_Thrusters - 1 loop
             Force_36.Thr_Force (I) := Force_Dep_U.Thr_Force (I);
          end loop;
 
          declare
             -- Call the C algorithm
             On_Time_36 : constant Thr_Firing_Schmitt_On_Time_Cmd.C.U_C :=
-               Update (Self.Alg, Force_36'Unchecked_Access);
+               Update (Self.Alg, Force_36'Access);
 
             -- Extract first 8 elements for output
             On_Time_Result : Thr_On_Time_Cmd.U := (On_Time_Request => [others => 0.0]);
          begin
-            for I in 0 .. Num_Thrusters - 1 loop
+            for I in 0 .. Num_Dp_Thrusters - 1 loop
                On_Time_Result.On_Time_Request (I) := On_Time_36.On_Time_Request (I);
             end loop;
 
@@ -92,9 +142,11 @@ package body Component.Thr_Firing_Schmitt.Implementation is
    -- Reset the algorithm's Schmitt-trigger hysteresis state. Called on GNC state
    -- change.
    overriding procedure Reset_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
+      Ignore : Tick.T renames Arg;
    begin
-      -- Clear the algorithm's previous-state thruster history.
-      Reset (Self.Alg);
+      -- Clear the algorithm's previous-state thruster history, dropping every
+      -- thruster to OFF. The configuration is left untouched.
+      Re_Initialize (Self.Alg);
    end Reset_Tick_T_Recv_Sync;
 
    -- The parameter update connector.
@@ -110,22 +162,42 @@ package body Component.Thr_Firing_Schmitt.Implementation is
    -- This procedure is called when the parameters of a component have been updated.
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
    begin
-      -- Set algorithm configuration from parameters.
-      Set_Levels_On_Off (Self.Alg, Self.Levels.Level_On, Self.Levels.Level_Off);
-      Set_Thr_Min_Fire_Time (Self.Alg, Self.Thr_Min_Fire_Time.Value);
-      Set_Control_Period (Self.Alg, Self.Control_Period.Value);
-      Set_On_Time_Saturation_Factor (Self.Alg, Self.On_Time_Saturation_Factor.Value);
-      Set_Thrust_Pulsing_Regime (Self.Alg,
-         Thr_Firing_Schmitt_Pulsing_Regime'Val (Natural (Self.Thrust_Pulsing_Regime.Value)));
+      -- Rebuild the algorithm configuration from the updated parameters. The values
+      -- were checked by Validate_Parameters at staging, so Set_Config will not
+      -- reject them. The Schmitt-trigger hysteresis state is preserved.
+      Apply_Config (Self);
    end Update_Parameters_Action;
 
-   -- Invalid Parameter handler. This procedure is called when a parameter's type is found to be invalid:
-   overriding procedure Invalid_Parameter (Self : in out Instance; Par : in Parameter.T; Errant_Field_Number : in Unsigned_32; Errant_Field : in Basic_Types.Poly_Type) is
-      pragma Annotate (GNATSAS, Intentional, "subp always fails", "intentional assertion");
+   -- Validate a staged parameter set before it is applied by asking the algorithm's
+   -- own non-throwing Validate_Config predicate, so the configuration rules live
+   -- solely in the algorithm. Rejecting an invalid update here at staging keeps it
+   -- from reaching the throwing Create/Set_Config across the FFI boundary. The
+   -- thruster array is not staged, so the candidate configuration pairs the staged
+   -- parameters with the currently configured thruster array.
+   overriding function Validate_Parameters (
+      Self : in out Instance;
+      Levels : in Levels_On_Off.U;
+      Thr_Min_Fire_Time : in Packed_F32.U;
+      Control_Period : in Packed_F32.U;
+      On_Time_Saturation_Factor : in Packed_F32.U;
+      Thrust_Pulsing_Regime : in Packed_Pulsing_Regime.U
+   ) return Parameter_Validation_Status.E is
    begin
-      -- None of the parameters should be invalid in this case.
-      pragma Assert (False);
-   end Invalid_Parameter;
+      if Validate_Config (
+            Num_Thrusters             => Self.Num_Thrusters,
+            Max_Thrust                => Self.Max_Thrust'Access,
+            Level_On                  => Levels.Level_On,
+            Level_Off                 => Levels.Level_Off,
+            Thr_Min_Fire_Time         => Thr_Min_Fire_Time.Value,
+            Control_Period            => Control_Period.Value,
+            On_Time_Saturation_Factor => On_Time_Saturation_Factor.Value,
+            Pulsing_Regime            => To_C (Thrust_Pulsing_Regime.Value))
+      then
+         return Parameter_Validation_Status.Valid;
+      else
+         return Parameter_Validation_Status.Invalid;
+      end if;
+   end Validate_Parameters;
 
    -----------------------------------------------
    -- Data dependency handlers:
