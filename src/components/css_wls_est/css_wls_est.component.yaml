@@ -1,0 +1,19 @@
+---
+description: CSS weighted least squares estimator fits a sun heading and body rate to the readings of a coarse sun sensor constellation.
+execution: passive
+init:
+  description: Initializes the CSS weighted least squares estimator algorithm.
+connectors:
+  - description: Run the algorithm up to the current time.
+    type: Tick.T
+    kind: recv_sync
+  - description: Fetch a data product item from the database.
+    type: Data_Product_Fetch.T
+    return_type: Data_Product_Return.T
+    kind: request
+  - description: The data product invoker connector
+    type: Data_Product.T
+    kind: send
+  - description: The parameter update connector.
+    type: Parameter_Update.T
+    kind: modify

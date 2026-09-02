@@ -1,0 +1,26 @@
+---
+description: Parameters for the Css Wls Est component
+parameters:
+  - name: Css_N_Hat_B
+    description: "[-] Per-sensor boresight unit vectors in the body frame, 3 components per sensor in row major order. Each row must be a unit vector to within 1e-3."
+    type: Packed_F32x24.T
+    default: "[+0.70710678, -0.50000000, +0.50000000,
+               +0.70710678, -0.50000000, -0.50000000,
+               +0.70710678, +0.50000000, -0.50000000,
+               +0.70710678, +0.50000000, +0.50000000,
+               -0.70710678, +0.00000000, +0.70710678,
+               -0.70710678, +0.70710678, +0.00000000,
+               -0.70710678, +0.00000000, -0.70710678,
+               -0.70710678, -0.70710678, +0.00000000]"
+  - name: Css_Bias
+    description: "[-] Per-sensor calibration scale factors. Each must be finite and non-negative."
+    type: Packed_F32x8.T
+    default: "[others => 1.0]"
+  - name: Sensor_Use_Thresh
+    description: "[-] Cosine threshold at or below which a reading is discarded from the fit."
+    type: Packed_F32.T
+    default: "(Value => 0.15)"
+  - name: Use_Weights
+    description: "[-] Whether to weight the measurements in the least squares fit."
+    type: Packed_Boolean.T
+    default: "(Value => False)"
