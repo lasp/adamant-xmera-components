@@ -1,0 +1,4 @@
+---
+description: Array of 32 Packed_F32x3 elements. Mirrors the float[32][3] boresight table in CssWlsEstConstellation_c.
+type: Packed_F32x3.T
+length: 32

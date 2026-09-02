@@ -1,0 +1,26 @@
+---
+#  /*! @brief Plain-old-data mirror of the C++ CssWlsEstOutput fields. */
+#  typedef struct {
+#      Vector3f_c sunHeading_B;         /*!< [-]   estimated unit sun heading, body frame; zero when no fit */
+#      Vector3f_c omega_BN_B;           /*!< [r/s] inertial angular velocity, body frame; zero when no rate */
+#      Vector3f_c residualStateHeading; /*!< [-]   heading reported on the filter status output, pre-zeroing */
+#      float postFitResiduals[CSS_WLS_EST_MAX_NUM_CSS]; /*!< [-] post-fit residuals, one per configured sensor */
+#      uint32_t numActiveCss;                           /*!< [-] sensors above the use threshold this cycle */
+#  } CssWlsEstOutput_c;
+fields:
+  - name: Sun_Heading_B
+    type: Packed_F32x3.T
+    description: "[-] Estimated unit sun heading in the body frame. Zero when no fit was possible."
+  - name: Omega_Bn_B
+    type: Packed_F32x3.T
+    description: "[r/s] Inertial angular velocity in the body frame. Zero when no rate is available."
+  - name: Residual_State_Heading
+    type: Packed_F32x3.T
+    description: "[-] Heading captured before the singular-fit zeroing, for diagnostics."
+  - name: Post_Fit_Residuals
+    type: Packed_F32x32.T
+    description: "[-] Post-fit measurement residuals, one per configured sensor."
+  - name: Num_Active_Css
+    type: Interfaces.Unsigned_32
+    format: U32
+    description: "[-] Sensors whose reading exceeded the use threshold this cycle."
