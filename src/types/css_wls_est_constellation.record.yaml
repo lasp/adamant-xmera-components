@@ -1,0 +1,14 @@
+---
+#  typedef struct {
+#      uint32_t numCss;                                    /*!< [-] number of configured sensors */
+#      CssConfiguration_c cssSensors[MAX_NUM_CSS_SENSORS]; /*!< [-] per-sensor configuration */
+#  } CssWeightedLeastSquaresConstellation_c;
+description: CSS constellation geometry. Maps to CssWeightedLeastSquaresConstellation_c in the cssWeightedLeastSquares C shim, which passes it by pointer.
+fields:
+  - name: Num_Css
+    type: Interfaces.Unsigned_32
+    format: U32
+    description: "[-] Number of configured sensors. Must be in [1, 8]."
+  - name: Css_Sensors
+    type: Css_Configuration_X8.T
+    description: "[-] Per-sensor geometry. Entries beyond Num_Css are ignored."

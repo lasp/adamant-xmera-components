@@ -1,0 +1,9 @@
+---
+#  typedef struct {
+#      float cosValues[MAX_NUM_CSS_SENSORS]; /*!< [-] per-sensor cosine readings, indexed by sensor */
+#  } CssWeightedLeastSquaresInputs_c;
+description: Per-cycle CSS measurements. Maps to CssWeightedLeastSquaresInputs_c in the cssWeightedLeastSquares C shim, which passes it by pointer.
+fields:
+  - name: Cos_Values
+    type: Packed_F32x8.T
+    description: "[-] Per-sensor cosine readings, indexed by sensor. A reading above 1.1 or not a number is dropped with the ones below the use threshold."

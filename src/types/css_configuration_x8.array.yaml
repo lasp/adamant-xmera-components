@@ -1,0 +1,4 @@
+---
+description: The eight coarse sun sensors, indexed by sensor slot. Mirrors the CssConfiguration_c[MAX_NUM_CSS_SENSORS] table in CssWeightedLeastSquaresConstellation_c.
+type: Css_Configuration.T
+length: 8
