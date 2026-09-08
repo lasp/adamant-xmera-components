@@ -34,13 +34,7 @@ package body Component.Thr_Firing_Remainder.Implementation is
    --------------------------------------------------
    -- Initializes the thruster firing remainder algorithm.
    overriding procedure Init (Self : in out Instance) is
-      use Parameter_Validation_Status;
    begin
-      pragma Assert (Self.Validate_Parameters (
-         Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time,
-         Control_Period            => Self.Control_Period,
-         On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor,
-         Thrust_Pulsing_Regime     => Self.Thrust_Pulsing_Regime) = Valid);
       Self.Alg := Create (
          Num_Thrusters             => Self.Num_Thrusters,
          Max_Thrust                => Self.Max_Thrust'Access,

@@ -11,14 +11,7 @@ package body Component.Stepper_Motor_Controller.Implementation is
    --------------------------------------------------
    -- Initializes the stepper motor controller algorithm.
    overriding procedure Init (Self : in out Instance) is
-      use Parameter_Validation_Status;
    begin
-      pragma Assert (Self.Validate_Parameters (
-         Step_Angle       => Self.Step_Angle,
-         Motor_Min_Angle  => Self.Motor_Min_Angle,
-         Motor_Max_Angle  => Self.Motor_Max_Angle,
-         Settle_Count_Max => Self.Settle_Count_Max,
-         Min_Step_Command => Self.Min_Step_Command) = Valid);
       Self.Alg := Create (
          Step_Angle       => Self.Step_Angle.Value,
          Min_Angle        => Self.Motor_Min_Angle.Value,
