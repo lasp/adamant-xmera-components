@@ -16,12 +16,7 @@ package body Component.Convert_St_Platform_To_Body.Implementation is
    --------------------------------------------------
    -- Initializes the convert star tracker platform to body algorithm.
    overriding procedure Init (Self : in out Instance) is
-      use Parameter_Validation_Status;
    begin
-      -- Create throws on an invalid configuration, so the parameter default must form a
-      -- valid one. Assert through Validate_Parameters, the component's single validation
-      -- gate, rather than calling Validate_Config a second time here.
-      pragma Assert (Self.Validate_Parameters (Dcm_Cb => Self.Dcm_Cb) = Valid);
       Self.Alg := Create (Dcm_Cb => (Value => Packed_F32x9.C.To_C (Self.Dcm_Cb)));
    end Init;
 
