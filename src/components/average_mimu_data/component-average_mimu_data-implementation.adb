@@ -14,15 +14,7 @@ package body Component.Average_Mimu_Data.Implementation is
    --------------------------------------------------
    -- Initializes the AverageMimuData algorithm.
    overriding procedure Init (Self : in out Instance) is
-      use Parameter_Validation_Status;
    begin
-      -- Create throws on an invalid configuration, so the parameter defaults must form
-      -- a valid one. Assert through Validate_Parameters, the component's single
-      -- validation gate, rather than calling Validate_Config a second time here.
-      pragma Assert (Self.Validate_Parameters (
-         Gyro_Time_Delta  => Self.Gyro_Time_Delta,
-         Accel_Time_Delta => Self.Accel_Time_Delta,
-         Dcm_Pltf_To_Bdy  => Self.Dcm_Pltf_To_Bdy) = Valid);
       Self.Alg := Create (
          Gyro_Averaging_Window  => Self.Gyro_Time_Delta.Value,
          Accel_Averaging_Window => Self.Accel_Time_Delta.Value,
