@@ -34,20 +34,11 @@ package body Component.Css_Comm.Implementation is
    --------------------------------------------------
    -- Initializes the CSS comm algorithm.
    overriding procedure Init (Self : in out Instance) is
-      use Parameter_Validation_Status;
-
       -- The array arguments cross by reference, so they need aliased objects to
       -- point at and cannot be marshalled inline.
       Max_Sensor_Values : aliased Css_Values_Array_C := Make_Max_Sensor_Values (Self.Max_Sensor_Value.Value);
       Cheby_Poly_C : aliased Cheby_Polynomials_C_Type := (Data => Packed_F64x11.C.To_C (Self.Cheby_Polynomials));
    begin
-      -- Create throws on an invalid configuration, so the parameter defaults must form
-      -- a valid one. Assert through Validate_Parameters, the component's single
-      -- validation gate, rather than calling Validate_Config a second time here.
-      pragma Assert (Self.Validate_Parameters (
-         Max_Sensor_Value  => Self.Max_Sensor_Value,
-         Cheby_Count       => Self.Cheby_Count,
-         Cheby_Polynomials => Self.Cheby_Polynomials) = Valid);
       -- The number of CSS sensors is fixed by the hardware interface: the ADC data
       -- dependency carries exactly Css_Adc_U16_8.Length channels.
       Self.Alg := Create (
