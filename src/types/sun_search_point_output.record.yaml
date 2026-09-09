@@ -1,0 +1,22 @@
+---
+#  typedef struct {
+#      Vector3f_c sigma_BR;   /*!< attitude error (MRPs) of B relative to R */
+#      Vector3f_c omega_BR_B; /*!< [rad/s] body rate error of B relative to R in B frame */
+#      Vector3f_c omega_RN_B; /*!< [rad/s] reference frame rate of R relative to N in B frame */
+#      bool faultDetected;    /*!< [-] true once the search fails to acquire the sun */
+#  } SunSearchPointOutput_c;
+description: Sun search point guidance output - the attitude and rate errors and the search-failure flag. Maps to SunSearchPointOutput_c in the sunSearchPoint C shim.
+fields:
+  - name: Sigma_Br
+    description: Attitude error (MRPs) of B relative to R.
+    type: Packed_F32x3.T
+  - name: Omega_Br_B
+    description: "[rad/s] Body rate error of B relative to R, in B frame components."
+    type: Packed_F32x3.T
+  - name: Omega_Rn_B
+    description: "[rad/s] Reference frame rate of R relative to N, in B frame components."
+    type: Packed_F32x3.T
+  - name: Fault_Detected
+    description: Whether the search failed to acquire the sun (1) or not (0).
+    type: Interfaces.Unsigned_8
+    format: U8

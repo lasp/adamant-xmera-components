@@ -1,0 +1,12 @@
+---
+description: Data dependencies for the Sun Search Point component.
+data_dependencies:
+  - name: Omega_Bn_B
+    type: Packed_F32x3.T
+    description: Measured body rate.
+  - name: R_Hat_Sb_B
+    type: Packed_F32x3.T
+    description: Sun direction vector in the body frame.
+  - name: Num_Css_Viewing_Sun
+    type: Packed_U32.T
+    description: Number of coarse sun sensors observing the sun this cycle. Drives the transition out of the search phase.
