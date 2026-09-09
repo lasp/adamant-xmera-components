@@ -1,0 +1,5 @@
+---
+description: Array of 3 booleans (per-IMU validity flags for the MIMU majority vote).
+type: Boolean
+format: E8
+length: 3

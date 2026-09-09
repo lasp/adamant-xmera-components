@@ -8,7 +8,8 @@ with Parameter_Update;
 with Mimu_Majority_Vote_Algorithm_C; use Mimu_Majority_Vote_Algorithm_C;
 
 -- MIMU majority vote algorithm detects faulted IMUs by comparing individual
--- angular velocity measurements and computes a fault-excluded average.
+-- angular velocity and acceleration measurements and computes fault-excluded
+-- averages (independent gyro and accel votes).
 package Component.Mimu_Majority_Vote.Implementation is
 
    -- The component class instance record:
@@ -71,17 +72,17 @@ private
    -- hardware registers, or performing other special functionality that only needs to be performed after parameters have
    -- been updated.
    overriding procedure Update_Parameters_Action (Self : in out Instance);
-   -- This function is called when the parameter operation type is "Validate". The default implementation of this
-   -- subprogram in the implementation package is a function that returns "Valid". However, this function can, and should be
-   -- overridden if something special needs to happen to further validate a parameter. Examples of this might be validation of
-   -- certain parameters beyond individual type ranges, or performing other special functionality that only needs to be
-   -- performed after parameters have been validated. Note that range checking is performed during staging, and does not need
-   -- to be implemented here.
+   -- This function is called when the parameter operation type is "Validate". It stages the incoming parameter values into
+   -- the algorithm's non-throwing C Validate_Config predicate so an invalid configuration is rejected before it can reach
+   -- the throwing Create/Set_Config. Note that range checking is performed during staging, and does not need to be
+   -- implemented here.
    overriding function Validate_Parameters (
       Self : in out Instance;
       Omega_Threshold : in Packed_F32.U;
-      Fault_Persistence_Limit : in Packed_U32.U
-   ) return Parameter_Validation_Status.E is (Parameter_Validation_Status.Valid);
+      Gyro_Fault_Persistence_Limit : in Packed_U32.U;
+      Accel_Threshold : in Packed_F32.U;
+      Accel_Fault_Persistence_Limit : in Packed_U32.U
+   ) return Parameter_Validation_Status.E;
 
    -----------------------------------------------
    -- Data dependency primitives:
