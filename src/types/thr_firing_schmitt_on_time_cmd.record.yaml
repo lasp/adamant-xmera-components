@@ -1,0 +1,8 @@
+---
+#  typedef struct {
+#      float onTimeRequest[THR_FIRING_SCHMITT_MAX_THRUSTER_COUNT];  /*!< [s] array of on-time requests */
+#  } ThrusterOnTimeCmd_c;
+fields:
+  - name: On_Time_Request
+    type: Packed_F32x36.T
+    description: "[s] On-time requests"

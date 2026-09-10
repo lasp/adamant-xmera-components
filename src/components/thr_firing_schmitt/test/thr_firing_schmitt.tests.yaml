@@ -1,0 +1,21 @@
+---
+description: This is a unit test suite for the Thr Firing Schmitt component
+tests:
+  - name: Test
+    description: Run algorithm to ensure integration is sound.
+  - name: Test_Reset
+    description: Verify the reset connector clears the Schmitt-trigger hysteresis state.
+  - name: Test_Min_Fire_Time_Floor
+    description: A duty cycle at or above Level_On latches the thruster on at the minimum fire time, and one at or below Level_Off latches it off, regardless of the previous state.
+  - name: Test_On_Time_Saturation
+    description: An on-time request that reaches the control period saturates to On_Time_Saturation_Factor times the control period.
+  - name: Test_Off_Pulsing_Offset
+    description: Off-pulsing adds the maximum thrust to the requested force and clamps the sum at zero.
+  - name: Test_Thruster_Independence
+    description: Each thruster carries its own hysteresis state, so the same intermediate force yields different on-times.
+  - name: Test_Num_Thrusters_Bound
+    description: Thrusters beyond the configured count are left at zero on-time and their zero maximum thrust is never divided by.
+  - name: Test_Pulsing_Regime_Validation
+    description: A byte outside the pulsing regime enumeration is rejected at parameter staging by E8 type validation.
+  - name: Test_Invalid_Parameter
+    description: A staged parameter set the algorithm's config validators would reject is refused by Validate_Parameters, one field at a time.
