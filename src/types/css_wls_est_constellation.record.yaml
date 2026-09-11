@@ -1,0 +1,18 @@
+---
+#  /*! @brief Plain-old-data mirror of the CSS constellation geometry held by CssWlsEstConfig. */
+#  typedef struct {
+#      uint32_t numCss; /*!< [-] number of configured sensors, in [1, CSS_WLS_EST_MAX_NUM_CSS] */
+#      float cssNHat_B[CSS_WLS_EST_MAX_NUM_CSS][3]; /*!< [-] per-sensor boresight unit vectors, body frame */
+#      float cssBias[CSS_WLS_EST_MAX_NUM_CSS];      /*!< [-] per-sensor calibration scale factors, each >= 0 */
+#  } CssWlsEstConstellation_c;
+fields:
+  - name: Num_Css
+    type: Interfaces.Unsigned_32
+    format: U32
+    description: "[-] Number of configured sensors."
+  - name: Css_N_Hat_B
+    type: Packed_F32x3_X32.T
+    description: "[-] Per-sensor boresight unit vectors in the body frame, one row per sensor."
+  - name: Css_Bias
+    type: Packed_F32x32.T
+    description: "[-] Per-sensor calibration scale factors."

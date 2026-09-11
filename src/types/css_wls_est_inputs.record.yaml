@@ -1,0 +1,9 @@
+---
+#  /*! @brief Plain-old-data mirror of the estimator's per-cycle measurement inputs. */
+#  typedef struct {
+#      float cosValues[CSS_WLS_EST_MAX_NUM_CSS]; /*!< [-] per-sensor cosine readings, indexed by sensor */
+#  } CssWlsEstInputs_c;
+fields:
+  - name: Cos_Values
+    type: Packed_F32x32.T
+    description: "[-] Per-sensor cosine readings, indexed by sensor."

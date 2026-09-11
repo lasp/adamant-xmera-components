@@ -1,0 +1,18 @@
+---
+description: Data products for the Css Wls Est component.
+data_products:
+  - name: Sun_Heading_B
+    type: Packed_F32x3.T
+    description: "[-] Estimated unit sun heading in the body frame. Zero when no fit was possible."
+  - name: Omega_Bn_B
+    type: Packed_F32x3.T
+    description: "[r/s] Inertial angular velocity in the body frame. Zero until two headings have been observed."
+  - name: Num_Active_Css
+    type: Packed_U32.T
+    description: "[-] Sensors whose reading exceeded the use threshold this cycle."
+  - name: Residual_State_Heading
+    type: Packed_F32x3.T
+    description: "[-] Heading captured before the singular-fit zeroing, for diagnostics."
+  - name: Post_Fit_Residuals
+    type: Packed_F32x8.T
+    description: "[-] Post-fit measurement residuals for the 8 physical channels."
