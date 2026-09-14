@@ -1,0 +1,5 @@
+---
+description: Packed 24 element vector of 32-bit floats. Holds a table of 8 three-component vectors in row major order.
+type: Short_Float
+format: F32
+length: 24

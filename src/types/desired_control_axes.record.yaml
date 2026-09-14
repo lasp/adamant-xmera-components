@@ -1,0 +1,35 @@
+---
+#  typedef struct {
+#      bool torqueX;
+#      bool torqueY;
+#      bool torqueZ;
+#      bool forceX;
+#      bool forceY;
+#      bool forceZ;
+#  } ForceTorqueControlAxes_c;
+description: Per-axis controllability assertions for the thruster force mapping, torque xyz then force xyz, all in body frame B. A true entry asserts that axis must lie in the column space of the control mapping matrix DG.
+fields:
+  - name: Torque_X
+    type: Boolean
+    format: E8
+    description: "[-] Assert the body x torque axis is controllable"
+  - name: Torque_Y
+    type: Boolean
+    format: E8
+    description: "[-] Assert the body y torque axis is controllable"
+  - name: Torque_Z
+    type: Boolean
+    format: E8
+    description: "[-] Assert the body z torque axis is controllable"
+  - name: Force_X
+    type: Boolean
+    format: E8
+    description: "[-] Assert the body x force axis is controllable"
+  - name: Force_Y
+    type: Boolean
+    format: E8
+    description: "[-] Assert the body y force axis is controllable"
+  - name: Force_Z
+    type: Boolean
+    format: E8
+    description: "[-] Assert the body z force axis is controllable"
