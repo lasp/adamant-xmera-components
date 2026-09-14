@@ -1,0 +1,19 @@
+---
+description: Parameters for the Mrp Pd component.
+parameters:
+  - name: Proportional_Gain_K
+    description: "[Nm] Proportional gain applied to the MRP attitude error"
+    type: Packed_F32.T
+    default: "(Value => 0.0)"
+  - name: Derivative_Gain_P
+    description: "[Nms] Rate error feedback gain"
+    type: Packed_F32.T
+    default: "(Value => 0.0)"
+  - name: Known_Torque_Pnt_B_B
+    description: "[Nm] Known external torque in body frame components"
+    type: Packed_F32x3.T
+    default: "[0.0, 0.0, 0.0]"
+  - name: Inertia
+    description: "[kg m^2] Spacecraft inertia about point B (3x3, row-major, 9 elements)"
+    type: Packed_F32x9.T
+    default: "[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]"
