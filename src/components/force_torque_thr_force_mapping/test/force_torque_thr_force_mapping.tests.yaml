@@ -1,0 +1,17 @@
+---
+description: This is a unit test suite for the Force Torque Thr Force Mapping component
+tests:
+  - name: Test_Pure_Torque
+    description: A commanded torque about each body axis is reproduced by the mapped thruster forces.
+  - name: Test_Pure_Force
+    description: A commanded force along each body axis is reproduced by the mapped thruster forces.
+  - name: Test_Combined_Force_And_Torque
+    description: A simultaneous force and torque command is reproduced by the mapped thruster forces.
+  - name: Test_Zero_Command
+    description: A zero force and torque command produces zero thruster force on every thruster.
+  - name: Test_Min_Shift
+    description: Every mapped thruster force is non negative and at least one is zero.
+  - name: Test_Parameter_Update
+    description: Applying a new thruster geometry changes the mapping used on the next tick.
+  - name: Test_Invalid_Parameter
+    description: A configuration the algorithm rejects is refused at parameter staging.
