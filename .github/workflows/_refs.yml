@@ -41,7 +41,7 @@ jobs:
       # develop tip. trigger_jenkins_renode.yml POSTs this same value to
       # Jenkins, so the Renode build and the GitHub builds cannot disagree
       # about which fp32 revision they test.
-      fp32_fsw_xmera_ref: '58faa7c1634a8a1441d1a4bab9b93864da6c3fec'
+      fp32_fsw_xmera_ref: 'feature/EMAGNCFSW-1177-add-mrp-pd-c-shim'
       # Eigen fork carrying freestanding-build support.
       eigen_ref: 'feature/freestanding'
       # Empty string means "follow lasp/adamant's default branch". 
