@@ -55,8 +55,7 @@ package body Css_Comm_Tests.Implementation is
       -- Input ADC counts: [50, 0, 100, 0, 110, 0, 0, 0]
       -- (ADC is unsigned, so the legacy negative-input case is not
       -- representable here; replaced with 0.)
-      -- Expected output (16 elements, last 8 are zero-padding to
-      -- MAX_NUM_CSS_SENSORS): [0.5, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, ...]
+      -- Expected output: [0.5, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0]
       -- Rationale: cheby = 0, so the C output is clamp(adc/100, [0, 1]).
       Input_Data : constant Css_Array_Adc_8.T := (
          Adc_Value => [50, 0, 100, 0, 110, 0, 0, 0]
