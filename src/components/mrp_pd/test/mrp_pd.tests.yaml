@@ -1,0 +1,7 @@
+---
+description: This is a unit test suite for the Mrp Pd component
+tests:
+  - name: Test
+    description: Run algorithm to ensure integration is sound.
+  - name: Test_Invalid_Parameter
+    description: Ensure a staged configuration the algorithm would reject is refused at validation.
