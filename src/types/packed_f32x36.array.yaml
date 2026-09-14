@@ -1,5 +1,0 @@
----
-description: Packed 36 element vector of 32-bit floats. Used for thruster force and on-time command arrays.
-type: Short_Float
-format: F32
-length: 36

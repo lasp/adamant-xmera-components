@@ -2,16 +2,10 @@
 -- Thr_Firing_Remainder Component Implementation Body
 --------------------------------------------------------------------------------
 
-with Thr_Force_Cmd;
-with Thr_On_Time_Cmd;
-with Thr_Firing_Remainder_Force_Cmd.C;
-with Thr_Firing_Remainder_On_Time_Cmd.C;
+with Thr_Force_Cmd.C;
+with Thr_On_Time_Cmd.C;
 
 package body Component.Thr_Firing_Remainder.Implementation is
-
-   -- Number of thrusters carried by the 8-element data products, which the
-   -- component zero-pads into (and truncates back out of) the 36-element C API.
-   Num_Dp_Thrusters : constant := 8;
 
    -- Push the component's current configuration -- the applied parameters plus
    -- the thruster array held as instance state -- into the C++ algorithm. Every
@@ -53,14 +47,14 @@ package body Component.Thr_Firing_Remainder.Implementation is
    not overriding procedure Configure_Thrusters (
       Self          : in out Instance;
       Num_Thrusters : in Unsigned_32;
-      Max_Thrust    : in Packed_F32x36.U)
+      Max_Thrust    : in Packed_F32x8.U)
    is
       use Parameter_Validation_Status;
    begin
       -- Record the thruster array as the Ada-side source of truth, then swap the
       -- full configuration into the algorithm.
       Self.Num_Thrusters := Num_Thrusters;
-      Self.Max_Thrust := Packed_F32x36.C.To_C (Max_Thrust);
+      Self.Max_Thrust := Packed_F32x8.C.To_C (Max_Thrust);
       -- The assembly owns this call, so an out-of-range thruster count or a
       -- non-finite maximum thrust is a wiring error rather than ground input:
       -- assert instead of reporting, and keep it out of the throwing Set_Config.
@@ -97,32 +91,14 @@ package body Component.Thr_Firing_Remainder.Implementation is
       Self.Update_Parameters;
 
       declare
-         -- Unpack 8-element dependency
-         Force_Dep_U : constant Thr_Force_Cmd.U := Thr_Force_Cmd.Unpack (Force_Dep);
-
-         -- Build 36-element C input (zeroed, then copy 8 thruster values)
-         Force_36 : aliased Thr_Firing_Remainder_Force_Cmd.C.U_C := (Thr_Force => [others => 0.0]);
+         Force_C : aliased Thr_Force_Cmd.C.U_C :=
+            Thr_Force_Cmd.C.To_C (Thr_Force_Cmd.Unpack (Force_Dep));
+         On_Time_Result : constant Thr_On_Time_Cmd.T :=
+            Thr_On_Time_Cmd.C.Pack (Update (Self.Alg, Force_C'Access));
       begin
-         for I in 0 .. Num_Dp_Thrusters - 1 loop
-            Force_36.Thr_Force (I) := Force_Dep_U.Thr_Force (I);
-         end loop;
-
-         declare
-            -- Call the C algorithm
-            On_Time_36 : constant Thr_Firing_Remainder_On_Time_Cmd.C.U_C :=
-               Update (Self.Alg, Force_36'Access);
-
-            -- Extract first 8 elements for output
-            On_Time_Result : Thr_On_Time_Cmd.T := (On_Time_Request => [others => 0.0]);
-         begin
-            for I in 0 .. Num_Dp_Thrusters - 1 loop
-               On_Time_Result.On_Time_Request (I) := On_Time_36.On_Time_Request (I);
-            end loop;
-
-            Self.Data_Product_T_Send (Self.Data_Products.On_Time_Cmd (Arg.Time, On_Time_Result));
-            -- Send the on-time command directly to the actuation interface:
-            Self.Thr_On_Time_Cmd_T_Send_If_Connected (On_Time_Result);
-         end;
+         Self.Data_Product_T_Send (Self.Data_Products.On_Time_Cmd (Arg.Time, On_Time_Result));
+         -- Send the on-time command directly to the actuation interface:
+         Self.Thr_On_Time_Cmd_T_Send_If_Connected (On_Time_Result);
       end;
    end Tick_T_Recv_Sync;
 

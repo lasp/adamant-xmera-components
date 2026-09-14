@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 
 with Interfaces;
-with Packed_F32x36;
+with Packed_F32x8;
 with Basic_Assertions; use Basic_Assertions;
 with Thr_On_Time_Cmd;
 with Thr_On_Time_Cmd.Assertion; use Thr_On_Time_Cmd.Assertion;
@@ -53,7 +53,7 @@ package body Thr_Firing_Remainder_Tests.Implementation is
 
       -- Thruster configuration: 2 thrusters with maxThrust = 1.0
       Thr_Count : constant Interfaces.Unsigned_32 := 2;
-      Max_Thrust : constant Packed_F32x36.U := [0 => 1.0, 1 => 1.0, others => 0.0];
+      Max_Thrust : constant Packed_F32x8.U := [0 => 1.0, 1 => 1.0, others => 0.0];
 
       -- Control parameters
       Min_Fire_Time : constant Packed_F32.T := (Value => 0.02);

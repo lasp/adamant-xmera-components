@@ -1,8 +1,0 @@
----
-#  typedef struct {
-#      float thrForce[THR_FIRING_REMAINDER_MAX_THRUSTER_COUNT];  /*!< [N] Thruster force values */
-#  } ThrFiringRemainderForceCmd;
-fields:
-  - name: Thr_Force
-    type: Packed_F32x36.T
-    description: "[N] Thruster force values"

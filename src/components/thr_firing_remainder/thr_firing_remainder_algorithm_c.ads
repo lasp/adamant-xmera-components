@@ -8,10 +8,10 @@ pragma Warnings     (Off, "-gnatwu");
 pragma Warnings     (Off, "-gnatwx");
 
 with Interfaces;       use Interfaces;
-with Packed_F32x36.C;
+with Packed_F32x8.C;
 with Thr_Firing_Remainder_Enums;
-with Thr_Firing_Remainder_Force_Cmd.C;
-with Thr_Firing_Remainder_On_Time_Cmd.C;
+with Thr_Force_Cmd.C;
+with Thr_On_Time_Cmd.C;
 
 package Thr_Firing_Remainder_Algorithm_C is
 
@@ -54,11 +54,11 @@ package Thr_Firing_Remainder_Algorithm_C is
    -- ABI validation: the constant-dimensioned Ada arrays crossing the FFI
    -- boundary must match the C-side THR_FIRING_REMAINDER_MAX_THRUSTER_COUNT,
    -- checked at elaboration.
-   pragma Assert (Unsigned_32 (Packed_F32x36.Length) = Get_Max_Thruster_Count);
-   pragma Assert (Packed_F32x36.C.U_C'Object_Size = Thr_Firing_Remainder_Force_Cmd.C.U_C'Object_Size);
-   pragma Assert (Unsigned_32 (Thr_Firing_Remainder_Force_Cmd.C.U_C'Object_Size / Short_Float'Object_Size) = Get_Max_Thruster_Count);
-   pragma Assert (Packed_F32x36.C.U_C'Object_Size = Thr_Firing_Remainder_On_Time_Cmd.C.U_C'Object_Size);
-   pragma Assert (Unsigned_32 (Thr_Firing_Remainder_On_Time_Cmd.C.U_C'Object_Size / Short_Float'Object_Size) = Get_Max_Thruster_Count);
+   pragma Assert (Unsigned_32 (Packed_F32x8.Length) = Get_Max_Thruster_Count);
+   pragma Assert (Packed_F32x8.C.U_C'Object_Size = Thr_Force_Cmd.C.U_C'Object_Size);
+   pragma Assert (Unsigned_32 (Thr_Force_Cmd.C.U_C'Object_Size / Short_Float'Object_Size) = Get_Max_Thruster_Count);
+   pragma Assert (Packed_F32x8.C.U_C'Object_Size = Thr_On_Time_Cmd.C.U_C'Object_Size);
+   pragma Assert (Unsigned_32 (Thr_On_Time_Cmd.C.U_C'Object_Size / Short_Float'Object_Size) = Get_Max_Thruster_Count);
 
    --* Opaque handle for a ThrFiringRemainderAlgorithm instance.
    type Thr_Firing_Remainder_Algorithm is limited private;
@@ -75,7 +75,7 @@ package Thr_Firing_Remainder_Algorithm_C is
    --* throwing Create/Set_Config from an invalid configuration.
    function Validate_Config
      (Num_Thrusters             : Unsigned_32;
-      Max_Thrust                : access constant Packed_F32x36.C.U_C;
+      Max_Thrust                : access constant Packed_F32x8.C.U_C;
       Thr_Min_Fire_Time         : Short_Float;
       Control_Period            : Short_Float;
       On_Time_Saturation_Factor : Short_Float;
@@ -96,7 +96,7 @@ package Thr_Firing_Remainder_Algorithm_C is
    --* @return The new algorithm instance, which must be released with Destroy.
    function Create
      (Num_Thrusters             : Unsigned_32;
-      Max_Thrust                : access constant Packed_F32x36.C.U_C;
+      Max_Thrust                : access constant Packed_F32x8.C.U_C;
       Thr_Min_Fire_Time         : Short_Float;
       Control_Period            : Short_Float;
       On_Time_Saturation_Factor : Short_Float;
@@ -126,7 +126,7 @@ package Thr_Firing_Remainder_Algorithm_C is
    procedure Set_Config
      (Self                      : Thr_Firing_Remainder_Algorithm_Access;
       Num_Thrusters             : Unsigned_32;
-      Max_Thrust                : access constant Packed_F32x36.C.U_C;
+      Max_Thrust                : access constant Packed_F32x8.C.U_C;
       Thr_Min_Fire_Time         : Short_Float;
       Control_Period            : Short_Float;
       On_Time_Saturation_Factor : Short_Float;
@@ -142,8 +142,8 @@ package Thr_Firing_Remainder_Algorithm_C is
    --* @return The computed on-time command.
    function Update
      (Self      : Thr_Firing_Remainder_Algorithm_Access;
-      Force_Cmd : access constant Thr_Firing_Remainder_Force_Cmd.C.U_C)
-     return Thr_Firing_Remainder_On_Time_Cmd.C.U_C
+      Force_Cmd : access constant Thr_Force_Cmd.C.U_C)
+     return Thr_On_Time_Cmd.C.U_C
      with Import       => True,
           Convention   => C,
           External_Name => "ThrFiringRemainderAlgorithm_update";
