@@ -1,0 +1,33 @@
+---
+description: Parameters for the Force Torque Thr Force Mapping component
+parameters:
+  - name: R_Thruster_B
+    description: "[m] Per-thruster locations in the body frame, 3 components per thruster in row major order."
+    type: Packed_F32x24.T
+    default: "[-1.0, -1.0, +1.0,
+               -1.0, -1.0, +1.0,
+               +1.0, +1.0, +1.0,
+               +1.0, +1.0, +1.0,
+               +1.0, +1.0, -1.0,
+               +1.0, +1.0, -1.0,
+               -1.0, -1.0, -1.0,
+               -1.0, -1.0, -1.0]"
+  - name: T_Hat_Thruster_B
+    description: "[-] Per-thruster thrust directions in the body frame, 3 components per thruster in row major order. Each row must be a unit vector to within 1e-3."
+    type: Packed_F32x24.T
+    default: "[+0.0, +1.0, +0.0,
+               +0.0, +0.0, -1.0,
+               +0.0, +0.0, -1.0,
+               -1.0, +0.0, +0.0,
+               +0.0, -1.0, +0.0,
+               -1.0, +0.0, +0.0,
+               +1.0, +0.0, +0.0,
+               +0.0, +1.0, +0.0]"
+  - name: Center_Of_Mass_B
+    description: "[m] Center of mass in the body frame. Must be finite."
+    type: Packed_F32x3.T
+    default: "[0.0, 0.0, 0.0]"
+  - name: Desired_Control_Axes_B
+    description: "[-] Per-axis controllability assertions. An asserted axis must lie in the column space of the thruster control mapping matrix."
+    type: Desired_Control_Axes.T
+    default: "(Torque_X => True, Torque_Y => True, Torque_Z => True, Force_X => True, Force_Y => True, Force_Z => True)"

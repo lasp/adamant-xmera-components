@@ -1,0 +1,9 @@
+---
+#  typedef struct {
+#      float data[MAX_EFF_CNT * 3];
+#  } ThrusterGeometryArray_c;
+description: Record wrapping a table of thruster vectors, three components per thruster in row major order. Maps to ThrusterGeometryArray_c in the force torque thruster force mapping C shim.
+fields:
+  - name: Value
+    description: Table of 8 three-component vectors in row major order.
+    type: Packed_F32x24.T
