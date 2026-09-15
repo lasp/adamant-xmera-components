@@ -1,8 +1,0 @@
----
-#  typedef struct {
-#      float onTimeRequest[THR_FIRING_REMAINDER_MAX_THRUSTER_COUNT];  /*!< [s] On-time requests */
-#  } ThrFiringRemainderOnTimeCmd;
-fields:
-  - name: On_Time_Request
-    type: Packed_F32x36.T
-    description: "[s] On-time requests"

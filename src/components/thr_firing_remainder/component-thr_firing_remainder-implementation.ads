@@ -3,8 +3,8 @@
 --------------------------------------------------------------------------------
 
 -- Includes:
-with Packed_F32x36;
-with Packed_F32x36.C;
+with Packed_F32x8;
+with Packed_F32x8.C;
 with Tick;
 with Thr_Firing_Remainder_Algorithm_C; use Thr_Firing_Remainder_Algorithm_C;
 
@@ -30,7 +30,7 @@ package Component.Thr_Firing_Remainder.Implementation is
    not overriding procedure Configure_Thrusters (
       Self          : in out Instance;
       Num_Thrusters : in Unsigned_32;
-      Max_Thrust    : in Packed_F32x36.U);
+      Max_Thrust    : in Packed_F32x8.U);
 
 private
 
@@ -44,7 +44,7 @@ private
       -- cannot produce usable on-times until Configure_Thrusters supplies the
       -- real maximum thrusts.
       Num_Thrusters : Unsigned_32 := 0;
-      Max_Thrust : aliased Packed_F32x36.C.U_C := [others => 0.0];
+      Max_Thrust : aliased Packed_F32x8.C.U_C := [others => 0.0];
    end record;
 
    ---------------------------------------

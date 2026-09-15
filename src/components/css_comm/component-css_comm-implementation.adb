@@ -2,9 +2,10 @@
 -- Css_Comm Component Implementation Body
 --------------------------------------------------------------------------------
 
-with Css_Sensor_Values;
+with Css_Sensor_Values.C;
 with Css_Adc_U16_8;
 with Cheby_Polynomials.C;
+with Packed_F64x8.C;
 with Packed_F64x11.C;
 with Interfaces;
 
@@ -15,20 +16,6 @@ package body Component.Css_Comm.Implementation is
    -- name, so we refer to the record type through this alias instead.
    subtype Cheby_Polynomials_C_Type is Cheby_Polynomials.C.U_C;
 
-   -- Build the per-sensor max-value array by broadcasting the single Max_Sensor_Value
-   -- parameter across the active channels. The C algorithm scales each sensor by its
-   -- own maxSensorValues entry; the component uses one shared scale factor, and the
-   -- number of active sensors is fixed by the ADC data dependency width. Trailing
-   -- (non-physical) entries stay zero.
-   function Make_Max_Sensor_Values (Max_Value : Long_Float) return Css_Values_Array_C is
-      Result : Css_Values_Array_C := [others => 0.0];
-   begin
-      for I in 0 .. Css_Adc_U16_8.Length - 1 loop
-         Result (I) := Max_Value;
-      end loop;
-      return Result;
-   end Make_Max_Sensor_Values;
-
    --------------------------------------------------
    -- Subprogram for implementation init method:
    --------------------------------------------------
@@ -36,7 +23,7 @@ package body Component.Css_Comm.Implementation is
    overriding procedure Init (Self : in out Instance) is
       -- The array arguments cross by reference, so they need aliased objects to
       -- point at and cannot be marshalled inline.
-      Max_Sensor_Values : aliased Css_Values_Array_C := Make_Max_Sensor_Values (Self.Max_Sensor_Value.Value);
+      Max_Sensor_Values : aliased Packed_F64x8.C.U_C := [others => Self.Max_Sensor_Value.Value];
       Cheby_Poly_C : aliased Cheby_Polynomials_C_Type := (Data => Packed_F64x11.C.To_C (Self.Cheby_Polynomials));
    begin
       -- The number of CSS sensors is fixed by the hardware interface: the ADC data
@@ -79,34 +66,25 @@ package body Component.Css_Comm.Implementation is
 
       -- Pass the raw ADC counts to the C algorithm, which normalizes each
       -- reading by the Max_Sensor_Value parameter, applies the Chebyshev
-      -- correction, and clamps the corrected value to [0, 1]. Entries beyond
-      -- the physical ADC channels are zero-padded up to the C algorithm's
-      -- MAX_NUM_CSS_SENSORS bound.
+      -- correction, and clamps the corrected value to [0, 1].
       declare
-         Css_Input_C : aliased Css_Sensor_Values_C := (Data => [others => 0.0]);
+         Css_Input_C : aliased Css_Sensor_Values.C.U_C := (Data => [others => 0.0]);
       begin
          for I in Css_Adc_Input.Adc_Value'Range loop
-            Css_Input_C.Data (Css_Input_C.Data'First + Natural (I - Css_Adc_Input.Adc_Value'First)) :=
-               Long_Float (Css_Adc_Input.Adc_Value (I));
+            Css_Input_C.Data (I) := Long_Float (Css_Adc_Input.Adc_Value (I));
          end loop;
 
-         -- Call the algorithm and publish the corrected cosine values as the
-         -- data product, stamped with the timestamp of the fetched ADC reading
-         -- (not the tick time) so downstream consumers see the true data age.
-         -- Css_Sensor_Values.T is narrower than the C algorithm's
-         -- MAX_NUM_CSS_SENSORS bound; the trailing entries of the C output
-         -- correspond to no physical sensor and are not published.
+         -- Publish the corrected cosine values stamped with the timestamp of the
+         -- fetched ADC reading (not the tick time) so downstream consumers see
+         -- the true data age.
          declare
-            Css_Output : constant Css_Sensor_Values_C := Update (
+            Css_Output : constant Css_Sensor_Values.C.U_C := Update (
                Self.Alg,
                Input_Values => Css_Input_C'Access
             );
-            Out_Product : Css_Sensor_Values.T := (Data => [others => 0.0]);
          begin
-            for I in Out_Product.Data'Range loop
-               Out_Product.Data (I) := Css_Output.Data (Css_Output.Data'First + Natural (I - Out_Product.Data'First));
-            end loop;
-            Self.Data_Product_T_Send (Self.Data_Products.Css_Sensor_Output (Css_Input_Time, Out_Product));
+            Self.Data_Product_T_Send (
+               Self.Data_Products.Css_Sensor_Output (Css_Input_Time, Css_Sensor_Values.C.Pack (Css_Output)));
          end;
       end;
    end Tick_T_Recv_Sync;
@@ -127,7 +105,7 @@ package body Component.Css_Comm.Implementation is
       -- were checked by Validate_Parameters at staging, so Set_Config will not reject
       -- them. Cheby_Count has no counterpart in the flattened config (the algorithm
       -- uses all MAX_NUM_CHEBY_POLYS coefficients) and is intentionally not applied.
-      Max_Sensor_Values : aliased Css_Values_Array_C := Make_Max_Sensor_Values (Self.Max_Sensor_Value.Value);
+      Max_Sensor_Values : aliased Packed_F64x8.C.U_C := [others => Self.Max_Sensor_Value.Value];
       Cheby_Poly_C : aliased Cheby_Polynomials_C_Type := (
          Data => Packed_F64x11.C.To_C (Self.Cheby_Polynomials)
       );
@@ -151,7 +129,7 @@ package body Component.Css_Comm.Implementation is
       Cheby_Polynomials : in Packed_F64x11.U
    ) return Parameter_Validation_Status.E is
       pragma Unreferenced (Self, Cheby_Count);
-      Max_Sensor_Values : aliased Css_Values_Array_C := Make_Max_Sensor_Values (Max_Sensor_Value.Value);
+      Max_Sensor_Values : aliased Packed_F64x8.C.U_C := [others => Max_Sensor_Value.Value];
       Cheby_Poly_C : aliased Cheby_Polynomials_C_Type := (Data => Packed_F64x11.C.To_C (Cheby_Polynomials));
    begin
       if Validate_Config (
