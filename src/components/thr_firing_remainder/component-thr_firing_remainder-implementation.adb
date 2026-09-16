@@ -15,7 +15,6 @@ package body Component.Thr_Firing_Remainder.Implementation is
    begin
       Set_Config (
          Self.Alg,
-         Num_Thrusters             => Self.Num_Thrusters,
          Max_Thrust                => Self.Max_Thrust'Access,
          Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time.Value,
          Control_Period            => Self.Control_Period.Value,
@@ -30,7 +29,6 @@ package body Component.Thr_Firing_Remainder.Implementation is
    overriding procedure Init (Self : in out Instance) is
    begin
       Self.Alg := Create (
-         Num_Thrusters             => Self.Num_Thrusters,
          Max_Thrust                => Self.Max_Thrust'Access,
          Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time.Value,
          Control_Period            => Self.Control_Period.Value,
@@ -45,19 +43,17 @@ package body Component.Thr_Firing_Remainder.Implementation is
    end Destroy;
 
    not overriding procedure Configure_Thrusters (
-      Self          : in out Instance;
-      Num_Thrusters : in Unsigned_32;
-      Max_Thrust    : in Packed_F32x8.U)
+      Self       : in out Instance;
+      Max_Thrust : in Packed_F32x8.U)
    is
       use Parameter_Validation_Status;
    begin
       -- Record the thruster array as the Ada-side source of truth, then swap the
       -- full configuration into the algorithm.
-      Self.Num_Thrusters := Num_Thrusters;
       Self.Max_Thrust := Packed_F32x8.C.To_C (Max_Thrust);
-      -- The assembly owns this call, so an out-of-range thruster count or a
-      -- non-finite maximum thrust is a wiring error rather than ground input:
-      -- assert instead of reporting, and keep it out of the throwing Set_Config.
+      -- The assembly owns this call, so a maximum thrust that is not finite and
+      -- greater than zero is a wiring error rather than ground input: assert
+      -- instead of reporting, and keep it out of the throwing Set_Config.
       -- Validate_Parameters reads the thruster array assigned just above, so this
       -- checks the whole configuration through the component's single gate.
       pragma Assert (Self.Validate_Parameters (
@@ -136,7 +132,6 @@ package body Component.Thr_Firing_Remainder.Implementation is
    ) return Parameter_Validation_Status.E is
    begin
       if Validate_Config (
-            Num_Thrusters             => Self.Num_Thrusters,
             Max_Thrust                => Self.Max_Thrust'Access,
             Thr_Min_Fire_Time         => Thr_Min_Fire_Time.Value,
             Control_Period            => Control_Period.Value,

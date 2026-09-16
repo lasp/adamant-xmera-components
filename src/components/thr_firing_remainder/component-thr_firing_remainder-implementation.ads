@@ -21,16 +21,14 @@ package Component.Thr_Firing_Remainder.Implementation is
    -- Initializes the thruster firing remainder algorithm.
    overriding procedure Init (Self : in out Instance);
    not overriding procedure Destroy (Self : in out Instance);
-   -- Configures the thruster geometry and maximum thrusts. MUST be called
-   -- before the first tick: with unconfigured (zero) maximum thrusts the C
-   -- algorithm's on-time division produces Inf (commanding a thruster
-   -- full-on) or NaN. No parameter or data dependency supplies this
-   -- configuration; the caller integrating this component into an assembly
-   -- owns invoking it.
+   -- Configures the per-thruster maximum thrusts. MUST be called before the
+   -- first tick: the placeholder the record starts with is valid but arbitrary,
+   -- so the on-times it produces are meaningless. No parameter or data
+   -- dependency supplies this configuration; the caller integrating this
+   -- component into an assembly owns invoking it.
    not overriding procedure Configure_Thrusters (
-      Self          : in out Instance;
-      Num_Thrusters : in Unsigned_32;
-      Max_Thrust    : in Packed_F32x8.U);
+      Self       : in out Instance;
+      Max_Thrust : in Packed_F32x8.U);
 
 private
 
@@ -39,12 +37,11 @@ private
       Alg : Thr_Firing_Remainder_Algorithm_Access := null;
       -- The thruster array half of the algorithm configuration, held here as the
       -- Ada-side source of truth because the flattened shim exposes no getters.
-      -- The defaults keep the initial configuration valid -- Num_Thrusters => 0
-      -- skips the per-thruster maximum-thrust validation -- but the algorithm
+      -- Every entry is validated now that the thruster count is gone, so the
+      -- placeholder has to be a valid thrust rather than zero; the algorithm
       -- cannot produce usable on-times until Configure_Thrusters supplies the
       -- real maximum thrusts.
-      Num_Thrusters : Unsigned_32 := 0;
-      Max_Thrust : aliased Packed_F32x8.C.U_C := [others => 0.0];
+      Max_Thrust : aliased Packed_F32x8.C.U_C := [others => 1.0];
    end record;
 
    ---------------------------------------

@@ -2,7 +2,6 @@
 -- Thr_Firing_Remainder Tests Body
 --------------------------------------------------------------------------------
 
-with Interfaces;
 with Packed_F32x8;
 with Basic_Assertions; use Basic_Assertions;
 with Thr_On_Time_Cmd;
@@ -51,9 +50,8 @@ package body Thr_Firing_Remainder_Tests.Implementation is
       T : Component.Thr_Firing_Remainder.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Thr_Firing_Remainder_Parameters.Instance;
 
-      -- Thruster configuration: 2 thrusters with maxThrust = 1.0
-      Thr_Count : constant Interfaces.Unsigned_32 := 2;
-      Max_Thrust : constant Packed_F32x8.U := [0 => 1.0, 1 => 1.0, others => 0.0];
+      -- Thruster configuration: unit maximum thrust on every thruster
+      Max_Thrust : constant Packed_F32x8.U := [others => 1.0];
 
       -- Control parameters
       Min_Fire_Time : constant Packed_F32.T := (Value => 0.02);
@@ -70,7 +68,10 @@ package body Thr_Firing_Remainder_Tests.Implementation is
       -- Expected on-time computation for OFF_PULSING:
       -- thruster 0: force=-0.5 + maxThrust(1.0) = 0.5, onTime = (0.5/1.0)*0.5 = 0.25
       -- thruster 1: force=-0.3 + maxThrust(1.0) = 0.7, onTime = (0.7/1.0)*0.5 = 0.35
-      Expected_On_Time_Off_Pulsing : constant Packed_F32x8.T := [0.25, 0.35, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+      -- thrusters 2-7: force=0.0 + maxThrust(1.0) = 1.0, onTime = (1.0/1.0)*0.5 = 0.5,
+      -- which reaches the control period and saturates. Off-pulsing holds an
+      -- uncommanded thruster full on, so a zero force is a full-duty request.
+      Expected_On_Time_Off_Pulsing : constant Packed_F32x8.T := [0.25, 0.35, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5];
 
       Output : Thr_On_Time_Cmd.T;
    begin
@@ -83,7 +84,7 @@ package body Thr_Firing_Remainder_Tests.Implementation is
       T.Component_Instance.Set_Up;
 
       -- Configure thrusters
-      T.Component_Instance.Configure_Thrusters (Num_Thrusters => Thr_Count, Max_Thrust => Max_Thrust);
+      T.Component_Instance.Configure_Thrusters (Max_Thrust => Max_Thrust);
 
       -- Stage and apply parameters
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thr_Min_Fire_Time (Min_Fire_Time)), Success);
@@ -132,7 +133,7 @@ package body Thr_Firing_Remainder_Tests.Implementation is
       T.Component_Instance.Set_Up;
 
       -- Configure thrusters
-      T.Component_Instance.Configure_Thrusters (Num_Thrusters => Thr_Count, Max_Thrust => Max_Thrust);
+      T.Component_Instance.Configure_Thrusters (Max_Thrust => Max_Thrust);
 
       -- Stage and apply parameters with OFF_PULSING regime
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thr_Min_Fire_Time (Min_Fire_Time)), Success);
