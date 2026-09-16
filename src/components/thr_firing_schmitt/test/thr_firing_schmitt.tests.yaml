@@ -13,3 +13,5 @@ tests:
     description: Off-pulsing adds the maximum thrust to the requested force and clamps the sum at zero.
   - name: Test_Thruster_Independence
     description: Each thruster carries its own hysteresis state, so the same intermediate force yields different on-times.
+  - name: Test_Pulsing_Regime_Validation
+    description: A byte outside the pulsing regime enumeration is rejected at parameter staging by E8 type validation.

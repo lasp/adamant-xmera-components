@@ -10,6 +10,8 @@ with Levels_On_Off;
 with Packed_F32;
 with Packed_Pulsing_Regime;
 with Thr_Firing_Remainder_Enums;
+with Parameter;
+with Basic_Types;
 with Parameter_Enums.Assertion;
 use Parameter_Enums.Parameter_Update_Status;
 use Parameter_Enums.Assertion;
@@ -372,5 +374,33 @@ package body Thr_Firing_Schmitt_Tests.Implementation is
       Short_Float_Assert.Eq (Output.On_Time_Request (0), 0.02, Epsilon => 0.0001);
       Short_Float_Assert.Eq (Output.On_Time_Request (1), 0.0, Epsilon => 0.0001);
    end Test_Thruster_Independence;
+
+   -- A byte outside the pulsing regime enumeration must be rejected at
+   -- staging by E8 type validation, before it can reach the component's
+   -- enum conversion (which would raise Constraint_Error on the invalid
+   -- value) or the C algorithm. The out-of-range raw byte is injected by
+   -- overwriting the parameter buffer, mimicking a ground upload.
+   overriding procedure Test_Pulsing_Regime_Validation (Self : in out Instance) is
+      T : Component.Thr_Firing_Schmitt.Implementation.Tester.Instance_Access renames Self.Tester;
+      Params : Thr_Firing_Schmitt_Parameters.Instance;
+      Param : Parameter.T := Params.Thrust_Pulsing_Regime (On_Pulsing_Regime);
+   begin
+      -- Initialize with the shared thruster baseline. Nothing this test asserts
+      -- depends on the thruster configuration; it is here only because Init
+      -- requires it.
+      T.Component_Instance.Init;
+
+      -- A raw byte one past the last enumeration value must be rejected:
+      Param.Buffer (Param.Buffer'First) := Basic_Types.Byte (Natural (
+         Thr_Firing_Remainder_Enums.Pulsing_Regime.E'Pos (
+            Thr_Firing_Remainder_Enums.Pulsing_Regime.E'Last)) + 1);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Param), Validation_Error);
+
+      -- The last valid enumeration value stages successfully:
+      Param.Buffer (Param.Buffer'First) := Basic_Types.Byte (
+         Thr_Firing_Remainder_Enums.Pulsing_Regime.E'Pos (
+            Thr_Firing_Remainder_Enums.Pulsing_Regime.E'Last));
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Param), Success);
+   end Test_Pulsing_Regime_Validation;
 
 end Thr_Firing_Schmitt_Tests.Implementation;

@@ -37,6 +37,10 @@ private
    -- force yields different on-times.
    overriding procedure Test_Thruster_Independence (Self : in out Instance);
 
+   -- A byte outside the pulsing regime enumeration is rejected at parameter
+   -- staging by E8 type validation.
+   overriding procedure Test_Pulsing_Regime_Validation (Self : in out Instance);
+
    -- Test data and state:
    type Instance is new Thr_Firing_Schmitt_Tests.Base_Instance with record
       null;
