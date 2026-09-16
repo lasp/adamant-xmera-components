@@ -257,4 +257,44 @@ package body Thr_Firing_Schmitt_Tests.Implementation is
       Short_Float_Assert.Eq (Output.On_Time_Request (0), 0.02, Epsilon => 0.0001);
    end Test_Min_Fire_Time_Floor;
 
+   -- An on-time request that reaches the control period is deliberately
+   -- oversaturated to On_Time_Saturation_Factor times the control period, so the
+   -- thruster is still firing when the next control period begins.
+   overriding procedure Test_On_Time_Saturation (Self : in out Instance) is
+      T : Component.Thr_Firing_Schmitt.Implementation.Tester.Instance_Access renames Self.Tester;
+      Params : Thr_Firing_Schmitt_Parameters.Instance;
+
+      Oversaturating_Factor : constant Packed_F32.T := (Value => 1.5);
+
+      -- onTime saturates to 1.5 * 0.5 = 0.75, beyond the control period itself.
+      Expected_Saturated : constant Short_Float := 0.75;
+
+      Output : Thr_On_Time_Cmd.T;
+   begin
+      T.Component_Instance.Init;
+      T.Component_Instance.Set_Up;
+
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Thrust (Max_Thrust)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Levels (Levels)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thr_Min_Fire_Time (Min_Fire_Time)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Period (Control_Period_Param)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.On_Time_Saturation_Factor (Oversaturating_Factor)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thrust_Pulsing_Regime (On_Pulsing_Regime)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+
+      -- Tick 1: force equals the maximum thrust, so onTime = 0.5 exactly meets the
+      -- control period. The comparison is inclusive, so this already saturates.
+      T.Thruster_Force_Cmd := (Thr_Force => [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
+      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+      Output := T.On_Time_Cmd_History.Get (1);
+      Short_Float_Assert.Eq (Output.On_Time_Request (0), Expected_Saturated, Epsilon => 0.0001);
+
+      -- Tick 2: a force well beyond the maximum thrust cannot push the on-time any
+      -- higher -- the saturated value is a ceiling, not a scaling.
+      T.Thruster_Force_Cmd := (Thr_Force => [2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
+      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+      Output := T.On_Time_Cmd_History.Get (2);
+      Short_Float_Assert.Eq (Output.On_Time_Request (0), Expected_Saturated, Epsilon => 0.0001);
+   end Test_On_Time_Saturation;
+
 end Thr_Firing_Schmitt_Tests.Implementation;

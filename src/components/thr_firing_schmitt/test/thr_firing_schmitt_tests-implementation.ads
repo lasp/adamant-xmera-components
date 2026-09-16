@@ -25,6 +25,10 @@ private
    -- previous state.
    overriding procedure Test_Min_Fire_Time_Floor (Self : in out Instance);
 
+   -- An on-time request that reaches the control period saturates to
+   -- On_Time_Saturation_Factor times the control period.
+   overriding procedure Test_On_Time_Saturation (Self : in out Instance);
+
    -- Test data and state:
    type Instance is new Thr_Firing_Schmitt_Tests.Base_Instance with record
       null;
