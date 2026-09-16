@@ -9,3 +9,5 @@ tests:
     description: A duty cycle at or above Level_On latches the thruster on at the minimum fire time, and one at or below Level_Off latches it off, regardless of the previous state.
   - name: Test_On_Time_Saturation
     description: An on-time request that reaches the control period saturates to On_Time_Saturation_Factor times the control period.
+  - name: Test_Off_Pulsing_Offset
+    description: Off-pulsing adds the maximum thrust to the requested force and clamps the sum at zero.

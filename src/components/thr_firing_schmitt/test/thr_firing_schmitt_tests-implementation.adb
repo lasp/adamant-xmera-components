@@ -297,4 +297,41 @@ package body Thr_Firing_Schmitt_Tests.Implementation is
       Short_Float_Assert.Eq (Output.On_Time_Request (0), Expected_Saturated, Epsilon => 0.0001);
    end Test_On_Time_Saturation;
 
+   -- In off-pulsing the commanded force is a negative delta about a thruster that
+   -- is otherwise firing continuously, so the algorithm adds the maximum thrust
+   -- back before converting to an on-time, then refuses to go below zero.
+   overriding procedure Test_Off_Pulsing_Offset (Self : in out Instance) is
+      T : Component.Thr_Firing_Schmitt.Implementation.Tester.Instance_Access renames Self.Tester;
+      Params : Thr_Firing_Schmitt_Parameters.Instance;
+
+      Output : Thr_On_Time_Cmd.T;
+   begin
+      T.Component_Instance.Init;
+      T.Component_Instance.Set_Up;
+
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Thrust (Max_Thrust)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Levels (Levels)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thr_Min_Fire_Time (Min_Fire_Time)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Period (Control_Period_Param)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.On_Time_Saturation_Factor (Saturation_Factor)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thrust_Pulsing_Regime (Off_Pulsing_Regime)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+
+      -- Tick 1: a zero delta means "no reduction", so the effective force is the
+      -- full maximum thrust and the thruster fires for the whole control period
+      -- (saturated at a factor of 1.0).
+      T.Thruster_Force_Cmd := (Thr_Force => [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
+      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+      Output := T.On_Time_Cmd_History.Get (1);
+      Short_Float_Assert.Eq (Output.On_Time_Request (0), 0.5, Epsilon => 0.0001);
+
+      -- Tick 2: a delta more negative than the maximum thrust would make the
+      -- effective force negative (-2.0 + 1.0 = -1.0). It is clamped to zero rather
+      -- than producing a negative on-time.
+      T.Thruster_Force_Cmd := (Thr_Force => [-2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
+      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+      Output := T.On_Time_Cmd_History.Get (2);
+      Short_Float_Assert.Eq (Output.On_Time_Request (0), 0.0, Epsilon => 0.0001);
+   end Test_Off_Pulsing_Offset;
+
 end Thr_Firing_Schmitt_Tests.Implementation;

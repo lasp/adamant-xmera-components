@@ -29,6 +29,10 @@ private
    -- On_Time_Saturation_Factor times the control period.
    overriding procedure Test_On_Time_Saturation (Self : in out Instance);
 
+   -- Off-pulsing adds the maximum thrust to the requested force and clamps the
+   -- sum at zero.
+   overriding procedure Test_Off_Pulsing_Offset (Self : in out Instance);
+
    -- Test data and state:
    type Instance is new Thr_Firing_Schmitt_Tests.Base_Instance with record
       null;
