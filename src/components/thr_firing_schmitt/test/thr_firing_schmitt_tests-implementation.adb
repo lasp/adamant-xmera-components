@@ -212,4 +212,49 @@ package body Thr_Firing_Schmitt_Tests.Implementation is
       -- Tear_Down_Test will handle the final Destroy
    end Test_Reset;
 
+   -- Below the minimum fire time the duty cycle decides. A level at or above
+   -- Level_On latches ON and floors the on-time at the minimum fire time; a level
+   -- at or below Level_Off latches OFF at zero. Both latches override whatever the
+   -- previous state was, which is what separates them from the hysteresis band
+   -- exercised by Test_Reset.
+   overriding procedure Test_Min_Fire_Time_Floor (Self : in out Instance) is
+      T : Component.Thr_Firing_Schmitt.Implementation.Tester.Instance_Access renames Self.Tester;
+      Params : Thr_Firing_Schmitt_Parameters.Instance;
+
+      Output : Thr_On_Time_Cmd.T;
+   begin
+      T.Component_Instance.Init;
+      T.Component_Instance.Set_Up;
+
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Thrust (Max_Thrust)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Levels (Levels)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thr_Min_Fire_Time (Min_Fire_Time)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Period (Control_Period_Param)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.On_Time_Saturation_Factor (Saturation_Factor)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thrust_Pulsing_Regime (On_Pulsing_Regime)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+
+      -- Tick 1: force=0.032 => onTime=0.016, below the 0.02 minimum fire time.
+      -- level = 0.016/0.02 = 0.8 >= Level_On (0.75), so the thruster latches ON
+      -- and fires for exactly the minimum fire time.
+      T.Thruster_Force_Cmd := (Thr_Force => [0.032, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
+      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+      Output := T.On_Time_Cmd_History.Get (1);
+      Short_Float_Assert.Eq (Output.On_Time_Request (0), 0.02, Epsilon => 0.0001);
+
+      -- Tick 2: force=0.008 => onTime=0.004, level = 0.2 <= Level_Off (0.25).
+      -- The OFF latch wins over the ON state left by tick 1.
+      T.Thruster_Force_Cmd := (Thr_Force => [0.008, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
+      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+      Output := T.On_Time_Cmd_History.Get (2);
+      Short_Float_Assert.Eq (Output.On_Time_Request (0), 0.0, Epsilon => 0.0001);
+
+      -- Tick 3: back to level 0.8. The ON latch wins over the OFF state left by
+      -- tick 2, so neither latch depends on history.
+      T.Thruster_Force_Cmd := (Thr_Force => [0.032, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
+      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+      Output := T.On_Time_Cmd_History.Get (3);
+      Short_Float_Assert.Eq (Output.On_Time_Request (0), 0.02, Epsilon => 0.0001);
+   end Test_Min_Fire_Time_Floor;
+
 end Thr_Firing_Schmitt_Tests.Implementation;

@@ -5,3 +5,5 @@ tests:
     description: Run algorithm to ensure integration is sound.
   - name: Test_Reset
     description: Verify the reset connector clears the Schmitt-trigger hysteresis state.
+  - name: Test_Min_Fire_Time_Floor
+    description: A duty cycle at or above Level_On latches the thruster on at the minimum fire time, and one at or below Level_Off latches it off, regardless of the previous state.

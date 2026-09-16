@@ -20,6 +20,11 @@ private
    -- Verify the reset connector clears the Schmitt-trigger hysteresis state.
    overriding procedure Test_Reset (Self : in out Instance);
 
+   -- A duty cycle at or above Level_On latches the thruster on at the minimum
+   -- fire time, and one at or below Level_Off latches it off, regardless of the
+   -- previous state.
+   overriding procedure Test_Min_Fire_Time_Floor (Self : in out Instance);
+
    -- Test data and state:
    type Instance is new Thr_Firing_Schmitt_Tests.Base_Instance with record
       null;
