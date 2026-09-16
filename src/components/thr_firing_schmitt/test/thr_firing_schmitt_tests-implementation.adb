@@ -403,4 +403,88 @@ package body Thr_Firing_Schmitt_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Param), Success);
    end Test_Pulsing_Regime_Validation;
 
+   -- A staged parameter set that the C++ ThrFiringSchmittConfig would reject must
+   -- be refused by Validate_Parameters, so it never reaches the throwing Set_Config
+   -- across the FFI boundary. Each field is perturbed on its own and then restored,
+   -- proving the rejection is attributable to that field. The values here pass the
+   -- staging type/range checks and are caught only by the algorithm's validators.
+   overriding procedure Test_Invalid_Parameter (Self : in out Instance) is
+      T : Component.Thr_Firing_Schmitt.Implementation.Tester.Instance_Access renames Self.Tester;
+      Params : Thr_Firing_Schmitt_Parameters.Instance;
+
+      -- Stage the full valid set. Every case below starts from this baseline so a
+      -- rejection can only come from the single field that was perturbed.
+      procedure Stage_Valid_Set is
+      begin
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Thrust (Max_Thrust)), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Levels (Levels)), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thr_Min_Fire_Time (Min_Fire_Time)), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Period (Control_Period_Param)), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.On_Time_Saturation_Factor (Saturation_Factor)), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thrust_Pulsing_Regime (On_Pulsing_Regime)), Success);
+      end Stage_Valid_Set;
+   begin
+      -- Initialize with the shared thruster baseline. Every rejection below is
+      -- attributable to the perturbed parameter rather than to the thruster
+      -- configuration, which stays valid throughout.
+      T.Component_Instance.Init;
+
+      -- The baseline set is accepted:
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
+
+      -- A zero Level_On is rejected (must be finite and in (0, 1]):
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Levels ((Level_On => 0.0, Level_Off => 0.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- A Level_On above one is rejected:
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Levels ((Level_On => 1.1, Level_Off => 0.25))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- A Level_Off of one is rejected (must be finite and in [0, 1)):
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Levels ((Level_On => 1.0, Level_Off => 1.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- Thresholds that cross -- Level_On below Level_Off -- are rejected, because
+      -- they would invert the hysteresis band:
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Levels ((Level_On => 0.1, Level_Off => 0.2))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- A zero minimum fire time is rejected (must be finite and strictly > 0):
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thr_Min_Fire_Time ((Value => 0.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- A zero control period is rejected (must be finite and strictly > 0):
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Period ((Value => 0.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- An on-time saturation factor below one is rejected (must be finite and >= 1):
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.On_Time_Saturation_Factor ((Value => 0.5))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- A zero maximum thrust is rejected. Every slot divides the requested force,
+      -- so a zero anywhere in the array would produce Inf or NaN on-times:
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Thrust ([0 => 0.0, others => 1.0])), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- A negative maximum thrust is rejected:
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Thrust ([0 => -1.0, others => 1.0])), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- Restoring validity makes the set acceptable again, so the rejections above
+      -- were caused by the perturbed values rather than by sticky staging state:
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
+      Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+   end Test_Invalid_Parameter;
+
 end Thr_Firing_Schmitt_Tests.Implementation;
