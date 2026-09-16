@@ -1,0 +1,27 @@
+---
+description: Parameters for the Sun Search Point component
+parameters:
+  - name: Rotations
+    description: "[-] The sun-search rotation sequence, in the order commanded. The search runs each entry for its duration, commanding that rate about that body axis. Each duration must be finite and greater than zero, and each rate must be finite."
+    type: Rotation_Properties_X4_Record.T
+    default: "(Rotations => [others => (Rotation_Duration => 1.0, Rotation_Rate => 0.0, Rotation_Axis => Sun_Search_Point_Enums.Body_Axis.B1_Hat_B)])"
+  - name: S_Hat_Bdy_Cmd
+    description: "[-] The body-fixed unit vector that is driven onto the measured sun direction during the pointing phase. Norm must be within 1e-3 of 1.0."
+    type: Packed_F32x3.T
+    default: "[0.0, 0.0, 1.0]"
+  - name: Sun_Axis_Spin_Rate
+    description: "[rad/s] Signed spin rate commanded about the measured sun direction once the sun is acquired. The commanded reference rate in the pointing phase is this scalar times the sun unit vector, so zero holds the vehicle inertially fixed on the sun line. Must be finite."
+    type: Packed_F32.T
+    default: "(Value => 0.0)"
+  - name: Omega_Rn_B_Cfg
+    description: "[rad/s] Body rate commanded during the pointing phase when the sun direction is unavailable. The sun direction input is the exact zero vector when no coarse sun sensor sees the sun, and this rate is commanded instead. Must be finite."
+    type: Packed_F32x3.T
+    default: "[0.0, 0.0, 0.0]"
+  - name: Observation_Threshold
+    description: "[-] Number of coarse sun sensors that must see the sun, at or above which the sun is considered acquired and the search hands over to pointing. Checked only after the first rotation completes. Zero hands over as soon as the first rotation completes."
+    type: Packed_Observation_Threshold.T
+    default: "(Value => 4)"
+  - name: Control_Period
+    description: "[s] Per-update time step. The search timeline advances by exactly this much per tick rather than from a clock, so it must equal the rate at which the component is scheduled or the rotation durations elapse faster or slower than wall-clock time. Must be finite and greater than zero."
+    type: Packed_F32.T
+    default: "(Value => 0.2)"
