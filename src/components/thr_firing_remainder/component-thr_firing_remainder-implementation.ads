@@ -4,7 +4,6 @@
 
 -- Includes:
 with Packed_F32x8;
-with Packed_F32x8.C;
 with Tick;
 with Thr_Firing_Remainder_Algorithm_C; use Thr_Firing_Remainder_Algorithm_C;
 
@@ -21,27 +20,12 @@ package Component.Thr_Firing_Remainder.Implementation is
    -- Initializes the thruster firing remainder algorithm.
    overriding procedure Init (Self : in out Instance);
    not overriding procedure Destroy (Self : in out Instance);
-   -- Configures the per-thruster maximum thrusts. MUST be called before the
-   -- first tick: the placeholder the record starts with is valid but arbitrary,
-   -- so the on-times it produces are meaningless. No parameter or data
-   -- dependency supplies this configuration; the caller integrating this
-   -- component into an assembly owns invoking it.
-   not overriding procedure Configure_Thrusters (
-      Self       : in out Instance;
-      Max_Thrust : in Packed_F32x8.U);
 
 private
 
    -- The component class instance record:
    type Instance is new Thr_Firing_Remainder.Base_Instance with record
       Alg : Thr_Firing_Remainder_Algorithm_Access := null;
-      -- The thruster array half of the algorithm configuration, held here as the
-      -- Ada-side source of truth because the flattened shim exposes no getters.
-      -- Every entry is validated now that the thruster count is gone, so the
-      -- placeholder has to be a valid thrust rather than zero; the algorithm
-      -- cannot produce usable on-times until Configure_Thrusters supplies the
-      -- real maximum thrusts.
-      Max_Thrust : aliased Packed_F32x8.C.U_C := [others => 1.0];
    end record;
 
    ---------------------------------------
@@ -97,6 +81,7 @@ private
    -- to be implemented here.
    overriding function Validate_Parameters (
       Self : in out Instance;
+      Max_Thrust : in Packed_F32x8.U;
       Thr_Min_Fire_Time : in Packed_F32.U;
       Control_Period : in Packed_F32.U;
       On_Time_Saturation_Factor : in Packed_F32.U;

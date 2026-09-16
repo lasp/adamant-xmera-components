@@ -2,34 +2,30 @@
 -- Thr_Firing_Remainder Component Implementation Body
 --------------------------------------------------------------------------------
 
+with Packed_F32x8.C;
 with Thr_Force_Cmd.C;
 with Thr_On_Time_Cmd.C;
 
 package body Component.Thr_Firing_Remainder.Implementation is
-
-   -- Push the component's current configuration -- the applied parameters plus
-   -- the thruster array held as instance state -- into the C++ algorithm. Every
-   -- reconfiguration path goes through here so the configuration is assembled in
-   -- exactly one place.
-   procedure Apply_Config (Self : in out Instance) is
-   begin
-      Set_Config (
-         Self.Alg,
-         Max_Thrust                => Self.Max_Thrust'Access,
-         Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time.Value,
-         Control_Period            => Self.Control_Period.Value,
-         On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor.Value,
-         Pulsing_Regime            => To_C (Self.Thrust_Pulsing_Regime.Value));
-   end Apply_Config;
 
    --------------------------------------------------
    -- Subprogram for implementation init method:
    --------------------------------------------------
    -- Initializes the thruster firing remainder algorithm.
    overriding procedure Init (Self : in out Instance) is
+      use Parameter_Validation_Status;
+      Max_Thrust_C : aliased constant Packed_F32x8.C.U_C := Packed_F32x8.C.To_C (Self.Max_Thrust);
    begin
+      -- Check the parameter defaults through the component's single gate before
+      -- handing them to the throwing Create.
+      pragma Assert (Self.Validate_Parameters (
+         Max_Thrust                => Self.Max_Thrust,
+         Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time,
+         Control_Period            => Self.Control_Period,
+         On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor,
+         Thrust_Pulsing_Regime     => Self.Thrust_Pulsing_Regime) = Valid);
       Self.Alg := Create (
-         Max_Thrust                => Self.Max_Thrust'Access,
+         Max_Thrust                => Max_Thrust_C'Access,
          Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time.Value,
          Control_Period            => Self.Control_Period.Value,
          On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor.Value,
@@ -41,28 +37,6 @@ package body Component.Thr_Firing_Remainder.Implementation is
       -- Free the C++ heap data.
       Destroy (Self.Alg);
    end Destroy;
-
-   not overriding procedure Configure_Thrusters (
-      Self       : in out Instance;
-      Max_Thrust : in Packed_F32x8.U)
-   is
-      use Parameter_Validation_Status;
-   begin
-      -- Record the thruster array as the Ada-side source of truth, then swap the
-      -- full configuration into the algorithm.
-      Self.Max_Thrust := Packed_F32x8.C.To_C (Max_Thrust);
-      -- The assembly owns this call, so a maximum thrust that is not finite and
-      -- greater than zero is a wiring error rather than ground input: assert
-      -- instead of reporting, and keep it out of the throwing Set_Config.
-      -- Validate_Parameters reads the thruster array assigned just above, so this
-      -- checks the whole configuration through the component's single gate.
-      pragma Assert (Self.Validate_Parameters (
-         Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time,
-         Control_Period            => Self.Control_Period,
-         On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor,
-         Thrust_Pulsing_Regime     => Self.Thrust_Pulsing_Regime) = Valid);
-      Apply_Config (Self);
-   end Configure_Thrusters;
 
    ---------------------------------------
    -- Invokee connector primitives:
@@ -110,29 +84,36 @@ package body Component.Thr_Firing_Remainder.Implementation is
    -----------------------------------------------
    -- This procedure is called when the parameters of a component have been updated.
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
+      Max_Thrust_C : aliased constant Packed_F32x8.C.U_C := Packed_F32x8.C.To_C (Self.Max_Thrust);
    begin
-      -- Rebuild the algorithm configuration from the updated parameters. The values
-      -- were checked by Validate_Parameters at staging, so Set_Config will not
-      -- reject them. The accumulated pulse remainder state is preserved.
-      Apply_Config (Self);
+      -- Push the updated parameters into the C++ algorithm in a single call. The
+      -- values were checked by Validate_Parameters at staging, so Set_Config will
+      -- not reject them. The accumulated pulse remainder state is preserved.
+      Set_Config (
+         Self.Alg,
+         Max_Thrust                => Max_Thrust_C'Access,
+         Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time.Value,
+         Control_Period            => Self.Control_Period.Value,
+         On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor.Value,
+         Pulsing_Regime            => To_C (Self.Thrust_Pulsing_Regime.Value));
    end Update_Parameters_Action;
 
    -- Validate a staged parameter set before it is applied by asking the algorithm's
    -- own non-throwing Validate_Config predicate, so the configuration rules live
    -- solely in the algorithm. Rejecting an invalid update here at staging keeps it
-   -- from reaching the throwing Create/Set_Config across the FFI boundary. The
-   -- thruster array is not staged, so the candidate configuration pairs the staged
-   -- parameters with the currently configured thruster array.
+   -- from reaching the throwing Create/Set_Config across the FFI boundary.
    overriding function Validate_Parameters (
       Self : in out Instance;
+      Max_Thrust : in Packed_F32x8.U;
       Thr_Min_Fire_Time : in Packed_F32.U;
       Control_Period : in Packed_F32.U;
       On_Time_Saturation_Factor : in Packed_F32.U;
       Thrust_Pulsing_Regime : in Packed_Pulsing_Regime.U
    ) return Parameter_Validation_Status.E is
+      Max_Thrust_C : aliased constant Packed_F32x8.C.U_C := Packed_F32x8.C.To_C (Max_Thrust);
    begin
       if Validate_Config (
-            Max_Thrust                => Self.Max_Thrust'Access,
+            Max_Thrust                => Max_Thrust_C'Access,
             Thr_Min_Fire_Time         => Thr_Min_Fire_Time.Value,
             Control_Period            => Control_Period.Value,
             On_Time_Saturation_Factor => On_Time_Saturation_Factor.Value,

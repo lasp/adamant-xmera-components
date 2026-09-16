@@ -1,6 +1,10 @@
 ---
 description: Parameters for the Thr Firing Remainder component
 parameters:
+  - name: Max_Thrust
+    description: "[N] Per-thruster maximum thrust. Every entry must be finite and greater than zero."
+    type: Packed_F32x8.T
+    default: "[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]"
   - name: Thr_Min_Fire_Time
     description: "[s] Minimum thruster fire time"
     type: Packed_F32.T

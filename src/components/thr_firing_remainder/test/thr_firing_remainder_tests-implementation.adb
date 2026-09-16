@@ -19,6 +19,10 @@ use Parameter_Enums.Assertion;
 
 package body Thr_Firing_Remainder_Tests.Implementation is
 
+   -- The thruster configuration shared by every test: a maximum thrust of 1.0 N,
+   -- which keeps the on-time arithmetic transparent.
+   Max_Thrust : constant Packed_F32x8.T := [others => 1.0];
+
    -------------------------------------------------------------------------
    -- Fixtures:
    -------------------------------------------------------------------------
@@ -50,9 +54,6 @@ package body Thr_Firing_Remainder_Tests.Implementation is
       T : Component.Thr_Firing_Remainder.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Thr_Firing_Remainder_Parameters.Instance;
 
-      -- Thruster configuration: unit maximum thrust on every thruster
-      Max_Thrust : constant Packed_F32x8.U := [others => 1.0];
-
       -- Control parameters
       Min_Fire_Time : constant Packed_F32.T := (Value => 0.02);
       Control_Period_Param : constant Packed_F32.T := (Value => 0.5);
@@ -83,10 +84,8 @@ package body Thr_Firing_Remainder_Tests.Implementation is
       T.Component_Instance.Init;
       T.Component_Instance.Set_Up;
 
-      -- Configure thrusters
-      T.Component_Instance.Configure_Thrusters (Max_Thrust => Max_Thrust);
-
       -- Stage and apply parameters
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Thrust (Max_Thrust)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thr_Min_Fire_Time (Min_Fire_Time)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Period (Control_Period_Param)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.On_Time_Saturation_Factor (Saturation_Factor)), Success);
@@ -132,10 +131,8 @@ package body Thr_Firing_Remainder_Tests.Implementation is
       T.Component_Instance.Init;
       T.Component_Instance.Set_Up;
 
-      -- Configure thrusters
-      T.Component_Instance.Configure_Thrusters (Max_Thrust => Max_Thrust);
-
       -- Stage and apply parameters with OFF_PULSING regime
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Thrust (Max_Thrust)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thr_Min_Fire_Time (Min_Fire_Time)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Period (Control_Period_Param)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.On_Time_Saturation_Factor (Saturation_Factor)), Success);
@@ -219,6 +216,7 @@ package body Thr_Firing_Remainder_Tests.Implementation is
       -- rejection can only come from the single field that was perturbed.
       procedure Stage_Valid_Set is
       begin
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Thrust (Max_Thrust)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thr_Min_Fire_Time (Valid_Min_Fire_Time)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Period (Valid_Control_Period)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.On_Time_Saturation_Factor (Valid_Saturation_Factor)), Success);
@@ -244,6 +242,17 @@ package body Thr_Firing_Remainder_Tests.Implementation is
       -- An on-time saturation factor below one is rejected (must be finite and >= 1):
       Stage_Valid_Set;
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.On_Time_Saturation_Factor ((Value => 0.5))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- A zero maximum thrust is rejected. Every slot divides the requested force,
+      -- so a zero anywhere in the array would produce Inf or NaN on-times:
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Thrust ([0 => 0.0, others => 1.0])), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- A negative maximum thrust is rejected:
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Thrust ([0 => -1.0, others => 1.0])), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
 
       -- Restoring validity makes the set acceptable again, so the rejections above
