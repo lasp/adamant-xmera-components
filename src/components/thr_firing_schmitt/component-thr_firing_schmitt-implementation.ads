@@ -74,7 +74,7 @@ private
    -- something special needs to happen after a parameter update. Examples of this might be copying certain parameters to
    -- hardware registers, or performing other special functionality that only needs to be performed after parameters have
    -- been updated.
-   overriding procedure Update_Parameters_Action (Self : in out Instance) is null;
+   overriding procedure Update_Parameters_Action (Self : in out Instance);
    -- This function is called when the parameter operation type is "Validate". The default implementation of this
    -- subprogram in the implementation package is a function that returns "Valid". However, this function can, and should be
    -- overridden if something special needs to happen to further validate a parameter. Examples of this might be validation of
@@ -89,7 +89,7 @@ private
       Control_Period : in Packed_F32.U;
       On_Time_Saturation_Factor : in Packed_F32.U;
       Thrust_Pulsing_Regime : in Packed_Pulsing_Regime.U
-   ) return Parameter_Validation_Status.E is (Parameter_Validation_Status.Valid);
+   ) return Parameter_Validation_Status.E;
 
    -----------------------------------------------
    -- Data dependency primitives:

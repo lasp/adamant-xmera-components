@@ -3,6 +3,8 @@
 --------------------------------------------------------------------------------
 
 with Packed_F32x8.C;
+with Thr_Force_Cmd.C;
+with Thr_On_Time_Cmd.C;
 
 package body Component.Thr_Firing_Schmitt.Implementation is
 
@@ -11,8 +13,18 @@ package body Component.Thr_Firing_Schmitt.Implementation is
    --------------------------------------------------
    -- Initializes the thruster firing Schmitt algorithm.
    overriding procedure Init (Self : in out Instance) is
+      use Parameter_Validation_Status;
       Max_Thrust_C : aliased constant Packed_F32x8.C.U_C := Packed_F32x8.C.To_C (Self.Max_Thrust);
    begin
+      -- Check the parameter defaults through the component's single gate before
+      -- handing them to the throwing Create.
+      pragma Assert (Self.Validate_Parameters (
+         Max_Thrust                => Self.Max_Thrust,
+         Levels                    => Self.Levels,
+         Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time,
+         Control_Period            => Self.Control_Period,
+         On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor,
+         Thrust_Pulsing_Regime     => Self.Thrust_Pulsing_Regime) = Valid);
       Self.Alg := Create (
          Max_Thrust                => Max_Thrust_C'Access,
          Level_On                  => Self.Levels.Level_On,
@@ -34,17 +46,42 @@ package body Component.Thr_Firing_Schmitt.Implementation is
    ---------------------------------------
    -- Run the algorithm up to the current time.
    overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
+      use Data_Product_Enums;
+      use Data_Product_Enums.Data_Dependency_Status;
+
+      -- Grab data dependencies:
+      --
+      -- Data_Dependency_Status.E can be Success, Not_Available, Error, or Stale.
+      -- All return values besides Success indicate that this component is not
+      -- wired up correctly in the algorithm execution order and received errant,
+      -- stale, or no data. This should never happen, so we assert.
+      Force_Dep : Thr_Force_Cmd.T;
+      Force_Status : constant Data_Dependency_Status.E :=
+         Self.Get_Thruster_Force_Cmd (Value => Force_Dep, Stale_Reference => Arg.Time);
+      pragma Assert (Force_Status = Success);
+
+      -- The force command and the algorithm's input share the mission thruster
+      -- count, so the dependency crosses the FFI boundary unpacked, with no
+      -- intermediate array.
+      Force_C : aliased constant Thr_Force_Cmd.C.U_C := Thr_Force_Cmd.C.Unpack (Force_Dep);
    begin
-      -- TODO statements
-      null;
+      -- Update the parameters:
+      Self.Update_Parameters;
+
+      Self.Data_Product_T_Send (Self.Data_Products.On_Time_Cmd (
+         Arg.Time,
+         Thr_On_Time_Cmd.C.Pack (Update (Self.Alg, Force_C'Access))
+      ));
    end Tick_T_Recv_Sync;
 
    -- Reset the algorithm's Schmitt-trigger hysteresis state. Called on GNC state
    -- change.
    overriding procedure Reset_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
+      Ignore : Tick.T renames Arg;
    begin
-      -- TODO statements
-      null;
+      -- Clear the algorithm's previous-state thruster history, dropping every
+      -- thruster to OFF. The configuration is left untouched.
+      Re_Initialize (Self.Alg);
    end Reset_Tick_T_Recv_Sync;
 
    -- The parameter update connector.
@@ -53,6 +90,57 @@ package body Component.Thr_Firing_Schmitt.Implementation is
       -- Process the parameter update, staging or fetching parameters as requested.
       Self.Process_Parameter_Update (Arg);
    end Parameter_Update_T_Modify;
+
+   -----------------------------------------------
+   -- Parameter handlers:
+   -----------------------------------------------
+   -- This procedure is called when the parameters of a component have been updated.
+   overriding procedure Update_Parameters_Action (Self : in out Instance) is
+      Max_Thrust_C : aliased constant Packed_F32x8.C.U_C := Packed_F32x8.C.To_C (Self.Max_Thrust);
+   begin
+      -- Push the updated parameters into the C++ algorithm in a single call. The
+      -- values were checked by Validate_Parameters at staging, so Set_Config will
+      -- not reject them. The Schmitt-trigger hysteresis state is preserved.
+      Set_Config (
+         Self.Alg,
+         Max_Thrust                => Max_Thrust_C'Access,
+         Level_On                  => Self.Levels.Level_On,
+         Level_Off                 => Self.Levels.Level_Off,
+         Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time.Value,
+         Control_Period            => Self.Control_Period.Value,
+         On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor.Value,
+         Pulsing_Regime            => To_C (Self.Thrust_Pulsing_Regime.Value));
+   end Update_Parameters_Action;
+
+   -- Validate a staged parameter set before it is applied by asking the algorithm's
+   -- own non-throwing Validate_Config predicate, so the configuration rules live
+   -- solely in the algorithm. Rejecting an invalid update here at staging keeps it
+   -- from reaching the throwing Create/Set_Config across the FFI boundary.
+   overriding function Validate_Parameters (
+      Self : in out Instance;
+      Max_Thrust : in Packed_F32x8.U;
+      Levels : in Levels_On_Off.U;
+      Thr_Min_Fire_Time : in Packed_F32.U;
+      Control_Period : in Packed_F32.U;
+      On_Time_Saturation_Factor : in Packed_F32.U;
+      Thrust_Pulsing_Regime : in Packed_Pulsing_Regime.U
+   ) return Parameter_Validation_Status.E is
+      Max_Thrust_C : aliased constant Packed_F32x8.C.U_C := Packed_F32x8.C.To_C (Max_Thrust);
+   begin
+      if Validate_Config (
+            Max_Thrust                => Max_Thrust_C'Access,
+            Level_On                  => Levels.Level_On,
+            Level_Off                 => Levels.Level_Off,
+            Thr_Min_Fire_Time         => Thr_Min_Fire_Time.Value,
+            Control_Period            => Control_Period.Value,
+            On_Time_Saturation_Factor => On_Time_Saturation_Factor.Value,
+            Pulsing_Regime            => To_C (Thrust_Pulsing_Regime.Value))
+      then
+         return Parameter_Validation_Status.Valid;
+      else
+         return Parameter_Validation_Status.Invalid;
+      end if;
+   end Validate_Parameters;
 
    -----------------------------------------------
    -- Data dependency handlers:
