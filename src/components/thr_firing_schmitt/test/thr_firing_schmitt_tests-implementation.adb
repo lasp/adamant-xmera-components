@@ -334,4 +334,43 @@ package body Thr_Firing_Schmitt_Tests.Implementation is
       Short_Float_Assert.Eq (Output.On_Time_Request (0), 0.0, Epsilon => 0.0001);
    end Test_Off_Pulsing_Offset;
 
+   -- The Schmitt trigger keeps one ON/OFF state per thruster. Driving two
+   -- thrusters into opposite states and then handing them an identical force in
+   -- the hysteresis band must produce different on-times; a shared state would
+   -- collapse them to the same value.
+   overriding procedure Test_Thruster_Independence (Self : in out Instance) is
+      T : Component.Thr_Firing_Schmitt.Implementation.Tester.Instance_Access renames Self.Tester;
+      Params : Thr_Firing_Schmitt_Parameters.Instance;
+
+      Output : Thr_On_Time_Cmd.T;
+   begin
+      T.Component_Instance.Init;
+      T.Component_Instance.Set_Up;
+
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Thrust (Max_Thrust)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Levels (Levels)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thr_Min_Fire_Time (Min_Fire_Time)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Period (Control_Period_Param)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.On_Time_Saturation_Factor (Saturation_Factor)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thrust_Pulsing_Regime (On_Pulsing_Regime)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+
+      -- Tick 1: thruster 0 is driven well above the minimum fire time and latches
+      -- ON; thruster 1 is commanded zero and latches OFF.
+      T.Thruster_Force_Cmd := (Thr_Force => [0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
+      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+      Output := T.On_Time_Cmd_History.Get (1);
+      Short_Float_Assert.Eq (Output.On_Time_Request (0), 0.25, Epsilon => 0.0001);
+      Short_Float_Assert.Eq (Output.On_Time_Request (1), 0.0, Epsilon => 0.0001);
+
+      -- Tick 2: both thrusters get the same force, landing at level 0.5 -- inside
+      -- the hysteresis band, where the previous state decides. Thruster 0 holds at
+      -- the minimum fire time, thruster 1 stays off.
+      T.Thruster_Force_Cmd := (Thr_Force => [0.02, 0.02, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
+      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+      Output := T.On_Time_Cmd_History.Get (2);
+      Short_Float_Assert.Eq (Output.On_Time_Request (0), 0.02, Epsilon => 0.0001);
+      Short_Float_Assert.Eq (Output.On_Time_Request (1), 0.0, Epsilon => 0.0001);
+   end Test_Thruster_Independence;
+
 end Thr_Firing_Schmitt_Tests.Implementation;

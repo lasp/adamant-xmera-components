@@ -11,3 +11,5 @@ tests:
     description: An on-time request that reaches the control period saturates to On_Time_Saturation_Factor times the control period.
   - name: Test_Off_Pulsing_Offset
     description: Off-pulsing adds the maximum thrust to the requested force and clamps the sum at zero.
+  - name: Test_Thruster_Independence
+    description: Each thruster carries its own hysteresis state, so the same intermediate force yields different on-times.

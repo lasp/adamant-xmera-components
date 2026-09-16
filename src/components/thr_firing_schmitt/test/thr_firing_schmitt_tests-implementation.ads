@@ -33,6 +33,10 @@ private
    -- sum at zero.
    overriding procedure Test_Off_Pulsing_Offset (Self : in out Instance);
 
+   -- Each thruster carries its own hysteresis state, so the same intermediate
+   -- force yields different on-times.
+   overriding procedure Test_Thruster_Independence (Self : in out Instance);
+
    -- Test data and state:
    type Instance is new Thr_Firing_Schmitt_Tests.Base_Instance with record
       null;
