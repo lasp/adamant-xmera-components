@@ -2,8 +2,6 @@
 -- Thr_Firing_Remainder Tests Body
 --------------------------------------------------------------------------------
 
-with Interfaces;
-with Packed_F32x8;
 with Basic_Assertions; use Basic_Assertions;
 with Thr_On_Time_Cmd;
 with Thr_On_Time_Cmd.Assertion; use Thr_On_Time_Cmd.Assertion;
@@ -19,6 +17,10 @@ use Parameter_Enums.Parameter_Update_Status;
 use Parameter_Enums.Assertion;
 
 package body Thr_Firing_Remainder_Tests.Implementation is
+
+   -- The thruster configuration shared by every test: a maximum thrust of 1.0 N,
+   -- which keeps the on-time arithmetic transparent.
+   Max_Thrust : constant Packed_F32x8.T := [others => 1.0];
 
    -------------------------------------------------------------------------
    -- Fixtures:
@@ -51,10 +53,6 @@ package body Thr_Firing_Remainder_Tests.Implementation is
       T : Component.Thr_Firing_Remainder.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Thr_Firing_Remainder_Parameters.Instance;
 
-      -- Thruster configuration: 2 thrusters with maxThrust = 1.0
-      Thr_Count : constant Interfaces.Unsigned_32 := 2;
-      Max_Thrust : constant Packed_F32x8.U := [0 => 1.0, 1 => 1.0, others => 0.0];
-
       -- Control parameters
       Min_Fire_Time : constant Packed_F32.T := (Value => 0.02);
       Control_Period_Param : constant Packed_F32.T := (Value => 0.5);
@@ -70,7 +68,10 @@ package body Thr_Firing_Remainder_Tests.Implementation is
       -- Expected on-time computation for OFF_PULSING:
       -- thruster 0: force=-0.5 + maxThrust(1.0) = 0.5, onTime = (0.5/1.0)*0.5 = 0.25
       -- thruster 1: force=-0.3 + maxThrust(1.0) = 0.7, onTime = (0.7/1.0)*0.5 = 0.35
-      Expected_On_Time_Off_Pulsing : constant Packed_F32x8.T := [0.25, 0.35, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+      -- thrusters 2-7: force=0.0 + maxThrust(1.0) = 1.0, onTime = (1.0/1.0)*0.5 = 0.5,
+      -- which reaches the control period and saturates. Off-pulsing holds an
+      -- uncommanded thruster full on, so a zero force is a full-duty request.
+      Expected_On_Time_Off_Pulsing : constant Packed_F32x8.T := [0.25, 0.35, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5];
 
       Output : Thr_On_Time_Cmd.T;
    begin
@@ -82,10 +83,8 @@ package body Thr_Firing_Remainder_Tests.Implementation is
       T.Component_Instance.Init;
       T.Component_Instance.Set_Up;
 
-      -- Configure thrusters
-      T.Component_Instance.Configure_Thrusters (Num_Thrusters => Thr_Count, Max_Thrust => Max_Thrust);
-
       -- Stage and apply parameters
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Thrust (Max_Thrust)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thr_Min_Fire_Time (Min_Fire_Time)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Period (Control_Period_Param)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.On_Time_Saturation_Factor (Saturation_Factor)), Success);
@@ -131,10 +130,8 @@ package body Thr_Firing_Remainder_Tests.Implementation is
       T.Component_Instance.Init;
       T.Component_Instance.Set_Up;
 
-      -- Configure thrusters
-      T.Component_Instance.Configure_Thrusters (Num_Thrusters => Thr_Count, Max_Thrust => Max_Thrust);
-
       -- Stage and apply parameters with OFF_PULSING regime
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Thrust (Max_Thrust)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thr_Min_Fire_Time (Min_Fire_Time)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Period (Control_Period_Param)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.On_Time_Saturation_Factor (Saturation_Factor)), Success);
@@ -218,6 +215,7 @@ package body Thr_Firing_Remainder_Tests.Implementation is
       -- rejection can only come from the single field that was perturbed.
       procedure Stage_Valid_Set is
       begin
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Thrust (Max_Thrust)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thr_Min_Fire_Time (Valid_Min_Fire_Time)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Period (Valid_Control_Period)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.On_Time_Saturation_Factor (Valid_Saturation_Factor)), Success);
@@ -243,6 +241,17 @@ package body Thr_Firing_Remainder_Tests.Implementation is
       -- An on-time saturation factor below one is rejected (must be finite and >= 1):
       Stage_Valid_Set;
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.On_Time_Saturation_Factor ((Value => 0.5))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- A zero maximum thrust is rejected. Every slot divides the requested force,
+      -- so a zero anywhere in the array would produce Inf or NaN on-times:
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Thrust ([0 => 0.0, others => 1.0])), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- A negative maximum thrust is rejected:
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Thrust ([0 => -1.0, others => 1.0])), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
 
       -- Restoring validity makes the set acceptable again, so the rejections above

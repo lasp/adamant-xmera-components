@@ -1,31 +1,32 @@
 --------------------------------------------------------------------------------
--- Thr_Firing_Remainder Component Implementation Spec
+-- Thr_Firing_Schmitt Component Implementation Spec
 --------------------------------------------------------------------------------
 
 -- Includes:
 with Packed_F32x8;
 with Tick;
-with Thr_Firing_Remainder_Algorithm_C; use Thr_Firing_Remainder_Algorithm_C;
+with Parameter_Update;
+with Thr_Firing_Schmitt_Algorithm_C; use Thr_Firing_Schmitt_Algorithm_C;
 
--- Thruster firing remainder algorithm converts thruster force commands to on-time
--- commands using pulse-width modulation with remainder tracking.
-package Component.Thr_Firing_Remainder.Implementation is
+-- Thruster firing Schmitt algorithm converts thruster force commands to on-time
+-- commands using Schmitt-trigger (hysteresis) pulse-width modulation.
+package Component.Thr_Firing_Schmitt.Implementation is
 
    -- The component class instance record:
-   type Instance is new Thr_Firing_Remainder.Base_Instance with private;
+   type Instance is new Thr_Firing_Schmitt.Base_Instance with private;
 
    --------------------------------------------------
    -- Subprogram for implementation init method:
    --------------------------------------------------
-   -- Initializes the thruster firing remainder algorithm.
+   -- Initializes the thruster firing Schmitt algorithm.
    overriding procedure Init (Self : in out Instance);
    not overriding procedure Destroy (Self : in out Instance);
 
 private
 
    -- The component class instance record:
-   type Instance is new Thr_Firing_Remainder.Base_Instance with record
-      Alg : Thr_Firing_Remainder_Algorithm_Access := null;
+   type Instance is new Thr_Firing_Schmitt.Base_Instance with record
+      Alg : Thr_Firing_Schmitt_Algorithm_Access := null;
    end record;
 
    ---------------------------------------
@@ -35,7 +36,7 @@ private
    -- set up code. This method is generally called by the assembly
    -- main.adb after all component initialization and tasks have been started.
    -- Some activities need to only be run once at startup, but cannot be run
-   -- safely until everything is up and running, ie. command registration, initial
+   -- safely until everything is up and running, i.e. command registration, initial
    -- data product updates. This procedure should be implemented to do these things
    -- if necessary.
    overriding procedure Set_Up (Self : in out Instance) is null;
@@ -45,6 +46,9 @@ private
    ---------------------------------------
    -- Run the algorithm up to the current time.
    overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T);
+   -- Reset the algorithm's Schmitt-trigger hysteresis state. Called on GNC state
+   -- change.
+   overriding procedure Reset_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T);
    -- The parameter update connector.
    overriding procedure Parameter_Update_T_Modify (Self : in out Instance; Arg : in out Parameter_Update.T);
 
@@ -53,14 +57,12 @@ private
    ---------------------------------------
    -- This procedure is called when a Data_Product_T_Send message is dropped due to a full queue.
    overriding procedure Data_Product_T_Send_Dropped (Self : in out Instance; Arg : in Data_Product.T) is null;
-   -- This procedure is called when a Thr_On_Time_Cmd_T_Send message is dropped due to a full queue.
-   overriding procedure Thr_On_Time_Cmd_T_Send_Dropped (Self : in out Instance; Arg : in Thr_On_Time_Cmd.T) is null;
 
    -----------------------------------------------
    -- Parameter primitives:
    -----------------------------------------------
    -- Description:
-   --    Parameters for the Thr Firing Remainder component
+   --    Parameters for the Thr Firing Schmitt component
 
    -- Invalid parameter handler. This procedure is called when a parameter's type is found to be invalid:
    -- Null: the staging code rejects the value and returns an error status to the Parameters
@@ -82,6 +84,7 @@ private
    overriding function Validate_Parameters (
       Self : in out Instance;
       Max_Thrust : in Packed_F32x8.U;
+      Levels : in Levels_On_Off.U;
       Thr_Min_Fire_Time : in Packed_F32.U;
       Control_Period : in Packed_F32.U;
       On_Time_Saturation_Factor : in Packed_F32.U;
@@ -92,7 +95,7 @@ private
    -- Data dependency primitives:
    -----------------------------------------------
    -- Description:
-   --    Data dependencies for the Thr Firing Remainder component.
+   --    Data dependencies for the Thr Firing Schmitt component.
    -- Function which retrieves a data dependency.
    -- The default implementation is to simply call the Data_Product_Fetch_T_Request connector. Change the implementation if this component
    -- needs to do something different.
@@ -101,4 +104,4 @@ private
    -- Invalid data dependency handler. This procedure is called when a data dependency's id or length are found to be invalid:
    overriding procedure Invalid_Data_Dependency (Self : in out Instance; Id : in Data_Product_Types.Data_Product_Id; Ret : in Data_Product_Return.T);
 
-end Component.Thr_Firing_Remainder.Implementation;
+end Component.Thr_Firing_Schmitt.Implementation;

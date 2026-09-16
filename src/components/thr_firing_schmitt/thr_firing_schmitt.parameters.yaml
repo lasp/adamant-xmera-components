@@ -1,10 +1,14 @@
 ---
-description: Parameters for the Thr Firing Remainder component
+description: Parameters for the Thr Firing Schmitt component
 parameters:
   - name: Max_Thrust
     description: "[N] Per-thruster maximum thrust. Every entry must be finite and greater than zero."
     type: Packed_F32x8.T
     default: "[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]"
+  - name: Levels
+    description: "[-] Schmitt-trigger ON and OFF duty cycle fractions"
+    type: Levels_On_Off.T
+    default: "(Level_On => 0.75, Level_Off => 0.25)"
   - name: Thr_Min_Fire_Time
     description: "[s] Minimum thruster fire time"
     type: Packed_F32.T
