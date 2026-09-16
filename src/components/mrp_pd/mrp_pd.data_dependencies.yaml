@@ -1,0 +1,6 @@
+---
+description: Data dependencies for the Mrp Pd component.
+data_dependencies:
+  - name: Attitude_Guidance
+    type: Att_Guid.T
+    description: Attitude and rate tracking errors and the reference angular acceleration

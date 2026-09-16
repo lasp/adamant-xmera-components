@@ -1,0 +1,6 @@
+---
+description: Data products for the Mrp Pd component.
+data_products:
+  - name: Control_Torque
+    type: Cmd_Torque_Body.T
+    description: Commanded control torque in body frame components.
