@@ -2,7 +2,6 @@
 -- Thr_Firing_Remainder Tests Body
 --------------------------------------------------------------------------------
 
-with Packed_F32x8;
 with Basic_Assertions; use Basic_Assertions;
 with Thr_On_Time_Cmd;
 with Thr_On_Time_Cmd.Assertion; use Thr_On_Time_Cmd.Assertion;

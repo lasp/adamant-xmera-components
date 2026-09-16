@@ -56,13 +56,16 @@ package body Component.Thr_Firing_Remainder.Implementation is
       Force_Status : constant Data_Dependency_Status.E :=
          Self.Get_Thruster_Force_Cmd (Value => Force_Dep, Stale_Reference => Arg.Time);
       pragma Assert (Force_Status = Success);
+
+      -- The force command and the algorithm's input share the mission thruster
+      -- count, so the dependency crosses the FFI boundary unpacked, with no
+      -- intermediate array.
+      Force_C : aliased constant Thr_Force_Cmd.C.U_C := Thr_Force_Cmd.C.Unpack (Force_Dep);
    begin
       -- Update the parameters:
       Self.Update_Parameters;
 
       declare
-         Force_C : aliased Thr_Force_Cmd.C.U_C :=
-            Thr_Force_Cmd.C.To_C (Thr_Force_Cmd.Unpack (Force_Dep));
          On_Time_Result : constant Thr_On_Time_Cmd.T :=
             Thr_On_Time_Cmd.C.Pack (Update (Self.Alg, Force_C'Access));
       begin
