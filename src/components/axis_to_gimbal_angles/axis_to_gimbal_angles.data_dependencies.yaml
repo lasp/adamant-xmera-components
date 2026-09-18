@@ -1,0 +1,6 @@
+---
+description: Data dependencies for the Axis To Gimbal Angles component.
+data_dependencies:
+  - name: Thrust_Direction
+    type: Packed_F32x3.T
+    description: "[-] Commanded thrust direction in body frame components. Need not be unit length. An all-zero vector leaves the gimbal at neutral."

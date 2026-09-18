@@ -1,0 +1,19 @@
+---
+description: Axis to gimbal angles. Maps a commanded body frame thrust direction onto the two gimbal angles that place the gimbal thrust axis on it. A request beyond the travel of the mechanism is pulled back onto the cone of the largest deflection, and a request with no direction leaves the gimbal at neutral. Wraps the AxisToGimbalAnglesAlgorithm C++ algorithm via its C shim.
+execution: passive
+init:
+  description: Initializes the axis to gimbal angles algorithm with the default parameter values.
+connectors:
+  - description: Run the algorithm up to the current time.
+    type: Tick.T
+    kind: recv_sync
+  - description: Fetch a data product item from the database.
+    type: Data_Product_Fetch.T
+    return_type: Data_Product_Return.T
+    kind: request
+  - description: The data product invoker connector
+    type: Data_Product.T
+    kind: send
+  - description: The parameter update connector.
+    type: Parameter_Update.T
+    kind: modify
