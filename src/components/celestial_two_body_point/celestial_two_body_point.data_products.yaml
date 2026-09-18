@@ -1,0 +1,6 @@
+---
+description: Data products for the Celestial Two Body Point component.
+data_products:
+  - name: Attitude_Reference
+    type: Att_Ref.T
+    description: Two body pointing attitude reference. All three fields are zero when either celestial body is at the spacecraft position, or when the bodies are aligned and the orbit normal is undefined.
