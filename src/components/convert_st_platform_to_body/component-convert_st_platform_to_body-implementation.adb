@@ -68,7 +68,7 @@ package body Component.Convert_St_Platform_To_Body.Implementation is
       -- Call the C algorithm and publish the resulting body-frame attitude:
       Self.Data_Product_T_Send (Self.Data_Products.Star_Tracker_Body_Attitude (
          Arg.Time,
-         St_Att.Pack (St_Att.C.To_Ada (Update (Self.Alg, Measurement => Measurement_C'Access)))
+         St_Att.C.Pack (Update (Self.Alg, Measurement => Measurement_C'Access))
       ));
    end Tick_T_Recv_Sync;
 

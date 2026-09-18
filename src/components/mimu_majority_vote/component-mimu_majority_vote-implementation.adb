@@ -115,7 +115,7 @@ package body Component.Mimu_Majority_Vote.Implementation is
          -- Publish result with independent gyro and accel votes:
          Self.Data_Product_T_Send (Self.Data_Products.Majority_Vote_Result (
             Arg.Time,
-            Mimu_Majority_Vote_Output.Pack (Mimu_Majority_Vote_Output.C.To_Ada (Result))
+            Mimu_Majority_Vote_Output.C.Pack (Result)
          ));
       end;
    end Tick_T_Recv_Sync;

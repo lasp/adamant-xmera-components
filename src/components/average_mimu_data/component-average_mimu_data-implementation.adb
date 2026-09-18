@@ -50,7 +50,7 @@ package body Component.Average_Mimu_Data.Implementation is
          begin
             Pkt.Is_Valid := 1;
             Pkt.Meas_Time := Arg.Meas_Time;
-            Pkt.Samples := Mimu_Sample_X10.C.To_C (Mimu_Sample_X10.Unpack (Arg.Samples));
+            Pkt.Samples := Mimu_Sample_X10.C.Unpack (Arg.Samples);
          end;
          Self.Packet_Count := Self.Packet_Count + 1;
       end if;

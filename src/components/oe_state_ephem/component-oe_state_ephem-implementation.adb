@@ -169,7 +169,7 @@ package body Component.Oe_State_Ephem.Implementation is
       begin
          Self.Data_Product_T_Send (Self.Data_Products.Ephemeris_State (
             Arg.Time,
-            Cartesian_State.Pack (Cartesian_State.C.To_Ada (Result))
+            Cartesian_State.C.Pack (Result)
          ));
       end;
    end Tick_T_Recv_Sync;
