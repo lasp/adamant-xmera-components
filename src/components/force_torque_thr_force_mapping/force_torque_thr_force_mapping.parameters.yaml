@@ -1,6 +1,10 @@
 ---
 description: Parameters for the Force Torque Thr Force Mapping component
 parameters:
+  - name: Num_Thrusters
+    description: "[-] Number of configured thrusters. Must be in [1, 8]. Only the first Num_Thrusters entries of the geometry take part in the mapping."
+    type: Packed_U32.T
+    default: "(Value => 8)"
   - name: R_Thruster_B
     description: "[m] Per-thruster locations in the body frame, 3 components per thruster in row major order."
     type: Packed_F32x24.T

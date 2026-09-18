@@ -7,6 +7,7 @@ with Desired_Control_Axes;
 with Force_Torque_Thr_Force_Mapping_Enums;
 with Force_Torque_Thr_Force_Mapping_Parameters;
 with Packed_F32x3;
+with Packed_U32;
 with Packed_F32x8;
 with Thruster_Availability_X8;
 with Packed_F32x24;
@@ -49,6 +50,8 @@ package body Force_Torque_Thr_Force_Mapping_Tests.Implementation is
    All_Axes : constant Desired_Control_Axes.T :=
       (Torque_X => True, Torque_Y => True, Torque_Z => True,
        Force_X => True, Force_Y => True, Force_Z => True);
+   -- The full complement the default geometry configures.
+   All_Thrusters : constant Packed_U32.T := (Value => 8);
    All_Available : constant Thruster_Availability_X8.T :=
       [others => Force_Torque_Thr_Force_Mapping_Enums.Device_Availability.Available];
 
@@ -291,6 +294,7 @@ package body Force_Torque_Thr_Force_Mapping_Tests.Implementation is
 
       procedure Stage_Valid_Set is
       begin
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Num_Thrusters (All_Thrusters)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.R_Thruster_B (Default_Positions)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.T_Hat_Thruster_B (Default_Directions)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Center_Of_Mass_B (Origin)), Success);
@@ -336,6 +340,17 @@ package body Force_Torque_Thr_Force_Mapping_Tests.Implementation is
          T.Stage_Parameter (Params.R_Thruster_B (Ill_Conditioned_Positions)), Success);
       Parameter_Update_Status_Assert.Eq (
          T.Stage_Parameter (Params.T_Hat_Thruster_B (Ill_Conditioned_Directions)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- A thruster count outside [1, MAX_EFF_CNT] is rejected at both ends:
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (
+         T.Stage_Parameter (Params.Num_Thrusters ((Value => 0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (
+         T.Stage_Parameter (Params.Num_Thrusters ((Value => 9))), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
 
       -- Selecting no control axis is rejected on an otherwise valid set:

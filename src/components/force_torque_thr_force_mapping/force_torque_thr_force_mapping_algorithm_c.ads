@@ -59,6 +59,8 @@ package Force_Torque_Thr_Force_Mapping_Algorithm_C is
    type Force_Torque_Thr_Force_Mapping_Algorithm_Access is access all Force_Torque_Thr_Force_Mapping_Algorithm;
 
    --* @brief Report whether a configuration would be accepted by Create/Set_Config.
+   --* @param Num_Thrusters         Number of configured thrusters, in [1, MAX_EFF_CNT]. Only the
+   --* first Num_Thrusters entries of the geometry take part in the mapping.
    --* @param R_Thruster_B          Thruster locations in the body frame, three components per
    --* thruster in row major order.
    --* @param T_Hat_Thruster_B      Thrust directions in the body frame, three components per
@@ -70,7 +72,8 @@ package Force_Torque_Thr_Force_Mapping_Algorithm_C is
    --* @return True if the configuration is valid. Never throws, so it can guard the
    --* throwing Create/Set_Config from an invalid configuration.
    function Validate_Config
-     (R_Thruster_B           : access constant Thruster_Geometry_Array.C.U_C;
+     (Num_Thrusters          : Unsigned_32;
+      R_Thruster_B           : access constant Thruster_Geometry_Array.C.U_C;
       T_Hat_Thruster_B       : access constant Thruster_Geometry_Array.C.U_C;
       Center_Of_Mass_B       : access constant Packed_F32x3_Record.C.U_C;
       Desired_Control_Axes_B : access constant Desired_Control_Axes.C.U_C;
@@ -82,6 +85,8 @@ package Force_Torque_Thr_Force_Mapping_Algorithm_C is
 
    --* @brief Construct a new ForceTorqueThrForceMappingAlgorithm from a configuration.
    --* Validate the values with Validate_Config before calling; throws on invalid input.
+   --* @param Num_Thrusters         Number of configured thrusters, in [1, MAX_EFF_CNT]. Only the
+   --* first Num_Thrusters entries of the geometry take part in the mapping.
    --* @param R_Thruster_B          Thruster locations to install.
    --* @param T_Hat_Thruster_B      Thrust directions to install.
    --* @param Center_Of_Mass_B      Center of mass to install.
@@ -90,7 +95,8 @@ package Force_Torque_Thr_Force_Mapping_Algorithm_C is
    --* left out of the mapping. A minimum of one must be available.
    --* @return The new algorithm instance, which must be released with Destroy.
    function Create
-     (R_Thruster_B           : access constant Thruster_Geometry_Array.C.U_C;
+     (Num_Thrusters          : Unsigned_32;
+      R_Thruster_B           : access constant Thruster_Geometry_Array.C.U_C;
       T_Hat_Thruster_B       : access constant Thruster_Geometry_Array.C.U_C;
       Center_Of_Mass_B       : access constant Packed_F32x3_Record.C.U_C;
       Desired_Control_Axes_B : access constant Desired_Control_Axes.C.U_C;
@@ -111,6 +117,8 @@ package Force_Torque_Thr_Force_Mapping_Algorithm_C is
    --* @brief Apply a new configuration and recompute the thruster mapping matrix.
    --* Validate the values with Validate_Config before calling; throws on invalid input.
    --* @param Self                  The algorithm instance.
+   --* @param Num_Thrusters         Number of configured thrusters, in [1, MAX_EFF_CNT]. Only the
+   --* first Num_Thrusters entries of the geometry take part in the mapping.
    --* @param R_Thruster_B          Thruster locations to install.
    --* @param T_Hat_Thruster_B      Thrust directions to install.
    --* @param Center_Of_Mass_B      Center of mass to install.
@@ -119,6 +127,7 @@ package Force_Torque_Thr_Force_Mapping_Algorithm_C is
    --* left out of the mapping. A minimum of one must be available.
    procedure Set_Config
      (Self                   : Force_Torque_Thr_Force_Mapping_Algorithm_Access;
+      Num_Thrusters          : Unsigned_32;
       R_Thruster_B           : access constant Thruster_Geometry_Array.C.U_C;
       T_Hat_Thruster_B       : access constant Thruster_Geometry_Array.C.U_C;
       Center_Of_Mass_B       : access constant Packed_F32x3_Record.C.U_C;

@@ -70,6 +70,7 @@ private
    -- This function is called when the parameter operation type is "Validate".
    overriding function Validate_Parameters (
       Self : in out Instance;
+      Num_Thrusters : in Packed_U32.U;
       R_Thruster_B : in Packed_F32x24.U;
       T_Hat_Thruster_B : in Packed_F32x24.U;
       Center_Of_Mass_B : in Packed_F32x3.U;

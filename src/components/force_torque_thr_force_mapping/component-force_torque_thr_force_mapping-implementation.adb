@@ -31,6 +31,7 @@ package body Component.Force_Torque_Thr_Force_Mapping.Implementation is
          Thruster_Availability_Array.C.To_C ((Value => Self.Thruster_Availability));
    begin
       Self.Alg := Create (
+         Num_Thrusters          => Self.Num_Thrusters.Value,
          R_Thruster_B           => R_Thruster_C'Access,
          T_Hat_Thruster_B       => T_Hat_Thruster_C'Access,
          Center_Of_Mass_B       => Center_Of_Mass_C'Access,
@@ -111,6 +112,7 @@ package body Component.Force_Torque_Thr_Force_Mapping.Implementation is
    begin
       Set_Config (
          Self.Alg,
+         Num_Thrusters          => Self.Num_Thrusters.Value,
          R_Thruster_B           => R_Thruster_C'Access,
          T_Hat_Thruster_B       => T_Hat_Thruster_C'Access,
          Center_Of_Mass_B       => Center_Of_Mass_C'Access,
@@ -124,6 +126,7 @@ package body Component.Force_Torque_Thr_Force_Mapping.Implementation is
    -- the throwing Create/Set_Config across the FFI boundary.
    overriding function Validate_Parameters (
       Self : in out Instance;
+      Num_Thrusters : in Packed_U32.U;
       R_Thruster_B : in Packed_F32x24.U;
       T_Hat_Thruster_B : in Packed_F32x24.U;
       Center_Of_Mass_B : in Packed_F32x3.U;
@@ -143,6 +146,7 @@ package body Component.Force_Torque_Thr_Force_Mapping.Implementation is
          Thruster_Availability_Array.C.To_C ((Value => Thruster_Availability));
    begin
       if Validate_Config (
+            Num_Thrusters          => Num_Thrusters.Value,
             R_Thruster_B           => R_Thruster_C'Access,
             T_Hat_Thruster_B       => T_Hat_Thruster_C'Access,
             Center_Of_Mass_B       => Center_Of_Mass_C'Access,
