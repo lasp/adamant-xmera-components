@@ -53,7 +53,7 @@ package body Component.Attitude_Tracking_Error.Implementation is
          Sigma_Bn => Packed_F32x3.C.Unpack (Nav.Sigma_Bn),
          Omega_Bn_B => Packed_F32x3.C.Unpack (Nav.Omega_Bn_B)
       );
-      Ref_C : constant Att_Ref.C.U_C := Att_Ref.C.To_C (Att_Ref.Unpack (Ref));
+      Ref_C : constant Att_Ref.C.U_C := Att_Ref.C.Unpack (Ref);
 
       -- Call algorithm (pass by value):
       Guid : constant Att_Guid.C.U_C := Update (
@@ -65,7 +65,7 @@ package body Component.Attitude_Tracking_Error.Implementation is
       -- Send out data product:
       Self.Data_Product_T_Send (Self.Data_Products.Attitude_Guidance (
          Arg.Time,
-         Att_Guid.Pack (Att_Guid.C.To_Ada (Guid))
+         Att_Guid.C.Pack (Guid)
       ));
    end Tick_T_Recv_Sync;
 

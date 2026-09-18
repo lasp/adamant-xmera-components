@@ -94,10 +94,10 @@ package body Component.Ephemerides_Recenter.Implementation is
 
       declare
          -- Convert Ada Cartesian_State.T to its C-compatible form for each body.
-         Body_0_C : constant Cartesian_State.C.U_C := Cartesian_State.C.To_C (Cartesian_State.Unpack (Body_0_State));
-         Body_1_C : constant Cartesian_State.C.U_C := Cartesian_State.C.To_C (Cartesian_State.Unpack (Body_1_State));
-         Body_2_C : constant Cartesian_State.C.U_C := Cartesian_State.C.To_C (Cartesian_State.Unpack (Body_2_State));
-         Body_3_C : constant Cartesian_State.C.U_C := Cartesian_State.C.To_C (Cartesian_State.Unpack (Body_3_State));
+         Body_0_C : constant Cartesian_State.C.U_C := Cartesian_State.C.Unpack (Body_0_State);
+         Body_1_C : constant Cartesian_State.C.U_C := Cartesian_State.C.Unpack (Body_1_State);
+         Body_2_C : constant Cartesian_State.C.U_C := Cartesian_State.C.Unpack (Body_2_State);
+         Body_3_C : constant Cartesian_State.C.U_C := Cartesian_State.C.Unpack (Body_3_State);
 
          -- Build the bounded-array input record in a single aggregate. The C
          -- shim reads all 20 entries; trailing entries are zero-padded. Spice
@@ -168,7 +168,7 @@ package body Component.Ephemerides_Recenter.Implementation is
                Velocity => Out_Body.Output_V
             );
          begin
-            return Cartesian_State.Pack (Cartesian_State.C.To_Ada (Out_State_C));
+            return Cartesian_State.C.Pack (Out_State_C);
          end Build_Output_State;
       begin
          -- Send out a recentered Cartesian state data product for every body.
