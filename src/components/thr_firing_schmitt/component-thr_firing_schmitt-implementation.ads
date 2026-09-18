@@ -18,8 +18,9 @@ package Component.Thr_Firing_Schmitt.Implementation is
    --------------------------------------------------
    -- Subprogram for implementation init method:
    --------------------------------------------------
-   -- Initializes the thruster firing Schmitt algorithm.
-   overriding procedure Init (Self : in out Instance);
+   -- Initializes the thruster firing Schmitt algorithm with the control period and the default parameter
+   -- values.
+   overriding procedure Init (Self : in out Instance; Control_Period : in Basic_Types.Positive_Short_Float);
    not overriding procedure Destroy (Self : in out Instance);
 
 private
@@ -27,6 +28,10 @@ private
    -- The component class instance record:
    type Instance is new Thr_Firing_Schmitt.Base_Instance with record
       Alg : Thr_Firing_Schmitt_Algorithm_Access := null;
+      -- [s] Time between two algorithm updates, supplied by the assembly at
+      -- initialization. The default keeps the configuration valid for the generated
+      -- parameter default check, which runs before Init.
+      Control_Period : Basic_Types.Positive_Short_Float := 0.2;
    end record;
 
    ---------------------------------------
@@ -86,7 +91,6 @@ private
       Max_Thrust : in Packed_F32x8.U;
       Levels : in Levels_On_Off.U;
       Thr_Min_Fire_Time : in Packed_F32.U;
-      Control_Period : in Packed_F32.U;
       On_Time_Saturation_Factor : in Packed_F32.U;
       Thrust_Pulsing_Regime : in Packed_Pulsing_Regime.U
    ) return Parameter_Validation_Status.E;

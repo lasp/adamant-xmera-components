@@ -13,10 +13,6 @@ parameters:
     description: "[s] Minimum thruster fire time"
     type: Packed_F32.T
     default: "(Value => 0.02)"
-  - name: Control_Period
-    description: "[s] Control period for thruster firing"
-    type: Packed_F32.T
-    default: "(Value => 0.2)"
   - name: On_Time_Saturation_Factor
     description: "On-time saturation factor"
     type: Packed_F32.T

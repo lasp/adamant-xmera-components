@@ -2,7 +2,11 @@
 description: Thruster firing Schmitt algorithm converts thruster force commands to on-time commands using Schmitt-trigger (hysteresis) pulse-width modulation.
 execution: passive
 init:
-  description: Initializes the thruster firing Schmitt algorithm.
+  description: Initializes the thruster firing Schmitt algorithm with the control period and the default parameter values.
+  parameters:
+    - name: Control_Period
+      type: Basic_Types.Positive_Short_Float
+      description: "[s] Time between two algorithm updates. Fixed by the rate at which the assembly schedules the component, so it is not a runtime parameter. The type keeps it greater than zero."
 connectors:
   - description: Run the algorithm up to the current time.
     type: Tick.T
