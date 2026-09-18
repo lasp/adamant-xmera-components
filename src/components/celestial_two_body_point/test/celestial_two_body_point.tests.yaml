@@ -1,0 +1,9 @@
+---
+description: This is a unit test suite for the Celestial Two Body Point component
+tests:
+  - name: Test
+    description: Run the geometry of the Python reference test to ensure the Ada to C to C++ integration is sound.
+  - name: Test_Invalid_Parameter
+    description: Ensure a staged configuration the algorithm would reject is refused at validation.
+  - name: Test_Invalid_Data_Dependency
+    description: Ensure a data dependency with the wrong identifier is treated as a wiring defect and fails the tick's assertion.
