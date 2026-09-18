@@ -1,0 +1,6 @@
+---
+description: Data products for the Sun Avoidance component.
+data_products:
+  - name: Attitude_Reference
+    type: Att_Ref.T
+    description: The input attitude reference rotated by the remaining slew, with the slew rate added to the reference rate while the slew is in progress.

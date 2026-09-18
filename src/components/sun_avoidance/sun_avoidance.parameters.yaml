@@ -1,0 +1,11 @@
+---
+description: Parameters for the Sun Avoidance component.
+parameters:
+  - name: Sensitive_Hat_B
+    description: "[-] Body frame unit vector to keep away from the Sun during the slew. Must be finite and within 1e-3 of unit length."
+    type: Packed_F32x3.T
+    default: "[0.0, 0.0, 1.0]"
+  - name: Slew_Rate
+    description: "[rad/s] Rate at which the slew toward the input reference is fed forward. Must be finite and greater than zero."
+    type: Packed_F32.T
+    default: "(Value => 0.017453292)"
