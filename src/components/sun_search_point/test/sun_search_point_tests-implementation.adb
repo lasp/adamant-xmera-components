@@ -7,7 +7,6 @@ with Basic_Assertions; use Basic_Assertions;
 with Basic_Types;
 with Packed_Observation_Threshold;
 with Parameter;
-with Packed_F32;
 with Packed_F32x3;
 with Packed_F32x3.Assertion; use Packed_F32x3.Assertion;
 with Packed_Sun_Search_Status.Assertion; use Packed_Sun_Search_Status.Assertion;
@@ -45,7 +44,7 @@ package body Sun_Search_Point_Tests.Implementation is
 
    -- Half-second control period against one-second rotations: two ticks per rotation,
    -- and the whole four-second sequence elapses on the ninth tick.
-   Test_Control_Period : constant Packed_F32.T := (Value => 0.5);
+   Test_Control_Period : constant Short_Float := 0.5;
    Test_Observation_Threshold : constant Packed_Observation_Threshold.T := (Value => 4);
 
    Zero_Vector : constant Packed_F32x3.T := [0.0, 0.0, 0.0];
@@ -75,7 +74,6 @@ package body Sun_Search_Point_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Sun_Axis_Spin_Rate ((Value => 0.0))), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Omega_Rn_B_Cfg (Zero_Vector)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Observation_Threshold (Test_Observation_Threshold)), Success);
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Period (Test_Control_Period)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
    end Apply_Test_Parameters;
 
@@ -127,7 +125,7 @@ package body Sun_Search_Point_Tests.Implementation is
       Self.Tester.Connect;
 
       -- Call component init here.
-      Self.Tester.Component_Instance.Init;
+      Self.Tester.Component_Instance.Init (Control_Period => Test_Control_Period);
 
       -- Call the component set up method that the assembly would normally call.
       Self.Tester.Component_Instance.Set_Up;
@@ -241,7 +239,6 @@ package body Sun_Search_Point_Tests.Implementation is
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Sun_Axis_Spin_Rate ((Value => 0.0))), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Omega_Rn_B_Cfg (Zero_Vector)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Observation_Threshold (Test_Observation_Threshold)), Success);
-         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Period (Test_Control_Period)), Success);
       end Stage_Valid_Set;
 
    begin
@@ -268,16 +265,6 @@ package body Sun_Search_Point_Tests.Implementation is
       Stage_Valid_Set;
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.S_Hat_Bdy_Cmd ([2.0, 0.0, 0.0])), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
-
-      -- A control period of zero is rejected (must be finite and > 0):
-      Stage_Valid_Set;
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Period ((Value => 0.0))), Success);
-      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
-
-      Stage_Valid_Set;
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Period ((Value => -0.5))), Success);
-      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
-
       -- A non-finite fallback rate is rejected. The value is injected as raw bytes because
       -- the compiler will not let a non-finite Short_Float be written as a literal, and
       -- because that is how one would arrive: as bytes from the ground.
