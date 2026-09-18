@@ -1,0 +1,5 @@
+---
+description: Availability of each of the four reaction wheels, packed as 2-bit enumerations. Values outside the enumeration fail type validation during parameter staging.
+type: Mrp_Feedback_Enums.Wheel_Availability.E
+format: E2
+length: 4
