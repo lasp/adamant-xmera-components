@@ -11,12 +11,14 @@ package body Component.Sun_Search_Point.Implementation is
    --------------------------------------------------
    -- Subprogram for implementation init method:
    --------------------------------------------------
-   -- Initializes the sun search point algorithm.
-   overriding procedure Init (Self : in out Instance) is
+   -- Initializes the sun search point algorithm with the control period and the default parameter
+   -- values.
+   overriding procedure Init (Self : in out Instance; Control_Period : in Basic_Types.Positive_Short_Float) is
       -- Create takes the rotation sequence by pointer, so it needs an object to point at.
       Rotations_C : aliased constant Rotation_Properties_X4_Record.C.U_C :=
          Rotation_Properties_X4_Record.C.To_C (Self.Rotations);
    begin
+      Self.Control_Period := Control_Period;
       -- Create throws on an invalid configuration, so the parameter defaults must form a
       -- valid one. The generated Assert_Valid_Parameter_Defaults checks them at startup
       -- and in unit test set up.
@@ -26,7 +28,7 @@ package body Component.Sun_Search_Point.Implementation is
          Sun_Axis_Spin_Rate    => Self.Sun_Axis_Spin_Rate.Value,
          Omega_Rn_B            => (Value => Packed_F32x3.C.To_C (Self.Omega_Rn_B_Cfg)),
          Observation_Threshold => Unsigned_32 (Self.Observation_Threshold.Value),
-         Control_Period        => Self.Control_Period.Value);
+         Control_Period        => Self.Control_Period);
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -120,7 +122,7 @@ package body Component.Sun_Search_Point.Implementation is
          Sun_Axis_Spin_Rate    => Self.Sun_Axis_Spin_Rate.Value,
          Omega_Rn_B            => (Value => Packed_F32x3.C.To_C (Self.Omega_Rn_B_Cfg)),
          Observation_Threshold => Unsigned_32 (Self.Observation_Threshold.Value),
-         Control_Period        => Self.Control_Period.Value);
+         Control_Period        => Self.Control_Period);
    end Update_Parameters_Action;
 
    -- Validate a staged parameter set before it is applied by asking the algorithm's own
@@ -133,10 +135,8 @@ package body Component.Sun_Search_Point.Implementation is
       S_Hat_Bdy_Cmd : in Packed_F32x3.U;
       Sun_Axis_Spin_Rate : in Packed_F32.U;
       Omega_Rn_B_Cfg : in Packed_F32x3.U;
-      Observation_Threshold : in Packed_Observation_Threshold.U;
-      Control_Period : in Packed_F32.U
+      Observation_Threshold : in Packed_Observation_Threshold.U
    ) return Parameter_Validation_Status.E is
-      Ignore : Instance renames Self;
       -- Validate_Config takes the rotation sequence by pointer, so it needs an object to point at.
       Rotations_C : aliased constant Rotation_Properties_X4_Record.C.U_C :=
          Rotation_Properties_X4_Record.C.To_C (Rotations);
@@ -147,7 +147,7 @@ package body Component.Sun_Search_Point.Implementation is
             Sun_Axis_Spin_Rate    => Sun_Axis_Spin_Rate.Value,
             Omega_Rn_B            => (Value => Packed_F32x3.C.To_C (Omega_Rn_B_Cfg)),
             Observation_Threshold => Unsigned_32 (Observation_Threshold.Value),
-            Control_Period        => Control_Period.Value)
+            Control_Period        => Self.Control_Period)
       then
          return Parameter_Validation_Status.Valid;
       else

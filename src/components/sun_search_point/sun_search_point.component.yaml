@@ -2,7 +2,11 @@
 description: Safe-mode sun search and pointing guidance. Runs a scripted sun-search rotation sequence, then transitions to closed-loop sun pointing once the sun is acquired or the sequence elapses.
 execution: passive
 init:
-  description: Initializes the sun search point algorithm.
+  description: Initializes the sun search point algorithm with the control period and the default parameter values.
+  parameters:
+    - name: Control_Period
+      type: Basic_Types.Positive_Short_Float
+      description: "[s] Time between two algorithm updates. Fixed by the rate at which the assembly schedules the component, so it is not a runtime parameter. The type keeps it greater than zero."
 connectors:
   - description: Run the algorithm up to the current time.
     type: Tick.T
