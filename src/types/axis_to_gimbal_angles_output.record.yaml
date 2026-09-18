@@ -1,0 +1,19 @@
+---
+#  typedef struct {
+#      float gimbalAngle1;   /*!< [rad] inclination of the thrust axis projected into the mount y-z plane */
+#      float gimbalAngle2;   /*!< [rad] inclination of the thrust axis projected into the mount x-z plane */
+#      float thrustHat_B[3]; /*!< [-] unit thrust direction the gimbal angles achieve, body frame */
+#  } AxisToGimbalAnglesOutput_c;
+description: Output of the AxisToGimbalAnglesAlgorithm C shim. Maps to AxisToGimbalAnglesOutput_c. The two gimbal angles and the thrust direction they achieve.
+fields:
+  - name: Gimbal_Angle_1
+    type: Short_Float
+    format: F32
+    description: "[rad] Inclination of the thrust axis projected into the mount y-z plane."
+  - name: Gimbal_Angle_2
+    type: Short_Float
+    format: F32
+    description: "[rad] Inclination of the thrust axis projected into the mount x-z plane."
+  - name: Thrust_Hat_B
+    type: Packed_F32x3.T
+    description: "[-] Unit thrust direction the gimbal angles achieve, body frame components."
