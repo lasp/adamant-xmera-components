@@ -1,0 +1,19 @@
+---
+description: Thrust vectoring. Computes the unit direction of a fixed magnitude thrust acting through a fixed point on the vehicle so that it produces the requested torque about the center of mass. The part of the request along the moment arm cannot be produced and is discarded, and a request beyond what the geometry can deliver saturates at the largest achievable torque. Wraps the ThrustVectoringAlgorithm C++ algorithm via its C shim.
+execution: passive
+init:
+  description: Initializes the thrust vectoring algorithm with the default parameter values.
+connectors:
+  - description: Run the algorithm up to the current time.
+    type: Tick.T
+    kind: recv_sync
+  - description: Fetch a data product item from the database.
+    type: Data_Product_Fetch.T
+    return_type: Data_Product_Return.T
+    kind: request
+  - description: The data product invoker connector
+    type: Data_Product.T
+    kind: send
+  - description: The parameter update connector.
+    type: Parameter_Update.T
+    kind: modify

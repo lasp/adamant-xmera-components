@@ -1,0 +1,15 @@
+---
+description: Parameters for the Thrust Vectoring component.
+parameters:
+  - name: R_Mb_B
+    description: "[m] Position of the thrust point M relative to the body frame origin, body frame components. Must be finite."
+    type: Packed_F32x3.T
+    default: "[0.0, 0.0, 1.0]"
+  - name: Thrust
+    description: "[N] Thrust magnitude. Must be finite and greater than zero."
+    type: Packed_F32.T
+    default: "(Value => 1.0)"
+  - name: R_Cb_B
+    description: "[m] Position of the center of mass relative to the body frame origin, body frame components. Must be finite and more than 1 mm from the thrust point."
+    type: Packed_F32x3.T
+    default: "[0.0, 0.0, 0.0]"
