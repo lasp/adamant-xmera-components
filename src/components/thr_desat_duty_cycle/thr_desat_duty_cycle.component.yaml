@@ -1,0 +1,23 @@
+---
+description: Thruster desaturation duty cycle gate. Passes the commanded thruster forces through for the first firing periods of every cycle and commands zero force for the remaining settling periods, giving the reaction wheels quiet windows to re-stabilize the attitude between desaturation pulses. The cadence is free-running and advances every tick. Wraps the ThrDesatDutyCycleAlgorithm C++ algorithm via its C shim.
+execution: passive
+init:
+  description: Initializes the duty cycle gate with the default parameter values.
+connectors:
+  - description: Run the algorithm up to the current time.
+    type: Tick.T
+    kind: recv_sync
+  - description: Restart the duty cycle at the beginning of its firing window. Called on GNC state change.
+    name: Reset_Tick_T_Recv_Sync
+    type: Tick.T
+    kind: recv_sync
+  - description: Fetch a data product item from the database.
+    type: Data_Product_Fetch.T
+    return_type: Data_Product_Return.T
+    kind: request
+  - description: The data product invoker connector
+    type: Data_Product.T
+    kind: send
+  - description: The parameter update connector.
+    type: Parameter_Update.T
+    kind: modify
