@@ -14,6 +14,8 @@ with Packed_F32x3_Record.C;
 with Packed_F32x8.C;
 with Packed_F32x24.C;
 with Thr_Force_Cmd.C;
+with Thruster_Availability_Array.C;
+with Thruster_Availability_X8.C;
 with Thruster_Geometry_Array.C;
 
 package Force_Torque_Thr_Force_Mapping_Algorithm_C is
@@ -44,6 +46,13 @@ package Force_Torque_Thr_Force_Mapping_Algorithm_C is
    pragma Assert (Unsigned_32 (Packed_F32x8.Length) = Get_Max_Thruster_Count);
    pragma Assert (Thr_Force_Cmd.C.U_C'Object_Size = Packed_F32x8.C.U_C'Object_Size);
    pragma Assert (Unsigned_32 (Thr_Force_Cmd.C.U_C'Object_Size / Short_Float'Object_Size) = Get_Max_Thruster_Count);
+   -- ThrusterAvailabilityArray_c: one uint8_t per thruster slot. The C
+   -- DeviceAvailability_c enum is int-sized, so the shim takes a uint8_t array
+   -- instead and converts; this pins the Ada side to that one-byte-per-slot layout.
+   pragma Assert (Unsigned_32 (Thruster_Availability_X8.Length) = Get_Max_Thruster_Count);
+   pragma Assert (Thruster_Availability_Array.C.U_C'Object_Size = Thruster_Availability_X8.C.U_C'Object_Size);
+   pragma Assert (Unsigned_32 (Thruster_Availability_Array.C.U_C'Object_Size / Unsigned_8'Object_Size) =
+      Get_Max_Thruster_Count);
 
    --* Opaque handle for a ForceTorqueThrForceMappingAlgorithm instance.
    type Force_Torque_Thr_Force_Mapping_Algorithm is limited private;
@@ -56,13 +65,16 @@ package Force_Torque_Thr_Force_Mapping_Algorithm_C is
    --* thruster in row major order; each must be a unit vector to within 1e-3.
    --* @param Center_Of_Mass_B      Center of mass in the body frame; must be finite.
    --* @param Desired_Control_Axes_B Per-axis controllability assertions.
+   --* @param Thruster_Availability  Per-thruster availability; an unavailable thruster is
+   --* left out of the mapping. A minimum of one must be available.
    --* @return True if the configuration is valid. Never throws, so it can guard the
    --* throwing Create/Set_Config from an invalid configuration.
    function Validate_Config
      (R_Thruster_B           : access constant Thruster_Geometry_Array.C.U_C;
       T_Hat_Thruster_B       : access constant Thruster_Geometry_Array.C.U_C;
       Center_Of_Mass_B       : access constant Packed_F32x3_Record.C.U_C;
-      Desired_Control_Axes_B : access constant Desired_Control_Axes.C.U_C)
+      Desired_Control_Axes_B : access constant Desired_Control_Axes.C.U_C;
+      Thruster_Availability  : access constant Thruster_Availability_Array.C.U_C)
      return Boolean
      with Import       => True,
           Convention   => C,
@@ -74,12 +86,15 @@ package Force_Torque_Thr_Force_Mapping_Algorithm_C is
    --* @param T_Hat_Thruster_B      Thrust directions to install.
    --* @param Center_Of_Mass_B      Center of mass to install.
    --* @param Desired_Control_Axes_B Per-axis controllability assertions.
+   --* @param Thruster_Availability  Per-thruster availability; an unavailable thruster is
+   --* left out of the mapping. A minimum of one must be available.
    --* @return The new algorithm instance, which must be released with Destroy.
    function Create
      (R_Thruster_B           : access constant Thruster_Geometry_Array.C.U_C;
       T_Hat_Thruster_B       : access constant Thruster_Geometry_Array.C.U_C;
       Center_Of_Mass_B       : access constant Packed_F32x3_Record.C.U_C;
-      Desired_Control_Axes_B : access constant Desired_Control_Axes.C.U_C)
+      Desired_Control_Axes_B : access constant Desired_Control_Axes.C.U_C;
+      Thruster_Availability  : access constant Thruster_Availability_Array.C.U_C)
      return Force_Torque_Thr_Force_Mapping_Algorithm_Access
      with Import       => True,
           Convention   => C,
@@ -100,18 +115,21 @@ package Force_Torque_Thr_Force_Mapping_Algorithm_C is
    --* @param T_Hat_Thruster_B      Thrust directions to install.
    --* @param Center_Of_Mass_B      Center of mass to install.
    --* @param Desired_Control_Axes_B Per-axis controllability assertions.
+   --* @param Thruster_Availability  Per-thruster availability; an unavailable thruster is
+   --* left out of the mapping. A minimum of one must be available.
    procedure Set_Config
      (Self                   : Force_Torque_Thr_Force_Mapping_Algorithm_Access;
       R_Thruster_B           : access constant Thruster_Geometry_Array.C.U_C;
       T_Hat_Thruster_B       : access constant Thruster_Geometry_Array.C.U_C;
       Center_Of_Mass_B       : access constant Packed_F32x3_Record.C.U_C;
-      Desired_Control_Axes_B : access constant Desired_Control_Axes.C.U_C)
+      Desired_Control_Axes_B : access constant Desired_Control_Axes.C.U_C;
+      Thruster_Availability  : access constant Thruster_Availability_Array.C.U_C)
      with Import       => True,
           Convention   => C,
           External_Name => "ForceTorqueThrForceMappingAlgorithm_setConfig";
 
    --* @brief Map the requested body torque and force onto per-thruster forces.
-   --* Every entry of the result is non-negative and shifted by the minimum.
+   --* Every entry of the result is non-negative; an unavailable thruster receives zero.
    --* @param Self        The algorithm instance.
    --* @param Cmd_Torque_B Requested control torque in the body frame.
    --* @param Cmd_Force_B  Requested control force in the body frame.

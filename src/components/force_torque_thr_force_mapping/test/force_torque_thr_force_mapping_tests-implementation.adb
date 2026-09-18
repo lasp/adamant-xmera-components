@@ -4,9 +4,11 @@
 
 with Basic_Assertions; use Basic_Assertions;
 with Desired_Control_Axes;
+with Force_Torque_Thr_Force_Mapping_Enums;
 with Force_Torque_Thr_Force_Mapping_Parameters;
 with Packed_F32x3;
 with Packed_F32x8;
+with Thruster_Availability_X8;
 with Packed_F32x24;
 with Parameter_Enums.Assertion;
 with Thr_Force_Cmd;
@@ -16,8 +18,11 @@ use Parameter_Enums.Parameter_Update_Status;
 package body Force_Torque_Thr_Force_Mapping_Tests.Implementation is
 
    -- The expected thruster forces below were computed from an independent
-   -- double-precision truncated-SVD pseudo-inverse of the control mapping matrix,
-   -- not from this algorithm. Epsilon is the fp32 agreement budget between the two.
+   -- single-precision truncated-SVD pseudo-inverse of the control mapping matrix,
+   -- not from this algorithm. The reference must use fp32, not fp64: the null-space
+   -- shift divides by an entry of the shift direction, so the entry it selects can
+   -- change with the precision, and the two would then clamp different thrusters.
+   -- Epsilon is the fp32 agreement budget between the two.
    Epsilon : constant Short_Float := 0.0001;
 
    -- The eight-thruster geometry the parameter defaults carry: two thrusters at
@@ -44,6 +49,8 @@ package body Force_Torque_Thr_Force_Mapping_Tests.Implementation is
    All_Axes : constant Desired_Control_Axes.T :=
       (Torque_X => True, Torque_Y => True, Torque_Z => True,
        Force_X => True, Force_Y => True, Force_Z => True);
+   All_Available : constant Thruster_Availability_X8.T :=
+      [others => Force_Torque_Thr_Force_Mapping_Enums.Device_Availability.Available];
 
    -- The default geometry mirrored through the body x axis. Still full rank with a
    -- condition number of 2, but it maps a given command onto different thrusters.
@@ -166,11 +173,11 @@ package body Force_Torque_Thr_Force_Mapping_Tests.Implementation is
    overriding procedure Test_Pure_Torque (Self : in out Instance) is
       T : Component.Force_Torque_Thr_Force_Mapping.Implementation.Tester.Instance_Access renames Self.Tester;
       Expected_Torque_X : constant Packed_F32x8.U :=
-         [0.0, 0.5, 0.166667, 0.166667, 0.208333, 0.375, 0.208333, 0.541667];
+         [0.0, 0.166667, 0.0, 0.0, 0.0, 0.166667, 0.0, 0.333333];
       Expected_Torque_Y : constant Packed_F32x8.U :=
-         [0.166667, 0.166667, 0.5, 0.0, 0.208333, 0.541667, 0.208333, 0.375];
+         [0.0, 0.0, 0.166667, 0.0, 0.0, 0.333333, 0.0, 0.166667];
       Expected_Torque_Z : constant Packed_F32x8.U :=
-         [0.166667, 0.166667, 0.333333, 0.333333, 0.0, 0.416667, 0.5, 0.083333];
+         [0.0, 0.0, 0.083333, 0.083333, 0.0, 0.416667, 0.5, 0.083333];
    begin
       T.Component_Instance.Init;
       T.Component_Instance.Set_Up;
@@ -185,11 +192,13 @@ package body Force_Torque_Thr_Force_Mapping_Tests.Implementation is
    overriding procedure Test_Pure_Force (Self : in out Instance) is
       T : Component.Force_Torque_Thr_Force_Mapping.Implementation.Tester.Instance_Access renames Self.Tester;
       Expected_Force_X : constant Packed_F32x8.U :=
-         [0.333333, 0.333333, 0.5, 0.0, 0.291667, 0.208333, 0.791667, 0.375];
+         [0.0, 0.0, 0.083333, 0.0, 0.083333, 0.0, 0.583333, 0.166667];
       Expected_Force_Y : constant Packed_F32x8.U :=
-         [0.791667, 0.291667, 0.458333, 0.458333, 0.0, 0.416667, 0.5, 0.583333];
-      Expected_Force_Z : constant Packed_F32x8.U :=
-         [0.5, 0.0, 0.0, 0.5, 0.5, 0.5, 0.5, 0.5];
+         [0.416667, 0.0, 0.083333, 0.083333, 0.0, 0.416667, 0.5, 0.583333];
+      -- No thrust direction in this layout has a +z component, so a +z force needs a
+      -- pulling thruster. The null-space shift cannot lift those entries, and the clamp
+      -- takes them to zero, which drops the command entirely.
+      Expected_Force_Z : constant Packed_F32x8.U := [others => 0.0];
    begin
       T.Component_Instance.Init;
       T.Component_Instance.Set_Up;
@@ -204,7 +213,7 @@ package body Force_Torque_Thr_Force_Mapping_Tests.Implementation is
    overriding procedure Test_Combined_Force_And_Torque (Self : in out Instance) is
       T : Component.Force_Torque_Thr_Force_Mapping.Implementation.Tester.Instance_Access renames Self.Tester;
       Expected : constant Packed_F32x8.U :=
-         [0.883333, 0.033333, 0.366667, 0.316667, 0.0, 0.683333, 1.2, 0.916667];
+         [0.183333, 0.0, 0.0, 0.0, 0.0, 0.683333, 1.2, 0.916667];
    begin
       T.Component_Instance.Init;
       T.Component_Instance.Set_Up;
@@ -223,8 +232,9 @@ package body Force_Torque_Thr_Force_Mapping_Tests.Implementation is
    end Test_Zero_Command;
 
    -- Every mapped thruster force is non negative and at least one is zero. The
-   -- algorithm shifts the least-squares solution by its minimum, so a thruster can
-   -- never be commanded to pull.
+   -- algorithm shifts the least-squares solution along the null space of DG, which
+   -- leaves the achieved force and torque unchanged, and then clamps at zero, so a
+   -- thruster can never be commanded to pull.
    overriding procedure Test_Min_Shift (Self : in out Instance) is
       T : Component.Force_Torque_Thr_Force_Mapping.Implementation.Tester.Instance_Access renames Self.Tester;
       Forces : Packed_F32x8.U;
@@ -250,9 +260,9 @@ package body Force_Torque_Thr_Force_Mapping_Tests.Implementation is
       T : Component.Force_Torque_Thr_Force_Mapping.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Force_Torque_Thr_Force_Mapping_Parameters.Instance;
       Expected_Default : constant Packed_F32x8.U :=
-         [0.883333, 0.033333, 0.366667, 0.316667, 0.0, 0.683333, 1.2, 0.916667];
+         [0.183333, 0.0, 0.0, 0.0, 0.0, 0.683333, 1.2, 0.916667];
       Expected_Mirrored : constant Packed_F32x8.U :=
-         [1.083333, 0.233333, 0.0, 0.183333, 0.391667, 0.475, 0.941667, 1.025];
+         [0.466667, 0.0, 0.0, 0.0, 0.0, 0.0, 0.325, 0.408333];
    begin
       T.Component_Instance.Init;
       T.Component_Instance.Set_Up;
@@ -285,6 +295,8 @@ package body Force_Torque_Thr_Force_Mapping_Tests.Implementation is
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.T_Hat_Thruster_B (Default_Directions)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Center_Of_Mass_B (Origin)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Desired_Control_Axes_B (All_Axes)), Success);
+         Parameter_Update_Status_Assert.Eq (
+            T.Stage_Parameter (Params.Thruster_Availability (All_Available)), Success);
       end Stage_Valid_Set;
    begin
       T.Component_Instance.Init;
@@ -316,16 +328,29 @@ package body Force_Torque_Thr_Force_Mapping_Tests.Implementation is
              Force_X => False, Force_Y => True, Force_Z => True))), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
 
-      -- An ill-conditioned geometry is rejected even with no axis asserted:
+      -- An ill-conditioned geometry is rejected. The axis selection is left at the
+      -- default, so the rejection is attributable to the conditioning check: selecting
+      -- no axis at all is refused by a separate rule, exercised below.
       Stage_Valid_Set;
       Parameter_Update_Status_Assert.Eq (
          T.Stage_Parameter (Params.R_Thruster_B (Ill_Conditioned_Positions)), Success);
       Parameter_Update_Status_Assert.Eq (
          T.Stage_Parameter (Params.T_Hat_Thruster_B (Ill_Conditioned_Directions)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- Selecting no control axis is rejected on an otherwise valid set:
+      Stage_Valid_Set;
       Parameter_Update_Status_Assert.Eq (
          T.Stage_Parameter (Params.Desired_Control_Axes_B (
             (Torque_X => False, Torque_Y => False, Torque_Z => False,
              Force_X => False, Force_Y => False, Force_Z => False))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- Marking every thruster unavailable is rejected: the mapping needs at least one.
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (
+         T.Stage_Parameter (Params.Thruster_Availability (
+            [others => Force_Torque_Thr_Force_Mapping_Enums.Device_Availability.Unavailable])), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
 
       -- Restoring validity makes the set acceptable again, so the rejections above

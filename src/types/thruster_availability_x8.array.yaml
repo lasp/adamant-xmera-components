@@ -1,0 +1,5 @@
+---
+description: Per-thruster availability for the thruster force mapping, one entry per thruster slot. An unavailable thruster takes no part in the mapping; a minimum of one must be available.
+type: Force_Torque_Thr_Force_Mapping_Enums.Device_Availability.E
+format: E8
+length: 8

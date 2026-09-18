@@ -31,3 +31,7 @@ parameters:
     description: "[-] Per-axis controllability assertions. An asserted axis must lie in the column space of the thruster control mapping matrix."
     type: Desired_Control_Axes.T
     default: "(Torque_X => True, Torque_Y => True, Torque_Z => True, Force_X => True, Force_Y => True, Force_Z => True)"
+  - name: Thruster_Availability
+    description: "[-] Per-thruster availability. An unavailable thruster is left out of the mapping and always receives a zero force command. A minimum of one thruster must be available."
+    type: Thruster_Availability_X8.T
+    default: "[others => Force_Torque_Thr_Force_Mapping_Enums.Device_Availability.Available]"
