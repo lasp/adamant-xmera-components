@@ -31,20 +31,10 @@ package body Component.Mimu_Majority_Vote.Implementation is
    --------------------------------------------------
    -- Initializes the MIMU majority vote algorithm.
    overriding procedure Init (Self : in out Instance) is
-      use Parameter_Validation_Status;
    begin
-      -- The parameter defaults must satisfy the algorithm's validator, since Create
-      -- throws across the FFI boundary and Ada cannot catch it. Assert through the
-      -- component's own gate so Init checks the defaults by the same route a ground
-      -- parameter update takes.
-      pragma Assert (Self.Validate_Parameters (
-         Omega_Threshold => Self.Omega_Threshold,
-         Gyro_Fault_Persistence_Limit => Self.Gyro_Fault_Persistence_Limit,
-         Accel_Threshold => Self.Accel_Threshold,
-         Accel_Fault_Persistence_Limit => Self.Accel_Fault_Persistence_Limit) = Valid);
-
-      -- Allocate the C++ algorithm on the heap with the initial configuration built
-      -- from the component's parameter defaults.
+      -- Create throws on an invalid configuration, so the parameter defaults must form a
+      -- valid one. The generated Assert_Valid_Parameter_Defaults checks them at startup
+      -- and in unit test set up.
       Self.Alg := Create (
          Omega_Threshold => Self.Omega_Threshold.Value,
          Gyro_Fault_Persistence_Limit => Self.Gyro_Fault_Persistence_Limit.Value,
