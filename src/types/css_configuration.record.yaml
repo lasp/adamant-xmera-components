@@ -1,0 +1,14 @@
+---
+#  typedef struct {
+#      Vector3f_c nHat_B; /*!< [-] boresight unit vector, body frame components */
+#      float bias;        /*!< [-] calibration scale factor applied to the boresight */
+#  } CssConfiguration_c;
+description: Geometry of a single coarse sun sensor. Maps to CssConfiguration_c in the cssWeightedLeastSquares C shim.
+fields:
+  - name: N_Hat_B
+    description: "[-] Boresight unit vector in the body frame. The norm must be within 1e-3 of one; it is normalized on storage."
+    type: Packed_F32x3.T
+  - name: Bias
+    description: "[-] Calibration scale factor applied to the boresight. Must be finite and non-negative; zero disables the sensor."
+    type: Short_Float
+    format: F32
