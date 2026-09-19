@@ -1,0 +1,5 @@
+---
+description: Array of 4 32-bit signed integers, sized to RW_EFF_CNT. Carries one C enumeration value per reaction wheel across the FFI boundary.
+type: Interfaces.Integer_32
+format: I32
+length: 4

@@ -1,0 +1,43 @@
+---
+description: Parameters for the Mrp Feedback component.
+parameters:
+  - name: Proportional_Gain_K
+    description: "[Nm] Proportional gain applied to the MRP attitude error. Must be finite and not negative."
+    type: Packed_F32.T
+    default: "(Value => 0.0)"
+  - name: Derivative_Gain_P
+    description: "[Nms] Rate error feedback gain. Must be finite and not negative."
+    type: Packed_F32.T
+    default: "(Value => 0.0)"
+  - name: Integral_Gain_Ki
+    description: "[Nm] Integral feedback gain. Must be finite and not negative. Zero disables the integral term."
+    type: Packed_F32.T
+    default: "(Value => 0.0)"
+  - name: Integral_Limit
+    description: "[Nms] Anti-windup clamp on each component of the integrated attitude error. Must be finite and not negative."
+    type: Packed_F32.T
+    default: "(Value => 0.0)"
+  - name: Control_Law_Type
+    description: "[-] Control law variant used for the gyroscopic momentum term."
+    type: Packed_Control_Law_Type.T
+    default: "(Value => Mrp_Feedback_Enums.Control_Law_Type.Normal)"
+  - name: Known_Torque_Pnt_B_B
+    description: "[Nm] Known external torque in body frame components. Must be finite."
+    type: Packed_F32x3.T
+    default: "[0.0, 0.0, 0.0]"
+  - name: Inertia
+    description: "[kg m^2] Spacecraft inertia about point B (3x3, row-major, 9 elements). Must be a valid inertia matrix."
+    type: Packed_F32x9.T
+    default: "[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]"
+  - name: Rw_Spin_Axes
+    description: "[-] Reaction wheel spin axes in body frame components, one unit vector per wheel. Each must be finite and within 1e-3 of unit length."
+    type: Packed_F32x3_X4.T
+    default: "[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [0.57735027, 0.57735027, 0.57735027]]"
+  - name: Rw_Inertias
+    description: "[kg m^2] Spin axis inertia of each reaction wheel. Each must be finite."
+    type: Packed_F32x4.T
+    default: "[0.0, 0.0, 0.0, 0.0]"
+  - name: Wheel_Availability
+    description: "[-] Which reaction wheels contribute to the wheel momentum term. An unavailable wheel is left out."
+    type: Wheel_Availability_X4.T
+    default: "[others => Mrp_Feedback_Enums.Wheel_Availability.Available]"

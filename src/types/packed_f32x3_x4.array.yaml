@@ -1,0 +1,4 @@
+---
+description: Array of 4 Packed_F32x3 elements, one three-vector per reaction wheel.
+type: Packed_F32x3.T
+length: 4

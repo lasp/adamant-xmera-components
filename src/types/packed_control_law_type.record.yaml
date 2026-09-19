@@ -1,0 +1,7 @@
+---
+description: MRP feedback control law selection, packed as an 8-bit enumeration. Values outside the enumeration fail type validation during parameter staging.
+fields:
+  - name: Value
+    description: The control law variant.
+    type: Mrp_Feedback_Enums.Control_Law_Type.E
+    format: E8

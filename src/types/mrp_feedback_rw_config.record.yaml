@@ -1,0 +1,22 @@
+---
+#  typedef struct {
+#      uint32_t numRW;                                     /*!< [-] number of reaction wheels on the vehicle */
+#      float GsMatrix_B[3 * RW_EFF_CNT];                   /*!< [-] RW spin axes in body frame, three per wheel */
+#      float JsList[RW_EFF_CNT];                           /*!< [kg*m^2] per-wheel spin-axis inertia */
+#      DeviceAvailability_c wheelAvailability[RW_EFF_CNT]; /*!< [-] AVAILABLE / UNAVAILABLE state of each wheel */
+#  } MrpFeedbackRwConfig_c;
+description: Reaction wheel configuration as exchanged with the MrpFeedbackAlgorithm C shim. Maps to MrpFeedbackRwConfig_c, which the shim takes by pointer.
+fields:
+  - name: Num_Rw
+    type: Interfaces.Unsigned_32
+    format: U32
+    description: "[-] Number of reaction wheels on the vehicle."
+  - name: Gs_Matrix_B
+    type: Packed_F32x3_X4.T
+    description: "[-] Reaction wheel spin axes in body frame components, one unit vector per wheel."
+  - name: Js_List
+    type: Packed_F32x4.T
+    description: "[kg m^2] Per-wheel spin axis inertia."
+  - name: Wheel_Availability
+    type: Int32_X4.T
+    description: "[-] Availability of each wheel as the C DeviceAvailability_c value (0 available, 1 unavailable)."
