@@ -1,0 +1,19 @@
+---
+description: Celestial two body pointing attitude guidance. Computes the attitude reference that points the first body axis at a primary celestial body while turning a second axis as close as possible toward a secondary celestial body. When the two bodies are nearly aligned, the orbit normal about the primary body takes the place of the secondary body. Wraps the CelestialTwoBodyPointAlgorithm C++ algorithm via its C shim.
+execution: passive
+init:
+  description: Initializes the celestial two body point algorithm with the default parameter values.
+connectors:
+  - description: Run the algorithm up to the current time.
+    type: Tick.T
+    kind: recv_sync
+  - description: Fetch a data product item from the database.
+    type: Data_Product_Fetch.T
+    return_type: Data_Product_Return.T
+    kind: request
+  - description: The data product invoker connector
+    type: Data_Product.T
+    kind: send
+  - description: The parameter update connector.
+    type: Parameter_Update.T
+    kind: modify
