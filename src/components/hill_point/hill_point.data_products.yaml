@@ -1,0 +1,6 @@
+---
+description: Data products for the Hill Point component.
+data_products:
+  - name: Attitude_Reference
+    type: Att_Ref.T
+    description: Hill frame attitude reference. All three fields are zero when the orbit geometry is degenerate (orbit radius under one meter, zero relative velocity, or position and velocity nearly collinear).

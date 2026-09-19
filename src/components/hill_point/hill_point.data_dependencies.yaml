@@ -1,0 +1,9 @@
+---
+description: Data dependencies for the Hill Point component.
+data_dependencies:
+  - name: Spacecraft_State
+    type: Cartesian_State.T
+    description: "[m, m/s] Spacecraft inertial position and velocity in the inertial frame N."
+  - name: Primary_Body_State
+    type: Cartesian_State.T
+    description: "[m, m/s] Inertial position and velocity of the primary body the orbit frame is defined about. Zero when the spacecraft state is already expressed relative to that body."
