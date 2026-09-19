@@ -1,0 +1,10 @@
+---
+#  /*! @brief Message used to define the vehicle control force vector in Body frame components*/
+#  typedef struct {
+#      float forceRequestBody[3];  //!< [N] Control force requested
+#  } CmdForceBodyMsgF32Payload;
+description: Commanded control force in body frame components.
+fields:
+  - name: Force_Request_Body
+    type: Packed_F32x3.T
+    description: "[N] Control force requested"

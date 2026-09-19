@@ -1,0 +1,12 @@
+---
+description: Enumerations for the Force Torque Thr Force Mapping component.
+enums:
+  - name: Device_Availability
+    description: Availability of a single thruster. Values match the C DeviceAvailability_c enumeration, so Available is zero rather than the more obvious one.
+    literals:
+      - name: Available
+        value: 0
+        description: The thruster may be used by the mapping.
+      - name: Unavailable
+        value: 1
+        description: The thruster is excluded from the mapping and always receives a zero force command.
