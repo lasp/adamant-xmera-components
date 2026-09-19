@@ -1,0 +1,11 @@
+---
+description: Parameters for the Thr Desat Duty Cycle component.
+parameters:
+  - name: Firing_Periods
+    description: "[-] Control periods at the start of each cycle for which the force command is passed through. Must be at least 1."
+    type: Packed_U32.T
+    default: "(Value => 1)"
+  - name: Settling_Periods
+    description: "[-] Control periods for which the gate commands zero force. Any value whose sum with Firing_Periods fits in 32 bits. Zero disables duty cycling."
+    type: Packed_U32.T
+    default: "(Value => 0)"

@@ -1,0 +1,6 @@
+---
+description: Data products for the Thr Desat Duty Cycle component.
+data_products:
+  - name: Gated_Force_Cmd
+    type: Thr_Force_Cmd.T
+    description: "[N] The commanded force during a firing period, zero during a settling period."

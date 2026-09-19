@@ -1,0 +1,6 @@
+---
+description: Data dependencies for the Thr Desat Duty Cycle component.
+data_dependencies:
+  - name: Thruster_Force_Cmd
+    type: Thr_Force_Cmd.T
+    description: "[N] Commanded per-thruster desaturation force (8 thrusters)."
