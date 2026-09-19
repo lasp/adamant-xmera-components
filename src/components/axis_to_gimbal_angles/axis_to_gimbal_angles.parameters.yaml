@@ -1,0 +1,11 @@
+---
+description: Parameters for the Axis To Gimbal Angles component.
+parameters:
+  - name: Sigma_Mb
+    description: "[-] MRP attitude of the gimbal mount frame M relative to the body frame B. The mount +z axis is the un-deflected thrust axis. Must be finite."
+    type: Packed_F32x3.T
+    default: "[0.0, 0.0, 0.0]"
+  - name: Theta_Max
+    description: "[rad] Largest deflection of the thrust axis from the neutral axis. Must lie strictly between 0 and pi/2."
+    type: Packed_F32.T
+    default: "(Value => 1.0471976)"
