@@ -1,0 +1,13 @@
+---
+description: This is a unit test suite for the Sun Avoidance component
+tests:
+  - name: Test
+    description: Run a slew with the Sun clear of the swept arc to ensure the Ada to C to C++ integration is sound.
+  - name: Test_Long_Way_Around
+    description: Check that a Sun inside the swept arc makes the slew go the long way around.
+  - name: Test_Pass_Through_Without_Sun
+    description: Check that an all-zero Sun position passes the input reference through unchanged.
+  - name: Test_Invalid_Parameter
+    description: Ensure a staged configuration the algorithm would reject is refused at validation.
+  - name: Test_Invalid_Data_Dependency
+    description: Ensure a data dependency with the wrong identifier is treated as a wiring defect and fails the tick's assertion.
