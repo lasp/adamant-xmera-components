@@ -1,0 +1,6 @@
+---
+description: Data dependencies for the Thrust Vectoring component.
+data_dependencies:
+  - name: Torque_Request
+    type: Cmd_Torque_Body.T
+    description: "[Nm] Requested thruster torque about the center of mass, body frame components."

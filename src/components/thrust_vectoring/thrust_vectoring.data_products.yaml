@@ -1,0 +1,6 @@
+---
+description: Data products for the Thrust Vectoring component.
+data_products:
+  - name: Thrust_Direction
+    type: Packed_F32x3.T
+    description: "[-] Unit thrust direction in body frame components that produces the requested torque. A zero request fires the thrust through the center of mass."
