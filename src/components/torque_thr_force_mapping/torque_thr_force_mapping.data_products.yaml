@@ -1,0 +1,6 @@
+---
+description: Data products for the Torque Thr Force Mapping component.
+data_products:
+  - name: Thruster_Force_Cmd
+    type: Thr_Force_Cmd.T
+    description: "[N] Thruster force command, one entry per thruster slot."
