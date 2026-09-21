@@ -11,23 +11,19 @@ package body Component.Thr_Firing_Remainder.Implementation is
    --------------------------------------------------
    -- Subprogram for implementation init method:
    --------------------------------------------------
-   -- Initializes the thruster firing remainder algorithm.
-   overriding procedure Init (Self : in out Instance) is
-      use Parameter_Validation_Status;
+   -- Initializes the thruster firing remainder algorithm with the control period and the default parameter
+   -- values.
+   overriding procedure Init (Self : in out Instance; Control_Period : in Basic_Types.Positive_Short_Float) is
       Max_Thrust_C : aliased constant Packed_F32x8.C.U_C := Packed_F32x8.C.To_C (Self.Max_Thrust);
    begin
-      -- Check the parameter defaults through the component's single gate before
-      -- handing them to the throwing Create.
-      pragma Assert (Self.Validate_Parameters (
-         Max_Thrust                => Self.Max_Thrust,
-         Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time,
-         Control_Period            => Self.Control_Period,
-         On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor,
-         Thrust_Pulsing_Regime     => Self.Thrust_Pulsing_Regime) = Valid);
+      Self.Control_Period := Control_Period;
+      -- Create throws on an invalid configuration, so the parameter defaults must form a
+      -- valid one. The generated Assert_Valid_Parameter_Defaults checks them at startup
+      -- and in unit test set up.
       Self.Alg := Create (
          Max_Thrust                => Max_Thrust_C'Access,
          Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time.Value,
-         Control_Period            => Self.Control_Period.Value,
+         Control_Period            => Self.Control_Period,
          On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor.Value,
          Pulsing_Regime            => To_C (Self.Thrust_Pulsing_Regime.Value));
    end Init;
@@ -96,7 +92,7 @@ package body Component.Thr_Firing_Remainder.Implementation is
          Self.Alg,
          Max_Thrust                => Max_Thrust_C'Access,
          Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time.Value,
-         Control_Period            => Self.Control_Period.Value,
+         Control_Period            => Self.Control_Period,
          On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor.Value,
          Pulsing_Regime            => To_C (Self.Thrust_Pulsing_Regime.Value));
    end Update_Parameters_Action;
@@ -109,7 +105,6 @@ package body Component.Thr_Firing_Remainder.Implementation is
       Self : in out Instance;
       Max_Thrust : in Packed_F32x8.U;
       Thr_Min_Fire_Time : in Packed_F32.U;
-      Control_Period : in Packed_F32.U;
       On_Time_Saturation_Factor : in Packed_F32.U;
       Thrust_Pulsing_Regime : in Packed_Pulsing_Regime.U
    ) return Parameter_Validation_Status.E is
@@ -118,7 +113,7 @@ package body Component.Thr_Firing_Remainder.Implementation is
       if Validate_Config (
             Max_Thrust                => Max_Thrust_C'Access,
             Thr_Min_Fire_Time         => Thr_Min_Fire_Time.Value,
-            Control_Period            => Control_Period.Value,
+            Control_Period            => Self.Control_Period,
             On_Time_Saturation_Factor => On_Time_Saturation_Factor.Value,
             Pulsing_Regime            => To_C (Thrust_Pulsing_Regime.Value))
       then

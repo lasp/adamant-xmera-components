@@ -18,8 +18,9 @@ package Component.Sun_Search_Point.Implementation is
    --------------------------------------------------
    -- Subprogram for implementation init method:
    --------------------------------------------------
-   -- Initializes the sun search point algorithm.
-   overriding procedure Init (Self : in out Instance);
+   -- Initializes the sun search point algorithm with the control period and the default parameter
+   -- values.
+   overriding procedure Init (Self : in out Instance; Control_Period : in Basic_Types.Positive_Short_Float);
    not overriding procedure Destroy (Self : in out Instance);
 
 private
@@ -27,6 +28,10 @@ private
    -- The component class instance record:
    type Instance is new Sun_Search_Point.Base_Instance with record
       Alg : Sun_Search_Point_Algorithm_Access := null;
+      -- [s] Time between two algorithm updates, supplied by the assembly at
+      -- initialization. The default keeps the configuration valid for the generated
+      -- parameter default check, which runs before Init.
+      Control_Period : Basic_Types.Positive_Short_Float := 0.2;
    end record;
 
    ---------------------------------------
@@ -87,8 +92,7 @@ private
       S_Hat_Bdy_Cmd : in Packed_F32x3.U;
       Sun_Axis_Spin_Rate : in Packed_F32.U;
       Omega_Rn_B_Cfg : in Packed_F32x3.U;
-      Observation_Threshold : in Packed_Observation_Threshold.U;
-      Control_Period : in Packed_F32.U
+      Observation_Threshold : in Packed_Observation_Threshold.U
    ) return Parameter_Validation_Status.E;
 
    -----------------------------------------------

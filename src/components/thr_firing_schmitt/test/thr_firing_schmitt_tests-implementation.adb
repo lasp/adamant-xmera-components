@@ -18,6 +18,9 @@ use Parameter_Enums.Assertion;
 
 package body Thr_Firing_Schmitt_Tests.Implementation is
 
+   -- The control period is fixed at initialization, half a second for every test.
+   Control_Period : constant Short_Float := 0.5;
+
    -- The baseline configuration shared by the behavioural tests. Unit maximum
    -- thrust keeps the on-time arithmetic transparent: with a control period of
    -- 0.5 s an on-time is simply the requested force halved. The hysteresis band
@@ -25,7 +28,6 @@ package body Thr_Firing_Schmitt_Tests.Implementation is
    Max_Thrust : constant Packed_F32x8.T := [others => 1.0];
    Levels : constant Levels_On_Off.T := (Level_On => 0.75, Level_Off => 0.25);
    Min_Fire_Time : constant Packed_F32.T := (Value => 0.02);
-   Control_Period_Param : constant Packed_F32.T := (Value => 0.5);
    Saturation_Factor : constant Packed_F32.T := (Value => 1.0);
    On_Pulsing_Regime : constant Packed_Pulsing_Regime.T :=
       (Value => Thr_Firing_Remainder_Enums.Pulsing_Regime.On_Pulsing);
@@ -84,14 +86,13 @@ package body Thr_Firing_Schmitt_Tests.Implementation is
       -----------------------------------------------------------------------
 
       -- Initialize component
-      T.Component_Instance.Init;
+      T.Component_Instance.Init (Control_Period => Control_Period);
       T.Component_Instance.Set_Up;
 
       -- Stage and apply parameters
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Thrust (Max_Thrust)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Levels (Levels)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thr_Min_Fire_Time (Min_Fire_Time)), Success);
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Period (Control_Period_Param)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.On_Time_Saturation_Factor (Saturation_Factor)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thrust_Pulsing_Regime (On_Pulsing_Regime)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
@@ -127,14 +128,13 @@ package body Thr_Firing_Schmitt_Tests.Implementation is
       -----------------------------------------------------------------------
 
       -- Initialize fresh algorithm instance
-      T.Component_Instance.Init;
+      T.Component_Instance.Init (Control_Period => Control_Period);
       T.Component_Instance.Set_Up;
 
       -- Stage and apply parameters with OFF_PULSING regime
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Thrust (Max_Thrust)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Levels (Levels)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thr_Min_Fire_Time (Min_Fire_Time)), Success);
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Period (Control_Period_Param)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.On_Time_Saturation_Factor (Saturation_Factor)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thrust_Pulsing_Regime (Off_Pulsing_Regime)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
@@ -175,14 +175,13 @@ package body Thr_Firing_Schmitt_Tests.Implementation is
 
       Output : Thr_On_Time_Cmd.T;
    begin
-      T.Component_Instance.Init;
+      T.Component_Instance.Init (Control_Period => Control_Period);
       T.Component_Instance.Set_Up;
 
       -- Stage and apply parameters
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Thrust (Max_Thrust)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Levels (Levels)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thr_Min_Fire_Time (Min_Fire_Time)), Success);
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Period (Control_Period_Param)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.On_Time_Saturation_Factor (Saturation_Factor)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thrust_Pulsing_Regime (On_Pulsing_Regime)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
@@ -225,13 +224,12 @@ package body Thr_Firing_Schmitt_Tests.Implementation is
 
       Output : Thr_On_Time_Cmd.T;
    begin
-      T.Component_Instance.Init;
+      T.Component_Instance.Init (Control_Period => Control_Period);
       T.Component_Instance.Set_Up;
 
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Thrust (Max_Thrust)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Levels (Levels)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thr_Min_Fire_Time (Min_Fire_Time)), Success);
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Period (Control_Period_Param)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.On_Time_Saturation_Factor (Saturation_Factor)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thrust_Pulsing_Regime (On_Pulsing_Regime)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
@@ -273,13 +271,12 @@ package body Thr_Firing_Schmitt_Tests.Implementation is
 
       Output : Thr_On_Time_Cmd.T;
    begin
-      T.Component_Instance.Init;
+      T.Component_Instance.Init (Control_Period => Control_Period);
       T.Component_Instance.Set_Up;
 
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Thrust (Max_Thrust)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Levels (Levels)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thr_Min_Fire_Time (Min_Fire_Time)), Success);
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Period (Control_Period_Param)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.On_Time_Saturation_Factor (Oversaturating_Factor)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thrust_Pulsing_Regime (On_Pulsing_Regime)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
@@ -308,13 +305,12 @@ package body Thr_Firing_Schmitt_Tests.Implementation is
 
       Output : Thr_On_Time_Cmd.T;
    begin
-      T.Component_Instance.Init;
+      T.Component_Instance.Init (Control_Period => Control_Period);
       T.Component_Instance.Set_Up;
 
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Thrust (Max_Thrust)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Levels (Levels)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thr_Min_Fire_Time (Min_Fire_Time)), Success);
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Period (Control_Period_Param)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.On_Time_Saturation_Factor (Saturation_Factor)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thrust_Pulsing_Regime (Off_Pulsing_Regime)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
@@ -346,13 +342,12 @@ package body Thr_Firing_Schmitt_Tests.Implementation is
 
       Output : Thr_On_Time_Cmd.T;
    begin
-      T.Component_Instance.Init;
+      T.Component_Instance.Init (Control_Period => Control_Period);
       T.Component_Instance.Set_Up;
 
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Thrust (Max_Thrust)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Levels (Levels)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thr_Min_Fire_Time (Min_Fire_Time)), Success);
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Period (Control_Period_Param)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.On_Time_Saturation_Factor (Saturation_Factor)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thrust_Pulsing_Regime (On_Pulsing_Regime)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
@@ -388,7 +383,7 @@ package body Thr_Firing_Schmitt_Tests.Implementation is
       -- Initialize with the shared thruster baseline. Nothing this test asserts
       -- depends on the thruster configuration; it is here only because Init
       -- requires it.
-      T.Component_Instance.Init;
+      T.Component_Instance.Init (Control_Period => Control_Period);
 
       -- A raw byte one past the last enumeration value must be rejected:
       Param.Buffer (Param.Buffer'First) := Basic_Types.Byte (Natural (
@@ -419,7 +414,6 @@ package body Thr_Firing_Schmitt_Tests.Implementation is
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Thrust (Max_Thrust)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Levels (Levels)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thr_Min_Fire_Time (Min_Fire_Time)), Success);
-         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Period (Control_Period_Param)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.On_Time_Saturation_Factor (Saturation_Factor)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thrust_Pulsing_Regime (On_Pulsing_Regime)), Success);
       end Stage_Valid_Set;
@@ -427,7 +421,7 @@ package body Thr_Firing_Schmitt_Tests.Implementation is
       -- Initialize with the shared thruster baseline. Every rejection below is
       -- attributable to the perturbed parameter rather than to the thruster
       -- configuration, which stays valid throughout.
-      T.Component_Instance.Init;
+      T.Component_Instance.Init (Control_Period => Control_Period);
 
       -- The baseline set is accepted:
       Stage_Valid_Set;
@@ -458,12 +452,6 @@ package body Thr_Firing_Schmitt_Tests.Implementation is
       Stage_Valid_Set;
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Thr_Min_Fire_Time ((Value => 0.0))), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
-
-      -- A zero control period is rejected (must be finite and strictly > 0):
-      Stage_Valid_Set;
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Period ((Value => 0.0))), Success);
-      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
-
       -- An on-time saturation factor below one is rejected (must be finite and >= 1):
       Stage_Valid_Set;
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.On_Time_Saturation_Factor ((Value => 0.5))), Success);
