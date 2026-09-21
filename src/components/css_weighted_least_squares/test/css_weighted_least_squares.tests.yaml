@@ -1,0 +1,15 @@
+---
+description: This is a unit test suite for the Css Weighted Least Squares component
+tests:
+  - name: Test
+    description: Fit the sun heading along each body axis from the Python reference test, with and without measurement weights, to ensure the Ada to C to C++ integration is sound.
+  - name: Test_Partial_Coverage
+    description: Check the minimum norm fits with two and one lit sensors, the effect of an unavailable sensor, the residual indexing, and the no signal case against the Python reference model.
+  - name: Test_Rate_Estimate
+    description: Check the body rate from two successive headings, including a slow slew, a heading reversal, and the reset connector.
+  - name: Test_Reconfigure
+    description: Check that a parameter update changes the live fit, and that the fit weights do not carry over from a cycle with more lit sensors.
+  - name: Test_Invalid_Parameter
+    description: Ensure a staged configuration the algorithm would reject is refused at validation.
+  - name: Test_Invalid_Data_Dependency
+    description: Ensure a data dependency with the wrong identifier is treated as a wiring defect and fails the tick's assertion.
