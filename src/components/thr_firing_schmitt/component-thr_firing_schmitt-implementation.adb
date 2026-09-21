@@ -64,10 +64,9 @@ package body Component.Thr_Firing_Schmitt.Implementation is
       -- Update the parameters:
       Self.Update_Parameters;
 
-      Self.Data_Product_T_Send (Self.Data_Products.On_Time_Cmd (
-         Arg.Time,
-         Thr_On_Time_Cmd.C.Pack (Update (Self.Alg, Force_C'Access))
-      ));
+      -- Send the on-time command straight to the actuation interface, which
+      -- publishes the on-times it actually stages.
+      Self.Thr_On_Time_Cmd_T_Send (Thr_On_Time_Cmd.C.Pack (Update (Self.Alg, Force_C'Access)));
    end Tick_T_Recv_Sync;
 
    -- Reset the algorithm's Schmitt-trigger hysteresis state. Called on GNC state

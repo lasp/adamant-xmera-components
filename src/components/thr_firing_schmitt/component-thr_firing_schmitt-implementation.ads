@@ -6,6 +6,7 @@
 with Packed_F32x8;
 with Tick;
 with Parameter_Update;
+with Thr_On_Time_Cmd;
 with Thr_Firing_Schmitt_Algorithm_C; use Thr_Firing_Schmitt_Algorithm_C;
 
 -- Thruster firing Schmitt algorithm converts thruster force commands to on-time
@@ -60,8 +61,8 @@ private
    ---------------------------------------
    -- Invoker connector primitives:
    ---------------------------------------
-   -- This procedure is called when a Data_Product_T_Send message is dropped due to a full queue.
-   overriding procedure Data_Product_T_Send_Dropped (Self : in out Instance; Arg : in Data_Product.T) is null;
+   -- This procedure is called when a Thr_On_Time_Cmd_T_Send message is dropped due to a full queue.
+   overriding procedure Thr_On_Time_Cmd_T_Send_Dropped (Self : in out Instance; Arg : in Thr_On_Time_Cmd.T) is null;
 
    -----------------------------------------------
    -- Parameter primitives:
