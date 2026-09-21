@@ -1,0 +1,17 @@
+---
+description: This is a unit test suite for the Torque Thr Force Mapping component
+tests:
+  - name: Test_Pure_Torque
+    description: A commanded torque about each body axis is reproduced by the mapped thruster forces, with no force commanded.
+  - name: Test_Zero_Command
+    description: A zero torque command produces zero thruster force on every thruster.
+  - name: Test_Min_Shift
+    description: Every mapped thruster force is non negative and at least one is zero.
+  - name: Test_Parameter_Update
+    description: Applying a new thruster geometry changes the mapping used on the next tick.
+  - name: Test_Force_Parameter
+    description: A commanded force set through the parameter is mapped onto the thrusters together with the torque, and a zero force restores the torque only mapping.
+  - name: Test_Invalid_Parameter
+    description: A configuration the algorithm rejects is refused at parameter staging.
+  - name: Test_Invalid_Data_Dependency
+    description: Ensure a data dependency with the wrong identifier is treated as a wiring defect and fails the tick's assertion.
