@@ -19,8 +19,8 @@ private
    -- A byte outside the pulsing regime enumeration is rejected at parameter staging
    -- by E8 type validation.
    overriding procedure Test_Pulsing_Regime_Validation (Self : in out Instance);
-   -- A staged parameter set the algorithm's config validators would reject is refused
-   -- by Validate_Parameters, one field at a time.
+   -- A staged parameter set the algorithm's config validators would reject is
+   -- refused by Validate_Parameters, one field at a time.
    overriding procedure Test_Invalid_Parameter (Self : in out Instance);
 
    -- Test data and state:

@@ -4,7 +4,6 @@
 
 with Basic_Assertions; use Basic_Assertions;
 with Thr_On_Time_Cmd;
-with Thr_On_Time_Cmd.Assertion; use Thr_On_Time_Cmd.Assertion;
 with Packed_F32x8.Assertion; use Packed_F32x8.Assertion;
 with Thr_Firing_Remainder_Parameters;
 with Packed_F32;
@@ -98,17 +97,11 @@ package body Thr_Firing_Remainder_Tests.Implementation is
       -- Send tick to trigger algorithm
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
 
-      -- Verify output was produced
-      Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, 1);
-      Natural_Assert.Eq (T.On_Time_Cmd_History.Get_Count, 1);
-
-      -- The direct actuation connector must carry the same on-time command as
-      -- the data product:
+      -- Verify the on-time command was sent to the actuation interface
       Natural_Assert.Eq (T.Thr_On_Time_Cmd_T_Recv_Sync_History.Get_Count, 1);
-      Thr_On_Time_Cmd_Assert.Eq (T.Thr_On_Time_Cmd_T_Recv_Sync_History.Get (1), T.On_Time_Cmd_History.Get (1));
 
       -- Check output matches expected values
-      Output := T.On_Time_Cmd_History.Get (1);
+      Output := T.Thr_On_Time_Cmd_T_Recv_Sync_History.Get (1);
       Packed_F32x8_Assert.Eq (
          Output.On_Time_Request,
          Expected_On_Time_On_Pulsing,
@@ -144,16 +137,13 @@ package body Thr_Firing_Remainder_Tests.Implementation is
       -- Send tick to trigger algorithm
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
 
-      -- Verify output was produced (history accumulates)
-      Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, 2);
-      Natural_Assert.Eq (T.On_Time_Cmd_History.Get_Count, 2);
+      -- Verify the on-time command was sent to the actuation interface (history accumulates)
+      Natural_Assert.Eq (T.Thr_On_Time_Cmd_T_Recv_Sync_History.Get_Count, 2);
 
       -- The direct actuation connector tracks the data product on every run:
-      Natural_Assert.Eq (T.Thr_On_Time_Cmd_T_Recv_Sync_History.Get_Count, 2);
-      Thr_On_Time_Cmd_Assert.Eq (T.Thr_On_Time_Cmd_T_Recv_Sync_History.Get (2), T.On_Time_Cmd_History.Get (2));
 
       -- Check output matches expected values
-      Output := T.On_Time_Cmd_History.Get (2);
+      Output := T.Thr_On_Time_Cmd_T_Recv_Sync_History.Get (2);
       Packed_F32x8_Assert.Eq (
          Output.On_Time_Request,
          Expected_On_Time_Off_Pulsing,

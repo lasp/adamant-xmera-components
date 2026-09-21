@@ -7,8 +7,6 @@ with Component.Thr_Firing_Remainder_Reciprocal;
 with Printable_History;
 with Data_Product_Return.Representation;
 with Data_Product_Fetch.Representation;
-with Data_Product.Representation;
-with Data_Product;
 with Thr_On_Time_Cmd.Representation;
 with Thr_Force_Cmd;
 
@@ -20,11 +18,7 @@ package Component.Thr_Firing_Remainder.Implementation.Tester is
    -- Invoker connector history packages:
    package Data_Product_Fetch_T_Service_History_Package is new Printable_History (Data_Product_Fetch.T, Data_Product_Fetch.Representation.Image);
    package Data_Product_Fetch_T_Service_Return_History_Package is new Printable_History (Data_Product_Return.T, Data_Product_Return.Representation.Image);
-   package Data_Product_T_Recv_Sync_History_Package is new Printable_History (Data_Product.T, Data_Product.Representation.Image);
    package Thr_On_Time_Cmd_T_Recv_Sync_History_Package is new Printable_History (Thr_On_Time_Cmd.T, Thr_On_Time_Cmd.Representation.Image);
-
-   -- Data product history packages:
-   package On_Time_Cmd_History_Package is new Printable_History (Thr_On_Time_Cmd.T, Thr_On_Time_Cmd.Representation.Image);
 
    -- Component class instance:
    type Instance is new Component.Thr_Firing_Remainder_Reciprocal.Base_Instance with record
@@ -32,10 +26,7 @@ package Component.Thr_Firing_Remainder.Implementation.Tester is
       Component_Instance : aliased Component.Thr_Firing_Remainder.Implementation.Instance;
       -- Connector histories:
       Data_Product_Fetch_T_Service_History : Data_Product_Fetch_T_Service_History_Package.Instance;
-      Data_Product_T_Recv_Sync_History : Data_Product_T_Recv_Sync_History_Package.Instance;
       Thr_On_Time_Cmd_T_Recv_Sync_History : Thr_On_Time_Cmd_T_Recv_Sync_History_Package.Instance;
-      -- Data product histories:
-      On_Time_Cmd_History : On_Time_Cmd_History_Package.Instance;
       -- Data dependency return values. These can be set during unit test
       -- and will be returned to the component when a data dependency call
       -- is made.
@@ -52,7 +43,7 @@ package Component.Thr_Firing_Remainder.Implementation.Tester is
       -- value of this variable is returned.
       Data_Dependency_Return_Length_Override : Data_Product_Types.Data_Product_Buffer_Length_Type := 0;
       -- The timestamp to return with the data dependency. If this is set to (0, 0) then
-      -- the system_Time (above) is returned, otherwise, the value of this variable is returned.
+      -- the System_Time (above) is returned, otherwise, the value of this variable is returned.
       Data_Dependency_Timestamp_Override : Sys_Time.T := (0, 0);
    end record;
    type Instance_Access is access all Instance;
@@ -73,20 +64,10 @@ package Component.Thr_Firing_Remainder.Implementation.Tester is
    ---------------------------------------
    -- Fetch a data product item from the database.
    overriding function Data_Product_Fetch_T_Service (Self : in out Instance; Arg : in Data_Product_Fetch.T) return Data_Product_Return.T;
-   -- The data product invoker connector
-   overriding procedure Data_Product_T_Recv_Sync (Self : in out Instance; Arg : in Data_Product.T);
    -- Send the computed thruster on-time command directly to the actuation interface
    -- component. Only honored by the receiver while the thruster group is in closed-
    -- loop control.
    overriding procedure Thr_On_Time_Cmd_T_Recv_Sync (Self : in out Instance; Arg : in Thr_On_Time_Cmd.T);
-
-   -----------------------------------------------
-   -- Data product handler primitives:
-   -----------------------------------------------
-   -- Description:
-   --    Data products for the Thr Firing Remainder component.
-   -- Thruster on-time command (8 thrusters)
-   overriding procedure On_Time_Cmd (Self : in out Instance; Arg : in Thr_On_Time_Cmd.T);
 
    -----------------------------------------------
    -- Special primitives for aiding in the staging,

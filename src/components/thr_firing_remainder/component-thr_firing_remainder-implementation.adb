@@ -62,14 +62,9 @@ package body Component.Thr_Firing_Remainder.Implementation is
       -- Update the parameters:
       Self.Update_Parameters;
 
-      declare
-         On_Time_Result : constant Thr_On_Time_Cmd.T :=
-            Thr_On_Time_Cmd.C.Pack (Update (Self.Alg, Force_C'Access));
-      begin
-         Self.Data_Product_T_Send (Self.Data_Products.On_Time_Cmd (Arg.Time, On_Time_Result));
-         -- Send the on-time command directly to the actuation interface:
-         Self.Thr_On_Time_Cmd_T_Send_If_Connected (On_Time_Result);
-      end;
+      -- Send the on-time command straight to the actuation interface, which
+      -- publishes the on-times it actually stages.
+      Self.Thr_On_Time_Cmd_T_Send (Thr_On_Time_Cmd.C.Pack (Update (Self.Alg, Force_C'Access)));
    end Tick_T_Recv_Sync;
 
    -- The parameter update connector.
