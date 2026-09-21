@@ -7,3 +7,7 @@ tests:
     description: When the CSS sensor data dependency is stale, the reading is processed like a fresh one and the output is published with the reading's original timestamp.
   - name: Test_Invalid_Parameter
     description: Ensure a staged max sensor value the algorithm would reject is refused at validation.
+  - name: Test_Non_Finite_Correction_Is_No_Signal
+    description: A reading whose Chebyshev correction overflows is published as zero, no signal, instead of being clamped to one.
+  - name: Test_Invalid_Data_Dependency
+    description: Ensure a data dependency with the wrong identifier is treated as a wiring defect and fails the tick's assertion.

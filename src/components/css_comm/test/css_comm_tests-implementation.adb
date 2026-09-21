@@ -2,7 +2,9 @@
 -- Css_Comm Tests Body
 --------------------------------------------------------------------------------
 
+with Ada.Assertions;
 with Ada.Real_Time;
+with AUnit.Assertions;
 with Basic_Assertions; use Basic_Assertions;
 with Packed_F64x8.Assertion; use Packed_F64x8.Assertion;
 with Packed_F64x11;
@@ -198,5 +200,65 @@ package body Css_Comm_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
    end Test_Invalid_Parameter;
+
+   -- The corrected value of every sensor slot is a cosine, so the algorithm clamps
+   -- it to [0, 1]. A correction that overflows carries no measurement, and the
+   -- algorithm publishes zero for that slot rather than the clamped one. This
+   -- test loads the Chebyshev correction into the highest order term alone and
+   -- feeds a full scale count that overflows it, next to a small count that only
+   -- saturates it.
+   overriding procedure Test_Non_Finite_Correction_Is_No_Signal (Self : in out Instance) is
+      T : Component.Css_Comm.Implementation.Tester.Instance_Access renames Self.Tester;
+      Params : Css_Comm_Parameters.Instance;
+
+      Max_Sensor_Val : constant Packed_F64.T := (Value => 100.0);
+      Cheby_Count_Val : constant Packed_U32.T := (Value => 11);
+      -- Only the tenth order term is non zero, so the correction is 1.0e300
+      -- times T10 of the normalized reading.
+      Cheby_Poly_Val : constant Packed_F64x11.T := [10 => 1.0e300, others => 0.0];
+
+      -- Slot 1 normalizes to 1.0, where T10 is 1, so its correction is a huge
+      -- finite value that saturates to 1.0. Slot 2 normalizes to 655.35, where
+      -- T10 overflows to infinity, so it is reported as no signal. The zero
+      -- readings normalize to 0.0, where T10 is -1, and the negative correction
+      -- clamps them to 0.0.
+      Input_Data : constant Css_Array_Adc_8.T := (
+         Adc_Value => [100, 65535, 0, 0, 0, 0, 0, 0]
+      );
+      Expected_Output : constant Packed_F64x8.T := [1.0, others => 0.0];
+
+      Output : Css_Sensor_Values.T;
+   begin
+      T.Component_Instance.Init;
+
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Sensor_Value (Max_Sensor_Val)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cheby_Count (Cheby_Count_Val)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cheby_Polynomials (Cheby_Poly_Val)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+
+      T.Css_Sensor_Input := Input_Data;
+      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+
+      Natural_Assert.Eq (T.Css_Sensor_Output_History.Get_Count, 1);
+      Output := T.Css_Sensor_Output_History.Get (1);
+      Packed_F64x8_Assert.Eq (Output.Data, Expected_Output, Epsilon => 1.0e-10);
+   end Test_Non_Finite_Correction_Is_No_Signal;
+
+   -- A data dependency returned with the wrong identifier is a wiring defect, so
+   -- the component asserts instead of publishing anything.
+   overriding procedure Test_Invalid_Data_Dependency (Self : in out Instance) is
+      T : Component.Css_Comm.Implementation.Tester.Instance_Access renames Self.Tester;
+   begin
+      T.Component_Instance.Init;
+      T.Data_Dependency_Return_Id_Override := 999;
+      begin
+         T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+         AUnit.Assertions.Assert (False, "A dependency with the wrong identifier should have failed an assertion.");
+      exception
+         when Ada.Assertions.Assertion_Error =>
+            null; -- Expected.
+      end;
+      Natural_Assert.Eq (T.Css_Sensor_Output_History.Get_Count, 0);
+   end Test_Invalid_Data_Dependency;
 
 end Css_Comm_Tests.Implementation;
