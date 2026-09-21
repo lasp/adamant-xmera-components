@@ -1,0 +1,9 @@
+---
+#  typedef struct {
+#      float cosValues[MAX_NUM_CSS_SENSORS]; /*!< [-] per-sensor cosine readings */
+#  } CssReadingArray_c;
+description: Record wrapping the cosine reading of each coarse sun sensor slot. Maps to CssReadingArray_c in the cssWeightedLeastSquares C shim, which takes it by pointer.
+fields:
+  - name: Cos_Values
+    description: "[-] Cosine reading of each sensor, indexed by sensor."
+    type: Packed_F32x8.T

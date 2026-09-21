@@ -1,0 +1,22 @@
+---
+#  typedef struct {
+#      Vector3f_c sunHeading_B;                     /*!< [-]   estimated unit sun heading, body frame; zero when no fit */
+#      Vector3f_c omega_BN_B;                       /*!< [r/s] inertial angular velocity, body frame; zero when no rate */
+#      float postFitResiduals[MAX_NUM_CSS_SENSORS]; /*!< [-]   post-fit residuals, packed by observation */
+#      uint32_t numCssViewingSun;                   /*!< [-]   sensors that contributed to the fit this cycle */
+#  } CssWeightedLeastSquaresOutput_c;
+description: One cycle of the coarse sun sensor weighted least squares estimate. Maps to CssWeightedLeastSquaresOutput_c in the cssWeightedLeastSquares C shim, which returns it by value.
+fields:
+  - name: Sun_Heading_B
+    description: "[-] Estimated unit sun heading in body frame components. Zero when no fit was possible."
+    type: Packed_F32x3.T
+  - name: Omega_Bn_B
+    description: "[rad/s] Inertial angular velocity in body frame components, from two successive headings. Rotation about the sun heading is not observable. Zero until two headings have been observed."
+    type: Packed_F32x3.T
+  - name: Post_Fit_Residuals
+    description: "[-] Post-fit residuals, one per sensor that contributed, packed into the leading Num_Css_Viewing_Sun entries. The rest are zero."
+    type: Packed_F32x8.T
+  - name: Num_Css_Viewing_Sun
+    description: "[-] Sensors that contributed to the fit this cycle: available, and reading above the use threshold."
+    type: Interfaces.Unsigned_32
+    format: U32

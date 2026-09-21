@@ -1,0 +1,9 @@
+---
+#  typedef struct {
+#      uint8_t availability[MAX_NUM_CSS_SENSORS];
+#  } CssAvailabilityArray_c;
+description: Record wrapping the per-sensor availability. Maps to CssAvailabilityArray_c in the cssWeightedLeastSquares C shim, which takes it by pointer.
+fields:
+  - name: Value
+    description: Availability of each coarse sun sensor slot.
+    type: Css_Availability_X8.T

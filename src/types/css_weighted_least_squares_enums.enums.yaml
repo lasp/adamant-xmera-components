@@ -1,0 +1,12 @@
+---
+description: Enumerations for the Css Weighted Least Squares component.
+enums:
+  - name: Sensor_Availability
+    description: Availability of a single coarse sun sensor. Values match the C DeviceAvailability_c enumeration, so Available is zero rather than the more obvious one.
+    literals:
+      - name: Available
+        value: 0
+        description: The sensor takes part in the fit when its reading is above the use threshold.
+      - name: Unavailable
+        value: 1
+        description: The sensor is excluded from the fit and its boresight is never read.
