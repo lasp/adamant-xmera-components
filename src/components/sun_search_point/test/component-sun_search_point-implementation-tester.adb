@@ -17,9 +17,7 @@ package body Component.Sun_Search_Point.Implementation.Tester is
       Self.Data_Product_Fetch_T_Service_History.Init (Depth => 100);
       Self.Data_Product_T_Recv_Sync_History.Init (Depth => 100);
       -- Data product histories:
-      Self.Sigma_Br_History.Init (Depth => 100);
-      Self.Omega_Br_B_History.Init (Depth => 100);
-      Self.Omega_Rn_B_History.Init (Depth => 100);
+      Self.Attitude_Guidance_History.Init (Depth => 100);
       Self.Sun_Search_Status_History.Init (Depth => 100);
    end Init_Base;
 
@@ -30,9 +28,7 @@ package body Component.Sun_Search_Point.Implementation.Tester is
       Self.Data_Product_Fetch_T_Service_History.Destroy;
       Self.Data_Product_T_Recv_Sync_History.Destroy;
       -- Data product histories:
-      Self.Sigma_Br_History.Destroy;
-      Self.Omega_Br_B_History.Destroy;
-      Self.Omega_Rn_B_History.Destroy;
+      Self.Attitude_Guidance_History.Destroy;
       Self.Sun_Search_Status_History.Destroy;
    end Final_Base;
 
@@ -161,30 +157,20 @@ package body Component.Sun_Search_Point.Implementation.Tester is
    -----------------------------------------------
    -- Description:
    --    Data products for the Sun Search Point component.
-   -- Attitude error (MRPs) of the body frame relative to the reference frame.
-   overriding procedure Sigma_Br (Self : in out Instance; Arg : in Packed_F32x3.T) is
+   -- The attitude guidance for the attitude controller: the attitude error (MRPs) of
+   -- the body frame relative to the reference frame, the body rate error of B
+   -- relative to R, and the reference frame rate of R relative to N, all in B frame
+   -- components. The reference frame acceleration is zero, since the search and
+   -- pointing rates are piecewise constant. Published every tick.
+   overriding procedure Attitude_Guidance (Self : in out Instance; Arg : in Att_Guid.T) is
    begin
       -- Push the argument onto the test history for looking at later:
-      Self.Sigma_Br_History.Push (Arg);
-   end Sigma_Br;
+      Self.Attitude_Guidance_History.Push (Arg);
+   end Attitude_Guidance;
 
-   -- [rad/s] Body rate error of B relative to R, in B frame components.
-   overriding procedure Omega_Br_B (Self : in out Instance; Arg : in Packed_F32x3.T) is
-   begin
-      -- Push the argument onto the test history for looking at later:
-      Self.Omega_Br_B_History.Push (Arg);
-   end Omega_Br_B;
-
-   -- [rad/s] Reference frame rate of R relative to N, in B frame components.
-   overriding procedure Omega_Rn_B (Self : in out Instance; Arg : in Packed_F32x3.T) is
-   begin
-      -- Push the argument onto the test history for looking at later:
-      Self.Omega_Rn_B_History.Push (Arg);
-   end Omega_Rn_B;
-
-   -- Whether the search sequence acquired the sun. Published every tick, and
-   -- latches Sun_Not_Found once the sequence elapses without an acquisition until the
-   -- reset connector re-arms the search.
+   -- Whether the search sequence acquired the sun. Published every tick, and latches
+   -- Sun_Not_Found once the sequence elapses without an acquisition until the reset
+   -- connector re-arms the search.
    overriding procedure Sun_Search_Status (Self : in out Instance; Arg : in Packed_Sun_Search_Status.T) is
    begin
       -- Push the argument onto the test history for looking at later:

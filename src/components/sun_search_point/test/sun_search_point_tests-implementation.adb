@@ -4,11 +4,12 @@
 
 with Interfaces; use Interfaces;
 with Basic_Assertions; use Basic_Assertions;
+with Att_Guid;
+with Att_Guid.Assertion; use Att_Guid.Assertion;
 with Basic_Types;
 with Packed_Observation_Threshold;
 with Parameter;
 with Packed_F32x3;
-with Packed_F32x3.Assertion; use Packed_F32x3.Assertion;
 with Packed_Sun_Search_Status.Assertion; use Packed_Sun_Search_Status.Assertion;
 with Rotation_Properties_X4_Record;
 with Sun_Search_Point_Enums; use Sun_Search_Point_Enums;
@@ -100,15 +101,18 @@ package body Sun_Search_Point_Tests.Implementation is
    ) is
       T : Component.Sun_Search_Point.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
-      -- Every tick publishes all four data products.
-      Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, Tick_Number * 4);
-      Natural_Assert.Eq (T.Omega_Rn_B_History.Get_Count, Tick_Number);
+      -- Every tick publishes both data products.
+      Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, Tick_Number * 2);
+      Natural_Assert.Eq (T.Attitude_Guidance_History.Get_Count, Tick_Number);
 
       -- The sun is aligned with the commanded body vector, so the attitude error is
-      -- zero in both phases.
-      Packed_F32x3_Assert.Eq (T.Sigma_Br_History.Get (Tick_Number), Zero_Vector, Epsilon => Epsilon);
-      Packed_F32x3_Assert.Eq (T.Omega_Rn_B_History.Get (Tick_Number), Omega_Rn_B, Epsilon => Epsilon);
-      Packed_F32x3_Assert.Eq (T.Omega_Br_B_History.Get (Tick_Number), Expected_Omega_Br_B (Omega_Rn_B), Epsilon => Epsilon);
+      -- zero in both phases. The reference acceleration is always zero.
+      Att_Guid_Assert.Eq (T.Attitude_Guidance_History.Get (Tick_Number), (
+         Sigma_Br => Zero_Vector,
+         Omega_Br_B => Expected_Omega_Br_B (Omega_Rn_B),
+         Omega_Rn_B => Omega_Rn_B,
+         Domega_Rn_B => Zero_Vector
+      ), Epsilon => Epsilon);
       Packed_Sun_Search_Status_Assert.Eq (T.Sun_Search_Status_History.Get (Tick_Number), (Value => Status));
    end Assert_Latest_Output;
 
