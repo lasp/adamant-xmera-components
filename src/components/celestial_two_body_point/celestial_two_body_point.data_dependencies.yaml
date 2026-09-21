@@ -1,0 +1,12 @@
+---
+description: Data dependencies for the Celestial Two Body Point component.
+data_dependencies:
+  - name: Primary_Body_State
+    type: Cartesian_State.T
+    description: "[m, m/s] Inertial position and velocity of the primary celestial body, the one the first body axis points at."
+  - name: Secondary_Body_State
+    type: Cartesian_State.T
+    description: "[m, m/s] Inertial position and velocity of the secondary celestial body, the one the second body axis is turned toward."
+  - name: Spacecraft_State
+    type: Cartesian_State.T
+    description: "[m, m/s] Spacecraft inertial position and velocity."
