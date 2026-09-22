@@ -30,6 +30,8 @@ private
    overriding procedure Test_Invalid_Parameter (Self : in out Instance);
    -- Verify an observation threshold above the coarse sun sensor count is refused.
    overriding procedure Test_Observation_Threshold_Range (Self : in out Instance);
+   -- Ensure a data dependency with the wrong identifier is treated as a wiring defect and fails the tick's assertion.
+   overriding procedure Test_Invalid_Data_Dependency (Self : in out Instance);
 
    -- Test data and state:
    type Instance is new Sun_Search_Point_Tests.Base_Instance with record

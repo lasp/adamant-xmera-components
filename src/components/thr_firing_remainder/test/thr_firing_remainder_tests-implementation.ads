@@ -22,6 +22,8 @@ private
    -- A staged parameter set the algorithm's config validators would reject is
    -- refused by Validate_Parameters, one field at a time.
    overriding procedure Test_Invalid_Parameter (Self : in out Instance);
+   -- Ensure a data dependency with the wrong identifier is treated as a wiring defect and fails the tick's assertion.
+   overriding procedure Test_Invalid_Data_Dependency (Self : in out Instance);
 
    -- Test data and state:
    type Instance is new Thr_Firing_Remainder_Tests.Base_Instance with record

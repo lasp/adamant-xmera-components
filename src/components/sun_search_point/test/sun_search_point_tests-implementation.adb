@@ -2,6 +2,8 @@
 -- Sun_Search_Point Tests Body
 --------------------------------------------------------------------------------
 
+with Ada.Assertions;
+with AUnit.Assertions;
 with Interfaces; use Interfaces;
 with Basic_Assertions; use Basic_Assertions;
 with Att_Guid;
@@ -314,5 +316,21 @@ package body Sun_Search_Point_Tests.Implementation is
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Par), Validation_Error);
       end;
    end Test_Observation_Threshold_Range;
+
+   -- A data dependency that comes back with the wrong identifier means the assembly
+   -- is wired incorrectly. The component asserts rather than publishing anything.
+   overriding procedure Test_Invalid_Data_Dependency (Self : in out Instance) is
+      T : Component.Sun_Search_Point.Implementation.Tester.Instance_Access renames Self.Tester;
+   begin
+      T.Data_Dependency_Return_Id_Override := 999;
+      begin
+         T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+         AUnit.Assertions.Assert (False, "A dependency with the wrong identifier should have failed an assertion.");
+      exception
+         when Ada.Assertions.Assertion_Error =>
+            null; -- Expected.
+      end;
+      Natural_Assert.Eq (T.Attitude_Guidance_History.Get_Count, 0);
+   end Test_Invalid_Data_Dependency;
 
 end Sun_Search_Point_Tests.Implementation;

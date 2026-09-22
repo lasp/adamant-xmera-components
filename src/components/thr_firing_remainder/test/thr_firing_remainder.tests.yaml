@@ -7,3 +7,5 @@ tests:
     description: A byte outside the pulsing regime enumeration is rejected at parameter staging by E8 type validation.
   - name: Test_Invalid_Parameter
     description: A staged parameter set the algorithm's config validators would reject is refused by Validate_Parameters, one field at a time.
+  - name: Test_Invalid_Data_Dependency
+    description: Ensure a data dependency with the wrong identifier is treated as a wiring defect and fails the tick's assertion.
