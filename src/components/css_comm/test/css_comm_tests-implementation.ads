@@ -24,6 +24,10 @@ private
 
    -- Ensure a staged max sensor value the algorithm would reject is refused at validation.
    overriding procedure Test_Invalid_Parameter (Self : in out Instance);
+   -- A reading whose Chebyshev correction overflows is published as zero, no signal, instead of being clamped to one.
+   overriding procedure Test_Non_Finite_Correction_Is_No_Signal (Self : in out Instance);
+   -- Ensure a data dependency with the wrong identifier is treated as a wiring defect and fails the tick's assertion.
+   overriding procedure Test_Invalid_Data_Dependency (Self : in out Instance);
 
    -- Test data and state:
    type Instance is new Css_Comm_Tests.Base_Instance with record

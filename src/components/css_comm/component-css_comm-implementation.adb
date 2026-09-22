@@ -3,11 +3,9 @@
 --------------------------------------------------------------------------------
 
 with Css_Sensor_Values.C;
-with Css_Adc_U16_8;
 with Cheby_Polynomials.C;
 with Packed_F64x8.C;
 with Packed_F64x11.C;
-with Interfaces;
 
 package body Component.Css_Comm.Implementation is
 
@@ -26,10 +24,7 @@ package body Component.Css_Comm.Implementation is
       Max_Sensor_Values : aliased Packed_F64x8.C.U_C := [others => Self.Max_Sensor_Value.Value];
       Cheby_Poly_C : aliased Cheby_Polynomials_C_Type := (Data => Packed_F64x11.C.To_C (Self.Cheby_Polynomials));
    begin
-      -- The number of CSS sensors is fixed by the hardware interface: the ADC data
-      -- dependency carries exactly Css_Adc_U16_8.Length channels.
       Self.Alg := Create (
-         Num_Sensors       => Interfaces.Unsigned_32 (Css_Adc_U16_8.Length),
          Max_Sensor_Values => Max_Sensor_Values'Access,
          Polynomials       => Cheby_Poly_C'Access);
    end Init;
@@ -64,9 +59,10 @@ package body Component.Css_Comm.Implementation is
       -- Update the parameters:
       Self.Update_Parameters;
 
-      -- Pass the raw ADC counts to the C algorithm, which normalizes each
-      -- reading by the Max_Sensor_Value parameter, applies the Chebyshev
-      -- correction, and clamps the corrected value to [0, 1].
+      -- Pass the raw ADC counts of every sensor slot to the C algorithm, which
+      -- normalizes each reading by the Max_Sensor_Value parameter, applies the
+      -- Chebyshev correction, and clamps the corrected value to [0, 1]. A
+      -- corrected value that is not finite is reported as zero, no signal.
       declare
          Css_Input_C : aliased Css_Sensor_Values.C.U_C := (Data => [others => 0.0]);
       begin
@@ -112,7 +108,6 @@ package body Component.Css_Comm.Implementation is
    begin
       Set_Config (
          Self.Alg,
-         Num_Sensors       => Interfaces.Unsigned_32 (Css_Adc_U16_8.Length),
          Max_Sensor_Values => Max_Sensor_Values'Access,
          Polynomials       => Cheby_Poly_C'Access);
    end Update_Parameters_Action;
@@ -133,7 +128,6 @@ package body Component.Css_Comm.Implementation is
       Cheby_Poly_C : aliased Cheby_Polynomials_C_Type := (Data => Packed_F64x11.C.To_C (Cheby_Polynomials));
    begin
       if Validate_Config (
-            Num_Sensors       => Interfaces.Unsigned_32 (Css_Adc_U16_8.Length),
             Max_Sensor_Values => Max_Sensor_Values'Access,
             Polynomials       => Cheby_Poly_C'Access)
       then
