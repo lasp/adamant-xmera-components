@@ -13,27 +13,6 @@ with Triad_Enums;
 
 package Triad_Algorithm_C is
 
-   --* Fallback constraint axis. The representation clause pins the literals to the C
-   --* N3Axis_c values so that 'Enum_Val is a genuine validity gate when converting
-   --* the parameter value into this type.
-   type Triad_N3_Axis is
-     (Plus_Z_Hat_N,
-      Minus_Z_Hat_N)
-     with Convention => C;
-   for Triad_N3_Axis use
-     (Plus_Z_Hat_N  => 0,
-      Minus_Z_Hat_N => 1);
-
-   --* Convert the component's fallback axis parameter value into the C enumeration
-   --* above. The conversion lives here, with the C type, because it is boundary
-   --* marshalling: the two enumerations exist separately only because the generated
-   --* Adamant enumeration cannot carry Convention => C, and so is sized for Ada rather
-   --* than for the C int the shim expects. Going through 'Enum_Rep and 'Enum_Val
-   --* honors both representation clauses rather than relying on literal position.
-   function To_C (Value : in Triad_Enums.N3_Axis.E)
-      return Triad_N3_Axis
-   is (Triad_N3_Axis'Enum_Val (Triad_Enums.N3_Axis.E'Enum_Rep (Value)));
-
    --* Opaque handle for a TriadAlgorithm instance.
    type Triad_Algorithm is limited private;
    type Triad_Algorithm_Access is access all Triad_Algorithm;
@@ -48,7 +27,7 @@ package Triad_Algorithm_C is
    function Validate_Config
      (Sada_Hat_B       : access constant Packed_F32x3_Record.C.U_C;
       Thrust_Req_Hat_N : access constant Packed_F32x3_Record.C.U_C;
-      N3_Axis          : Triad_N3_Axis)
+      N3_Axis          : Triad_Enums.N3_Axis.C.E_C)
      return Boolean
      with Import        => True,
           Convention    => C,
@@ -61,7 +40,7 @@ package Triad_Algorithm_C is
    function Create
      (Sada_Hat_B       : access constant Packed_F32x3_Record.C.U_C;
       Thrust_Req_Hat_N : access constant Packed_F32x3_Record.C.U_C;
-      N3_Axis          : Triad_N3_Axis)
+      N3_Axis          : Triad_Enums.N3_Axis.C.E_C)
      return Triad_Algorithm_Access
      with Import        => True,
           Convention    => C,
@@ -82,7 +61,7 @@ package Triad_Algorithm_C is
      (Self             : Triad_Algorithm_Access;
       Sada_Hat_B       : access constant Packed_F32x3_Record.C.U_C;
       Thrust_Req_Hat_N : access constant Packed_F32x3_Record.C.U_C;
-      N3_Axis          : Triad_N3_Axis)
+      N3_Axis          : Triad_Enums.N3_Axis.C.E_C)
      with Import        => True,
           Convention    => C,
           External_Name => "TriadAlgorithm_setConfig";
