@@ -1,0 +1,9 @@
+---
+description: Data products for the Mrp Feedback component.
+data_products:
+  - name: Control_Torque
+    type: Cmd_Torque_Body.T
+    description: "[Nm] Commanded control torque in body frame components."
+  - name: Integral_Feedback_Torque
+    type: Cmd_Torque_Body.T
+    description: "[Nm] The integral feedback part of the commanded torque, in body frame components. Zero when the integral gain is zero."
