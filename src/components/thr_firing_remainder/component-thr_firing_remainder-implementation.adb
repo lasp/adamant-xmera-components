@@ -3,6 +3,7 @@
 --------------------------------------------------------------------------------
 
 with Packed_F32x8.C;
+with Thr_Firing_Remainder_Enums;
 with Thr_Force_Cmd.C;
 with Thr_On_Time_Cmd.C;
 
@@ -25,7 +26,7 @@ package body Component.Thr_Firing_Remainder.Implementation is
          Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time.Value,
          Control_Period            => Self.Control_Period,
          On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor.Value,
-         Pulsing_Regime            => To_C (Self.Thrust_Pulsing_Regime.Value));
+         Pulsing_Regime            => Thr_Firing_Remainder_Enums.Pulsing_Regime.C.To_C (Self.Thrust_Pulsing_Regime.Value));
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -94,7 +95,7 @@ package body Component.Thr_Firing_Remainder.Implementation is
          Thr_Min_Fire_Time         => Self.Thr_Min_Fire_Time.Value,
          Control_Period            => Self.Control_Period,
          On_Time_Saturation_Factor => Self.On_Time_Saturation_Factor.Value,
-         Pulsing_Regime            => To_C (Self.Thrust_Pulsing_Regime.Value));
+         Pulsing_Regime            => Thr_Firing_Remainder_Enums.Pulsing_Regime.C.To_C (Self.Thrust_Pulsing_Regime.Value));
    end Update_Parameters_Action;
 
    -- Validate a staged parameter set before it is applied by asking the algorithm's
@@ -115,7 +116,7 @@ package body Component.Thr_Firing_Remainder.Implementation is
             Thr_Min_Fire_Time         => Thr_Min_Fire_Time.Value,
             Control_Period            => Self.Control_Period,
             On_Time_Saturation_Factor => On_Time_Saturation_Factor.Value,
-            Pulsing_Regime            => To_C (Thrust_Pulsing_Regime.Value))
+            Pulsing_Regime            => Thr_Firing_Remainder_Enums.Pulsing_Regime.C.To_C (Thrust_Pulsing_Regime.Value))
       then
          return Parameter_Validation_Status.Valid;
       else
