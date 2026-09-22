@@ -1,0 +1,15 @@
+---
+description: Data products for the Css Weighted Least Squares component.
+data_products:
+  - name: Sun_Heading_B
+    type: Packed_F32x3.T
+    description: "[-] Estimated unit sun heading in body frame components. Zero when no fit was possible."
+  - name: Omega_Bn_B
+    type: Packed_F32x3.T
+    description: "[rad/s] Inertial angular velocity in body frame components, from two successive headings. Rotation about the sun heading is not observable. Zero until two headings have been observed."
+  - name: Post_Fit_Residuals
+    type: Packed_F32x8.T
+    description: "[-] Post-fit residuals, one per sensor that contributed, packed into the leading Num_Css_Viewing_Sun entries. The rest are zero."
+  - name: Num_Css_Viewing_Sun
+    type: Packed_U32.T
+    description: "[-] Sensors that contributed to the fit this cycle: available, and reading above the use threshold."

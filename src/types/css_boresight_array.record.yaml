@@ -1,0 +1,9 @@
+---
+#  typedef struct {
+#      float data[MAX_NUM_CSS_SENSORS * 3]; /*!< [-] boresight unit vectors, body frame components */
+#  } CssBoresightArray_c;
+description: Record wrapping the coarse sun sensor boresight table. Maps to CssBoresightArray_c in the cssWeightedLeastSquares C shim, which takes it by pointer.
+fields:
+  - name: Data
+    description: "[-] Boresight unit vectors in body frame components, three per sensor in row major order."
+    type: Packed_F32x24.T

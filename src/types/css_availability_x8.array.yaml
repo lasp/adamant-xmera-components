@@ -1,0 +1,5 @@
+---
+description: Availability of each of the eight coarse sun sensor slots, one byte per slot as the C boundary carries it. Values outside the enumeration fail type validation during parameter staging.
+type: Css_Weighted_Least_Squares_Enums.Sensor_Availability.E
+format: E8
+length: 8

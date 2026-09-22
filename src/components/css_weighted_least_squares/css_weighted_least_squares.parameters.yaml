@@ -1,0 +1,26 @@
+---
+description: Parameters for the Css Weighted Least Squares component.
+parameters:
+  - name: Css_N_Hat_B
+    description: "[-] Boresight unit vector of each coarse sun sensor in body frame components, three per sensor in row major order. An available sensor's boresight must be a unit vector to within 1e-3."
+    type: Packed_F32x24.T
+    default: "[+0.70710678, -0.50000000, +0.50000000,
+               +0.70710678, -0.50000000, -0.50000000,
+               +0.70710678, +0.50000000, -0.50000000,
+               +0.70710678, +0.50000000, +0.50000000,
+               -0.70710678, +0.00000000, +0.70710678,
+               -0.70710678, +0.70710678, +0.00000000,
+               -0.70710678, +0.00000000, -0.70710678,
+               -0.70710678, -0.70710678, +0.00000000]"
+  - name: Css_Availability
+    description: "[-] Which coarse sun sensors take part in the fit. An unavailable sensor is left out and its boresight is never read."
+    type: Css_Availability_X8.T
+    default: "[others => Css_Weighted_Least_Squares_Enums.Sensor_Availability.Available]"
+  - name: Use_Measurements_As_Weights
+    description: "[-] Whether each sensor's reading becomes its own weight in the least squares fit."
+    type: Packed_Boolean.T
+    default: "(Value => False)"
+  - name: Sensor_Use_Thresh
+    description: "[-] Cosine threshold at or below which a reading is dropped from the fit. Must lie in [0, 1]."
+    type: Packed_F32.T
+    default: "(Value => 0.15)"
