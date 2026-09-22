@@ -1,0 +1,11 @@
+---
+description: Parameters for the Mrp Rotation component.
+parameters:
+  - name: Initial_Sigma_Rr0
+    description: "[-] MRP attitude of the rotating frame R relative to R0 that the rotation starts from at initialization and on reset. Must be finite."
+    type: Packed_F32x3.T
+    default: "[0.0, 0.0, 0.0]"
+  - name: Omega_Rr0_R
+    description: "[rad/s] Constant angular velocity of R relative to R0 in R frame components. Must be finite."
+    type: Packed_F32x3.T
+    default: "[0.0, 0.0, 0.0]"

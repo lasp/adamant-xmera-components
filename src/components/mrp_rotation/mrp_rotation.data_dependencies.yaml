@@ -1,0 +1,6 @@
+---
+description: Data dependencies for the Mrp Rotation component.
+data_dependencies:
+  - name: Base_Attitude_Reference
+    type: Att_Ref.T
+    description: Attitude reference frame R0 that the rotation is superimposed on. Attitude, rate, and acceleration of R0 relative to inertial.

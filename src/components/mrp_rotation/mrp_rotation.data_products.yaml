@@ -1,0 +1,6 @@
+---
+description: Data products for the Mrp Rotation component.
+data_products:
+  - name: Attitude_Reference
+    type: Att_Ref.T
+    description: Attitude reference frame R rotating relative to R0. Attitude, rate, and acceleration of R relative to inertial.
