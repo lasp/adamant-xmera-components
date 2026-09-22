@@ -1,0 +1,9 @@
+---
+description: Data dependencies for the Triad component.
+data_dependencies:
+  - name: Sun_Direction_Inertial
+    type: Packed_F32x3.T
+    description: "[-] Unit vector from the spacecraft to the sun in inertial frame components."
+  - name: Thrust_Direction_Body
+    type: Packed_F32x3.T
+    description: "[-] Unit thrust direction in body frame components."
