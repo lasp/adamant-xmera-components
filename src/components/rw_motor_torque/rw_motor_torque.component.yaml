@@ -1,0 +1,19 @@
+---
+description: Reaction wheel motor torque mapping. Maps the commanded body control torque onto the available reaction wheels along the selected control axes, adds a null space term that steers the wheel speeds toward their desired values without disturbing the body, and sends the per-wheel motor torques straight to the wheel interface. Wraps the RwMotorTorqueAlgorithm C++ algorithm via its C shim.
+execution: passive
+init:
+  description: Initializes the reaction wheel motor torque algorithm with the default parameter values.
+connectors:
+  - description: Run the algorithm up to the current time.
+    type: Tick.T
+    kind: recv_sync
+  - description: Fetch a data product item from the database.
+    type: Data_Product_Fetch.T
+    return_type: Data_Product_Return.T
+    kind: request
+  - description: Send the computed per-wheel motor torques directly to the wheel interface component. Only honored by the receiver while the wheels are in closed-loop control.
+    type: Rwa_Torques.T
+    kind: send
+  - description: The parameter update connector.
+    type: Parameter_Update.T
+    kind: modify
