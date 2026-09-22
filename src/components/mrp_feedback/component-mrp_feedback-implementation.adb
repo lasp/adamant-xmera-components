@@ -4,6 +4,7 @@
 
 with Att_Guid;
 with Att_Guid.C;
+with Mrp_Feedback_Enums;
 with Mrp_Feedback_Output.C;
 with Mrp_Feedback_Rw_Availability.C;
 with Mrp_Feedback_Rw_Inertias.C;
@@ -65,7 +66,7 @@ package body Component.Mrp_Feedback.Implementation is
          P                    => Self.Derivative_Gain_P.Value,
          Ki                   => Self.Integral_Gain_Ki.Value,
          Integral_Limit       => Self.Integral_Limit.Value,
-         Control_Law_Type     => To_C (Self.Control_Law_Type.Value),
+         Control_Law_Type     => Mrp_Feedback_Enums.Control_Law_Type.C.To_C (Self.Control_Law_Type.Value),
          Control_Period       => Self.Control_Period,
          Known_Torque_Pnt_B_B => Cfg.Known_Torque'Access,
          Iscpnt_B_B           => Cfg.Inertia'Access,
@@ -172,7 +173,7 @@ package body Component.Mrp_Feedback.Implementation is
          P                    => Self.Derivative_Gain_P.Value,
          Ki                   => Self.Integral_Gain_Ki.Value,
          Integral_Limit       => Self.Integral_Limit.Value,
-         Control_Law_Type     => To_C (Self.Control_Law_Type.Value),
+         Control_Law_Type     => Mrp_Feedback_Enums.Control_Law_Type.C.To_C (Self.Control_Law_Type.Value),
          Control_Period       => Self.Control_Period,
          Known_Torque_Pnt_B_B => Cfg.Known_Torque'Access,
          Iscpnt_B_B           => Cfg.Inertia'Access,
@@ -208,7 +209,7 @@ package body Component.Mrp_Feedback.Implementation is
          P                    => Derivative_Gain_P.Value,
          Ki                   => Integral_Gain_Ki.Value,
          Integral_Limit       => Integral_Limit.Value,
-         Control_Law_Type     => To_C (Control_Law_Type.Value),
+         Control_Law_Type     => Mrp_Feedback_Enums.Control_Law_Type.C.To_C (Control_Law_Type.Value),
          Control_Period       => Self.Control_Period,
          Known_Torque_Pnt_B_B => Cfg.Known_Torque'Access,
          Iscpnt_B_B           => Cfg.Inertia'Access,

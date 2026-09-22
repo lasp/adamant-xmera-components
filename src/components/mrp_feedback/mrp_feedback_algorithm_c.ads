@@ -31,28 +31,6 @@ package Mrp_Feedback_Algorithm_C is
           Convention    => C,
           External_Name => "MrpFeedbackAlgorithm_getMaxNumRw";
 
-   --* Control law variant. The representation clause pins the literals to the C
-   --* ControlLawType_c values so that 'Enum_Val is a genuine validity gate when
-   --* converting the parameter value into this type.
-   type Mrp_Feedback_Control_Law_Type is
-     (Normal,
-      Simple_Integral)
-     with Convention => C;
-   for Mrp_Feedback_Control_Law_Type use
-     (Normal          => 0,
-      Simple_Integral => 1);
-
-   --* Convert the component's control law parameter value into the C enumeration
-   --* above. The conversion lives here, with the C type, because it is boundary
-   --* marshalling: the two enumerations exist separately only because the generated
-   --* Adamant enumeration cannot carry Convention => C, and so is sized for Ada rather
-   --* than for the C int the shim expects. Going through 'Enum_Rep and 'Enum_Val
-   --* honors both representation clauses rather than relying on literal position.
-   function To_C (Value : in Mrp_Feedback_Enums.Control_Law_Type.E)
-      return Mrp_Feedback_Control_Law_Type
-   is (Mrp_Feedback_Control_Law_Type'Enum_Val (
-         Mrp_Feedback_Enums.Control_Law_Type.E'Enum_Rep (Value)));
-
    -- ABI validation: the constant-dimensioned Ada arrays crossing the FFI
    -- boundary must match the C-side RW_EFF_CNT, checked at elaboration. Each
    -- wrapped array is tied three ways: the count, the purity of the record
@@ -102,7 +80,7 @@ package Mrp_Feedback_Algorithm_C is
       P                    : Short_Float;
       Ki                   : Short_Float;
       Integral_Limit       : Short_Float;
-      Control_Law_Type     : Mrp_Feedback_Control_Law_Type;
+      Control_Law_Type     : Mrp_Feedback_Enums.Control_Law_Type.C.E_C;
       Control_Period       : Short_Float;
       Known_Torque_Pnt_B_B : access constant Packed_F32x3_Record.C.U_C;
       Iscpnt_B_B           : access constant Packed_F32x9_Record.C.U_C;
@@ -123,7 +101,7 @@ package Mrp_Feedback_Algorithm_C is
       P                    : Short_Float;
       Ki                   : Short_Float;
       Integral_Limit       : Short_Float;
-      Control_Law_Type     : Mrp_Feedback_Control_Law_Type;
+      Control_Law_Type     : Mrp_Feedback_Enums.Control_Law_Type.C.E_C;
       Control_Period       : Short_Float;
       Known_Torque_Pnt_B_B : access constant Packed_F32x3_Record.C.U_C;
       Iscpnt_B_B           : access constant Packed_F32x9_Record.C.U_C;
@@ -152,7 +130,7 @@ package Mrp_Feedback_Algorithm_C is
       P                    : Short_Float;
       Ki                   : Short_Float;
       Integral_Limit       : Short_Float;
-      Control_Law_Type     : Mrp_Feedback_Control_Law_Type;
+      Control_Law_Type     : Mrp_Feedback_Enums.Control_Law_Type.C.E_C;
       Control_Period       : Short_Float;
       Known_Torque_Pnt_B_B : access constant Packed_F32x3_Record.C.U_C;
       Iscpnt_B_B           : access constant Packed_F32x9_Record.C.U_C;
