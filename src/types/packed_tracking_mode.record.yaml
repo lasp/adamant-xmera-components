@@ -1,0 +1,7 @@
+---
+description: Solar array reference tracking mode selection, packed as an 8-bit enumeration. Values outside the enumeration fail type validation during parameter staging.
+fields:
+  - name: Value
+    description: The tracking mode.
+    type: Solar_Array_Reference_Enums.Tracking_Mode.E
+    format: E8
