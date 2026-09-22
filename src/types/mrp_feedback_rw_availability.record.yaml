@@ -1,0 +1,9 @@
+---
+#  typedef struct {
+#      uint8_t availability[RW_EFF_CNT]; /*!< [-] one entry per wheel */
+#  } MrpFeedbackRwAvailability_c;
+description: Record wrapping the per-wheel availability. Maps to MrpFeedbackRwAvailability_c in the mrpFeedback C shim, which takes it by pointer.
+fields:
+  - name: Value
+    description: Availability of each reaction wheel slot.
+    type: Wheel_Availability_X4.T

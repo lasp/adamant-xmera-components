@@ -1,0 +1,9 @@
+---
+#  typedef struct {
+#      float data[3 * RW_EFF_CNT]; /*!< [-] three components per wheel */
+#  } MrpFeedbackRwSpinAxes_c;
+description: Record wrapping the reaction wheel spin axes, one body frame unit vector per wheel. Maps to MrpFeedbackRwSpinAxes_c in the mrpFeedback C shim, which takes it by pointer.
+fields:
+  - name: Value
+    description: "[-] Spin axis of each reaction wheel slot in body frame components."
+    type: Packed_F32x3_X4.T
