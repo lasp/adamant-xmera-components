@@ -1,0 +1,19 @@
+---
+description: Parameters for the Rw Motor Torque component.
+parameters:
+  - name: Control_Axes
+    description: "[-] Body axes the wheels are asked to control. At least one must be selected, and every selected axis must be reachable by the available wheels."
+    type: Rw_Motor_Torque_Control_Axes.T
+    default: "(Torque_X => True, Torque_Y => True, Torque_Z => True)"
+  - name: Rw_Spin_Axes
+    description: "[-] Reaction wheel spin axes in body frame components, one unit vector per wheel slot. Each must be finite and within 1e-3 of unit length."
+    type: Packed_F32x3_X4.T
+    default: "[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [0.57735027, 0.57735027, 0.57735027]]"
+  - name: Wheel_Availability
+    description: "[-] Which reaction wheels take part in the mapping. An unavailable wheel is commanded zero torque. Every slot is configured, so a slot without a wheel is marked unavailable."
+    type: Wheel_Availability_X4.T
+    default: "[others => Mrp_Feedback_Enums.Wheel_Availability.Available]"
+  - name: Omega_Gain
+    description: "[-] Null space feedback gain on the wheel speed error. Must be finite and not negative. Zero disables the null space term."
+    type: Packed_F32.T
+    default: "(Value => 0.0)"
