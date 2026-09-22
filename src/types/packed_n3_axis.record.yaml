@@ -1,0 +1,7 @@
+---
+description: Triad fallback constraint axis selection, packed as an 8-bit enumeration. Values outside the enumeration fail type validation during parameter staging.
+fields:
+  - name: Value
+    description: The fallback constraint axis.
+    type: Triad_Enums.N3_Axis.E
+    format: E8

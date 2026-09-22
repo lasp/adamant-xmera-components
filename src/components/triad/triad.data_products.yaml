@@ -1,0 +1,6 @@
+---
+description: Data products for the Triad component.
+data_products:
+  - name: Attitude_Reference
+    type: Att_Ref.T
+    description: Reference attitude that aligns the thrust direction with the requested inertial direction. The algorithm produces an attitude only, so the reference rate and acceleration are zero. The attitude is zero when the triad cannot be formed.

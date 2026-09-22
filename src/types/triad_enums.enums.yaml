@@ -1,0 +1,12 @@
+---
+description: Enumerations for the Triad component.
+enums:
+  - name: N3_Axis
+    description: Inertial z axis direction used as the fallback constraint axis when the sun direction is nearly parallel to the requested thrust direction. Values match the C N3Axis_c enumeration.
+    literals:
+      - name: Plus_Z_Hat_N
+        value: 0
+        description: The positive inertial z axis.
+      - name: Minus_Z_Hat_N
+        value: 1
+        description: The negative inertial z axis.

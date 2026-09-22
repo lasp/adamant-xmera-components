@@ -1,0 +1,19 @@
+---
+description: Triad attitude guidance. Computes the reference attitude that aligns the body thrust direction with a requested inertial thrust direction while keeping the solar array drive axis orthogonal to the sun. Wraps the TriadAlgorithm C++ algorithm via its C shim.
+execution: passive
+init:
+  description: Initializes the triad algorithm with the default parameter values.
+connectors:
+  - description: Run the algorithm up to the current time.
+    type: Tick.T
+    kind: recv_sync
+  - description: Fetch a data product item from the database.
+    type: Data_Product_Fetch.T
+    return_type: Data_Product_Return.T
+    kind: request
+  - description: The data product invoker connector
+    type: Data_Product.T
+    kind: send
+  - description: The parameter update connector.
+    type: Parameter_Update.T
+    kind: modify

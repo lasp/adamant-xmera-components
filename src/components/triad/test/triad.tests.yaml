@@ -1,0 +1,11 @@
+---
+description: This is a unit test suite for the Triad component
+tests:
+  - name: Test
+    description: Run the algorithm on the input sets of the Python reference test to ensure the Ada to C to C++ integration is sound.
+  - name: Test_Degenerate_Geometry
+    description: Check the fallback constraint axis when the sun is parallel to the requested thrust direction, and the zero attitude when the triad cannot be formed.
+  - name: Test_Invalid_Parameter
+    description: Ensure a staged configuration the algorithm would reject is refused at validation.
+  - name: Test_Invalid_Data_Dependency
+    description: Ensure a data dependency with the wrong identifier is treated as a wiring defect and fails the tick's assertion.

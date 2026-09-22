@@ -1,0 +1,15 @@
+---
+description: Parameters for the Triad component.
+parameters:
+  - name: Sada_Hat_B
+    description: "[-] Solar array drive axis in body frame components. Must be within 1e-3 of unit length."
+    type: Packed_F32x3.T
+    default: "[1.0, 0.0, 0.0]"
+  - name: Thrust_Req_Hat_N
+    description: "[-] Requested thrust direction in inertial frame components. Must be within 1e-3 of unit length."
+    type: Packed_F32x3.T
+    default: "[1.0, 0.0, 0.0]"
+  - name: N3_Axis
+    description: "[-] Inertial z axis direction used as the fallback constraint axis when the sun direction is nearly parallel to the requested thrust direction."
+    type: Packed_N3_Axis.T
+    default: "(Value => Triad_Enums.N3_Axis.Plus_Z_Hat_N)"
