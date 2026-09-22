@@ -1,0 +1,9 @@
+---
+#  typedef struct {
+#      float data[RW_EFF_CNT]; /*!< [kg*m^2] one entry per wheel */
+#  } MrpFeedbackRwInertias_c;
+description: Record wrapping the per-wheel spin axis inertias. Maps to MrpFeedbackRwInertias_c in the mrpFeedback C shim, which takes it by pointer.
+fields:
+  - name: Value
+    description: "[kg m^2] Spin axis inertia of each reaction wheel slot."
+    type: Packed_F32x4.T

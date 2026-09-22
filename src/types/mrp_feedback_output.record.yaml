@@ -1,0 +1,13 @@
+---
+#  typedef struct {
+#      Vector3f_c controlTorque;          /*!< [N*m] commanded control torque Lr */
+#      Vector3f_c integralFeedbackTorque; /*!< [N*m] integral feedback torque Li */
+#  } MrpFeedbackOutput_c;
+description: Output of the MrpFeedbackAlgorithm C shim. Maps to MrpFeedbackOutput_c.
+fields:
+  - name: Control_Torque
+    type: Packed_F32x3.T
+    description: "[Nm] Commanded control torque in body frame components."
+  - name: Integral_Feedback_Torque
+    type: Packed_F32x3.T
+    description: "[Nm] Integral feedback torque in body frame components."

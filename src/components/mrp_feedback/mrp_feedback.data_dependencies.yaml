@@ -1,0 +1,9 @@
+---
+description: Data dependencies for the Mrp Feedback component.
+data_dependencies:
+  - name: Attitude_Guidance
+    type: Att_Guid.T
+    description: Attitude and rate tracking errors, the reference rate, and the reference angular acceleration, all in body frame components.
+  - name: Wheel_Speeds
+    type: Rwa_Speeds.T
+    description: "[rad/s] Current speed of each reaction wheel."

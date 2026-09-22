@@ -1,0 +1,21 @@
+---
+description: Enumerations for the Mrp Feedback component.
+enums:
+  - name: Control_Law_Type
+    description: MRP feedback control law variant. Values match the C ControlLawType_c enumeration.
+    literals:
+      - name: Normal
+        value: 0
+        description: The gyroscopic momentum term uses the reference rate and the integral state.
+      - name: Simple_Integral
+        value: 1
+        description: The gyroscopic momentum term uses the measured body rate.
+  - name: Wheel_Availability
+    description: Whether a reaction wheel contributes to the wheel momentum term. Values match the C DeviceAvailability_c enumeration.
+    literals:
+      - name: Available
+        value: 0
+        description: The wheel is running and its momentum is included.
+      - name: Unavailable
+        value: 1
+        description: The wheel is excluded from the momentum term.
