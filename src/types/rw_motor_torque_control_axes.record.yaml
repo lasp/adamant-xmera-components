@@ -1,0 +1,18 @@
+---
+#  typedef struct {
+#      uint8_t axis[3]; /*!< [-] x, y, z; nonzero selects the axis */
+#  } RwMotorTorqueControlAxes_c;
+description: Body axes the reaction wheels are asked to control, x then y then z. A true entry selects the axis. Maps to RwMotorTorqueControlAxes_c in the rwMotorTorque C shim, which takes it by pointer.
+fields:
+  - name: Torque_X
+    type: Boolean
+    format: E8
+    description: "[-] Control the body x torque axis"
+  - name: Torque_Y
+    type: Boolean
+    format: E8
+    description: "[-] Control the body y torque axis"
+  - name: Torque_Z
+    type: Boolean
+    format: E8
+    description: "[-] Control the body z torque axis"
