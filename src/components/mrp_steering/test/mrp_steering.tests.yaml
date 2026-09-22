@@ -1,0 +1,11 @@
+---
+description: This is a unit test suite for the Mrp Steering component
+tests:
+  - name: Test
+    description: Run the algorithm through the integral accumulation and reset sequence of the Python reference test to ensure the Ada to C to C++ integration is sound.
+  - name: Test_Steering_Law_Variants
+    description: Check the feedforward toggle, the saturation gains, and the maximum rate options against the Python reference model.
+  - name: Test_Invalid_Parameter
+    description: Ensure a staged configuration the algorithm would reject is refused at validation.
+  - name: Test_Invalid_Data_Dependency
+    description: Ensure a data dependency with the wrong identifier is treated as a wiring defect and fails the tick's assertion.
