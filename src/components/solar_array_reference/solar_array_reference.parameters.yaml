@@ -1,0 +1,15 @@
+---
+description: Parameters for the Solar Array Reference component.
+parameters:
+  - name: Drive_Axis
+    description: "[-] Solar array drive axis in body frame components. Must be finite, within 1e-3 of unit length, and orthogonal to the surface normal."
+    type: Packed_F32x3.T
+    default: "[1.0, 0.0, 0.0]"
+  - name: Surface_Normal
+    description: "[-] Solar array surface normal at zero rotation in body frame components. Must be finite, within 1e-3 of unit length, and orthogonal to the drive axis."
+    type: Packed_F32x3.T
+    default: "[0.0, 1.0, 0.0]"
+  - name: Alignment_Threshold
+    description: "[rad] Angle between the sun direction and the drive axis below which the array has no preferred angle and the reference holds the current angle. Must be in [1e-3, pi/2]."
+    type: Packed_F32.T
+    default: "(Value => 0.1)"
