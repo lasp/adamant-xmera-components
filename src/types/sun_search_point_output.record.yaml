@@ -17,6 +17,6 @@ fields:
     description: "[rad/s] Reference frame rate of R relative to N, in B frame components."
     type: Packed_F32x3.T
   - name: Sun_Not_Found
-    description: Whether the search failed to acquire the sun (1) or not (0). Mirrors the C99 bool the shim returns, which is one byte holding 0 or 1.
-    type: Interfaces.Unsigned_8
-    format: U8
+    description: Whether the search failed to acquire the sun. Mirrors the C99 bool in the shim's output struct.
+    type: Boolean
+    format: E8

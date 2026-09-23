@@ -5,6 +5,7 @@
 with Packed_F32x3.C;
 with Rotation_Properties_X4_Record.C;
 with Sun_Search_Point_Enums; use Sun_Search_Point_Enums;
+with Sun_Search_Point_Output.C;
 
 package body Component.Sun_Search_Point.Implementation is
 
@@ -71,12 +72,12 @@ package body Component.Sun_Search_Point.Implementation is
 
       -- Run one guidance step and publish its outputs:
       declare
-         Output : constant Update_Result := Update (
+         Output : constant Sun_Search_Point_Output.T := Sun_Search_Point_Output.C.Pack (Update (
             Self.Alg,
             R_Hat_Sb_B          => (Value => Packed_F32x3.C.Unpack (R_Hat_Sb_B)),
             Omega_Bn_B          => (Value => Packed_F32x3.C.Unpack (Omega_Bn_B)),
             Num_Css_Viewing_Sun => Css_Count.Value
-         );
+         ));
       begin
          Self.Data_Product_T_Send (Self.Data_Products.Sigma_Br (Arg.Time, Output.Sigma_Br));
          Self.Data_Product_T_Send (Self.Data_Products.Omega_Br_B (Arg.Time, Output.Omega_Br_B));
