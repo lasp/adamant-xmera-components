@@ -1,0 +1,19 @@
+---
+description: Reaction Wheel Assembly (RWA) torques.
+fields:
+  - name: Rwa_1
+    description: Torque to apply to RWA 1 in NM.
+    type: Short_Float
+    format: F32
+  - name: Rwa_2
+    description: Torque to apply to RWA 2 in NM.
+    type: Short_Float
+    format: F32
+  - name: Rwa_3
+    description: Torque to apply to RWA 3 in NM.
+    type: Short_Float
+    format: F32
+  - name: Rwa_4
+    description: Torque to apply to RWA 4 in NM.
+    type: Short_Float
+    format: F32
