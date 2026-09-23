@@ -7,6 +7,7 @@ with Css_Boresight_Array.C;
 with Css_Reading_Array.C;
 with Css_Sensor_Values;
 with Css_Weighted_Least_Squares_Output.C;
+with Interfaces.C;
 with Packed_F32x3.C;
 with Packed_F32x8.C;
 
@@ -44,7 +45,7 @@ package body Component.Css_Weighted_Least_Squares.Implementation is
       Self.Alg := Create (
          Css_N_Hat_B                 => Cfg.Boresights'Access,
          Css_Availability            => Cfg.Availability'Access,
-         Use_Measurements_As_Weights => Self.Use_Measurements_As_Weights.Value,
+         Use_Measurements_As_Weights => Interfaces.C.C_bool (Self.Use_Measurements_As_Weights.Value),
          Sensor_Use_Thresh           => Self.Sensor_Use_Thresh.Value,
          Control_Period              => Self.Control_Period);
    end Init;
@@ -135,7 +136,7 @@ package body Component.Css_Weighted_Least_Squares.Implementation is
          Self.Alg,
          Css_N_Hat_B                 => Cfg.Boresights'Access,
          Css_Availability            => Cfg.Availability'Access,
-         Use_Measurements_As_Weights => Self.Use_Measurements_As_Weights.Value,
+         Use_Measurements_As_Weights => Interfaces.C.C_bool (Self.Use_Measurements_As_Weights.Value),
          Sensor_Use_Thresh           => Self.Sensor_Use_Thresh.Value,
          Control_Period              => Self.Control_Period);
    end Update_Parameters_Action;
@@ -159,7 +160,7 @@ package body Component.Css_Weighted_Least_Squares.Implementation is
       if Validate_Config (
          Css_N_Hat_B                 => Cfg.Boresights'Access,
          Css_Availability            => Cfg.Availability'Access,
-         Use_Measurements_As_Weights => Use_Measurements_As_Weights.Value,
+         Use_Measurements_As_Weights => Interfaces.C.C_bool (Use_Measurements_As_Weights.Value),
          Sensor_Use_Thresh           => Sensor_Use_Thresh.Value,
          Control_Period              => Self.Control_Period)
       then

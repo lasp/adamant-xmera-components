@@ -2,6 +2,7 @@
 -- Body_Rate_Miscompare Component Implementation Body
 --------------------------------------------------------------------------------
 
+with Interfaces.C;
 with Packed_F32x3.C;
 with Packed_F32x3_Record.C;
 
@@ -16,7 +17,7 @@ package body Component.Body_Rate_Miscompare.Implementation is
          Self.Alg,
          Body_Rate_Threshold     => Self.Body_Rate_Threshold.Value,
          Fault_Persistence_Limit => Self.Fault_Persistence_Limit.Value,
-         Use_Imu_Rates           => Self.Use_Imu_Rates);
+         Use_Imu_Rates           => Interfaces.C.C_bool (Self.Use_Imu_Rates));
    end Apply_Config;
 
    --------------------------------------------------
@@ -28,7 +29,7 @@ package body Component.Body_Rate_Miscompare.Implementation is
       Self.Alg := Create (
          Body_Rate_Threshold     => Self.Body_Rate_Threshold.Value,
          Fault_Persistence_Limit => Self.Fault_Persistence_Limit.Value,
-         Use_Imu_Rates           => Self.Use_Imu_Rates);
+         Use_Imu_Rates           => Interfaces.C.C_bool (Self.Use_Imu_Rates));
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -174,7 +175,7 @@ package body Component.Body_Rate_Miscompare.Implementation is
       if Validate_Config (
             Body_Rate_Threshold     => Body_Rate_Threshold.Value,
             Fault_Persistence_Limit => Fault_Persistence_Limit.Value,
-            Use_Imu_Rates           => Self.Use_Imu_Rates)
+            Use_Imu_Rates           => Interfaces.C.C_bool (Self.Use_Imu_Rates))
       then
          return Parameter_Validation_Status.Valid;
       else

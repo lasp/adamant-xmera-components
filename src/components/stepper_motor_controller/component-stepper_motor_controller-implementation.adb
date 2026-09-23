@@ -2,6 +2,7 @@
 -- Stepper_Motor_Controller Component Implementation Body
 --------------------------------------------------------------------------------
 
+with Interfaces.C;
 with Stepper_Enums;
 
 package body Component.Stepper_Motor_Controller.Implementation is
@@ -73,7 +74,7 @@ package body Component.Stepper_Motor_Controller.Implementation is
             Self.Alg,
             Current_Position => Motor_State.Current_Position,
             Reference_Angle => Reference_Angle.Value,
-            Is_Motor_Moving => Motor_State.Is_Moving = Stepper_Enums.Motion_Status.Moving
+            Is_Motor_Moving => Interfaces.C.C_bool (Motor_State.Is_Moving = Stepper_Enums.Motion_Status.Moving)
          );
       begin
          -- Map the algorithm output onto the step command interface. A positive

@@ -2,12 +2,9 @@ pragma Ada_2012;
 
 pragma Style_Checks (Off);
 pragma Warnings     (Off, "-gnatwu");
--- Boolean is used at the C boundary to match the shim's C99 bool (_Bool):
--- 1-byte, 0/1 representation, interoperable under Convention => C. Suppress
--- the -gnatwx advisory about using a C "char"-style type for the mapping.
-pragma Warnings     (Off, "-gnatwx");
 
 with Interfaces; use Interfaces;
+with Interfaces.C;
 with Body_Ephemeris_Payload.C;
 with Body_Ephemeris_Payload_X20.C;
 with Body_Ephemeris_Payload_X20_Record.C;
@@ -54,7 +51,7 @@ package Ephemerides_Recenter_Algorithm_C is
       Body_Ids                  : access constant Int32_X20_Record.C.U_C;
       Original_Central_Body_Ids : access constant Int32_X20_Record.C.U_C;
       Body_Count                : Unsigned_32)
-     return Boolean
+     return Interfaces.C.C_bool
      with Import       => True,
           Convention   => C,
           External_Name => "EphemeridesRecenterAlgorithm_validateConfig";
@@ -126,4 +123,3 @@ end Ephemerides_Recenter_Algorithm_C;
 
 pragma Style_Checks (On);
 pragma Warnings     (On, "-gnatwu");
-pragma Warnings     (On, "-gnatwx");

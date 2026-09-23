@@ -2,12 +2,9 @@ pragma Ada_2012;
 
 pragma Style_Checks (Off);
 pragma Warnings (Off, "-gnatwu");
--- Boolean is used at the C boundary to match the shim's C99 bool (_Bool):
--- 1-byte, 0/1 representation, interoperable under Convention => C. Suppress
--- the -gnatwx advisory about using a C "char"-style type for the mapping.
-pragma Warnings (Off, "-gnatwx");
 
 with Interfaces; use Interfaces;
+with Interfaces.C;
 with Att_Guid.C;
 with Mrp_Feedback_Enums;
 with Mrp_Feedback_Output.C;
@@ -87,7 +84,7 @@ package Mrp_Feedback_Algorithm_C is
       Gs_Matrix_B          : access constant Mrp_Feedback_Rw_Spin_Axes.C.U_C;
       Js_List              : access constant Mrp_Feedback_Rw_Inertias.C.U_C;
       Wheel_Availability   : access constant Mrp_Feedback_Rw_Availability.C.U_C)
-     return Boolean
+     return Interfaces.C.C_bool
      with Import        => True,
           Convention    => C,
           External_Name => "MrpFeedbackAlgorithm_validateConfig";
@@ -174,4 +171,3 @@ end Mrp_Feedback_Algorithm_C;
 
 pragma Style_Checks (On);
 pragma Warnings (On, "-gnatwu");
-pragma Warnings (On, "-gnatwx");

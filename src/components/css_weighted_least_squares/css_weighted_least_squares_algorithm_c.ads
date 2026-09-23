@@ -1,12 +1,9 @@
 pragma Ada_2012;
 pragma Style_Checks (Off);
 pragma Warnings (Off, "-gnatwu");
--- Boolean is used at the C boundary to match the shim's C99 bool (_Bool):
--- 1-byte, 0/1 representation, interoperable under Convention => C. Suppress
--- the -gnatwx advisory about using a C "char"-style type for the mapping.
-pragma Warnings (Off, "-gnatwx");
 
 with Interfaces; use Interfaces;
+with Interfaces.C;
 with Css_Availability_Array.C;
 with Css_Availability_X8.C;
 with Css_Boresight_Array.C;
@@ -64,10 +61,10 @@ package Css_Weighted_Least_Squares_Algorithm_C is
    function Validate_Config
      (Css_N_Hat_B                 : access constant Css_Boresight_Array.C.U_C;
       Css_Availability            : access constant Css_Availability_Array.C.U_C;
-      Use_Measurements_As_Weights : Boolean;
+      Use_Measurements_As_Weights : Interfaces.C.C_bool;
       Sensor_Use_Thresh           : Short_Float;
       Control_Period              : Short_Float)
-     return Boolean
+     return Interfaces.C.C_bool
      with Import        => True,
           Convention    => C,
           External_Name => "CssWeightedLeastSquaresAlgorithm_validateConfig";
@@ -79,7 +76,7 @@ package Css_Weighted_Least_Squares_Algorithm_C is
    function Create
      (Css_N_Hat_B                 : access constant Css_Boresight_Array.C.U_C;
       Css_Availability            : access constant Css_Availability_Array.C.U_C;
-      Use_Measurements_As_Weights : Boolean;
+      Use_Measurements_As_Weights : Interfaces.C.C_bool;
       Sensor_Use_Thresh           : Short_Float;
       Control_Period              : Short_Float)
      return Css_Weighted_Least_Squares_Algorithm_Access
@@ -102,7 +99,7 @@ package Css_Weighted_Least_Squares_Algorithm_C is
      (Self                        : Css_Weighted_Least_Squares_Algorithm_Access;
       Css_N_Hat_B                 : access constant Css_Boresight_Array.C.U_C;
       Css_Availability            : access constant Css_Availability_Array.C.U_C;
-      Use_Measurements_As_Weights : Boolean;
+      Use_Measurements_As_Weights : Interfaces.C.C_bool;
       Sensor_Use_Thresh           : Short_Float;
       Control_Period              : Short_Float)
      with Import        => True,
@@ -139,4 +136,3 @@ end Css_Weighted_Least_Squares_Algorithm_C;
 
 pragma Style_Checks (On);
 pragma Warnings (On, "-gnatwu");
-pragma Warnings (On, "-gnatwx");
