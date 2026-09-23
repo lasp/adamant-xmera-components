@@ -6,18 +6,9 @@ pragma Warnings (Off, "-gnatwu");
 with Interfaces; use Interfaces;
 with Interfaces.C;
 with Body_Rate_Miscompare_Output.C;
-with Packed_F32x3.C;
 with Packed_F32x3_Record.C;
 
 package Body_Rate_Miscompare_Algorithm_C is
-
-   --* Result of one miscompare update, presenting the selected body rate as a
-   --* packed record and the fault flag as a native Boolean. The raw C output
-   --* struct stays behind Update_C.
-   type Update_Result is record
-      Omega_Bn_B : Packed_F32x3.T;
-      Fault_Detected : Boolean;
-   end record;
 
    --* Opaque handle for a BodyRateMiscompareAlgorithm instance.
    type Body_Rate_Miscompare_Algorithm is limited private;
@@ -99,25 +90,8 @@ package Body_Rate_Miscompare_Algorithm_C is
    --* @param Self      The algorithm instance.
    --* @param Imu_Omega IMU body rate vector (Vector3f_c).
    --* @param St_Omega  Star tracker body rate vector (Vector3f_c).
-   --* @return Update_Result  The selected body rate and fault flag.
+   --* @return The output struct with the selected body rate and fault flag.
    function Update
-     (Self      : Body_Rate_Miscompare_Algorithm_Access;
-      Imu_Omega : Packed_F32x3_Record.C.U_C;
-      St_Omega  : Packed_F32x3_Record.C.U_C)
-     return Update_Result;
-
-private
-
-   -- Private representation: opaque null record
-   type Body_Rate_Miscompare_Algorithm is null record;
-
-   -- Raw C entry point. The public Update wraps this so callers receive
-   -- native Ada types while the C ABI keeps its output struct.
-   --* @param Self      The algorithm instance.
-   --* @param Imu_Omega IMU body rate vector (Vector3f_c).
-   --* @param St_Omega  Star tracker body rate vector (Vector3f_c).
-   --* @return The raw C output struct.
-   function Update_C
      (Self      : Body_Rate_Miscompare_Algorithm_Access;
       Imu_Omega : Packed_F32x3_Record.C.U_C;
       St_Omega  : Packed_F32x3_Record.C.U_C)
@@ -126,19 +100,10 @@ private
           Convention   => C,
           External_Name => "BodyRateMiscompareAlgorithm_update";
 
-   -- Convert the raw update output to the idiomatic result.
-   --* @param Output The raw C output struct.
-   --* @return The selected body rate and fault flag as native Ada types.
-   function To_Result (Output : Body_Rate_Miscompare_Output.C.U_C) return Update_Result
-   is ((Omega_Bn_B => Packed_F32x3.C.Pack (Output.Omega_Bn_B),
-        Fault_Detected => Output.Body_Rate_Fault_Detected /= 0));
+private
 
-   function Update
-     (Self      : Body_Rate_Miscompare_Algorithm_Access;
-      Imu_Omega : Packed_F32x3_Record.C.U_C;
-      St_Omega  : Packed_F32x3_Record.C.U_C)
-     return Update_Result
-   is (To_Result (Update_C (Self, Imu_Omega, St_Omega)));
+   -- Private representation: opaque null record
+   type Body_Rate_Miscompare_Algorithm is null record;
 
 end Body_Rate_Miscompare_Algorithm_C;
 
