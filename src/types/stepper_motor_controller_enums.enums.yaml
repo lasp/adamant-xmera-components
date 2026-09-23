@@ -1,0 +1,15 @@
+---
+description: Enumerations for the stepper motor controller algorithm.
+enums:
+  - name: Command_Type
+    description: Type of command produced by the stepper motor controller. Values match the C StepperMotorCommandType enumeration.
+    literals:
+      - name: None
+        value: 0
+        description: No command this cycle.
+      - name: Stop
+        value: 1
+        description: Stop the motor.
+      - name: Move
+        value: 2
+        description: Move by the number of steps in the output.

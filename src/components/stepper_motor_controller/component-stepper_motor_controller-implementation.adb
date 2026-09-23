@@ -4,6 +4,7 @@
 
 with Interfaces.C;
 with Stepper_Enums;
+with Stepper_Motor_Controller_Enums;
 
 package body Component.Stepper_Motor_Controller.Implementation is
 
@@ -67,6 +68,7 @@ package body Component.Stepper_Motor_Controller.Implementation is
       -- Call algorithm:
       declare
          use type Stepper_Enums.Motion_Status.E;
+         use Stepper_Motor_Controller_Enums.Command_Type;
 
          -- Run one tick of the controller state machine against the fetched
          -- motor state and reference angle:

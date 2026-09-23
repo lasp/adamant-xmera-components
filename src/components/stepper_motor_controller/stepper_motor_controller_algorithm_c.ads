@@ -5,30 +5,15 @@ pragma Warnings (Off, "-gnatwu");
 
 with Interfaces; use Interfaces;
 with Interfaces.C;
+with Stepper_Motor_Controller_Enums;
 with Stepper_Motor_Controller_Output.C;
 
 package Stepper_Motor_Controller_Algorithm_C is
 
-   --* Type of command produced by the stepper motor controller. Mirrors the
-   --* C StepperMotorCommandType enumeration carried in the Command_Type field
-   --* of the update output struct. The representation clause pins the literals
-   --* to the C values so that 'Enum_Val is a validity check when
-   --* converting the raw output field: an undefined value raises
-   --* Constraint_Error rather than silently mapping onto a valid command.
-   type Stepper_Motor_Command_Type is
-     (None,
-      Stop,
-      Move)
-     with Convention => C;
-   for Stepper_Motor_Command_Type use
-     (None => 0,
-      Stop => 1,
-      Move => 2);
-
    --* Result of one controller update, presenting the command as its
    --* enumeration type. The raw C output struct stays behind Update_C.
    type Update_Result is record
-      Command       : Stepper_Motor_Command_Type;
+      Command       : Stepper_Motor_Controller_Enums.Command_Type.E;
       Steps_To_Move : Integer_32;
    end record;
 
@@ -148,12 +133,13 @@ private
           Convention   => C,
           External_Name => "StepperMotorControllerAlgorithm_update";
 
-   -- Convert the raw update output to the idiomatic result. An out-of-range
-   -- command value from the C side fails the enum conversion's range check.
+   -- Convert the raw update output to the idiomatic result. The command
+   -- arrives as a C int; 'Enum_Val raises Constraint_Error if it is not a
+   -- literal of the enumeration.
    --* @param Output The raw C output struct.
    --* @return The command as its enumeration type and the step delta.
    function To_Result (Output : Stepper_Motor_Controller_Output.C.U_C) return Update_Result
-   is ((Command       => Stepper_Motor_Command_Type'Enum_Val (Output.Command_Type),
+   is ((Command       => Stepper_Motor_Controller_Enums.Command_Type.E'Enum_Val (Output.Command_Type),
         Steps_To_Move => Output.Steps_To_Move));
 
    function Update
