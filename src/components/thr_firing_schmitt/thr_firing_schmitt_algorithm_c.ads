@@ -23,38 +23,6 @@ package Thr_Firing_Schmitt_Algorithm_C is
           Convention   => C,
           External_Name => "ThrFiringSchmittAlgorithm_getMaxThrusterCount";
 
-   --* Thrust pulsing regime selection. The representation clause pins the
-   --* literals to the C ThrFiringSchmittPulsingRegime values so that
-   --* 'Enum_Val is a genuine validity gate when converting a raw parameter
-   --* value into this type.
-   type Thr_Firing_Schmitt_Pulsing_Regime is
-     (On_Pulsing,
-      Off_Pulsing)
-     with Convention => C;
-   for Thr_Firing_Schmitt_Pulsing_Regime use
-     (On_Pulsing  => 0,
-      Off_Pulsing => 1);
-
-   --* Convert the component's pulsing-regime parameter value into the C
-   --* enumeration above. The conversion lives here, with the C type, because it is
-   --* boundary marshalling: the two enumerations exist separately only because the
-   --* generated Adamant enumeration cannot carry Convention => C, and so is sized
-   --* for Ada rather than for the C int the shim expects.
-   --*
-   --* The Adamant enumeration is shared with the thr_firing_remainder component:
-   --* both shims declare the same two-valued regime with the same representation,
-   --* so a second identical enumeration would only duplicate it.
-   --*
-   --* Going through 'Enum_Rep and 'Enum_Val honors both representation clauses
-   --* rather than relying on literal position. A parameter value whose byte matches
-   --* no defined representation is rejected earlier, when the parameter is staged
-   --* (the generated validation tests 'Valid on the field), so 'Enum_Val cannot see
-   --* an undefined value here and callers need no exception handler.
-   function To_C (Value : in Thr_Firing_Remainder_Enums.Pulsing_Regime.E)
-      return Thr_Firing_Schmitt_Pulsing_Regime
-   is (Thr_Firing_Schmitt_Pulsing_Regime'Enum_Val (
-         Thr_Firing_Remainder_Enums.Pulsing_Regime.E'Enum_Rep (Value)));
-
    -- ABI validation: the constant-dimensioned Ada arrays crossing the FFI
    -- boundary must match the C-side MAX_EFF_CNT,
    -- checked at elaboration.
@@ -85,7 +53,7 @@ package Thr_Firing_Schmitt_Algorithm_C is
       Thr_Min_Fire_Time         : Short_Float;
       Control_Period            : Short_Float;
       On_Time_Saturation_Factor : Short_Float;
-      Pulsing_Regime            : Thr_Firing_Schmitt_Pulsing_Regime)
+      Pulsing_Regime            : Thr_Firing_Remainder_Enums.Pulsing_Regime.C.E_C)
      return Boolean
      with Import       => True,
           Convention   => C,
@@ -108,7 +76,7 @@ package Thr_Firing_Schmitt_Algorithm_C is
       Thr_Min_Fire_Time         : Short_Float;
       Control_Period            : Short_Float;
       On_Time_Saturation_Factor : Short_Float;
-      Pulsing_Regime            : Thr_Firing_Schmitt_Pulsing_Regime)
+      Pulsing_Regime            : Thr_Firing_Remainder_Enums.Pulsing_Regime.C.E_C)
      return Thr_Firing_Schmitt_Algorithm_Access
      with Import       => True,
           Convention   => C,
@@ -140,7 +108,7 @@ package Thr_Firing_Schmitt_Algorithm_C is
       Thr_Min_Fire_Time         : Short_Float;
       Control_Period            : Short_Float;
       On_Time_Saturation_Factor : Short_Float;
-      Pulsing_Regime            : Thr_Firing_Schmitt_Pulsing_Regime)
+      Pulsing_Regime            : Thr_Firing_Remainder_Enums.Pulsing_Regime.C.E_C)
      with Import       => True,
           Convention   => C,
           External_Name => "ThrFiringSchmittAlgorithm_setConfig";

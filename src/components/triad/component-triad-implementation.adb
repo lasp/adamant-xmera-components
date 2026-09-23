@@ -5,6 +5,7 @@
 with Packed_F32x3;
 with Packed_F32x3.C;
 with Packed_F32x3_Record.C;
+with Triad_Enums;
 
 package body Component.Triad.Implementation is
 
@@ -37,7 +38,7 @@ package body Component.Triad.Implementation is
       Self.Alg := Create (
          Sada_Hat_B       => Cfg.Sada_Hat_B'Access,
          Thrust_Req_Hat_N => Cfg.Thrust_Req_Hat_N'Access,
-         N3_Axis          => To_C (Self.N3_Axis.Value));
+         N3_Axis          => Triad_Enums.N3_Axis.C.To_C (Self.N3_Axis.Value));
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -113,7 +114,7 @@ package body Component.Triad.Implementation is
          Self.Alg,
          Sada_Hat_B       => Cfg.Sada_Hat_B'Access,
          Thrust_Req_Hat_N => Cfg.Thrust_Req_Hat_N'Access,
-         N3_Axis          => To_C (Self.N3_Axis.Value));
+         N3_Axis          => Triad_Enums.N3_Axis.C.To_C (Self.N3_Axis.Value));
    end Update_Parameters_Action;
 
    -- Validate a staged parameter set before it is applied by asking the algorithm's own
@@ -135,7 +136,7 @@ package body Component.Triad.Implementation is
       if Validate_Config (
          Sada_Hat_B       => Cfg.Sada_Hat_B'Access,
          Thrust_Req_Hat_N => Cfg.Thrust_Req_Hat_N'Access,
-         N3_Axis          => To_C (N3_Axis.Value))
+         N3_Axis          => Triad_Enums.N3_Axis.C.To_C (N3_Axis.Value))
       then
          return Parameter_Validation_Status.Valid;
       else
