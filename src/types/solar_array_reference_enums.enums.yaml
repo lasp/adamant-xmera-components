@@ -1,0 +1,12 @@
+---
+description: Enumerations for the Solar Array Reference component.
+enums:
+  - name: Tracking_Mode
+    description: Solar array reference tracking mode. Values match the C TrackingMode enumeration.
+    literals:
+      - name: Auto_Track
+        value: 0
+        description: The reference angle turns the array surface normal toward the sun.
+      - name: Specified_Angle
+        value: 1
+        description: The reference angle is the specified array angle.

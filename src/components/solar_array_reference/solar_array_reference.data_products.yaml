@@ -1,0 +1,6 @@
+---
+description: Data products for the Solar Array Reference component.
+data_products:
+  - name: Reference_Angle
+    type: Packed_F32.T
+    description: "[rad] Reference rotation angle of the solar array about its drive axis, wrapped to [-pi, pi]."

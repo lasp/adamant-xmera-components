@@ -1,0 +1,21 @@
+---
+description: Data dependencies for the Solar Array Reference component.
+data_dependencies:
+  - name: Navigation_Attitude
+    type: Nav_Att_Output.T
+    description: Current navigation attitude estimate. Only the body attitude is used.
+  - name: Attitude_Reference
+    type: Att_Ref.T
+    description: Reference attitude the body is slewing to. Only the reference attitude is used.
+  - name: Sun_Direction_Body
+    type: Packed_F32x3.T
+    description: "[-] Unit vector from the spacecraft to the sun in body frame components."
+  - name: Tracking_Mode
+    type: Packed_Tracking_Mode.T
+    description: "[-] Whether the reference angle tracks the sun or holds the specified array angle. Commanded sporadically at state transitions, so it is normally stale; a fresh value reconfigures the algorithm. The enumeration has exactly the values the algorithm accepts, so the command that sets it is validated at receipt and the tick does not validate it again."
+  - name: Specified_Array_Angle
+    type: Packed_Array_Angle.T
+    description: "[rad] Reference array angle used in the specified angle mode. Commanded sporadically at state transitions, so it is normally stale; a fresh value reconfigures the algorithm. The type carries the range the algorithm accepts, so the command that sets it is validated at receipt and the tick does not validate it again."
+  - name: Offset_Angle
+    type: Packed_Array_Angle.T
+    description: "[rad] Offset added to the sun tracking reference angle. Not applied in the specified angle mode. Commanded sporadically at state transitions, so it is normally stale; a fresh value reconfigures the algorithm. The type carries the range the algorithm accepts, so the command that sets it is validated at receipt and the tick does not validate it again."
