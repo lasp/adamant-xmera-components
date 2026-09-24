@@ -62,15 +62,14 @@ package Oe_State_Ephem_Algorithm_C is
    -- data rather than failing to compile.
    pragma Assert (Unsigned_32 (Oe_Arc_Records.Length) = Get_Max_Oe_Records);
    -- This size assert is narrower than it looks: it catches a field added or removed,
-   -- or a Long_Float narrowed, but not an Anomaly_Flag width change (the seven bytes
-   -- of padding that follow absorb any width up to 64 bits) and not a size-preserving
-   -- field reorder. Field order is guarded behaviourally by the component tests.
+   -- or a Long_Float narrowed, but not an Anomaly_Flag width change (the padding that
+   -- follows absorbs any width up to 64 bits) and not a size-preserving field reorder.
+   -- Field order is guarded behaviourally by the component tests.
    pragma Assert (Oe_Arc.C.U_C'Object_Size = Get_Fit_Arc_Size_Bits);
-   -- Anomaly_Flag pairs with a uint8_t-backed C enum, and the generated Adamant
-   -- enumeration carries no size clause -- its 8-bit width is a GNAT default that
-   -- nothing in the model pins. Assert it directly, since the size assert above
-   -- cannot see it.
-   pragma Assert (Oe_State_Ephem_Enums.Anomaly_Type.E'Object_Size = 8);
+   -- Anomaly_Flag crosses as the C version of its enumeration, which must have the
+   -- width of the C enum in the struct, an int. Assert it directly, since the size
+   -- assert above cannot see it.
+   pragma Assert (Oe_State_Ephem_Enums.Anomaly_Type.C.E_C'Object_Size = Interfaces.C.int'Size);
 
    --* @brief Allocate a new configuration in the empty state (zero arcs, zeroed
    --* storage). Must be released with Config_Destroy.
