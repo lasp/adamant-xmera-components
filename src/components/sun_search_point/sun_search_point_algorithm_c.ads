@@ -5,8 +5,6 @@ pragma Warnings (Off, "-gnatwu");
 
 with Interfaces; use Interfaces;
 with Interfaces.C;
-with Packed_F32x3;
-with Packed_F32x3.C;
 with Packed_F32x3_Record.C;
 with Packed_Observation_Threshold;
 with Rotation_Properties.C;
@@ -16,16 +14,6 @@ with Rotation_Properties_X4_Record.C;
 with Sun_Search_Point_Output.C;
 
 package Sun_Search_Point_Algorithm_C is
-
-   --* Result of one guidance update, presenting the three output vectors as packed
-   --* records and the search-failure flag as a native Boolean. The raw C output
-   --* struct stays behind Update_C.
-   type Update_Result is record
-      Sigma_Br      : Packed_F32x3.T;
-      Omega_Br_B    : Packed_F32x3.T;
-      Omega_Rn_B    : Packed_F32x3.T;
-      Sun_Not_Found : Boolean;
-   end record;
 
    --* Opaque handle for a SunSearchPointAlgorithm instance.
    type Sun_Search_Point_Algorithm is limited private;
@@ -145,27 +133,8 @@ package Sun_Search_Point_Algorithm_C is
    --* @param R_Hat_Sb_B          Sun direction vector in body frame.
    --* @param Omega_Bn_B          [rad/s] Inertial body angular velocity in body frame.
    --* @param Num_Css_Viewing_Sun [-] Coarse sun sensors observing the sun this cycle.
-   --* @return The three guidance vectors and the search-failure flag.
+   --* @return The output struct with the three guidance vectors and the search-failure flag.
    function Update
-     (Self                : Sun_Search_Point_Algorithm_Access;
-      R_Hat_Sb_B          : Packed_F32x3_Record.C.U_C;
-      Omega_Bn_B          : Packed_F32x3_Record.C.U_C;
-      Num_Css_Viewing_Sun : Unsigned_32)
-     return Update_Result;
-
-private
-
-   -- Private representation: opaque null record
-   type Sun_Search_Point_Algorithm is null record;
-
-   -- Raw C entry point. The public Update wraps this so callers receive native
-   -- Ada types while the C ABI keeps its output struct.
-   --* @param Self                The algorithm instance.
-   --* @param R_Hat_Sb_B          Sun direction vector in body frame.
-   --* @param Omega_Bn_B          [rad/s] Inertial body angular velocity in body frame.
-   --* @param Num_Css_Viewing_Sun [-] Coarse sun sensors observing the sun this cycle.
-   --* @return The raw C output struct.
-   function Update_C
      (Self                : Sun_Search_Point_Algorithm_Access;
       R_Hat_Sb_B          : Packed_F32x3_Record.C.U_C;
       Omega_Bn_B          : Packed_F32x3_Record.C.U_C;
@@ -175,22 +144,10 @@ private
           Convention    => C,
           External_Name => "SunSearchPointAlgorithm_update";
 
-   -- Convert the raw update output to the idiomatic result.
-   --* @param Output The raw C output struct.
-   --* @return The three guidance vectors and the search-failure flag as native Ada types.
-   function To_Result (Output : Sun_Search_Point_Output.C.U_C) return Update_Result
-   is ((Sigma_Br      => Packed_F32x3.C.Pack (Output.Sigma_Br),
-        Omega_Br_B    => Packed_F32x3.C.Pack (Output.Omega_Br_B),
-        Omega_Rn_B    => Packed_F32x3.C.Pack (Output.Omega_Rn_B),
-        Sun_Not_Found => Output.Sun_Not_Found /= 0));
+private
 
-   function Update
-     (Self                : Sun_Search_Point_Algorithm_Access;
-      R_Hat_Sb_B          : Packed_F32x3_Record.C.U_C;
-      Omega_Bn_B          : Packed_F32x3_Record.C.U_C;
-      Num_Css_Viewing_Sun : Unsigned_32)
-     return Update_Result
-   is (To_Result (Update_C (Self, R_Hat_Sb_B, Omega_Bn_B, Num_Css_Viewing_Sun)));
+   -- Private representation: opaque null record
+   type Sun_Search_Point_Algorithm is null record;
 
 end Sun_Search_Point_Algorithm_C;
 

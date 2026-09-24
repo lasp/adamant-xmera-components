@@ -5,6 +5,6 @@ fields:
     description: "[rad/s] Selected body angular velocity omega_BN_B."
     type: Packed_F32x3.T
   - name: Body_Rate_Fault_Detected
-    description: Whether a body rate fault was detected (1) or not (0).
-    type: Interfaces.Unsigned_8
-    format: U8
+    description: Whether a body rate fault was detected. Mirrors the C99 bool in the shim's output struct.
+    type: Boolean
+    format: E8
