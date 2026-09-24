@@ -2,12 +2,9 @@ pragma Ada_2012;
 
 pragma Style_Checks (Off);
 pragma Warnings     (Off, "-gnatwu");
--- Boolean is used at the C boundary to match the shim's C99 bool (_Bool):
--- 1-byte, 0/1 representation, interoperable under Convention => C. Suppress
--- the -gnatwx advisory about using a C "char"-style type for the mapping.
-pragma Warnings     (Off, "-gnatwx");
 
 with Interfaces;       use Interfaces;
+with Interfaces.C;
 with Packed_F32x8.C;
 with Thr_Firing_Remainder_Enums;
 with Thr_Force_Cmd.C;
@@ -50,7 +47,7 @@ package Thr_Firing_Remainder_Algorithm_C is
       Control_Period            : Short_Float;
       On_Time_Saturation_Factor : Short_Float;
       Pulsing_Regime            : Thr_Firing_Remainder_Enums.Pulsing_Regime.C.E_C)
-     return Boolean
+     return Interfaces.C.C_bool
      with Import       => True,
           Convention   => C,
           External_Name => "ThrFiringRemainderAlgorithm_validateConfig";
@@ -123,4 +120,3 @@ end Thr_Firing_Remainder_Algorithm_C;
 
 pragma Style_Checks (On);
 pragma Warnings     (On, "-gnatwu");
-pragma Warnings     (On, "-gnatwx");

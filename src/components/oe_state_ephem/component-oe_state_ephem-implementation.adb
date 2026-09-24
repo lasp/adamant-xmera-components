@@ -47,10 +47,10 @@ package body Component.Oe_State_Ephem.Implementation is
          -- unconstrained Packed_U32) but never denotes a convertible table.
          Valid := Table.Number_Of_Arcs.Value in 1 .. Unsigned_32 (Table.Arcs'Length);
          if Valid then
-            Valid := Config_Set_Scalars (Config,
+            Valid := Boolean (Config_Set_Scalars (Config,
                Central_Body_Mu => Table.Central_Body_Mu,
                Ephemeris_Time  => Table.Ephemeris_Time,
-               Vehicle_Time    => Table.Vehicle_Clock_Time);
+               Vehicle_Time    => Table.Vehicle_Clock_Time));
          end if;
          if Valid then
             -- Convert and append the active arcs one at a time; each Add_Arc
@@ -60,7 +60,7 @@ package body Component.Oe_State_Ephem.Implementation is
                declare
                   Arc_C : aliased constant Oe_Arc.C.U_C := Oe_Arc.C.Unpack (Table.Arcs (I));
                begin
-                  Valid := Config_Add_Arc (Config, Arc_C'Access);
+                  Valid := Boolean (Config_Add_Arc (Config, Arc_C'Access));
                end;
                exit when not Valid;
             end loop;
@@ -69,7 +69,7 @@ package body Component.Oe_State_Ephem.Implementation is
             -- Defense in depth: with every build step validated above, the only
             -- state Config_Validate can reject here is an empty config, which
             -- the count check already precludes.
-            Valid := Config_Validate (Config);
+            Valid := Boolean (Config_Validate (Config));
          end if;
          Is_Staged := Valid;
       end Stage_If_Valid;

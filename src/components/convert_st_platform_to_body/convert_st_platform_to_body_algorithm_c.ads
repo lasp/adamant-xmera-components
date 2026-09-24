@@ -2,12 +2,9 @@ pragma Ada_2012;
 
 pragma Style_Checks (Off);
 pragma Warnings (Off, "-gnatwu");
--- Boolean is used at the C boundary to match the shim's C99 bool (_Bool):
--- 1-byte, 0/1 representation, interoperable under Convention => C. Suppress
--- the -gnatwx advisory about using a C "char"-style type for the mapping.
-pragma Warnings (Off, "-gnatwx");
 
 with Interfaces; use Interfaces;
+with Interfaces.C;
 with St_Platform_Measurement.C;
 with St_Att.C;
 with Packed_F32x9_Record.C;
@@ -24,7 +21,7 @@ package Convert_St_Platform_To_Body_Algorithm_C is
    --* throwing Create/Set_Config from an invalid configuration.
    function Validate_Config
      (Dcm_Cb : Packed_F32x9_Record.C.U_C)
-     return Boolean
+     return Interfaces.C.C_bool
      with Import        => True,
           Convention    => C,
           External_Name => "ConvertStPlatformToBodyAlgorithm_validateConfig";
@@ -80,4 +77,3 @@ end Convert_St_Platform_To_Body_Algorithm_C;
 
 pragma Style_Checks (On);
 pragma Warnings (On, "-gnatwu");
-pragma Warnings (On, "-gnatwx");

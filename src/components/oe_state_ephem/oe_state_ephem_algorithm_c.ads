@@ -2,12 +2,9 @@ pragma Ada_2012;
 
 pragma Style_Checks (Off);
 pragma Warnings (Off, "-gnatwu");
--- Boolean is used at the C boundary to match the shim's C99 bool (_Bool):
--- 1-byte, 0/1 representation, interoperable under Convention => C. Suppress
--- the -gnatwx advisory about using a C "char"-style type for the mapping.
-pragma Warnings (Off, "-gnatwx");
 
 with Interfaces; use Interfaces;
+with Interfaces.C;
 with Cartesian_State.C;
 with Oe_State_Ephem_Enums;
 with Oe_Coefficients.C;
@@ -111,7 +108,7 @@ package Oe_State_Ephem_Algorithm_C is
       Central_Body_Mu : Long_Float;
       Ephemeris_Time  : Long_Float;
       Vehicle_Time    : Long_Float)
-     return Boolean
+     return Interfaces.C.C_bool
      with Import       => True,
           Convention   => C,
           External_Name => "OEStateEphemConfig_setScalars";
@@ -125,7 +122,7 @@ package Oe_State_Ephem_Algorithm_C is
    function Config_Add_Arc
      (Config  : Oe_State_Ephem_Config_Access;
       Fit_Arc : access constant Oe_Arc.C.U_C)
-     return Boolean
+     return Interfaces.C.C_bool
      with Import       => True,
           Convention   => C,
           External_Name => "OEStateEphemConfig_addArc";
@@ -137,7 +134,7 @@ package Oe_State_Ephem_Algorithm_C is
    --* invalid state; the full re-check is defense in depth.
    function Config_Validate
      (Config : Oe_State_Ephem_Config_Access)
-     return Boolean
+     return Interfaces.C.C_bool
      with Import       => True,
           Convention   => C,
           External_Name => "OEStateEphemConfig_validate";
@@ -230,4 +227,3 @@ end Oe_State_Ephem_Algorithm_C;
 
 pragma Style_Checks (On);
 pragma Warnings (On, "-gnatwu");
-pragma Warnings (On, "-gnatwx");

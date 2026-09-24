@@ -2,12 +2,9 @@ pragma Ada_2012;
 
 pragma Style_Checks (Off);
 pragma Warnings (Off, "-gnatwu");
--- Boolean is used at the C boundary to match the shim's C99 bool (_Bool):
--- 1-byte, 0/1 representation, interoperable under Convention => C. Suppress
--- the -gnatwx advisory about using a C "char"-style type for the mapping.
-pragma Warnings (Off, "-gnatwx");
 
 with Interfaces; use Interfaces;
+with Interfaces.C;
 with Stepper_Motor_Controller_Output.C;
 
 package Stepper_Motor_Controller_Algorithm_C is
@@ -53,7 +50,7 @@ package Stepper_Motor_Controller_Algorithm_C is
       Max_Angle        : Short_Float;
       Settle_Count_Max : Unsigned_32;
       Min_Step_Command : Unsigned_32)
-     return Boolean
+     return Interfaces.C.C_bool
      with Import       => True,
           Convention   => C,
           External_Name => "StepperMotorControllerAlgorithm_validateConfig";
@@ -114,7 +111,7 @@ package Stepper_Motor_Controller_Algorithm_C is
      (Self             : Stepper_Motor_Controller_Algorithm_Access;
       Current_Position : Integer_32;
       Reference_Angle  : Short_Float;
-      Is_Motor_Moving  : Boolean)
+      Is_Motor_Moving  : Interfaces.C.C_bool)
      return Update_Result;
 
    --* @brief Convert a reference angle to an integer step position using the configured step angle.
@@ -145,7 +142,7 @@ private
      (Self             : Stepper_Motor_Controller_Algorithm_Access;
       Current_Position : Integer_32;
       Reference_Angle  : Short_Float;
-      Is_Motor_Moving  : Boolean)
+      Is_Motor_Moving  : Interfaces.C.C_bool)
      return Stepper_Motor_Controller_Output.C.U_C
      with Import       => True,
           Convention   => C,
@@ -163,12 +160,11 @@ private
      (Self             : Stepper_Motor_Controller_Algorithm_Access;
       Current_Position : Integer_32;
       Reference_Angle  : Short_Float;
-      Is_Motor_Moving  : Boolean)
+      Is_Motor_Moving  : Interfaces.C.C_bool)
      return Update_Result
    is (To_Result (Update_C (Self, Current_Position, Reference_Angle, Is_Motor_Moving)));
 
 end Stepper_Motor_Controller_Algorithm_C;
 
 pragma Style_Checks (On);
-pragma Warnings (On, "-gnatwx");
 pragma Warnings (On, "-gnatwu");

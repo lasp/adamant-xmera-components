@@ -2,13 +2,10 @@ pragma Ada_2012;
 
 pragma Style_Checks (Off);
 pragma Warnings     (Off, "-gnatwu");
--- Boolean is used at the C boundary to match the shim's C99 bool (_Bool):
--- 1-byte, 0/1 representation, interoperable under Convention => C. Suppress
--- the -gnatwx advisory about the C "char"-style mapping.
-pragma Warnings     (Off, "-gnatwx");
 
 with Basic_Types;
 with Interfaces;                use Interfaces;
+with Interfaces.C;
 with Mimu_Majority_Vote_Output.C;
 with Mimu_Vote_Result.C;
 with Packed_Bool_X3;
@@ -66,7 +63,7 @@ package Mimu_Majority_Vote_Algorithm_C is
       Gyro_Fault_Persistence_Limit  : Unsigned_32;
       Accel_Threshold               : Short_Float;
       Accel_Fault_Persistence_Limit : Unsigned_32)
-     return Boolean
+     return Interfaces.C.C_bool
      with Import       => True,
           Convention   => C,
           External_Name => "MimuMajorityVoteAlgorithm_validateConfig";
@@ -141,4 +138,3 @@ end Mimu_Majority_Vote_Algorithm_C;
 
 pragma Style_Checks (On);
 pragma Warnings     (On, "-gnatwu");
-pragma Warnings     (On, "-gnatwx");

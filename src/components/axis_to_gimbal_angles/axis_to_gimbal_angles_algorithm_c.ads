@@ -2,11 +2,8 @@ pragma Ada_2012;
 
 pragma Style_Checks (Off);
 pragma Warnings (Off, "-gnatwu");
--- Boolean is used at the C boundary to match the shim's C99 bool (_Bool):
--- 1-byte, 0/1 representation, interoperable under Convention => C. Suppress
--- the -gnatwx advisory about using a C "char"-style type for the mapping.
-pragma Warnings (Off, "-gnatwx");
 
+with Interfaces.C;
 with Axis_To_Gimbal_Angles_Output.C;
 with Packed_F32x3_Record.C;
 
@@ -24,7 +21,7 @@ package Axis_To_Gimbal_Angles_Algorithm_C is
    function Validate_Config
      (Sigma_Mb  : access constant Packed_F32x3_Record.C.U_C;
       Theta_Max : Short_Float)
-     return Boolean
+     return Interfaces.C.C_bool
      with Import        => True,
           Convention    => C,
           External_Name => "AxisToGimbalAnglesAlgorithm_validateConfig";
@@ -83,4 +80,3 @@ end Axis_To_Gimbal_Angles_Algorithm_C;
 
 pragma Style_Checks (On);
 pragma Warnings (On, "-gnatwu");
-pragma Warnings (On, "-gnatwx");

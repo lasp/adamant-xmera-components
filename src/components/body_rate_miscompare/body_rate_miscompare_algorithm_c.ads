@@ -2,12 +2,9 @@ pragma Ada_2012;
 
 pragma Style_Checks (Off);
 pragma Warnings (Off, "-gnatwu");
--- Boolean is used at the C boundary to match the shim's C99 bool (_Bool):
--- 1-byte, 0/1 representation, interoperable under Convention => C. Suppress
--- the -gnatwx advisory about using a C "char"-style type for the mapping.
-pragma Warnings (Off, "-gnatwx");
 
 with Interfaces; use Interfaces;
+with Interfaces.C;
 with Body_Rate_Miscompare_Output.C;
 with Packed_F32x3.C;
 with Packed_F32x3_Record.C;
@@ -35,8 +32,8 @@ package Body_Rate_Miscompare_Algorithm_C is
    function Validate_Config
      (Body_Rate_Threshold     : Short_Float;
       Fault_Persistence_Limit : Unsigned_32;
-      Use_Imu_Rates           : Boolean)
-     return Boolean
+      Use_Imu_Rates           : Interfaces.C.C_bool)
+     return Interfaces.C.C_bool
      with Import       => True,
           Convention   => C,
           External_Name => "BodyRateMiscompareAlgorithm_validateConfig";
@@ -50,7 +47,7 @@ package Body_Rate_Miscompare_Algorithm_C is
    function Create
      (Body_Rate_Threshold     : Short_Float;
       Fault_Persistence_Limit : Unsigned_32;
-      Use_Imu_Rates           : Boolean)
+      Use_Imu_Rates           : Interfaces.C.C_bool)
      return Body_Rate_Miscompare_Algorithm_Access
      with Import       => True,
           Convention   => C,
@@ -76,7 +73,7 @@ package Body_Rate_Miscompare_Algorithm_C is
      (Self                    : Body_Rate_Miscompare_Algorithm_Access;
       Body_Rate_Threshold     : Short_Float;
       Fault_Persistence_Limit : Unsigned_32;
-      Use_Imu_Rates           : Boolean)
+      Use_Imu_Rates           : Interfaces.C.C_bool)
      with Import       => True,
           Convention   => C,
           External_Name => "BodyRateMiscompareAlgorithm_setConfig";
@@ -147,4 +144,3 @@ end Body_Rate_Miscompare_Algorithm_C;
 
 pragma Style_Checks (On);
 pragma Warnings (On, "-gnatwu");
-pragma Warnings (On, "-gnatwx");

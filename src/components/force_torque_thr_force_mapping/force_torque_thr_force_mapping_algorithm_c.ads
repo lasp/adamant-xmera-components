@@ -2,13 +2,10 @@ pragma Ada_2012;
 
 pragma Style_Checks (Off);
 pragma Warnings     (Off, "-gnatwu");
--- Boolean is used at the C boundary to match the shim's C99 bool (_Bool):
--- 1-byte, 0/1 representation, interoperable under Convention => C. Suppress
--- the -gnatwx advisory about using a C "char"-style type for the mapping.
-pragma Warnings     (Off, "-gnatwx");
 
 with Desired_Control_Axes.C;
 with Interfaces;       use Interfaces;
+with Interfaces.C;
 with Packed_F32x3.C;
 with Packed_F32x3_Record.C;
 with Packed_F32x8.C;
@@ -78,7 +75,7 @@ package Force_Torque_Thr_Force_Mapping_Algorithm_C is
       Center_Of_Mass_B       : access constant Packed_F32x3_Record.C.U_C;
       Desired_Control_Axes_B : access constant Desired_Control_Axes.C.U_C;
       Thruster_Availability  : access constant Thruster_Availability_Array.C.U_C)
-     return Boolean
+     return Interfaces.C.C_bool
      with Import       => True,
           Convention   => C,
           External_Name => "ForceTorqueThrForceMappingAlgorithm_validateConfig";
@@ -161,4 +158,3 @@ end Force_Torque_Thr_Force_Mapping_Algorithm_C;
 
 pragma Style_Checks (On);
 pragma Warnings     (On, "-gnatwu");
-pragma Warnings     (On, "-gnatwx");

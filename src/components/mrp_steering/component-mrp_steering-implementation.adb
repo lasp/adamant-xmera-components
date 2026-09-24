@@ -4,6 +4,7 @@
 
 with Att_Guid;
 with Att_Guid.C;
+with Interfaces.C;
 with Mrp_Feedback_Rw_Availability.C;
 with Mrp_Feedback_Rw_Inertias.C;
 with Mrp_Feedback_Rw_Spin_Axes.C;
@@ -63,7 +64,7 @@ package body Component.Mrp_Steering.Implementation is
          K1                            => Self.Proportional_Gain_K1.Value,
          K3                            => Self.Cubic_Gain_K3.Value,
          Omega_Max                     => Self.Omega_Max.Value,
-         Ignore_Outer_Loop_Feedforward => Self.Ignore_Outer_Loop_Feedforward.Value,
+         Ignore_Outer_Loop_Feedforward => Interfaces.C.C_bool (Self.Ignore_Outer_Loop_Feedforward.Value),
          P                             => Self.Derivative_Gain_P.Value,
          Ki                            => Self.Integral_Gain_Ki.Value,
          Integral_Limit                => Self.Integral_Limit.Value,
@@ -164,7 +165,7 @@ package body Component.Mrp_Steering.Implementation is
          K1                            => Self.Proportional_Gain_K1.Value,
          K3                            => Self.Cubic_Gain_K3.Value,
          Omega_Max                     => Self.Omega_Max.Value,
-         Ignore_Outer_Loop_Feedforward => Self.Ignore_Outer_Loop_Feedforward.Value,
+         Ignore_Outer_Loop_Feedforward => Interfaces.C.C_bool (Self.Ignore_Outer_Loop_Feedforward.Value),
          P                             => Self.Derivative_Gain_P.Value,
          Ki                            => Self.Integral_Gain_Ki.Value,
          Integral_Limit                => Self.Integral_Limit.Value,
@@ -204,7 +205,7 @@ package body Component.Mrp_Steering.Implementation is
          K1                            => Proportional_Gain_K1.Value,
          K3                            => Cubic_Gain_K3.Value,
          Omega_Max                     => Omega_Max.Value,
-         Ignore_Outer_Loop_Feedforward => Ignore_Outer_Loop_Feedforward.Value,
+         Ignore_Outer_Loop_Feedforward => Interfaces.C.C_bool (Ignore_Outer_Loop_Feedforward.Value),
          P                             => Derivative_Gain_P.Value,
          Ki                            => Integral_Gain_Ki.Value,
          Integral_Limit                => Integral_Limit.Value,

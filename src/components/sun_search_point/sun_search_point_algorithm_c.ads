@@ -75,7 +75,10 @@ package Sun_Search_Point_Algorithm_C is
       Omega_Rn_B            : Packed_F32x3_Record.C.U_C;
       Observation_Threshold : Unsigned_32;
       Control_Period        : Short_Float)
-     return Boolean;
+     return Interfaces.C.C_bool
+     with Import        => True,
+          Convention    => C,
+          External_Name => "SunSearchPointAlgorithm_validateConfig";
 
    --* @brief Construct a new SunSearchPointAlgorithm from a configuration.
    --* Validate the values with Validate_Config before calling; throws on invalid input.
@@ -171,38 +174,6 @@ private
      with Import        => True,
           Convention    => C,
           External_Name => "SunSearchPointAlgorithm_update";
-
-   -- Raw C entry point. The public Validate_Config wraps this so callers receive a
-   -- native Boolean while the C ABI keeps its C99 bool.
-   --* @param Rotations             [-] Sun-search rotation sequence.
-   --* @param S_Hat_Bdy_Cmd         [-] Commanded body vector to point at the sun.
-   --* @param Sun_Axis_Spin_Rate    [rad/s] Spin rate about the sun heading vector.
-   --* @param Omega_Rn_B            [rad/s] Fallback body rate when no sun direction is available.
-   --* @param Observation_Threshold [-] CSS count at or above which to transition to pointing.
-   --* @param Control_Period        [s] Per-update time step.
-   --* @return The shim's verdict as a C99 bool.
-   function Validate_Config_C
-     (Rotations             : access constant Rotation_Properties_X4_Record.C.U_C;
-      S_Hat_Bdy_Cmd         : Packed_F32x3_Record.C.U_C;
-      Sun_Axis_Spin_Rate    : Short_Float;
-      Omega_Rn_B            : Packed_F32x3_Record.C.U_C;
-      Observation_Threshold : Unsigned_32;
-      Control_Period        : Short_Float)
-     return Interfaces.C.C_bool
-     with Import        => True,
-          Convention    => C,
-          External_Name => "SunSearchPointAlgorithm_validateConfig";
-
-   function Validate_Config
-     (Rotations             : access constant Rotation_Properties_X4_Record.C.U_C;
-      S_Hat_Bdy_Cmd         : Packed_F32x3_Record.C.U_C;
-      Sun_Axis_Spin_Rate    : Short_Float;
-      Omega_Rn_B            : Packed_F32x3_Record.C.U_C;
-      Observation_Threshold : Unsigned_32;
-      Control_Period        : Short_Float)
-     return Boolean
-   is (Boolean (Validate_Config_C
-        (Rotations, S_Hat_Bdy_Cmd, Sun_Axis_Spin_Rate, Omega_Rn_B, Observation_Threshold, Control_Period)));
 
    -- Convert the raw update output to the idiomatic result.
    --* @param Output The raw C output struct.
