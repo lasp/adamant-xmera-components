@@ -9,10 +9,10 @@
 #  } StepperMotorControllerOutput;
 description: Output from the stepper motor controller algorithm. Maps to StepperMotorControllerOutput in the C shim.
 fields:
-  - name: Command_Type
-    description: Type of command to issue. Values match the C StepperMotorCommandType enumeration (NONE = 0, STOP = 1, MOVE = 2), carried as a 32-bit integer matching the C enum representation.
-    type: Interfaces.Integer_32
-    format: I32
+  - name: Command
+    description: Type of command to issue.
+    type: Stepper_Motor_Controller_Enums.Command_Type.E
+    format: E8
   - name: Steps_To_Move
     description: "[steps] Number of steps to move. Only valid for the MOVE command. Positive is clockwise, negative is counter-clockwise."
     type: Interfaces.Integer_32

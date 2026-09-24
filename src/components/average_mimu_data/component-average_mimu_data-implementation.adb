@@ -48,7 +48,7 @@ package body Component.Average_Mimu_Data.Implementation is
          declare
             Pkt : Mimu_Input_Packet.C.U_C renames Self.Input.Packets (Self.Packet_Count);
          begin
-            Pkt.Is_Valid := 1;
+            Pkt.Is_Valid := Interfaces.C.C_bool (True);
             Pkt.Meas_Time := Arg.Meas_Time;
             Pkt.Samples := Mimu_Sample_X10.C.Unpack (Arg.Samples);
          end;
@@ -76,7 +76,7 @@ package body Component.Average_Mimu_Data.Implementation is
       -- Invalidate the staged packets for the next cycle. Sample data behind
       -- an invalid flag is skipped by the algorithm, so it is not re-zeroed.
       for Pdx in 0 .. Self.Packet_Count - 1 loop
-         Self.Input.Packets (Pdx).Is_Valid := 0;
+         Self.Input.Packets (Pdx).Is_Valid := Interfaces.C.C_bool (False);
       end loop;
       Self.Packet_Count := 0;
    end Tick_T_Recv_Sync;

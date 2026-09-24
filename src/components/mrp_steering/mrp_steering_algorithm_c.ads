@@ -6,6 +6,7 @@ pragma Warnings (Off, "-gnatwu");
 with Interfaces; use Interfaces;
 with Interfaces.C;
 with Att_Guid.C;
+with Mrp_Feedback_Enums;
 with Mrp_Feedback_Rw_Availability.C;
 with Mrp_Feedback_Rw_Inertias.C;
 with Mrp_Feedback_Rw_Spin_Axes.C;
@@ -45,12 +46,11 @@ package Mrp_Steering_Algorithm_C is
    -- MrpSteeringRwInertias_c: float data[RW_EFF_CNT];
    pragma Assert (Mrp_Feedback_Rw_Inertias.C.U_C'Object_Size = Packed_F32x4.C.U_C'Object_Size);
    pragma Assert (Unsigned_32 (Mrp_Feedback_Rw_Inertias.C.U_C'Object_Size / Short_Float'Object_Size) = Get_Max_Num_Rw);
-   -- MrpSteeringRwAvailability_c: one uint8_t per wheel slot. The C
-   -- DeviceAvailability_c enum is int-sized, so the shim takes a uint8_t array
-   -- instead and converts; this pins the Ada side to that one-byte-per-slot layout.
+   -- MrpSteeringRwAvailability_c: DeviceAvailability_c availability[RW_EFF_CNT]. Each element crosses
+   -- as the C version of Mrp_Feedback_Enums.Wheel_Availability, the width of a C int.
    pragma Assert (Unsigned_32 (Wheel_Availability_X4.Length) = Get_Max_Num_Rw);
    pragma Assert (Mrp_Feedback_Rw_Availability.C.U_C'Object_Size = Wheel_Availability_X4.C.U_C'Object_Size);
-   pragma Assert (Unsigned_32 (Mrp_Feedback_Rw_Availability.C.U_C'Object_Size / Unsigned_8'Object_Size) = Get_Max_Num_Rw);
+   pragma Assert (Unsigned_32 (Mrp_Feedback_Rw_Availability.C.U_C'Object_Size / Mrp_Feedback_Enums.Wheel_Availability.C.E_C'Object_Size) = Get_Max_Num_Rw);
 
    --* Opaque handle for a MrpSteeringAlgorithm instance.
    type Mrp_Steering_Algorithm is limited private;

@@ -8,6 +8,7 @@ with Css_Availability_Array.C;
 with Css_Availability_X8.C;
 with Css_Boresight_Array.C;
 with Css_Reading_Array.C;
+with Css_Weighted_Least_Squares_Enums;
 with Css_Weighted_Least_Squares_Output.C;
 with Packed_F32x3.C;
 with Packed_F32x8.C;
@@ -29,11 +30,11 @@ package Css_Weighted_Least_Squares_Algorithm_C is
    pragma Assert (Unsigned_32 (Packed_F32x24.Length / 3) = Get_Max_Num_Css);
    pragma Assert (Css_Boresight_Array.C.U_C'Object_Size = Packed_F32x24.C.U_C'Object_Size);
    pragma Assert (Unsigned_32 (Css_Boresight_Array.C.U_C'Object_Size / Short_Float'Object_Size / 3) = Get_Max_Num_Css);
-   -- CssAvailabilityArray_c: uint8_t availability[MAX_NUM_CSS_SENSORS]; one byte per
-   -- slot, which the E8 enumeration array matches without conversion.
+   -- CssAvailabilityArray_c: DeviceAvailability_c availability[MAX_NUM_CSS_SENSORS]. Each element crosses
+   -- as the C version of Css_Weighted_Least_Squares_Enums.Sensor_Availability, the width of a C int.
    pragma Assert (Unsigned_32 (Css_Availability_X8.Length) = Get_Max_Num_Css);
    pragma Assert (Css_Availability_Array.C.U_C'Object_Size = Css_Availability_X8.C.U_C'Object_Size);
-   pragma Assert (Unsigned_32 (Css_Availability_Array.C.U_C'Object_Size / Unsigned_8'Object_Size) = Get_Max_Num_Css);
+   pragma Assert (Unsigned_32 (Css_Availability_Array.C.U_C'Object_Size / Css_Weighted_Least_Squares_Enums.Sensor_Availability.C.E_C'Object_Size) = Get_Max_Num_Css);
    -- CssReadingArray_c: float cosValues[MAX_NUM_CSS_SENSORS];
    pragma Assert (Unsigned_32 (Packed_F32x8.Length) = Get_Max_Num_Css);
    pragma Assert (Css_Reading_Array.C.U_C'Object_Size = Packed_F32x8.C.U_C'Object_Size);
