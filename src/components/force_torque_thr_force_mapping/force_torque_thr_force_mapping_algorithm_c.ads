@@ -4,6 +4,7 @@ pragma Style_Checks (Off);
 pragma Warnings     (Off, "-gnatwu");
 
 with Desired_Control_Axes.C;
+with Force_Torque_Thr_Force_Mapping_Enums;
 with Interfaces;       use Interfaces;
 with Interfaces.C;
 with Packed_F32x3.C;
@@ -43,12 +44,11 @@ package Force_Torque_Thr_Force_Mapping_Algorithm_C is
    pragma Assert (Unsigned_32 (Packed_F32x8.Length) = Get_Max_Thruster_Count);
    pragma Assert (Thr_Force_Cmd.C.U_C'Object_Size = Packed_F32x8.C.U_C'Object_Size);
    pragma Assert (Unsigned_32 (Thr_Force_Cmd.C.U_C'Object_Size / Short_Float'Object_Size) = Get_Max_Thruster_Count);
-   -- ThrusterAvailabilityArray_c: one uint8_t per thruster slot. The C
-   -- DeviceAvailability_c enum is int-sized, so the shim takes a uint8_t array
-   -- instead and converts; this pins the Ada side to that one-byte-per-slot layout.
+   -- ThrusterAvailabilityArray_c: DeviceAvailability_c availability[MAX_EFF_CNT]. Each element crosses
+   -- as the C version of Force_Torque_Thr_Force_Mapping_Enums.Device_Availability, the width of a C int.
    pragma Assert (Unsigned_32 (Thruster_Availability_X8.Length) = Get_Max_Thruster_Count);
    pragma Assert (Thruster_Availability_Array.C.U_C'Object_Size = Thruster_Availability_X8.C.U_C'Object_Size);
-   pragma Assert (Unsigned_32 (Thruster_Availability_Array.C.U_C'Object_Size / Unsigned_8'Object_Size) =
+   pragma Assert (Unsigned_32 (Thruster_Availability_Array.C.U_C'Object_Size / Force_Torque_Thr_Force_Mapping_Enums.Device_Availability.C.E_C'Object_Size) =
       Get_Max_Thruster_Count);
 
    --* Opaque handle for a ForceTorqueThrForceMappingAlgorithm instance.
