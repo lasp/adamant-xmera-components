@@ -7,6 +7,7 @@ with Mimu_Eng_Packet;
 with Tick;
 with Parameter_Update;
 with Mimu_Input_Packet_X4;
+with Interfaces.C;
 with Mimu_Input_Packets.C;
 with Average_Mimu_Data_Algorithm_C; use Average_Mimu_Data_Algorithm_C;
 
@@ -35,10 +36,10 @@ private
       Alg : Average_Mimu_Data_Algorithm_Access := null;
       -- Algorithm input, staged in place: samples are converted directly
       -- into this structure on receive and consumed on tick. Packets with
-      -- Is_Valid = 0 are skipped by the algorithm.
+      -- Is_Valid False are skipped by the algorithm.
       Input : aliased Mimu_Input_Packets.C.U_C := (
          Packets => [others => (
-            Is_Valid  => 0,
+            Is_Valid  => Interfaces.C.C_bool (False),
             Meas_Time => 0,
             Samples   => [others => (
                Gyro_P  => [others => 0.0],
