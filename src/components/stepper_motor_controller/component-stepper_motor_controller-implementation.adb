@@ -5,6 +5,7 @@
 with Interfaces.C;
 with Stepper_Enums;
 with Stepper_Motor_Controller_Enums;
+with Stepper_Motor_Controller_Output.C;
 
 package body Component.Stepper_Motor_Controller.Implementation is
 
@@ -72,12 +73,12 @@ package body Component.Stepper_Motor_Controller.Implementation is
 
          -- Run one tick of the controller state machine against the fetched
          -- motor state and reference angle:
-         Output : constant Update_Result := Stepper_Motor_Controller_Algorithm_C.Update (
+         Output : constant Stepper_Motor_Controller_Output.T := Stepper_Motor_Controller_Output.C.Pack (Stepper_Motor_Controller_Algorithm_C.Update (
             Self.Alg,
             Current_Position => Motor_State.Current_Position,
             Reference_Angle => Reference_Angle.Value,
             Is_Motor_Moving => Interfaces.C.C_bool (Motor_State.Is_Moving = Stepper_Enums.Motion_Status.Moving)
-         );
+         ));
       begin
          -- Map the algorithm output onto the step command interface. A positive
          -- step delta maps to a clockwise step command and a negative delta to
