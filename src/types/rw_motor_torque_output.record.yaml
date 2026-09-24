@@ -1,0 +1,9 @@
+---
+#  typedef struct {
+#      float motorTorque[RW_EFF_CNT]; /*!< [N-m] commanded RW motor torques */
+#  } RwMotorTorqueOutput_c;
+description: Per-wheel motor torques as returned by the rwMotorTorque C shim. Maps to RwMotorTorqueOutput_c.
+fields:
+  - name: Motor_Torque
+    type: Packed_F32x4.T
+    description: "[Nm] Commanded motor torque of each reaction wheel."
