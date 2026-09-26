@@ -1,0 +1,15 @@
+---
+description: Data products for the Inertial Filter component.
+data_products:
+  - name: Attitude_Estimate
+    type: Nav_Att_Output.T
+    description: Estimated body attitude and body rate, stamped with the time the filter advanced to. The sun direction is not estimated by this filter and is zero.
+  - name: Filter_State
+    type: Inertial_Filter_State.T
+    description: The filter state after the update, the variance of each state, and the system time of the last star tracker reading applied.
+  - name: St_Att_Residuals
+    type: Inertial_Filter_Fit_Residuals.T
+    description: Star tracker attitude residuals of this update, with whether that measurement fired.
+  - name: Rate_Residuals
+    type: Inertial_Filter_Fit_Residuals.T
+    description: Rate residuals of this update, with whether that measurement fired.
