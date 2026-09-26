@@ -1,0 +1,9 @@
+---
+#  typedef struct {
+#      double data[INERTIAL_FILTER_NUM_STATES * INERTIAL_FILTER_NUM_STATES]; /*!< [-] row-major N x N */
+#  } InertialFilterStateMatrix_c;
+description: Record wrapping a state matrix of the inertial filter, N x N in row major order. Maps to InertialFilterStateMatrix_c in the inertialFilter C shim, which takes it by pointer.
+fields:
+  - name: Value
+    description: "[-] N x N matrix in row major order."
+    type: Packed_F64x36.T

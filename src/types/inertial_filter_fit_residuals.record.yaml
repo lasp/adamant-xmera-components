@@ -1,0 +1,13 @@
+---
+description: Residuals of one measurement kind from one inertial filter update, before and after the update. Built from the residuals the inertialFilter C shim returns, without the measured value, which is already published by the sensor product.
+fields:
+  - name: Valid
+    description: Whether this measurement fired and was applied this update. The residuals are meaningful only when it did.
+    type: Boolean
+    format: E8
+  - name: Pre_Fit
+    description: "[-] Residual before the update."
+    type: Packed_F64x3.T
+  - name: Post_Fit
+    description: "[-] Residual after the update."
+    type: Packed_F64x3.T

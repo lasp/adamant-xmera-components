@@ -1,0 +1,14 @@
+---
+#  typedef struct {
+#      double timeTag; /*!< [s] measurement time tag */
+#      double rate[3]; /*!< body angular rate (rad/s) */
+#  } InertialRateData_c;
+description: Body rate reading for the inertial filter. Maps to InertialRateData_c in the inertialFilter C shim, which takes it by pointer.
+fields:
+  - name: Time_Tag
+    description: "[s] Measurement time tag. A value greater than zero marks a fresh reading."
+    type: Long_Float
+    format: F64
+  - name: Rate
+    description: "[rad/s] Body angular rate in body frame components."
+    type: Packed_F64x3.T
