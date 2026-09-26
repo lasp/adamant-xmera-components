@@ -1,0 +1,17 @@
+---
+description: State of the sunline filter after an update, the estimated state, the variance of each state, and when each kind of reading was last consumed. Built from the snapshot the sunlineFilter C shim returns, with the N x N covariance reduced to its diagonal.
+fields:
+  - name: State
+    description: "[-] Estimated state, the sun direction in the body frame, the body rate in rad/s, and the intensity bias."
+    type: Packed_F64x7.T
+  - name: Covariance_Diagonal
+    description: "[-] Diagonal of the state covariance, the variance of each state."
+    type: Packed_F64x7.T
+  - name: Last_Css_Measurement_Time
+    description: "[ns] System time of the last coarse sun sensor reading consumed by the filter, zero until one arrives after the filter is built or reset. Tells when the sun sensors last fed the filter once this product is sampled into a packet."
+    type: Interfaces.Unsigned_64
+    format: U64
+  - name: Last_Rate_Measurement_Time
+    description: "[ns] System time of the last body rate reading consumed by the filter, zero until one arrives after the filter is built or reset. Tells when the body rate last fed the filter once this product is sampled into a packet."
+    type: Interfaces.Unsigned_64
+    format: U64

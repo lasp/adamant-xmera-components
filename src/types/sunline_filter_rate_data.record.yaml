@@ -1,0 +1,14 @@
+---
+#  typedef struct {
+#      double timeTag; /*!< [s] time tag of the gyro reading */
+#      double rate[3]; /*!< [rad/s] body rate in body frame */
+#  } SunlineRateData_c;
+description: Gyro rate reading for the sunline filter. Maps to SunlineRateData_c in the sunlineFilter C shim, which takes it by pointer.
+fields:
+  - name: Time_Tag
+    description: "[s] Measurement time tag. A value greater than zero marks a fresh reading."
+    type: Long_Float
+    format: F64
+  - name: Rate
+    description: "[rad/s] Body angular rate in body frame components."
+    type: Packed_F64x3.T
