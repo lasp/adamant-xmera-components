@@ -1,5 +1,0 @@
----
-description: This is a unit test suite for the Inertial UKF component.
-tests:
-  - name: Test_Pass_Through
-    description: Run algorithm with known inputs to verify the pass-through of star-tracker attitude to nav attitude estimate and filter output.
