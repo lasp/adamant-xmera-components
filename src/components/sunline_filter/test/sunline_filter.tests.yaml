@@ -1,0 +1,21 @@
+---
+description: This is a unit test suite for the Sunline Filter component
+tests:
+  - name: Test
+    description: Feed the sun sensor cosines and body rate of a slow rotation and check the sun direction, rate, and bias estimates converge to the truth while the covariance shrinks, as in the algorithm's Python reference test, to ensure the Ada to C to C++ integration is sound. The filter state and residual products report the updates and their times.
+  - name: Test_Propagation
+    description: Ensure products whose timestamps have not advanced are not fed to the filter, so the sun direction is propagated with the seeded rate and the covariance grows under the process noise once the time base is set.
+  - name: Test_Reading_Before_Time_Base
+    description: Ensure a product not refreshed since before a reset is not consumed again, the first products newer than the last consumed set the time base without being applied, and the ones after those are applied.
+  - name: Test_Time_Anomalies
+    description: Ensure products stamped after the tick are applied at once and not again when the tick reaches them, and a tick before the time base restarts it at the next products, without either shutting out the readings that follow.
+  - name: Test_Fewer_Sensors
+    description: Ensure only the configured number of sensors is read and only those above the threshold count as active.
+  - name: Test_Reset
+    description: Ensure the estimate reset re-seeds the state and covariance while the measurements reset keeps them.
+  - name: Test_Parameter_Update
+    description: Ensure a parameter update reaches the filter while keeping the current estimate.
+  - name: Test_Invalid_Parameter
+    description: Ensure a staged configuration the algorithm would reject is refused at validation.
+  - name: Test_Invalid_Data_Dependency
+    description: Ensure a data dependency with the wrong identifier is treated as a wiring defect and fails the tick's assertion.
