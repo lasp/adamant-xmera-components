@@ -1,0 +1,62 @@
+---
+description: Parameters for the Sunline Filter component. The process noise and the initial covariance are given by their diagonals, since the full matrices do not fit in a parameter.
+parameters:
+  - name: Alpha
+    description: "[-] Sigma point spread. Must be in (0, 1]."
+    type: Packed_F64.T
+    default: "(Value => 0.02)"
+  - name: Beta
+    description: "[-] Prior knowledge tunable. Must be in [0, 2]."
+    type: Packed_F64.T
+    default: "(Value => 2.0)"
+  - name: Process_Noise_Diagonal
+    description: "[-] Diagonal of the N x N process noise covariance, one entry per state: the sun direction, the body rate, and the intensity bias. Every entry must be finite and not negative."
+    type: Packed_F64x7.T
+    default: "[1.0E-12, 1.0E-12, 1.0E-12, 1.0E-16, 1.0E-16, 1.0E-16, 1.0E-10]"
+  - name: Initial_State
+    description: "[-] State the filter is seeded with: the sun direction in the body frame, the body rate in rad/s, and the intensity bias. Must be finite. The seed is taken when the filter is built and at the estimate reset; a parameter update alone keeps the running estimate."
+    type: Packed_F64x7.T
+    default: "[0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]"
+  - name: Initial_Covariance_Diagonal
+    description: "[-] Diagonal of the N x N covariance the filter is seeded with, one entry per state. Every entry must be finite and not negative. The seed is taken when the filter is built and at the estimate reset; a parameter update alone keeps the running estimate."
+    type: Packed_F64x7.T
+    default: "[0.1, 0.1, 0.1, 0.001, 0.001, 0.001, 0.5]"
+  - name: Bias_Lower_Bound
+    description: "[-] Lower clamp on the intensity bias state. Must be greater than zero and less than the upper bound."
+    type: Packed_F64.T
+    default: "(Value => 0.5)"
+  - name: Bias_Upper_Bound
+    description: "[-] Upper clamp on the intensity bias state. Must be greater than the lower bound."
+    type: Packed_F64.T
+    default: "(Value => 1.5)"
+  - name: Css_N_Hat_B
+    description: "[-] Boresight unit vector of each coarse sun sensor slot in body frame components, three per sensor in row major order. The first configured number of sensors must be unit vectors to within 1e-3."
+    type: Packed_F32x24.T
+    default: "[+0.70710678, -0.50000000, +0.50000000,
+               +0.70710678, -0.50000000, -0.50000000,
+               +0.70710678, +0.50000000, -0.50000000,
+               +0.70710678, +0.50000000, +0.50000000,
+               -0.70710678, +0.00000000, +0.70710678,
+               -0.70710678, +0.70710678, +0.00000000,
+               -0.70710678, +0.00000000, -0.70710678,
+               -0.70710678, -0.70710678, +0.00000000]"
+  - name: Css_Scale_Factor
+    description: "[-] Calibration scale factor of each coarse sun sensor slot. One means the nominal response. Every entry must not be negative."
+    type: Packed_F64x8.T
+    default: "[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]"
+  - name: Number_Of_Css
+    description: "[-] Number of coarse sun sensors in use, the first that many slots. Must be in [1, 8]."
+    type: Packed_U32.T
+    default: "(Value => 8)"
+  - name: Sensor_Threshold
+    description: "[-] Cosine value above which a sensor counts as active in a measurement. Must not be negative."
+    type: Packed_F64.T
+    default: "(Value => 0.0)"
+  - name: Css_Measurement_Noise_Std
+    description: "[-] Standard deviation of the coarse sun sensor measurement noise. Must not be negative."
+    type: Packed_F64.T
+    default: "(Value => 0.01)"
+  - name: Gyro_Measurement_Noise_Std
+    description: "[rad/s] Standard deviation of the gyro measurement noise. Must not be negative."
+    type: Packed_F64.T
+    default: "(Value => 0.001)"
