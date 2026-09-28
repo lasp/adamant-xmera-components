@@ -1,0 +1,6 @@
+---
+description: Data dependencies for the Torque Thr Force Mapping component.
+data_dependencies:
+  - name: Commanded_Torque
+    type: Cmd_Torque_Body.T
+    description: "[Nm] Commanded control torque in body frame components."

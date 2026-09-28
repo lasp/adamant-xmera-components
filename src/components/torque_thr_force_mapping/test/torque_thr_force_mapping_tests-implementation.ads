@@ -1,0 +1,39 @@
+--------------------------------------------------------------------------------
+-- Torque_Thr_Force_Mapping Tests Spec
+--------------------------------------------------------------------------------
+
+-- This is a unit test suite for the Torque Thr Force Mapping component
+package Torque_Thr_Force_Mapping_Tests.Implementation is
+
+   -- Test data and state:
+   type Instance is new Torque_Thr_Force_Mapping_Tests.Base_Instance with private;
+   type Class_Access is access all Instance'Class;
+
+private
+   -- Fixture procedures:
+   overriding procedure Set_Up_Test (Self : in out Instance);
+   overriding procedure Tear_Down_Test (Self : in out Instance);
+
+   -- A commanded torque about each body axis is reproduced by the mapped thruster
+   -- forces, with no force commanded.
+   overriding procedure Test_Pure_Torque (Self : in out Instance);
+   -- A zero torque command produces zero thruster force on every thruster.
+   overriding procedure Test_Zero_Command (Self : in out Instance);
+   -- Every mapped thruster force is non negative and at least one is zero.
+   overriding procedure Test_Min_Shift (Self : in out Instance);
+   -- Applying a new thruster geometry changes the mapping used on the next tick.
+   overriding procedure Test_Parameter_Update (Self : in out Instance);
+   -- A commanded force set through the parameter is mapped onto the thrusters
+   -- together with the torque, and a zero force restores the torque only mapping.
+   overriding procedure Test_Force_Parameter (Self : in out Instance);
+   -- A configuration the algorithm rejects is refused at parameter staging.
+   overriding procedure Test_Invalid_Parameter (Self : in out Instance);
+   -- Ensure a data dependency with the wrong identifier is treated as a wiring
+   -- defect and fails the tick's assertion.
+   overriding procedure Test_Invalid_Data_Dependency (Self : in out Instance);
+
+   -- Test data and state:
+   type Instance is new Torque_Thr_Force_Mapping_Tests.Base_Instance with record
+      null;
+   end record;
+end Torque_Thr_Force_Mapping_Tests.Implementation;

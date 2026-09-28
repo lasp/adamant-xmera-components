@@ -1,0 +1,19 @@
+---
+description: Torque thruster force mapping converts a commanded body torque into per-thruster force commands using the truncated-SVD pseudo-inverse of the thruster control mapping matrix. It is the force torque thruster force mapping with the commanded force taken from a parameter instead of a data dependency, zero by default, for states that change the attitude without a delta-v. Wraps the ForceTorqueThrForceMappingAlgorithm C++ algorithm via its C shim.
+execution: passive
+init:
+  description: Initializes the thruster force mapping algorithm with the default parameter values.
+connectors:
+  - description: Run the algorithm up to the current time.
+    type: Tick.T
+    kind: recv_sync
+  - description: Fetch a data product item from the database.
+    type: Data_Product_Fetch.T
+    return_type: Data_Product_Return.T
+    kind: request
+  - description: The data product invoker connector
+    type: Data_Product.T
+    kind: send
+  - description: The parameter update connector.
+    type: Parameter_Update.T
+    kind: modify
