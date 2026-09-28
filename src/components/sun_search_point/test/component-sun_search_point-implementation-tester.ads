@@ -11,7 +11,7 @@ with Data_Product.Representation;
 with Packed_F32x3;
 with Packed_U32;
 with Data_Product;
-with Packed_F32x3.Representation;
+with Att_Guid.Representation;
 with Packed_Sun_Search_Status.Representation;
 
 -- Safe-mode sun search and pointing guidance. Runs a scripted sun-search rotation
@@ -26,9 +26,7 @@ package Component.Sun_Search_Point.Implementation.Tester is
    package Data_Product_T_Recv_Sync_History_Package is new Printable_History (Data_Product.T, Data_Product.Representation.Image);
 
    -- Data product history packages:
-   package Sigma_Br_History_Package is new Printable_History (Packed_F32x3.T, Packed_F32x3.Representation.Image);
-   package Omega_Br_B_History_Package is new Printable_History (Packed_F32x3.T, Packed_F32x3.Representation.Image);
-   package Omega_Rn_B_History_Package is new Printable_History (Packed_F32x3.T, Packed_F32x3.Representation.Image);
+   package Attitude_Guidance_History_Package is new Printable_History (Att_Guid.T, Att_Guid.Representation.Image);
    package Sun_Search_Status_History_Package is new Printable_History (Packed_Sun_Search_Status.T, Packed_Sun_Search_Status.Representation.Image);
 
    -- Component class instance:
@@ -39,9 +37,7 @@ package Component.Sun_Search_Point.Implementation.Tester is
       Data_Product_Fetch_T_Service_History : Data_Product_Fetch_T_Service_History_Package.Instance;
       Data_Product_T_Recv_Sync_History : Data_Product_T_Recv_Sync_History_Package.Instance;
       -- Data product histories:
-      Sigma_Br_History : Sigma_Br_History_Package.Instance;
-      Omega_Br_B_History : Omega_Br_B_History_Package.Instance;
-      Omega_Rn_B_History : Omega_Rn_B_History_Package.Instance;
+      Attitude_Guidance_History : Attitude_Guidance_History_Package.Instance;
       Sun_Search_Status_History : Sun_Search_Status_History_Package.Instance;
       -- Data dependency return values. These can be set during unit test
       -- and will be returned to the component when a data dependency call
@@ -90,15 +86,15 @@ package Component.Sun_Search_Point.Implementation.Tester is
    -----------------------------------------------
    -- Description:
    --    Data products for the Sun Search Point component.
-   -- Attitude error (MRPs) of the body frame relative to the reference frame.
-   overriding procedure Sigma_Br (Self : in out Instance; Arg : in Packed_F32x3.T);
-   -- [rad/s] Body rate error of B relative to R, in B frame components.
-   overriding procedure Omega_Br_B (Self : in out Instance; Arg : in Packed_F32x3.T);
-   -- [rad/s] Reference frame rate of R relative to N, in B frame components.
-   overriding procedure Omega_Rn_B (Self : in out Instance; Arg : in Packed_F32x3.T);
-   -- Whether the search sequence acquired the sun. Published every tick, and
-   -- latches Sun_Not_Found once the sequence elapses without an acquisition until the
-   -- reset connector re-arms the search.
+   -- The attitude guidance for the attitude controller: the attitude error (MRPs) of
+   -- the body frame relative to the reference frame, the body rate error of B
+   -- relative to R, and the reference frame rate of R relative to N, all in B frame
+   -- components. The reference frame acceleration is zero, since the search and
+   -- pointing rates are piecewise constant. Published every tick.
+   overriding procedure Attitude_Guidance (Self : in out Instance; Arg : in Att_Guid.T);
+   -- Whether the search sequence acquired the sun. Published every tick, and latches
+   -- Sun_Not_Found once the sequence elapses without an acquisition until the reset
+   -- connector re-arms the search.
    overriding procedure Sun_Search_Status (Self : in out Instance; Arg : in Packed_Sun_Search_Status.T);
 
    -----------------------------------------------

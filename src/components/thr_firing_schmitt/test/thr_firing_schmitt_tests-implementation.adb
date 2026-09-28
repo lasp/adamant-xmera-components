@@ -2,6 +2,8 @@
 -- Thr_Firing_Schmitt Tests Body
 --------------------------------------------------------------------------------
 
+with Ada.Assertions;
+with AUnit.Assertions;
 with Basic_Assertions; use Basic_Assertions;
 with Thr_On_Time_Cmd;
 with Packed_F32x8.Assertion; use Packed_F32x8.Assertion;
@@ -103,12 +105,11 @@ package body Thr_Firing_Schmitt_Tests.Implementation is
       -- Send tick to trigger algorithm
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
 
-      -- Verify output was produced
-      Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, 1);
-      Natural_Assert.Eq (T.On_Time_Cmd_History.Get_Count, 1);
+      -- Verify the on-time command was sent to the actuation interface
+      Natural_Assert.Eq (T.Thr_On_Time_Cmd_T_Recv_Sync_History.Get_Count, 1);
 
       -- Check output matches expected values
-      Output := T.On_Time_Cmd_History.Get (1);
+      Output := T.Thr_On_Time_Cmd_T_Recv_Sync_History.Get (1);
       Packed_F32x8_Assert.Eq (
          Output.On_Time_Request,
          Expected_On_Time_On_Pulsing,
@@ -145,12 +146,11 @@ package body Thr_Firing_Schmitt_Tests.Implementation is
       -- Send tick to trigger algorithm
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
 
-      -- Verify output was produced (history accumulates)
-      Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, 2);
-      Natural_Assert.Eq (T.On_Time_Cmd_History.Get_Count, 2);
+      -- Verify the on-time command was sent to the actuation interface (history accumulates)
+      Natural_Assert.Eq (T.Thr_On_Time_Cmd_T_Recv_Sync_History.Get_Count, 2);
 
       -- Check output matches expected values
-      Output := T.On_Time_Cmd_History.Get (2);
+      Output := T.Thr_On_Time_Cmd_T_Recv_Sync_History.Get (2);
       Packed_F32x8_Assert.Eq (
          Output.On_Time_Request,
          Expected_On_Time_Off_Pulsing,
@@ -196,7 +196,7 @@ package body Thr_Firing_Schmitt_Tests.Implementation is
       -- holds the thruster ON at the minimum fire time (0.02).
       T.Thruster_Force_Cmd := (Thr_Force => [0.02, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
-      Output := T.On_Time_Cmd_History.Get (2);
+      Output := T.Thr_On_Time_Cmd_T_Recv_Sync_History.Get (2);
       Short_Float_Assert.Eq (Output.On_Time_Request (0), 0.02, Epsilon => 0.0001);
 
       -- Reset the algorithm's hysteresis state via the reset connector.
@@ -207,7 +207,7 @@ package body Thr_Firing_Schmitt_Tests.Implementation is
       -- zero on-time, proving the reset took effect.
       T.Thruster_Force_Cmd := (Thr_Force => [0.02, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
-      Output := T.On_Time_Cmd_History.Get (3);
+      Output := T.Thr_On_Time_Cmd_T_Recv_Sync_History.Get (3);
       Short_Float_Assert.Eq (Output.On_Time_Request (0), 0.0, Epsilon => 0.0001);
 
       -- Tear_Down_Test will handle the final Destroy
@@ -239,21 +239,21 @@ package body Thr_Firing_Schmitt_Tests.Implementation is
       -- and fires for exactly the minimum fire time.
       T.Thruster_Force_Cmd := (Thr_Force => [0.032, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
-      Output := T.On_Time_Cmd_History.Get (1);
+      Output := T.Thr_On_Time_Cmd_T_Recv_Sync_History.Get (1);
       Short_Float_Assert.Eq (Output.On_Time_Request (0), 0.02, Epsilon => 0.0001);
 
       -- Tick 2: force=0.008 => onTime=0.004, level = 0.2 <= Level_Off (0.25).
       -- The OFF latch wins over the ON state left by tick 1.
       T.Thruster_Force_Cmd := (Thr_Force => [0.008, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
-      Output := T.On_Time_Cmd_History.Get (2);
+      Output := T.Thr_On_Time_Cmd_T_Recv_Sync_History.Get (2);
       Short_Float_Assert.Eq (Output.On_Time_Request (0), 0.0, Epsilon => 0.0001);
 
       -- Tick 3: back to level 0.8. The ON latch wins over the OFF state left by
       -- tick 2, so neither latch depends on history.
       T.Thruster_Force_Cmd := (Thr_Force => [0.032, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
-      Output := T.On_Time_Cmd_History.Get (3);
+      Output := T.Thr_On_Time_Cmd_T_Recv_Sync_History.Get (3);
       Short_Float_Assert.Eq (Output.On_Time_Request (0), 0.02, Epsilon => 0.0001);
    end Test_Min_Fire_Time_Floor;
 
@@ -285,14 +285,14 @@ package body Thr_Firing_Schmitt_Tests.Implementation is
       -- control period. The comparison is inclusive, so this already saturates.
       T.Thruster_Force_Cmd := (Thr_Force => [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
-      Output := T.On_Time_Cmd_History.Get (1);
+      Output := T.Thr_On_Time_Cmd_T_Recv_Sync_History.Get (1);
       Short_Float_Assert.Eq (Output.On_Time_Request (0), Expected_Saturated, Epsilon => 0.0001);
 
       -- Tick 2: a force well beyond the maximum thrust cannot push the on-time any
       -- higher -- the saturated value is a ceiling, not a scaling.
       T.Thruster_Force_Cmd := (Thr_Force => [2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
-      Output := T.On_Time_Cmd_History.Get (2);
+      Output := T.Thr_On_Time_Cmd_T_Recv_Sync_History.Get (2);
       Short_Float_Assert.Eq (Output.On_Time_Request (0), Expected_Saturated, Epsilon => 0.0001);
    end Test_On_Time_Saturation;
 
@@ -320,7 +320,7 @@ package body Thr_Firing_Schmitt_Tests.Implementation is
       -- (saturated at a factor of 1.0).
       T.Thruster_Force_Cmd := (Thr_Force => [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
-      Output := T.On_Time_Cmd_History.Get (1);
+      Output := T.Thr_On_Time_Cmd_T_Recv_Sync_History.Get (1);
       Short_Float_Assert.Eq (Output.On_Time_Request (0), 0.5, Epsilon => 0.0001);
 
       -- Tick 2: a delta more negative than the maximum thrust would make the
@@ -328,7 +328,7 @@ package body Thr_Firing_Schmitt_Tests.Implementation is
       -- than producing a negative on-time.
       T.Thruster_Force_Cmd := (Thr_Force => [-2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
-      Output := T.On_Time_Cmd_History.Get (2);
+      Output := T.Thr_On_Time_Cmd_T_Recv_Sync_History.Get (2);
       Short_Float_Assert.Eq (Output.On_Time_Request (0), 0.0, Epsilon => 0.0001);
    end Test_Off_Pulsing_Offset;
 
@@ -356,7 +356,7 @@ package body Thr_Firing_Schmitt_Tests.Implementation is
       -- ON; thruster 1 is commanded zero and latches OFF.
       T.Thruster_Force_Cmd := (Thr_Force => [0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
-      Output := T.On_Time_Cmd_History.Get (1);
+      Output := T.Thr_On_Time_Cmd_T_Recv_Sync_History.Get (1);
       Short_Float_Assert.Eq (Output.On_Time_Request (0), 0.25, Epsilon => 0.0001);
       Short_Float_Assert.Eq (Output.On_Time_Request (1), 0.0, Epsilon => 0.0001);
 
@@ -365,7 +365,7 @@ package body Thr_Firing_Schmitt_Tests.Implementation is
       -- the minimum fire time, thruster 1 stays off.
       T.Thruster_Force_Cmd := (Thr_Force => [0.02, 0.02, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
-      Output := T.On_Time_Cmd_History.Get (2);
+      Output := T.Thr_On_Time_Cmd_T_Recv_Sync_History.Get (2);
       Short_Float_Assert.Eq (Output.On_Time_Request (0), 0.02, Epsilon => 0.0001);
       Short_Float_Assert.Eq (Output.On_Time_Request (1), 0.0, Epsilon => 0.0001);
    end Test_Thruster_Independence;
@@ -474,5 +474,21 @@ package body Thr_Firing_Schmitt_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
    end Test_Invalid_Parameter;
+
+   -- A data dependency that comes back with the wrong identifier means the assembly
+   -- is wired incorrectly. The component asserts rather than commanding anything.
+   overriding procedure Test_Invalid_Data_Dependency (Self : in out Instance) is
+      T : Component.Thr_Firing_Schmitt.Implementation.Tester.Instance_Access renames Self.Tester;
+   begin
+      T.Data_Dependency_Return_Id_Override := 999;
+      begin
+         T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+         AUnit.Assertions.Assert (False, "A dependency with the wrong identifier should have failed an assertion.");
+      exception
+         when Ada.Assertions.Assertion_Error =>
+            null; -- Expected.
+      end;
+      Natural_Assert.Eq (T.Thr_On_Time_Cmd_T_Recv_Sync_History.Get_Count, 0);
+   end Test_Invalid_Data_Dependency;
 
 end Thr_Firing_Schmitt_Tests.Implementation;

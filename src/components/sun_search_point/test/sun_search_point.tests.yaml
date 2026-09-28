@@ -13,3 +13,5 @@ tests:
     description: Ensure staged parameter values the algorithm would reject are refused at validation.
   - name: Test_Observation_Threshold_Range
     description: Verify an observation threshold above the coarse sun sensor count is refused.
+  - name: Test_Invalid_Data_Dependency
+    description: Ensure a data dependency with the wrong identifier is treated as a wiring defect and fails the tick's assertion.
