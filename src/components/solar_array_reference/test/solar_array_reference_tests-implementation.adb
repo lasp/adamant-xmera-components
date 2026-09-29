@@ -39,8 +39,9 @@ package body Solar_Array_Reference_Tests.Implementation is
    Surface_Normal : constant Packed_F32x3.T := [0.0, 1.0, 0.0];
    Alignment_Threshold : constant Packed_F32.T := (Value => 0.1);
    Zero_Attitude : constant Packed_F32x3.T := [0.0, 0.0, 0.0];
-   Auto_Track : constant Packed_Tracking_Mode.T := (Value => Tracking_Mode.Auto_Track);
-   Specified_Angle : constant Packed_Tracking_Mode.T := (Value => Tracking_Mode.Specified_Angle);
+   Auto_Track : constant Packed_Tracking_Mode.T := (Value => Commanded_Tracking_Mode.Auto_Track);
+   Specified_Angle : constant Packed_Tracking_Mode.T := (Value => Commanded_Tracking_Mode.Specified_Angle);
+   Disabled : constant Packed_Tracking_Mode.T := (Value => Commanded_Tracking_Mode.Disabled);
    Attitude_A : constant Packed_F32x3.T := [0.1, 0.2, 0.3];
    Reference_A : constant Packed_F32x3.T := [0.3, 0.2, 0.1];
    Attitude_B : constant Packed_F32x3.T := [0.5, 0.4, 0.3];
@@ -85,6 +86,35 @@ package body Solar_Array_Reference_Tests.Implementation is
          Specified_Array_Angle_Id => 4, Specified_Array_Angle_Stale_Limit => One_Second,
          Offset_Angle_Id => 5, Offset_Angle_Stale_Limit => One_Second);
    end Map_Commands_With_Stale_Limit;
+
+   -- Map the attitude, the reference, and the sun direction to identifiers the tester
+   -- does not serve, so any fetch of them fails the tick's assertion.
+   procedure Map_Attitude_Inputs_Unavailable (Self : in out Instance) is
+      Never : constant Ada.Real_Time.Time_Span := Ada.Real_Time.Time_Span_Zero;
+   begin
+      Self.Tester.Component_Instance.Map_Data_Dependencies (
+         Navigation_Attitude_Id => 10, Navigation_Attitude_Stale_Limit => Never,
+         Attitude_Reference_Id => 11, Attitude_Reference_Stale_Limit => Never,
+         Sun_Direction_Body_Id => 12, Sun_Direction_Body_Stale_Limit => Never,
+         Tracking_Mode_Id => 3, Tracking_Mode_Stale_Limit => Never,
+         Specified_Array_Angle_Id => 4, Specified_Array_Angle_Stale_Limit => Never,
+         Offset_Angle_Id => 5, Offset_Angle_Stale_Limit => Never);
+   end Map_Attitude_Inputs_Unavailable;
+
+   -- Send one tick and expect it to fail an assertion without publishing anything.
+   procedure Send_Tick_And_Expect_Assertion (Self : in out Instance; Message : in String) is
+      T : Component.Solar_Array_Reference.Implementation.Tester.Instance_Access renames Self.Tester;
+      Published_Before : constant Natural := T.Reference_Angle_History.Get_Count;
+   begin
+      begin
+         T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+         AUnit.Assertions.Assert (False, Message);
+      exception
+         when Ada.Assertions.Assertion_Error =>
+            null; -- Expected.
+      end;
+      Natural_Assert.Eq (T.Reference_Angle_History.Get_Count, Published_Before);
+   end Send_Tick_And_Expect_Assertion;
 
    -- Send one tick at the given time, well ahead of the commands so they come back
    -- stale, with the given attitude, reference, and sun direction, and check the
@@ -355,6 +385,40 @@ package body Solar_Array_Reference_Tests.Implementation is
       Boolean_Assert.Eq (Accepted_By_Validation (Just_Above), False);
       Boolean_Assert.Eq (Accepted_By_Validation (Just_Below), False);
    end Test_Array_Angle_Range;
+
+   -- In the specified angle mode the algorithm reads none of the attitude inputs, so
+   -- the tick does not fetch them. With them unavailable the specified angle mode
+   -- still runs the algorithm and publishes the specified angle. Switching to the sun
+   -- tracking mode then needs them, so the tick fails its assertion.
+   overriding procedure Test_Specified_Angle_Without_Attitude (Self : in out Instance) is
+      T : Component.Solar_Array_Reference.Implementation.Tester.Instance_Access renames Self.Tester;
+   begin
+      Map_Attitude_Inputs_Unavailable (Self);
+      Apply_Configuration (Self, Threshold => Alignment_Threshold);
+
+      -- The specified angle mode publishes the specified angle, wrapped by the
+      -- algorithm, without the attitude inputs:
+      Send_Tick_And_Check (Self, 1, Specified_Angle, 0.5, 0.3, Attitude_A, Reference_A, Sun_Z_From_A, 0.5);
+      Send_Tick_And_Check (Self, 2, Specified_Angle, -2.0, 0.0, Attitude_A, Reference_A, Sun_Z_From_A, -2.0);
+
+      -- The sun tracking mode fetches them and fails its assertion:
+      T.Tracking_Mode := Auto_Track;
+      Send_Tick_And_Expect_Assertion (Self, "The sun tracking mode should have failed an assertion without the attitude inputs.");
+   end Test_Specified_Angle_Without_Attitude;
+
+   -- The commanding component does not tick this component while the solar arrays are
+   -- not controlled, so a Disabled mode on a tick is a sequencing defect. The component
+   -- asserts rather than publishing anything.
+   overriding procedure Test_Disabled_Mode (Self : in out Instance) is
+      T : Component.Solar_Array_Reference.Implementation.Tester.Instance_Access renames Self.Tester;
+   begin
+      Apply_Configuration (Self, Threshold => Alignment_Threshold);
+      T.Tracking_Mode := Disabled;
+      Send_Tick_And_Expect_Assertion (Self, "A Disabled tracking mode should have failed an assertion.");
+
+      -- A controlled mode runs again afterwards:
+      Send_Tick_And_Check (Self, 1, Specified_Angle, 0.5, 0.0, Attitude_A, Reference_A, Sun_Z_From_A, 0.5);
+   end Test_Disabled_Mode;
 
    -- A data dependency that comes back with the wrong identifier means the assembly
    -- is wired incorrectly. The component asserts rather than publishing anything.

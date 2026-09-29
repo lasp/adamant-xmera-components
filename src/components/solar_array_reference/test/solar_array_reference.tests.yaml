@@ -13,5 +13,9 @@ tests:
     description: Ensure a staged configuration the algorithm would reject is refused at validation.
   - name: Test_Array_Angle_Range
     description: Ensure the range of the commanded angle type is exactly the range the algorithm accepts, so command validation rejects what the algorithm would.
+  - name: Test_Specified_Angle_Without_Attitude
+    description: Ensure the specified angle mode runs without the attitude inputs and the sun tracking mode requires them.
+  - name: Test_Disabled_Mode
+    description: Ensure a Disabled tracking mode fails the tick's assertion without publishing.
   - name: Test_Invalid_Data_Dependency
     description: Ensure a data dependency with the wrong identifier is treated as a wiring defect and fails the tick's assertion.
