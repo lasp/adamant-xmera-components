@@ -32,6 +32,12 @@ private
    -- Ensure the range of the commanded angle type is exactly the range the algorithm
    -- accepts, so command validation rejects what the algorithm would.
    overriding procedure Test_Array_Angle_Range (Self : in out Instance);
+   -- Ensure the specified angle mode runs without the attitude inputs and the sun
+   -- tracking mode requires them.
+   overriding procedure Test_Specified_Angle_Without_Attitude (Self : in out Instance);
+   -- Ensure a Disabled tracking mode fails the tick's assertion without
+   -- publishing.
+   overriding procedure Test_Disabled_Mode (Self : in out Instance);
    -- Ensure a data dependency with the wrong identifier is treated as a wiring
    -- defect and fails the tick's assertion.
    overriding procedure Test_Invalid_Data_Dependency (Self : in out Instance);

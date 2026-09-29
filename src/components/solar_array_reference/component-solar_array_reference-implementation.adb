@@ -86,34 +86,33 @@ package body Component.Solar_Array_Reference.Implementation is
    ---------------------------------------
    -- Invokee connector primitives:
    ---------------------------------------
+   -- The commanded tracking modes the algorithm has a mode for.
+   subtype Controlled_Tracking_Mode is Solar_Array_Reference_Enums.Commanded_Tracking_Mode.E range
+      Solar_Array_Reference_Enums.Commanded_Tracking_Mode.Auto_Track .. Solar_Array_Reference_Enums.Commanded_Tracking_Mode.Specified_Angle;
+
+   -- Convert a commanded tracking mode to the tracking mode of the algorithm. Disabled
+   -- has no algorithm mode, so the caller asserts it is never Disabled first.
+   function To_Algorithm_Mode (Mode : in Controlled_Tracking_Mode) return Solar_Array_Reference_Enums.Tracking_Mode.C.E_C is
+      (case Mode is
+         when Solar_Array_Reference_Enums.Commanded_Tracking_Mode.Auto_Track => Solar_Array_Reference_Enums.Tracking_Mode.C.Auto_Track,
+         when Solar_Array_Reference_Enums.Commanded_Tracking_Mode.Specified_Angle => Solar_Array_Reference_Enums.Tracking_Mode.C.Specified_Angle);
+
    -- Run the algorithm up to the current time.
    overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
       use Data_Product_Enums;
       use Data_Product_Enums.Data_Dependency_Status;
+      use Solar_Array_Reference_Enums;
+      use type Solar_Array_Reference_Enums.Tracking_Mode.C.E_C;
+      use type Solar_Array_Reference_Enums.Commanded_Tracking_Mode.E;
 
-      -- Grab data dependencies:
+      -- Grab the commanded data dependencies:
       --
       -- Data_Dependency_Status.E can be Success, Not_Available, Error, or Stale.
-      -- The attitude, the reference, and the sun direction are produced earlier in the
-      -- same tick, so any other status indicates that this component is not wired up
-      -- correctly in the algorithm execution order. That should never happen, so we
-      -- assert.
-      Attitude : Nav_Att_Output.T;
-      Attitude_Status : constant Data_Dependency_Status.E :=
-         Self.Get_Navigation_Attitude (Value => Attitude, Stale_Reference => Arg.Time);
-      pragma Assert (Attitude_Status = Success);
-      Reference : Att_Ref.T;
-      Reference_Status : constant Data_Dependency_Status.E :=
-         Self.Get_Attitude_Reference (Value => Reference, Stale_Reference => Arg.Time);
-      pragma Assert (Reference_Status = Success);
-      Sun_Direction : Packed_F32x3.T;
-      Sun_Direction_Status : constant Data_Dependency_Status.E :=
-         Self.Get_Sun_Direction_Body (Value => Sun_Direction, Stale_Reference => Arg.Time);
-      pragma Assert (Sun_Direction_Status = Success);
       -- The tracking mode and the angles are commanded sporadically, at state
       -- transitions rather than every control cycle, so on most ticks they come back
       -- Stale. Stale is a normal state here: the algorithm keeps the configuration it
-      -- was last given. Success means a new command arrived this tick.
+      -- was last given. Success means a new command arrived this tick. Any other
+      -- status indicates that this component is not wired up correctly, so we assert.
       Mode : Packed_Tracking_Mode.T;
       Mode_Status : constant Data_Dependency_Status.E :=
          Self.Get_Tracking_Mode (Value => Mode, Stale_Reference => Arg.Time);
@@ -126,6 +125,17 @@ package body Component.Solar_Array_Reference.Implementation is
       Offset_Status : constant Data_Dependency_Status.E :=
          Self.Get_Offset_Angle (Value => Offset, Stale_Reference => Arg.Time);
       pragma Assert (Offset_Status = Success or else Offset_Status = Stale);
+      -- The commanding component does not tick this component while the solar arrays
+      -- are not controlled, so a Disabled mode means the component is sequenced
+      -- incorrectly. That should never happen, so we assert.
+      pragma Assert (Mode.Value /= Commanded_Tracking_Mode.Disabled);
+
+      -- The attitudes and the sun direction the algorithm is called with. They are
+      -- only fetched in the sun tracking mode. In the specified angle mode the
+      -- algorithm reads none of them, so they are left at zero.
+      Sigma_Bn : Packed_F32x3.T := [0.0, 0.0, 0.0];
+      Sigma_Rn : Packed_F32x3.T := [0.0, 0.0, 0.0];
+      Sun_Direction : Packed_F32x3.T := [0.0, 0.0, 0.0];
    begin
       -- Apply any pending parameter update:
       Self.Update_Parameters;
@@ -137,23 +147,46 @@ package body Component.Solar_Array_Reference.Implementation is
          Specified_Angle_Status = Success or else
          Offset_Status = Success
       then
-         Self.Commanded_Mode := Solar_Array_Reference_Enums.Tracking_Mode.C.To_C (Mode.Value);
+         Self.Commanded_Mode := To_Algorithm_Mode (Mode.Value);
          Self.Commanded_Angle := Specified_Angle.Value;
          Self.Commanded_Offset := Offset.Value;
          Apply_Config (Self);
       end if;
 
-      -- Call the C algorithm and publish the reference angle. Only the attitudes are
-      -- taken from the navigation and reference records, straight from the packed
-      -- fields the shim needs. When the sun is nearly along the drive axis the
-      -- algorithm returns the angle it retained from the previous tick.
-      -- Update is qualified because Parameter_Enums also declares one.
+      -- In the sun tracking mode, grab the attitude, the reference, and the sun
+      -- direction. They are produced earlier in the same tick, so any status other
+      -- than Success indicates that this component is not wired up correctly in the
+      -- algorithm execution order. That should never happen, so we assert. Only the
+      -- attitudes are taken from the navigation and reference records, straight from
+      -- the packed fields the shim needs.
+      if Self.Commanded_Mode = Tracking_Mode.C.Auto_Track then
+         declare
+            Attitude : Nav_Att_Output.T;
+            Attitude_Status : constant Data_Dependency_Status.E :=
+               Self.Get_Navigation_Attitude (Value => Attitude, Stale_Reference => Arg.Time);
+            pragma Assert (Attitude_Status = Success);
+            Reference : Att_Ref.T;
+            Reference_Status : constant Data_Dependency_Status.E :=
+               Self.Get_Attitude_Reference (Value => Reference, Stale_Reference => Arg.Time);
+            pragma Assert (Reference_Status = Success);
+            Sun_Direction_Status : constant Data_Dependency_Status.E :=
+               Self.Get_Sun_Direction_Body (Value => Sun_Direction, Stale_Reference => Arg.Time);
+            pragma Assert (Sun_Direction_Status = Success);
+         begin
+            Sigma_Bn := Attitude.Sigma_Bn;
+            Sigma_Rn := Reference.Sigma_Rn;
+         end;
+      end if;
+
+      -- Call the C algorithm and publish the reference angle. When the sun is nearly
+      -- along the drive axis the algorithm returns the angle it retained from the
+      -- previous tick. Update is qualified because Parameter_Enums also declares one.
       Self.Data_Product_T_Send (Self.Data_Products.Reference_Angle (
          Arg.Time,
          (Value => Solar_Array_Reference_Algorithm_C.Update (
             Self.Alg,
-            Sigma_Bn      => (Value => Packed_F32x3.C.Unpack (Attitude.Sigma_Bn)),
-            Sigma_Rn      => (Value => Packed_F32x3.C.Unpack (Reference.Sigma_Rn)),
+            Sigma_Bn      => (Value => Packed_F32x3.C.Unpack (Sigma_Bn)),
+            Sigma_Rn      => (Value => Packed_F32x3.C.Unpack (Sigma_Rn)),
             R_Hat_In_Sb_B => (Value => Packed_F32x3.C.Unpack (Sun_Direction))))
       ));
    end Tick_T_Recv_Sync;
