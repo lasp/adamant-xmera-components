@@ -10,3 +10,15 @@ enums:
       - name: Specified_Angle
         value: 1
         description: The reference angle is the specified array angle.
+  - name: Commanded_Tracking_Mode
+    description: This is the tracking mode commanded to the solar array reference component through its data dependency. It adds Disabled to the modes of the algorithm, so the commanding component can also report that the solar arrays are not controlled. The component converts it to Tracking_Mode before calling the algorithm.
+    literals:
+      - name: Disabled
+        value: 0
+        description: The solar arrays are not controlled. The component must not be ticked in this mode.
+      - name: Auto_Track
+        value: 1
+        description: The reference angle turns the array surface normal toward the sun.
+      - name: Specified_Angle
+        value: 2
+        description: The reference angle is the specified array angle.
