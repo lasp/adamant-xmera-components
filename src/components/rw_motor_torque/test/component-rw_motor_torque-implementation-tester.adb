@@ -57,8 +57,6 @@ package body Component.Rw_Motor_Torque.Implementation.Tester is
             when 0 => Id_To_Return := 0;
             -- ID for Wheel_Speeds:
             when 1 => Id_To_Return := 1;
-            -- ID for Desired_Wheel_Speeds:
-            when 2 => Id_To_Return := 2;
             -- If ID can not be found, then return ID out of range error.
             when others =>
                if Return_Status = Data_Product_Enums.Fetch_Status.Success then
@@ -74,8 +72,6 @@ package body Component.Rw_Motor_Torque.Implementation.Tester is
             when 0 => Length_To_Return := Cmd_Torque_Body.Size_In_Bytes;
             -- Length for Wheel_Speeds:
             when 1 => Length_To_Return := Rwa_Speeds.Size_In_Bytes;
-            -- Length for Desired_Wheel_Speeds:
-            when 2 => Length_To_Return := Rwa_Speeds.Size_In_Bytes;
             -- If ID can not be found, then return ID out of range error.
             when others =>
                if Return_Status = Data_Product_Enums.Fetch_Status.Success then
@@ -100,10 +96,6 @@ package body Component.Rw_Motor_Torque.Implementation.Tester is
             when 1 =>
                Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Rwa_Speeds.Size_In_Bytes - 1) :=
                   Rwa_Speeds.Serialization.To_Byte_Array (Self.Wheel_Speeds);
-            -- Length for Desired_Wheel_Speeds:
-            when 2 =>
-               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Rwa_Speeds.Size_In_Bytes - 1) :=
-                  Rwa_Speeds.Serialization.To_Byte_Array (Self.Desired_Wheel_Speeds);
             -- Do not fill. The ID is not recognized.
             when others =>
                Return_Status := Data_Product_Enums.Fetch_Status.Id_Out_Of_Range;

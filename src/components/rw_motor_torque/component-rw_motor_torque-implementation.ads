@@ -6,12 +6,13 @@
 with Tick;
 with Parameter_Update;
 with Rw_Motor_Torque_Algorithm_C; use Rw_Motor_Torque_Algorithm_C;
+with Rw_Speeds_Input.C;
 
 -- Reaction wheel motor torque mapping. Maps the commanded body control torque
 -- onto the available reaction wheels along the selected control axes, adds a null
--- space term that steers the wheel speeds toward their desired values without
--- disturbing the body, and sends the per-wheel motor torques straight to the
--- wheel interface. Wraps the RwMotorTorqueAlgorithm C++ algorithm via its C shim.
+-- space term that steers the wheel speeds toward the desired speeds held as a
+-- parameter without disturbing the body, and sends the per-wheel motor torques
+-- straight to the wheel interface. Wraps the RwMotorTorqueAlgorithm C++ algorithm via its C shim.
 package Component.Rw_Motor_Torque.Implementation is
 
    -- The component class instance record:
@@ -30,6 +31,9 @@ private
    -- The component class instance record:
    type Instance is new Rw_Motor_Torque.Base_Instance with record
       Alg : Rw_Motor_Torque_Algorithm_Access := null;
+      -- The desired wheel speeds parameter in the form the algorithm takes, refreshed
+      -- when the parameters are updated so the tick passes a pointer to it.
+      Desired_Speeds_C : aliased Rw_Speeds_Input.C.U_C;
    end record;
 
    ---------------------------------------
@@ -89,7 +93,8 @@ private
       Control_Axes : in Rw_Motor_Torque_Control_Axes.U;
       Rw_Spin_Axes : in Packed_F32x3_X4.U;
       Wheel_Availability : in Wheel_Availability_X4.U;
-      Omega_Gain : in Packed_F32.U
+      Omega_Gain : in Packed_F32.U;
+      Desired_Wheel_Speeds : in Rw_Speeds_Input.U
    ) return Parameter_Validation_Status.E;
 
    -----------------------------------------------

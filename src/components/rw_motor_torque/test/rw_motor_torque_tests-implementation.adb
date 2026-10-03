@@ -81,7 +81,6 @@ package body Rw_Motor_Torque_Tests.Implementation is
    begin
       T.Control_Torque := (Torque_Request_Body => [1.0, -0.5, 0.7]);
       T.Wheel_Speeds := (Rwa_1 => 10.0, Rwa_2 => 20.0, Rwa_3 => 30.0, Rwa_4 => 40.0);
-      T.Desired_Wheel_Speeds := (Rwa_1 => 0.0, Rwa_2 => 0.0, Rwa_3 => 0.0, Rwa_4 => 0.0);
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
       Natural_Assert.Eq (T.Rwa_Torques_T_Recv_Sync_History.Get_Count, Tick_Number);
       Rwa_Torques_Assert.Eq (T.Rwa_Torques_T_Recv_Sync_History.Get (Tick_Number), Expected, Epsilon => Epsilon);
@@ -163,6 +162,7 @@ package body Rw_Motor_Torque_Tests.Implementation is
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Rw_Spin_Axes (Spin_Axes)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Wheel_Availability (All_Available)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Omega_Gain (No_Gain)), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Desired_Wheel_Speeds ((Wheel_Speeds => [others => 0.0]))), Success);
       end Stage_Valid_Configuration;
    begin
       -- The reference configuration is accepted:
@@ -198,6 +198,19 @@ package body Rw_Motor_Torque_Tests.Implementation is
       Stage_Valid_Configuration;
       declare
          Par : Parameter.T := Params.Rw_Spin_Axes (Spin_Axes);
+      begin
+         -- Overwrite the first big-endian float with +infinity.
+         Par.Buffer (Par.Buffer'First .. Par.Buffer'First + 3) := [16#7F#, 16#80#, 16#00#, 16#00#];
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Par), Success);
+      end;
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- A non-finite desired wheel speed is rejected by Validate_Parameters. Staging
+      -- accepts it for the same reason it accepts the spin axis above, see the TODO in
+      -- the implementation:
+      Stage_Valid_Configuration;
+      declare
+         Par : Parameter.T := Params.Desired_Wheel_Speeds ((Wheel_Speeds => [others => 0.0]));
       begin
          -- Overwrite the first big-endian float with +infinity.
          Par.Buffer (Par.Buffer'First .. Par.Buffer'First + 3) := [16#7F#, 16#80#, 16#00#, 16#00#];
