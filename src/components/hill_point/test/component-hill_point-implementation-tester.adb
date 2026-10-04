@@ -12,9 +12,6 @@ package body Component.Hill_Point.Implementation.Tester is
       -- Initialize tester heap:
       -- Connector histories:
       Self.Data_Product_Fetch_T_Service_History.Init (Depth => 100);
-      Self.Data_Product_T_Recv_Sync_History.Init (Depth => 100);
-      -- Data product histories:
-      Self.Attitude_Reference_History.Init (Depth => 100);
    end Init_Base;
 
    procedure Final_Base (Self : in out Instance) is
@@ -22,9 +19,6 @@ package body Component.Hill_Point.Implementation.Tester is
       -- Destroy tester heap:
       -- Connector histories:
       Self.Data_Product_Fetch_T_Service_History.Destroy;
-      Self.Data_Product_T_Recv_Sync_History.Destroy;
-      -- Data product histories:
-      Self.Attitude_Reference_History.Destroy;
    end Final_Base;
 
    ---------------------------------------
@@ -33,8 +27,7 @@ package body Component.Hill_Point.Implementation.Tester is
    procedure Connect (Self : in out Instance) is
    begin
       Self.Component_Instance.Attach_Data_Product_Fetch_T_Request (To_Component => Self'Unchecked_Access, Hook => Self.Data_Product_Fetch_T_Service_Access);
-      Self.Component_Instance.Attach_Data_Product_T_Send (To_Component => Self'Unchecked_Access, Hook => Self.Data_Product_T_Recv_Sync_Access);
-      Self.Attach_Tick_T_Send (To_Component => Self.Component_Instance'Unchecked_Access, Hook => Self.Component_Instance.Tick_T_Recv_Sync_Access);
+      Self.Attach_Tick_T_Request (To_Component => Self.Component_Instance'Unchecked_Access, Hook => Self.Component_Instance.Tick_T_Service_Access);
    end Connect;
 
    -- Helper function for returning data dependencies:
@@ -127,28 +120,5 @@ package body Component.Hill_Point.Implementation.Tester is
       Self.Data_Product_Fetch_T_Service_History.Push (Arg);
       return To_Return;
    end Data_Product_Fetch_T_Service;
-
-   -- The data product invoker connector
-   overriding procedure Data_Product_T_Recv_Sync (Self : in out Instance; Arg : in Data_Product.T) is
-   begin
-      -- Push the argument onto the test history for looking at later:
-      Self.Data_Product_T_Recv_Sync_History.Push (Arg);
-      -- Dispatch the data product to the correct handler:
-      Self.Dispatch_Data_Product (Arg);
-   end Data_Product_T_Recv_Sync;
-
-   -----------------------------------------------
-   -- Data product handler primitive:
-   -----------------------------------------------
-   -- Description:
-   --    Data products for the Hill Point component.
-   -- Hill frame attitude reference. All three fields are zero when the orbit
-   -- geometry is degenerate (orbit radius under one meter, zero relative velocity,
-   -- or position and velocity nearly collinear).
-   overriding procedure Attitude_Reference (Self : in out Instance; Arg : in Att_Ref.T) is
-   begin
-      -- Push the argument onto the test history for looking at later:
-      Self.Attitude_Reference_History.Push (Arg);
-   end Attitude_Reference;
 
 end Component.Hill_Point.Implementation.Tester;

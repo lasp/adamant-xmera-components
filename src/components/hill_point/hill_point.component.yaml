@@ -4,13 +4,11 @@ execution: passive
 init:
   description: Initializes the Hill point algorithm.
 connectors:
-  - description: Run the algorithm up to the current time.
+  - description: Run the algorithm up to the current time and return the attitude reference it produces.
     type: Tick.T
-    kind: recv_sync
+    return_type: Att_Ref.T
+    kind: service
   - description: Fetch a data product item from the database.
     type: Data_Product_Fetch.T
     return_type: Data_Product_Return.T
     kind: request
-  - description: The data product invoker connector
-    type: Data_Product.T
-    kind: send

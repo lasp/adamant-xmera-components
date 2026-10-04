@@ -4,7 +4,6 @@
 
 with Ada.Assertions;
 with AUnit.Assertions;
-with Basic_Assertions; use Basic_Assertions;
 with Att_Ref;
 with Att_Ref.Assertion; use Att_Ref.Assertion;
 with Cartesian_State;
@@ -102,32 +101,28 @@ package body Hill_Point_Tests.Implementation is
          T.Spacecraft_State := Test_Cases (I).Spacecraft;
          T.Primary_Body_State := Test_Cases (I).Primary_Body;
 
-         -- Send tick to trigger the algorithm:
-         T.Tick_T_Send ((Time => T.System_Time, Count => 0));
-
-         -- Verify output was produced:
-         Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, I);
-         Natural_Assert.Eq (T.Attitude_Reference_History.Get_Count, I);
-
-         -- Check output matches expected values:
-         Att_Ref_Assert.Eq (T.Attitude_Reference_History.Get (I), Test_Cases (I).Expected, Epsilon => 1.0E-6);
+         -- Request the tick and check the reference it returns:
+         Att_Ref_Assert.Eq (T.Tick_T_Request ((Time => T.System_Time, Count => 0)), Test_Cases (I).Expected, Epsilon => 1.0E-6);
       end loop;
    end Test;
 
    -- A data dependency that comes back with the wrong identifier means the assembly
-   -- is wired incorrectly. The component asserts rather than publishing anything.
+   -- is wired incorrectly. The component asserts rather than returning a reference.
    overriding procedure Test_Invalid_Data_Dependency (Self : in out Instance) is
       T : Component.Hill_Point.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
       T.Data_Dependency_Return_Id_Override := 999;
       begin
-         T.Tick_T_Send ((Time => T.System_Time, Count => 0));
-         AUnit.Assertions.Assert (False, "A dependency with the wrong identifier should have failed an assertion.");
+         declare
+            Returned : constant Att_Ref.T := T.Tick_T_Request ((Time => T.System_Time, Count => 0));
+            pragma Unreferenced (Returned);
+         begin
+            AUnit.Assertions.Assert (False, "A dependency with the wrong identifier should have failed an assertion.");
+         end;
       exception
          when Ada.Assertions.Assertion_Error =>
             null; -- Expected.
       end;
-      Natural_Assert.Eq (T.Attitude_Reference_History.Get_Count, 0);
    end Test_Invalid_Data_Dependency;
 
 end Hill_Point_Tests.Implementation;
