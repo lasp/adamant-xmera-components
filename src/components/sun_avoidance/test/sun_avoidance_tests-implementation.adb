@@ -6,7 +6,6 @@ with Interfaces; use Interfaces;
 with Ada.Assertions;
 with AUnit.Assertions;
 with Parameter;
-with Basic_Assertions; use Basic_Assertions;
 with Att_Ref;
 with Att_Ref.Assertion; use Att_Ref.Assertion;
 with Packed_F32;
@@ -15,6 +14,7 @@ with Parameter_Enums.Assertion;
 use Parameter_Enums.Parameter_Update_Status;
 use Parameter_Enums.Assertion;
 with Sun_Avoidance_Parameters;
+with Sys_Time.Arithmetic;
 
 package body Sun_Avoidance_Tests.Implementation is
 
@@ -63,26 +63,20 @@ package body Sun_Avoidance_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
    end Apply_Test_Parameters;
 
-   -- Set the inputs and tick at the given number of seconds after the test start time.
-   -- The tester stamps the data dependencies with the same time, so they are never stale.
-   procedure Tick_At (Self : in out Instance; Seconds_After_Start : in Natural; Sun_Direction : in Packed_F32x3.T) is
+   -- Set the inputs and tick at the given number of seconds after the test start time,
+   -- returning the reference the tick produces. The tester stamps the data dependencies
+   -- with the same time, so they are never stale.
+   function Tick_At (Self : in out Instance; Seconds_After_Start : in Natural; Sun_Direction : in Packed_F32x3.T) return Att_Ref.T is
       T : Component.Sun_Avoidance.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
       T.System_Time := (Seconds => 10_000 + Unsigned_32 (Seconds_After_Start), Subseconds => 0);
       T.Spacecraft_Attitude := (Time_Tag => 0.0, Sigma_Bn => Body_Attitude, Omega_Bn_B => [0.0, 0.0, 0.0], Veh_Sun_Pnt_Bdy => [0.0, 0.0, 0.0]);
-      T.Input_Attitude_Reference := Input_Reference;
       T.Sun_Direction := Sun_Direction;
-      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+      return T.Att_Ref_Tick_T_Request ((
+         Current_Tick => (Time => T.System_Time, Count => 0),
+         Call_Time => Sys_Time.Arithmetic.To_Nanoseconds (T.System_Time),
+         Reference => Input_Reference));
    end Tick_At;
-
-   -- Check the reference published by the most recent tick.
-   procedure Assert_Latest_Output (Self : in out Instance; Tick_Number : in Natural; Expected : in Att_Ref.T) is
-      T : Component.Sun_Avoidance.Implementation.Tester.Instance_Access renames Self.Tester;
-   begin
-      Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, Tick_Number);
-      Natural_Assert.Eq (T.Attitude_Reference_History.Get_Count, Tick_Number);
-      Att_Ref_Assert.Eq (T.Attitude_Reference_History.Get (Tick_Number), Expected, Epsilon => Epsilon);
-   end Assert_Latest_Output;
 
    -------------------------------------------------------------------------
    -- Fixtures:
@@ -116,7 +110,7 @@ package body Sun_Avoidance_Tests.Implementation is
    -------------------------------------------------------------------------
 
    -- Run a slew with the Sun clear of the swept arc to ensure the Ada to C to C++
-   -- integration is sound. The published reference starts at the body attitude and
+   -- integration is sound. The returned reference starts at the body attitude and
    -- rotates toward the input reference at the slew rate, with the slew rate added to
    -- the reference rate about the slew axis. Once the slew completes the input
    -- reference passes through unchanged.
@@ -125,22 +119,19 @@ package body Sun_Avoidance_Tests.Implementation is
       Apply_Test_Parameters (Self);
 
       -- At the start the whole 60 degree slew remains, so the reference is the body attitude:
-      Tick_At (Self, Seconds_After_Start => 0, Sun_Direction => Sun_Clear_Of_Sweep);
-      Assert_Latest_Output (Self, 1, (
+      Att_Ref_Assert.Eq (Tick_At (Self, Seconds_After_Start => 0, Sun_Direction => Sun_Clear_Of_Sweep), (
          Sigma_Rn => [0.0, 0.0, 0.0],
          Omega_Rn_N => [0.001, -0.002, 0.003 + Slew_Rate.Value],
-         Domega_Rn_N => Input_Reference.Domega_Rn_N));
+         Domega_Rn_N => Input_Reference.Domega_Rn_N), Epsilon => Epsilon);
 
       -- Ten seconds in, the reference has turned 10 degrees about +z:
-      Tick_At (Self, Seconds_After_Start => 10, Sun_Direction => Sun_Clear_Of_Sweep);
-      Assert_Latest_Output (Self, 2, (
+      Att_Ref_Assert.Eq (Tick_At (Self, Seconds_After_Start => 10, Sun_Direction => Sun_Clear_Of_Sweep), (
          Sigma_Rn => [0.0, 0.0, Ten_Degrees],
          Omega_Rn_N => [0.001, -0.002, 0.003 + Slew_Rate.Value],
-         Domega_Rn_N => Input_Reference.Domega_Rn_N));
+         Domega_Rn_N => Input_Reference.Domega_Rn_N), Epsilon => Epsilon);
 
       -- Well after the 60 second slew, the input reference passes through:
-      Tick_At (Self, Seconds_After_Start => 100, Sun_Direction => Sun_Clear_Of_Sweep);
-      Assert_Latest_Output (Self, 3, Input_Reference);
+      Att_Ref_Assert.Eq (Tick_At (Self, Seconds_After_Start => 100, Sun_Direction => Sun_Clear_Of_Sweep), Input_Reference, Epsilon => Epsilon);
    end Test;
 
    -- Check that a Sun inside the swept arc makes the slew go the long way around. The
@@ -150,17 +141,15 @@ package body Sun_Avoidance_Tests.Implementation is
    begin
       Apply_Test_Parameters (Self);
 
-      Tick_At (Self, Seconds_After_Start => 0, Sun_Direction => Sun_Inside_Sweep);
-      Assert_Latest_Output (Self, 1, (
+      Att_Ref_Assert.Eq (Tick_At (Self, Seconds_After_Start => 0, Sun_Direction => Sun_Inside_Sweep), (
          Sigma_Rn => [0.0, 0.0, 0.0],
          Omega_Rn_N => [0.001, -0.002, 0.003 - Slew_Rate.Value],
-         Domega_Rn_N => Input_Reference.Domega_Rn_N));
+         Domega_Rn_N => Input_Reference.Domega_Rn_N), Epsilon => Epsilon);
 
-      Tick_At (Self, Seconds_After_Start => 10, Sun_Direction => Sun_Inside_Sweep);
-      Assert_Latest_Output (Self, 2, (
+      Att_Ref_Assert.Eq (Tick_At (Self, Seconds_After_Start => 10, Sun_Direction => Sun_Inside_Sweep), (
          Sigma_Rn => [0.0, 0.0, -Ten_Degrees],
          Omega_Rn_N => [0.001, -0.002, 0.003 - Slew_Rate.Value],
-         Domega_Rn_N => Input_Reference.Domega_Rn_N));
+         Domega_Rn_N => Input_Reference.Domega_Rn_N), Epsilon => Epsilon);
    end Test_Long_Way_Around;
 
    -- Check that an all-zero Sun position passes the input reference through unchanged,
@@ -171,23 +160,19 @@ package body Sun_Avoidance_Tests.Implementation is
       Apply_Test_Parameters (Self);
 
       -- With no Sun information, no slew is planned and the reference passes through:
-      Tick_At (Self, Seconds_After_Start => 0, Sun_Direction => Zero_Vector);
-      Assert_Latest_Output (Self, 1, Input_Reference);
-      Tick_At (Self, Seconds_After_Start => 10, Sun_Direction => Zero_Vector);
-      Assert_Latest_Output (Self, 2, Input_Reference);
+      Att_Ref_Assert.Eq (Tick_At (Self, Seconds_After_Start => 0, Sun_Direction => Zero_Vector), Input_Reference, Epsilon => Epsilon);
+      Att_Ref_Assert.Eq (Tick_At (Self, Seconds_After_Start => 10, Sun_Direction => Zero_Vector), Input_Reference, Epsilon => Epsilon);
 
       -- The slew is planned once, so the Sun appearing later changes nothing:
-      Tick_At (Self, Seconds_After_Start => 20, Sun_Direction => Sun_Clear_Of_Sweep);
-      Assert_Latest_Output (Self, 3, Input_Reference);
+      Att_Ref_Assert.Eq (Tick_At (Self, Seconds_After_Start => 20, Sun_Direction => Sun_Clear_Of_Sweep), Input_Reference, Epsilon => Epsilon);
 
       -- After a reset the next tick plans a slew from the current geometry, so the
       -- reference starts over from the body attitude:
       T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
-      Tick_At (Self, Seconds_After_Start => 30, Sun_Direction => Sun_Clear_Of_Sweep);
-      Assert_Latest_Output (Self, 4, (
+      Att_Ref_Assert.Eq (Tick_At (Self, Seconds_After_Start => 30, Sun_Direction => Sun_Clear_Of_Sweep), (
          Sigma_Rn => [0.0, 0.0, 0.0],
          Omega_Rn_N => [0.001, -0.002, 0.003 + Slew_Rate.Value],
-         Domega_Rn_N => Input_Reference.Domega_Rn_N));
+         Domega_Rn_N => Input_Reference.Domega_Rn_N), Epsilon => Epsilon);
    end Test_Pass_Through_Without_Sun;
 
    -- The algorithm requires a unit sensitive axis and a positive slew rate. Validation
@@ -251,19 +236,22 @@ package body Sun_Avoidance_Tests.Implementation is
    end Test_Invalid_Parameter;
 
    -- A data dependency that comes back with the wrong identifier means the assembly
-   -- is wired incorrectly. The component asserts rather than publishing anything.
+   -- is wired incorrectly. The component asserts rather than returning a reference.
    overriding procedure Test_Invalid_Data_Dependency (Self : in out Instance) is
       T : Component.Sun_Avoidance.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
       T.Data_Dependency_Return_Id_Override := 999;
       begin
-         T.Tick_T_Send ((Time => T.System_Time, Count => 0));
-         AUnit.Assertions.Assert (False, "A dependency with the wrong identifier should have failed an assertion.");
+         declare
+            Returned : constant Att_Ref.T := Tick_At (Self, Seconds_After_Start => 0, Sun_Direction => Sun_Clear_Of_Sweep);
+            pragma Unreferenced (Returned);
+         begin
+            AUnit.Assertions.Assert (False, "A dependency with the wrong identifier should have failed an assertion.");
+         end;
       exception
          when Ada.Assertions.Assertion_Error =>
             null; -- Expected.
       end;
-      Natural_Assert.Eq (T.Attitude_Reference_History.Get_Count, 0);
    end Test_Invalid_Data_Dependency;
 
 end Sun_Avoidance_Tests.Implementation;

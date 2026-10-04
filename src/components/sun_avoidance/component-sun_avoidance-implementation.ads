@@ -4,6 +4,8 @@
 
 -- Includes:
 with Tick;
+with Att_Ref;
+with Att_Ref_Tick;
 with Parameter_Update;
 with Sun_Avoidance_Algorithm_C; use Sun_Avoidance_Algorithm_C;
 
@@ -47,8 +49,9 @@ private
    ---------------------------------------
    -- Invokee connector primitives:
    ---------------------------------------
-   -- Run the algorithm up to the current time.
-   overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T);
+   -- Adjust the attitude reference in the argument away from the sun, at the tick in
+   -- the argument, and return the result.
+   overriding function Att_Ref_Tick_T_Service (Self : in out Instance; Arg : in Att_Ref_Tick.T) return Att_Ref.T;
    -- Discard the planned slew so the next tick plans a new one from the current
    -- geometry. Must be called on any transition into the guidance mode that uses
    -- this component.
@@ -60,7 +63,6 @@ private
    -- Invoker connector primitives:
    ---------------------------------------
    -- This procedure is called when a Data_Product_T_Send message is dropped due to a full queue.
-   overriding procedure Data_Product_T_Send_Dropped (Self : in out Instance; Arg : in Data_Product.T) is null;
 
    -----------------------------------------------
    -- Parameter primitives:
@@ -84,7 +86,10 @@ private
    -- overridden if something special needs to happen to further validate a parameter. Examples of this might be validation of
    -- certain parameters beyond individual type ranges, or performing other special functionality that only needs to be
    -- performed after parameters have been validated. Note that range checking is performed during staging, and does not need
-   -- to be implemented here.
+   -- to be implemented here. This function is also called through Assert_Valid_Parameter_Defaults from Set_Id_Bases and from
+   -- unit test setup, before the component is connected or initialized, to check the compiled-in default parameter values. The
+   -- implementation must therefore be a pure function of the passed-in parameter values, with no dependence on Init state and
+   -- no connector invocations.
    overriding function Validate_Parameters (
       Self : in out Instance;
       Sensitive_Hat_B : in Packed_F32x3.U;
