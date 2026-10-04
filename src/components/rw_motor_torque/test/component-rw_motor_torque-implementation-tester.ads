@@ -13,9 +13,10 @@ with Rwa_Speeds;
 
 -- Reaction wheel motor torque mapping. Maps the commanded body control torque
 -- onto the available reaction wheels along the selected control axes, adds a null
--- space term that steers the wheel speeds toward their desired values without
--- disturbing the body, and sends the per-wheel motor torques straight to the
--- wheel interface. Wraps the RwMotorTorqueAlgorithm C++ algorithm via its C shim.
+-- space term that steers the wheel speeds toward the desired speeds held as a
+-- parameter without disturbing the body, and sends the per-wheel motor torques
+-- straight to the wheel interface. Wraps the RwMotorTorqueAlgorithm C++ algorithm
+-- via its C shim.
 package Component.Rw_Motor_Torque.Implementation.Tester is
 
    use Component.Rw_Motor_Torque_Reciprocal;
@@ -36,7 +37,6 @@ package Component.Rw_Motor_Torque.Implementation.Tester is
       -- is made.
       Control_Torque : Cmd_Torque_Body.T;
       Wheel_Speeds : Rwa_Speeds.T;
-      Desired_Wheel_Speeds : Rwa_Speeds.T;
       -- The return status for the data dependency fetch. This can be set
       -- during unit test to return something other than Success.
       Data_Dependency_Return_Status_Override : Data_Product_Enums.Fetch_Status.E := Data_Product_Enums.Fetch_Status.Success;

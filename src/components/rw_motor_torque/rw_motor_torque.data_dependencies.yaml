@@ -7,6 +7,3 @@ data_dependencies:
   - name: Wheel_Speeds
     type: Rwa_Speeds.T
     description: "[rad/s] Current speed of each reaction wheel."
-  - name: Desired_Wheel_Speeds
-    type: Rwa_Speeds.T
-    description: "[rad/s] Desired speed of each reaction wheel. The null space term steers the wheels toward these speeds."
