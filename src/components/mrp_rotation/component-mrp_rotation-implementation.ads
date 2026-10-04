@@ -4,12 +4,14 @@
 
 -- Includes:
 with Tick;
+with Att_Ref;
+with Att_Ref_Tick;
 with Parameter_Update;
 with Mrp_Rotation_Algorithm_C; use Mrp_Rotation_Algorithm_C;
 
 -- MRP rotation attitude guidance. Superimposes a constant rate rotation on an
 -- input attitude reference frame, advancing the rotation by one control period
--- each tick, and publishes the resulting reference attitude, rate, and
+-- each tick, and returns the resulting reference attitude, rate, and
 -- acceleration. Wraps the MrpRotationAlgorithm C++ algorithm via its C shim.
 package Component.Mrp_Rotation.Implementation is
 
@@ -57,8 +59,9 @@ private
    ---------------------------------------
    -- Invokee connector primitives:
    ---------------------------------------
-   -- Run the algorithm up to the current time.
-   overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T);
+   -- Rotate the attitude reference in the argument by the configured rotation,
+   -- advanced to the tick in the argument, and return the result.
+   overriding function Att_Ref_Tick_T_Service (Self : in out Instance; Arg : in Att_Ref_Tick.T) return Att_Ref.T;
    -- Restart the rotation from the configured initial attitude. Called on GNC state
    -- change so the rotation does not carry over from the previous state.
    overriding procedure Reset_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T);
@@ -69,7 +72,6 @@ private
    -- Invoker connector primitives:
    ---------------------------------------
    -- This procedure is called when a Data_Product_T_Send message is dropped due to a full queue.
-   overriding procedure Data_Product_T_Send_Dropped (Self : in out Instance; Arg : in Data_Product.T) is null;
 
    -----------------------------------------------
    -- Parameter primitives:
@@ -102,18 +104,5 @@ private
       Initial_Sigma_Rr0 : in Packed_F32x3.U;
       Omega_Rr0_R : in Packed_F32x3.U
    ) return Parameter_Validation_Status.E;
-
-   -----------------------------------------------
-   -- Data dependency primitives:
-   -----------------------------------------------
-   -- Description:
-   --    Data dependencies for the Mrp Rotation component.
-   -- Function which retrieves a data dependency.
-   -- The default implementation is to simply call the Data_Product_Fetch_T_Request connector. Change the implementation if this component
-   -- needs to do something different.
-   overriding function Get_Data_Dependency (Self : in out Instance; Id : in Data_Product_Types.Data_Product_Id) return Data_Product_Return.T is (Self.Data_Product_Fetch_T_Request ((Id => Id)));
-
-   -- Invalid data dependency handler. This procedure is called when a data dependency's id or length are found to be invalid:
-   overriding procedure Invalid_Data_Dependency (Self : in out Instance; Id : in Data_Product_Types.Data_Product_Id; Ret : in Data_Product_Return.T);
 
 end Component.Mrp_Rotation.Implementation;

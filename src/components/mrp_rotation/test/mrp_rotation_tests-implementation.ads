@@ -20,9 +20,6 @@ private
    -- Ensure a staged configuration the algorithm would reject is refused at
    -- validation.
    overriding procedure Test_Invalid_Parameter (Self : in out Instance);
-   -- Ensure a data dependency with the wrong identifier is treated as a wiring
-   -- defect and fails the tick's assertion.
-   overriding procedure Test_Invalid_Data_Dependency (Self : in out Instance);
 
    -- Test data and state:
    type Instance is new Mrp_Rotation_Tests.Base_Instance with record

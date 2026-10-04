@@ -2,14 +2,12 @@
 -- Mrp_Rotation Tests Body
 --------------------------------------------------------------------------------
 
-with Ada.Assertions;
-with AUnit.Assertions;
 with Parameter;
-with Basic_Assertions; use Basic_Assertions;
 with Att_Ref.Assertion; use Att_Ref.Assertion;
 with Mrp_Rotation_Parameters;
 with Packed_F32x3;
 with Parameter_Enums.Assertion;
+with Sys_Time.Arithmetic;
 use Parameter_Enums.Parameter_Update_Status;
 use Parameter_Enums.Assertion;
 
@@ -50,15 +48,16 @@ package body Mrp_Rotation_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
    end Apply_Configuration;
 
-   -- Send one tick with the base reference frame and check the published reference.
-   procedure Send_Tick_And_Check (Self : in out Instance; Tick_Number : in Natural; Expected : in Att_Ref.T) is
+   -- Request one tick with the base reference frame and check the reference it returns.
+   procedure Send_Tick_And_Check (Self : in out Instance; Expected : in Att_Ref.T) is
       T : Component.Mrp_Rotation.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
-      T.Base_Attitude_Reference := Base_Reference;
-      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
-      Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, Tick_Number);
-      Natural_Assert.Eq (T.Attitude_Reference_History.Get_Count, Tick_Number);
-      Att_Ref_Assert.Eq (T.Attitude_Reference_History.Get (Tick_Number), Expected, Epsilon => Epsilon);
+      Att_Ref_Assert.Eq (
+         T.Att_Ref_Tick_T_Request ((
+            Current_Tick => (Time => T.System_Time, Count => 0),
+            Call_Time => Sys_Time.Arithmetic.To_Nanoseconds (T.System_Time),
+            Reference => Base_Reference)),
+         Expected, Epsilon => Epsilon);
    end Send_Tick_And_Check;
 
    -------------------------------------------------------------------------
@@ -67,8 +66,6 @@ package body Mrp_Rotation_Tests.Implementation is
 
    overriding procedure Set_Up_Test (Self : in out Instance) is
    begin
-      -- Allocate heap memory to component:
-      Self.Tester.Init_Base;
 
       -- Make necessary connections between tester and component:
       Self.Tester.Connect;
@@ -84,8 +81,6 @@ package body Mrp_Rotation_Tests.Implementation is
    begin
       -- Free the C++ algorithm heap:
       Self.Tester.Component_Instance.Destroy;
-      -- Free component heap:
-      Self.Tester.Final_Base;
    end Tear_Down_Test;
 
    -------------------------------------------------------------------------
@@ -129,19 +124,19 @@ package body Mrp_Rotation_Tests.Implementation is
       -- The first tick applies the staged configuration and rotates from the default
       -- seed:
       Apply_Configuration (Self);
-      Send_Tick_And_Check (Self, 1, Expected_From_Default_Seed);
+      Send_Tick_And_Check (Self, Expected_From_Default_Seed);
 
       -- The reset connector restarts the rotation from the configured initial attitude,
       -- and four ticks advance it:
       T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
       for I in Expected'Range loop
-         Send_Tick_And_Check (Self, 1 + I, Expected (I));
+         Send_Tick_And_Check (Self, Expected (I));
       end loop;
 
       -- A second reset starts the sequence over:
       T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
       for I in 1 .. 2 loop
-         Send_Tick_And_Check (Self, 5 + I, Expected (I));
+         Send_Tick_And_Check (Self, Expected (I));
       end loop;
    end Test;
 
@@ -185,21 +180,5 @@ package body Mrp_Rotation_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
    end Test_Invalid_Parameter;
-
-   -- A data dependency that comes back with the wrong identifier means the assembly
-   -- is wired incorrectly. The component asserts rather than publishing anything.
-   overriding procedure Test_Invalid_Data_Dependency (Self : in out Instance) is
-      T : Component.Mrp_Rotation.Implementation.Tester.Instance_Access renames Self.Tester;
-   begin
-      T.Data_Dependency_Return_Id_Override := 999;
-      begin
-         T.Tick_T_Send ((Time => T.System_Time, Count => 0));
-         AUnit.Assertions.Assert (False, "A dependency with the wrong identifier should have failed an assertion.");
-      exception
-         when Ada.Assertions.Assertion_Error =>
-            null; -- Expected.
-      end;
-      Natural_Assert.Eq (T.Attitude_Reference_History.Get_Count, 0);
-   end Test_Invalid_Data_Dependency;
 
 end Mrp_Rotation_Tests.Implementation;

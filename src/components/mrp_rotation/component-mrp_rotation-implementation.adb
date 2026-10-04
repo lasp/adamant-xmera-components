@@ -2,7 +2,6 @@
 -- Mrp_Rotation Component Implementation Body
 --------------------------------------------------------------------------------
 
-with Att_Ref;
 with Att_Ref.C;
 with Packed_F32x3.C;
 with Packed_F32x3_Record.C;
@@ -59,38 +58,21 @@ package body Component.Mrp_Rotation.Implementation is
    ---------------------------------------
    -- Invokee connector primitives:
    ---------------------------------------
-   -- Run the algorithm up to the current time.
-   overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
-      use Data_Product_Enums;
-      use Data_Product_Enums.Data_Dependency_Status;
-
-      -- Grab data dependencies:
-      --
-      -- Data_Dependency_Status.E can be Success, Not_Available, Error, or Stale.
-      -- The base reference is produced by a pointing component earlier in the same
-      -- tick, so any other status indicates that this component is not wired up
-      -- correctly in the algorithm execution order. That should never happen, so we
-      -- assert.
-      Base_Reference : Att_Ref.T;
-      Base_Reference_Status : constant Data_Dependency_Status.E :=
-         Self.Get_Base_Attitude_Reference (Value => Base_Reference, Stale_Reference => Arg.Time);
-      pragma Assert (Base_Reference_Status = Success);
-
-      -- Convert to the C type. The reference record and the algorithm's input share
-      -- one layout, so the dependency crosses with no intermediate record. It crosses
-      -- by pointer, so it needs an object to point at.
-      Base_Reference_C : aliased constant Att_Ref.C.U_C := Att_Ref.C.Unpack (Base_Reference);
+   -- Rotate the attitude reference in the argument by the configured rotation,
+   -- advanced to the tick in the argument, and return the result.
+   overriding function Att_Ref_Tick_T_Service (Self : in out Instance; Arg : in Att_Ref_Tick.T) return Att_Ref.T is
+      -- The reference crosses to the algorithm by pointer, so it needs an object to
+      -- point at.
+      Base_Reference_C : aliased constant Att_Ref.C.U_C := Att_Ref.C.Unpack (Arg.Reference);
    begin
       -- Apply any pending parameter update:
       Self.Update_Parameters;
 
-      -- Call the C algorithm and publish the rotated reference. Update is qualified
-      -- because Parameter_Enums also declares one.
-      Self.Data_Product_T_Send (Self.Data_Products.Attitude_Reference (
-         Arg.Time,
-         Att_Ref.C.Pack (Mrp_Rotation_Algorithm_C.Update (Self.Alg, Att_Ref_Input => Base_Reference_C'Access))
-      ));
-   end Tick_T_Recv_Sync;
+      -- Call the C algorithm and hand the rotated reference back to the caller, which
+      -- publishes the reference the control chain tracks. Update is qualified because
+      -- Parameter_Enums also declares one.
+      return Att_Ref.C.Pack (Mrp_Rotation_Algorithm_C.Update (Self.Alg, Att_Ref_Input => Base_Reference_C'Access));
+   end Att_Ref_Tick_T_Service;
 
    -- Restart the rotation from the configured initial attitude. Called on GNC state
    -- change so the rotation does not carry over from the previous state.
@@ -161,14 +143,4 @@ package body Component.Mrp_Rotation.Implementation is
    -----------------------------------------------
    -- Data dependency handlers:
    -----------------------------------------------
-   -- Description:
-   --    Data dependencies for the Mrp Rotation component.
-   -- Invalid data dependency handler. This procedure is called when a data dependency's id or length are found to be invalid:
-   overriding procedure Invalid_Data_Dependency (Self : in out Instance; Id : in Data_Product_Types.Data_Product_Id; Ret : in Data_Product_Return.T) is
-      pragma Annotate (GNATSAS, Intentional, "subp always fails", "intentional assertion");
-   begin
-      -- None of the data dependencies should be invalid in this case.
-      pragma Assert (False);
-   end Invalid_Data_Dependency;
-
 end Component.Mrp_Rotation.Implementation;
