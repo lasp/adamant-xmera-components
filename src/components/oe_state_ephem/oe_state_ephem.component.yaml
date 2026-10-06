@@ -26,8 +26,8 @@ init:
         by any subsequent successful Set delivered via the parameter-region
         pathway.
 connectors:
-  - description: Run the algorithm up to the current time. Also drains the staged parameter table (if any) and applies it to the algorithm before evaluating.
-    type: Tick.T
+  - description: Run the algorithm up to the tick's call time. Also drains the staged parameter table (if any) and applies it to the algorithm before evaluating.
+    type: Algorithm_Tick.T
     kind: recv_sync
   - description: The data product invoker connector.
     type: Data_Product.T

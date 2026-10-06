@@ -1,0 +1,10 @@
+---
+description: The tick an algorithm component runs on, with the time the algorithm propagates to already converted to nanoseconds. The component that dispatches the algorithm ticks converts the tick time once and hands the same value to every algorithm it runs in that tick, so the clock the algorithms propagate on is chosen in exactly one place.
+fields:
+  - name: Current_Tick
+    description: The tick as scheduled. Algorithm components stamp their data products with its time and use it as the stale reference for their data dependencies.
+    type: Tick.T
+  - name: Call_Time
+    description: "[ns] The time the algorithm propagates to, in nanoseconds of the tick time."
+    type: Interfaces.Unsigned_64
+    format: U64

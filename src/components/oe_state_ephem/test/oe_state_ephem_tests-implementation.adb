@@ -3,6 +3,7 @@
 --------------------------------------------------------------------------------
 
 with Ada.Numerics.Long_Elementary_Functions;
+with Algorithm_Tick;
 with Basic_Assertions; use Basic_Assertions;
 with Basic_Types;
 with Cartesian_State;
@@ -20,13 +21,19 @@ with Parameter_Enums;
 with Parameter_Enums.Assertion; use Parameter_Enums.Assertion;
 with Parameters_Memory_Region_Release;
 with Parameters_Memory_Region_Release.Assertion; use Parameters_Memory_Region_Release.Assertion;
+with Sys_Time.Arithmetic;
 with System;
+with Tick;
 
 package body Oe_State_Ephem_Tests.Implementation is
 
    -------------------------------------------------------------------------
    -- Helpers:
    -------------------------------------------------------------------------
+
+   -- The algorithm tick the dispatching component builds for a scheduled tick.
+   function To_Algorithm_Tick (Scheduled : in Tick.T) return Algorithm_Tick.T is
+      ((Current_Tick => Scheduled, Call_Time => Sys_Time.Arithmetic.To_Nanoseconds (Scheduled.Time)));
 
    -- Build a "minimum valid" arc: one Chebyshev coefficient slot (the
    -- algorithm rejects zero-coefficient arcs), all coefficients zero,
@@ -134,7 +141,7 @@ package body Oe_State_Ephem_Tests.Implementation is
       Expected_Zero : constant Packed_F64x3.T := [0.0, 0.0, 0.0];
       Epsilon : constant Long_Float := 1.0E-7;
    begin
-      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+      T.Algorithm_Tick_T_Send (To_Algorithm_Tick ((Time => T.System_Time, Count => 0)));
 
       Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, 1);
       Natural_Assert.Eq (T.Ephemeris_State_History.Get_Count, 1);
@@ -208,7 +215,7 @@ package body Oe_State_Ephem_Tests.Implementation is
       -- Set succeeded; table is staged. The next tick applies and runs.
       pragma Assert (Set_Status = Success);
 
-      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+      T.Algorithm_Tick_T_Send (To_Algorithm_Tick ((Time => T.System_Time, Count => 0)));
 
       -- Parameter_Table_Applied event must fire on the applying tick.
       Natural_Assert.Eq (T.Parameter_Table_Applied_History.Get_Count, 1);
@@ -316,7 +323,7 @@ package body Oe_State_Ephem_Tests.Implementation is
    begin
       pragma Assert (Set_Status = Success);
 
-      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+      T.Algorithm_Tick_T_Send (To_Algorithm_Tick ((Time => T.System_Time, Count => 0)));
 
       Natural_Assert.Eq (T.Parameter_Table_Applied_History.Get_Count, 1);
       Natural_Assert.Eq (T.Ephemeris_State_History.Get_Count, 1);
@@ -358,7 +365,7 @@ package body Oe_State_Ephem_Tests.Implementation is
       Natural_Assert.Eq (T.Invalid_Parameter_Table_Format_History.Get_Count, 1);
 
       -- No staged application: the next tick should NOT fire Parameter_Table_Applied.
-      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+      T.Algorithm_Tick_T_Send (To_Algorithm_Tick ((Time => T.System_Time, Count => 0)));
       Natural_Assert.Eq (T.Parameter_Table_Applied_History.Get_Count, 0);
    end Test_Set_Invalid_Format;
 
@@ -424,31 +431,31 @@ package body Oe_State_Ephem_Tests.Implementation is
       Natural_Assert.Eq (T.Invalid_Parameter_Table_Config_History.Get_Count, 1);
 
       -- Nothing was staged, so the next tick applies nothing.
-      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+      T.Algorithm_Tick_T_Send (To_Algorithm_Tick ((Time => T.System_Time, Count => 0)));
       Natural_Assert.Eq (T.Parameter_Table_Applied_History.Get_Count, 0);
 
       -- Same contract for a negative gravitational parameter.
       Parameter_Table_Update_Status_Assert.Eq (Send_Set_Table (T, Negative_Mu_Table), Parameter_Error);
       Natural_Assert.Eq (T.Invalid_Parameter_Table_Config_History.Get_Count, 2);
-      T.Tick_T_Send ((Time => T.System_Time, Count => 1));
+      T.Algorithm_Tick_T_Send (To_Algorithm_Tick ((Time => T.System_Time, Count => 1)));
       Natural_Assert.Eq (T.Parameter_Table_Applied_History.Get_Count, 0);
 
       -- Same contract for a count that exceeds the wire table's slots.
       Parameter_Table_Update_Status_Assert.Eq (Send_Set_Table (T, Too_Many_Arcs_Table), Parameter_Error);
       Natural_Assert.Eq (T.Invalid_Parameter_Table_Config_History.Get_Count, 3);
-      T.Tick_T_Send ((Time => T.System_Time, Count => 2));
+      T.Algorithm_Tick_T_Send (To_Algorithm_Tick ((Time => T.System_Time, Count => 2)));
       Natural_Assert.Eq (T.Parameter_Table_Applied_History.Get_Count, 0);
 
       -- Same contract for an arc the per-arc validation rejects.
       Parameter_Table_Update_Status_Assert.Eq (Send_Set_Table (T, Zero_Time_Table), Parameter_Error);
       Natural_Assert.Eq (T.Invalid_Parameter_Table_Config_History.Get_Count, 4);
-      T.Tick_T_Send ((Time => T.System_Time, Count => 3));
+      T.Algorithm_Tick_T_Send (To_Algorithm_Tick ((Time => T.System_Time, Count => 3)));
       Natural_Assert.Eq (T.Parameter_Table_Applied_History.Get_Count, 0);
 
       -- A valid table is still accepted afterwards, so a rejection leaves the
       -- staging path usable rather than wedging it.
       Parameter_Table_Update_Status_Assert.Eq (Send_Set_Table (T, Zero_Table), Success);
-      T.Tick_T_Send ((Time => T.System_Time, Count => 4));
+      T.Algorithm_Tick_T_Send (To_Algorithm_Tick ((Time => T.System_Time, Count => 4)));
       Natural_Assert.Eq (T.Parameter_Table_Applied_History.Get_Count, 1);
       Natural_Assert.Eq (T.Invalid_Parameter_Table_Config_History.Get_Count, 4);
    end Test_Set_Invalid_Config;
@@ -523,7 +530,7 @@ package body Oe_State_Ephem_Tests.Implementation is
 
       -- Drive an applying tick so the staged value drains and the algorithm
       -- holds the uploaded state. Is_Staged is False again afterward.
-      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+      T.Algorithm_Tick_T_Send (To_Algorithm_Tick ((Time => T.System_Time, Count => 0)));
 
       -- Request Get_Pointer; OE serializes current algorithm state into
       -- its staged buffer and returns a non-null region of the expected
@@ -664,7 +671,7 @@ package body Oe_State_Ephem_Tests.Implementation is
       -- The staged Set was NOT clobbered by the Get_Pointer. Drive a
       -- tick; the staged buffer drains and the algorithm now holds the
       -- uploaded Mu.
-      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+      T.Algorithm_Tick_T_Send (To_Algorithm_Tick ((Time => T.System_Time, Count => 0)));
       pragma Assert (T.Parameter_Table_Applied_History.Get_Count = 1);
 
       -- A second Get_Pointer now returns the freshly-applied state.
@@ -745,7 +752,7 @@ package body Oe_State_Ephem_Tests.Implementation is
    begin
       -- Upload Table_With_Mu(First_Mu); tick to apply it.
       pragma Assert (Send_Set_Table (T, Table_With_Mu (First_Mu)) = Success);
-      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+      T.Algorithm_Tick_T_Send (To_Algorithm_Tick ((Time => T.System_Time, Count => 0)));
       pragma Assert (T.Parameter_Table_Applied_History.Get_Count = 1);
 
       -- First Get_Pointer reflects the first upload.
@@ -753,7 +760,7 @@ package body Oe_State_Ephem_Tests.Implementation is
 
       -- Upload Table_With_Mu(Second_Mu); tick to apply it.
       pragma Assert (Send_Set_Table (T, Table_With_Mu (Second_Mu)) = Success);
-      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+      T.Algorithm_Tick_T_Send (To_Algorithm_Tick ((Time => T.System_Time, Count => 0)));
       pragma Assert (T.Parameter_Table_Applied_History.Get_Count = 2);
 
       -- Second Get_Pointer reflects the second upload, NOT the cached
@@ -809,10 +816,10 @@ package body Oe_State_Ephem_Tests.Implementation is
             Arcs => [0 => Arc (Flag), others => Zero_Arc])));
    begin
       pragma Assert (Send_Set_Table (T, Table (Anomaly_Type.True_Anomaly)) = Success);
-      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+      T.Algorithm_Tick_T_Send (To_Algorithm_Tick ((Time => T.System_Time, Count => 0)));
 
       pragma Assert (Send_Set_Table (T, Table (Anomaly_Type.Mean_Anomaly)) = Success);
-      T.Tick_T_Send ((Time => T.System_Time, Count => 1));
+      T.Algorithm_Tick_T_Send (To_Algorithm_Tick ((Time => T.System_Time, Count => 1)));
 
       Natural_Assert.Eq (T.Ephemeris_State_History.Get_Count, 2);
       declare
@@ -869,7 +876,7 @@ package body Oe_State_Ephem_Tests.Implementation is
 
       -- Single tick: only the most-recent Set is applied. Generic_
       -- Staged_Variable.Stage discards the first table.
-      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+      T.Algorithm_Tick_T_Send (To_Algorithm_Tick ((Time => T.System_Time, Count => 0)));
       Natural_Assert.Eq (T.Parameter_Table_Applied_History.Get_Count, 1);
 
       -- Dump confirms the algorithm holds Second_Mu, not First_Mu.

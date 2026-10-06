@@ -47,7 +47,7 @@ jobs:
       # Empty string means "follow lasp/adamant's default branch". 
       # Set to a branch/tag/SHA to pin. Keep the quotes a bare 
       # `adamant_ref:` is YAML null, not an empty string.
-      adamant_ref: ''
+      adamant_ref: 'c96894dcd0702fe62ec80918505da85b5b54e78e'
       # Used by the amd64 jobs (job-level container:) and by the arm64 jobs
       # (docker run under QEMU).
       image: 'ghcr.io/lasp/adamant:0.2'
