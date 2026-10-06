@@ -12,6 +12,7 @@ with Packed_F32x3.Assertion; use Packed_F32x3.Assertion;
 with Parameter;
 with Average_Mimu_Data_Parameters;
 with Parameter_Enums.Assertion;
+with Sys_Time.Arithmetic;
 use Parameter_Enums.Parameter_Update_Status;
 use Parameter_Enums.Assertion;
 
@@ -47,8 +48,7 @@ package body Average_Mimu_Data_Tests.Implementation is
 
    -- Sys_Time seconds/subseconds expressed in nanoseconds.
    function To_Ns (Seconds : Interfaces.Unsigned_32; Subseconds : Interfaces.Unsigned_16) return Interfaces.Unsigned_64 is
-      (Interfaces.Unsigned_64 (Seconds) * 1_000_000_000 +
-       Interfaces.Unsigned_64 (Subseconds) * 1_000_000_000 / 65_536);
+      (Sys_Time.Arithmetic.To_Nanoseconds ((Seconds => Seconds, Subseconds => Subseconds)));
 
    -- Build one engineering-unit sample from representative raw counts
    function Eng_Sample (Gyro_Dn_X, Gyro_Dn_Y, Gyro_Dn_Z, Accel_Dn_X, Accel_Dn_Y, Accel_Dn_Z : Short_Float) return Mimu_Sample.T is
