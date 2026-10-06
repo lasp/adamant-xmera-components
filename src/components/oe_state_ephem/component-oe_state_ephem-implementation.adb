@@ -149,7 +149,7 @@ package body Component.Oe_State_Ephem.Implementation is
    ---------------------------------------
    -- Invokee connector primitives:
    ---------------------------------------
-   overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
+   overriding procedure Algorithm_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Algorithm_Tick.T) is
       Applied : Boolean := False;
    begin
       -- Apply any staged parameter table BEFORE running the algorithm so it
@@ -162,17 +162,14 @@ package body Component.Oe_State_Ephem.Implementation is
       end if;
 
       declare
-         Call_Time_Ns : constant Interfaces.Unsigned_64 :=
-            Interfaces.Unsigned_64 (Arg.Time.Seconds) * 1_000_000_000 +
-            (Interfaces.Unsigned_64 (Arg.Time.Subseconds) * 1_000_000_000) / 65_536;
-         Result : constant Cartesian_State.C.U_C := Update (Self.Alg, Call_Time_Ns);
+         Result : constant Cartesian_State.C.U_C := Update (Self.Alg, Arg.Call_Time);
       begin
          Self.Data_Product_T_Send (Self.Data_Products.Ephemeris_State (
-            Arg.Time,
+            Arg.Current_Tick.Time,
             Cartesian_State.C.Pack (Result)
          ));
       end;
-   end Tick_T_Recv_Sync;
+   end Algorithm_Tick_T_Recv_Sync;
 
    overriding function Parameters_Memory_Region_T_Service (Self : in out Instance; Arg : in Parameters_Memory_Region.T) return Parameters_Memory_Region_Release.T is
       use Parameter_Enums.Parameter_Table_Operation_Type;

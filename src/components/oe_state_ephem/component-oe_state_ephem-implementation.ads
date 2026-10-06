@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 
 -- Includes:
-with Tick;
+with Algorithm_Tick;
 with Parameters_Memory_Region;
 with Oe_State_Ephem_Parameter_Table;
 with Oe_State_Ephem_Algorithm_C; use Oe_State_Ephem_Algorithm_C;
@@ -104,7 +104,7 @@ private
    ---------------------------------------
    -- Run the algorithm up to the current time. Also applies the staged parameter
    -- table (if any) to the algorithm before evaluating.
-   overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T);
+   overriding procedure Algorithm_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Algorithm_Tick.T);
    -- Inbound parameter table memory region from an upstream
    -- Parameter_Table_Forwarder; returns the operation status (Success,
    -- Parameter_Error, etc) synchronously. The forwarder has already stripped
