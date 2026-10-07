@@ -1,0 +1,6 @@
+---
+description: Data dependencies for the Vector Duty Cycle component.
+data_dependencies:
+  - name: Commanded_Torque
+    type: Cmd_Torque_Body.T
+    description: "[Nm] The body torque requested by momentum management, the vector the duty cycle applies to."

@@ -1,12 +1,12 @@
 --------------------------------------------------------------------------------
--- Thr_Desat_Duty_Cycle Tests Spec
+-- Vector_Duty_Cycle Tests Spec
 --------------------------------------------------------------------------------
 
--- This is a unit test suite for the Thr Desat Duty Cycle component
-package Thr_Desat_Duty_Cycle_Tests.Implementation is
+-- This is a unit test suite for the Vector Duty Cycle component
+package Vector_Duty_Cycle_Tests.Implementation is
 
    -- Test data and state:
-   type Instance is new Thr_Desat_Duty_Cycle_Tests.Base_Instance with private;
+   type Instance is new Vector_Duty_Cycle_Tests.Base_Instance with private;
    type Class_Access is access all Instance'Class;
 
 private
@@ -17,17 +17,18 @@ private
    -- Run the cadences of the Python reference test to ensure the Ada to C to C++
    -- integration is sound.
    overriding procedure Test (Self : in out Instance);
-   -- Ensure a data dependency with the wrong identifier is treated as a wiring
-   -- defect and fails the tick's assertion.
-   overriding procedure Test_Invalid_Data_Dependency (Self : in out Instance);
-   -- Check that the reset connector restarts the duty cycle at its firing window.
+   -- Check that the reset connector restarts the duty cycle at its on window and
+   -- that a parameter update alone does not.
    overriding procedure Test_Reset (Self : in out Instance);
    -- Ensure a staged configuration the algorithm would reject is refused at
    -- validation.
    overriding procedure Test_Invalid_Parameter (Self : in out Instance);
+   -- Ensure a data dependency with the wrong identifier is treated as a wiring
+   -- defect and fails the tick's assertion.
+   overriding procedure Test_Invalid_Data_Dependency (Self : in out Instance);
 
    -- Test data and state:
-   type Instance is new Thr_Desat_Duty_Cycle_Tests.Base_Instance with record
+   type Instance is new Vector_Duty_Cycle_Tests.Base_Instance with record
       null;
    end record;
-end Thr_Desat_Duty_Cycle_Tests.Implementation;
+end Vector_Duty_Cycle_Tests.Implementation;

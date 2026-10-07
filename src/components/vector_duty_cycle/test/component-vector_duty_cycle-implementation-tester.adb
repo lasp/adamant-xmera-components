@@ -1,11 +1,11 @@
 --------------------------------------------------------------------------------
--- Thr_Desat_Duty_Cycle Component Tester Body
+-- Vector_Duty_Cycle Component Tester Body
 --------------------------------------------------------------------------------
 
 -- Includes:
 with Parameter;
 
-package body Component.Thr_Desat_Duty_Cycle.Implementation.Tester is
+package body Component.Vector_Duty_Cycle.Implementation.Tester is
 
    ---------------------------------------
    -- Initialize heap variables:
@@ -17,7 +17,7 @@ package body Component.Thr_Desat_Duty_Cycle.Implementation.Tester is
       Self.Data_Product_Fetch_T_Service_History.Init (Depth => 100);
       Self.Data_Product_T_Recv_Sync_History.Init (Depth => 100);
       -- Data product histories:
-      Self.Gated_Force_Cmd_History.Init (Depth => 100);
+      Self.Gated_Torque_History.Init (Depth => 100);
    end Init_Base;
 
    procedure Final_Base (Self : in out Instance) is
@@ -27,7 +27,7 @@ package body Component.Thr_Desat_Duty_Cycle.Implementation.Tester is
       Self.Data_Product_Fetch_T_Service_History.Destroy;
       Self.Data_Product_T_Recv_Sync_History.Destroy;
       -- Data product histories:
-      Self.Gated_Force_Cmd_History.Destroy;
+      Self.Gated_Torque_History.Destroy;
    end Final_Base;
 
    ---------------------------------------
@@ -58,7 +58,7 @@ package body Component.Thr_Desat_Duty_Cycle.Implementation.Tester is
       -- Determine return data product ID:
       if Id_To_Return = 0 then
          case Arg.Id is
-            -- ID for Thruster_Force_Cmd:
+            -- ID for Commanded_Torque:
             when 0 => Id_To_Return := 0;
             -- If ID can not be found, then return ID out of range error.
             when others =>
@@ -71,8 +71,8 @@ package body Component.Thr_Desat_Duty_Cycle.Implementation.Tester is
       -- Determine return data product length:
       if Length_To_Return = 0 then
          case Arg.Id is
-            -- Length for Thruster_Force_Cmd:
-            when 0 => Length_To_Return := Thr_Force_Cmd.Size_In_Bytes;
+            -- Length for Commanded_Torque:
+            when 0 => Length_To_Return := Cmd_Torque_Body.Size_In_Bytes;
             -- If ID can not be found, then return ID out of range error.
             when others =>
                if Return_Status = Data_Product_Enums.Fetch_Status.Success then
@@ -89,10 +89,10 @@ package body Component.Thr_Desat_Duty_Cycle.Implementation.Tester is
       -- Fill the data product buffer:
       if Return_Status = Data_Product_Enums.Fetch_Status.Success then
          case Arg.Id is
-            -- Length for Thruster_Force_Cmd:
+            -- Length for Commanded_Torque:
             when 0 =>
-               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Thr_Force_Cmd.Size_In_Bytes - 1) :=
-                  Thr_Force_Cmd.Serialization.To_Byte_Array (Self.Thruster_Force_Cmd);
+               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Cmd_Torque_Body.Size_In_Bytes - 1) :=
+                  Cmd_Torque_Body.Serialization.To_Byte_Array (Self.Commanded_Torque);
             -- Do not fill. The ID is not recognized.
             when others =>
                Return_Status := Data_Product_Enums.Fetch_Status.Id_Out_Of_Range;
@@ -138,13 +138,14 @@ package body Component.Thr_Desat_Duty_Cycle.Implementation.Tester is
    -- Data product handler primitive:
    -----------------------------------------------
    -- Description:
-   --    Data products for the Thr Desat Duty Cycle component.
-   -- [N] The commanded force during a firing period, zero during a settling period.
-   overriding procedure Gated_Force_Cmd (Self : in out Instance; Arg : in Thr_Force_Cmd.T) is
+   --    Data products for the Vector Duty Cycle component.
+   -- [Nm] The commanded torque during an on period, zero during an off period. The
+   -- thruster force mapping takes this as its commanded torque.
+   overriding procedure Gated_Torque (Self : in out Instance; Arg : in Cmd_Torque_Body.T) is
    begin
       -- Push the argument onto the test history for looking at later:
-      Self.Gated_Force_Cmd_History.Push (Arg);
-   end Gated_Force_Cmd;
+      Self.Gated_Torque_History.Push (Arg);
+   end Gated_Torque;
 
    -----------------------------------------------
    -- Special primitives for aiding in the staging,
@@ -209,4 +210,4 @@ package body Component.Thr_Desat_Duty_Cycle.Implementation.Tester is
       return Param_Update.Status;
    end Update_Parameters;
 
-end Component.Thr_Desat_Duty_Cycle.Implementation.Tester;
+end Component.Vector_Duty_Cycle.Implementation.Tester;

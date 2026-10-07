@@ -1,47 +1,48 @@
 --------------------------------------------------------------------------------
--- Thr_Desat_Duty_Cycle Component Tester Spec
+-- Vector_Duty_Cycle Component Tester Spec
 --------------------------------------------------------------------------------
 
 -- Includes:
-with Component.Thr_Desat_Duty_Cycle_Reciprocal;
+with Component.Vector_Duty_Cycle_Reciprocal;
 with Printable_History;
 with Data_Product_Return.Representation;
 with Data_Product_Fetch.Representation;
 with Data_Product.Representation;
+with Cmd_Torque_Body;
 with Data_Product;
-with Thr_Force_Cmd.Representation;
-with Thr_Force_Cmd;
+with Cmd_Torque_Body.Representation;
 
--- Thruster desaturation duty cycle gate. Passes the commanded thruster forces
--- through for the first firing periods of every cycle and commands zero force for
--- the remaining settling periods, giving the reaction wheels quiet windows to re-
--- stabilize the attitude between desaturation pulses. The cadence is free-running
--- and advances every tick. Wraps the ThrDesatDutyCycleAlgorithm C++ algorithm via
--- its C shim.
-package Component.Thr_Desat_Duty_Cycle.Implementation.Tester is
+-- Duty cycle for a body vector. Passes the input vector through for the first on
+-- periods of every cycle and outputs zero for the remaining off periods. In the
+-- desaturation state it sits between momentum management and the thruster force
+-- mapping, so the thrusters fire in pulses with quiet windows in which the
+-- reaction wheels re-stabilize the attitude. The cadence is free-running and
+-- advances every tick. Wraps the VectorDutyCycleAlgorithm C++ algorithm via its C
+-- shim.
+package Component.Vector_Duty_Cycle.Implementation.Tester is
 
-   use Component.Thr_Desat_Duty_Cycle_Reciprocal;
+   use Component.Vector_Duty_Cycle_Reciprocal;
    -- Invoker connector history packages:
    package Data_Product_Fetch_T_Service_History_Package is new Printable_History (Data_Product_Fetch.T, Data_Product_Fetch.Representation.Image);
    package Data_Product_Fetch_T_Service_Return_History_Package is new Printable_History (Data_Product_Return.T, Data_Product_Return.Representation.Image);
    package Data_Product_T_Recv_Sync_History_Package is new Printable_History (Data_Product.T, Data_Product.Representation.Image);
 
    -- Data product history packages:
-   package Gated_Force_Cmd_History_Package is new Printable_History (Thr_Force_Cmd.T, Thr_Force_Cmd.Representation.Image);
+   package Gated_Torque_History_Package is new Printable_History (Cmd_Torque_Body.T, Cmd_Torque_Body.Representation.Image);
 
    -- Component class instance:
-   type Instance is new Component.Thr_Desat_Duty_Cycle_Reciprocal.Base_Instance with record
+   type Instance is new Component.Vector_Duty_Cycle_Reciprocal.Base_Instance with record
       -- The component instance under test:
-      Component_Instance : aliased Component.Thr_Desat_Duty_Cycle.Implementation.Instance;
+      Component_Instance : aliased Component.Vector_Duty_Cycle.Implementation.Instance;
       -- Connector histories:
       Data_Product_Fetch_T_Service_History : Data_Product_Fetch_T_Service_History_Package.Instance;
       Data_Product_T_Recv_Sync_History : Data_Product_T_Recv_Sync_History_Package.Instance;
       -- Data product histories:
-      Gated_Force_Cmd_History : Gated_Force_Cmd_History_Package.Instance;
+      Gated_Torque_History : Gated_Torque_History_Package.Instance;
       -- Data dependency return values. These can be set during unit test
       -- and will be returned to the component when a data dependency call
       -- is made.
-      Thruster_Force_Cmd : Thr_Force_Cmd.T;
+      Commanded_Torque : Cmd_Torque_Body.T;
       -- The return status for the data dependency fetch. This can be set
       -- during unit test to return something other than Success.
       Data_Dependency_Return_Status_Override : Data_Product_Enums.Fetch_Status.E := Data_Product_Enums.Fetch_Status.Success;
@@ -82,9 +83,10 @@ package Component.Thr_Desat_Duty_Cycle.Implementation.Tester is
    -- Data product handler primitives:
    -----------------------------------------------
    -- Description:
-   --    Data products for the Thr Desat Duty Cycle component.
-   -- [N] The commanded force during a firing period, zero during a settling period.
-   overriding procedure Gated_Force_Cmd (Self : in out Instance; Arg : in Thr_Force_Cmd.T);
+   --    Data products for the Vector Duty Cycle component.
+   -- [Nm] The commanded torque during an on period, zero during an off period. The
+   -- thruster force mapping takes this as its commanded torque.
+   overriding procedure Gated_Torque (Self : in out Instance; Arg : in Cmd_Torque_Body.T);
 
    -----------------------------------------------
    -- Special primitives for aiding in the staging,
@@ -102,4 +104,4 @@ package Component.Thr_Desat_Duty_Cycle.Implementation.Tester is
    -- working parameter values with the staged values.
    not overriding function Update_Parameters (Self : in out Instance) return Parameter_Update_Status.E;
 
-end Component.Thr_Desat_Duty_Cycle.Implementation.Tester;
+end Component.Vector_Duty_Cycle.Implementation.Tester;

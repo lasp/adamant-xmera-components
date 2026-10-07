@@ -1,10 +1,10 @@
 ---
-description: This is a unit test suite for the Thr Desat Duty Cycle component
+description: This is a unit test suite for the Vector Duty Cycle component
 tests:
   - name: Test
     description: Run the cadences of the Python reference test to ensure the Ada to C to C++ integration is sound.
   - name: Test_Reset
-    description: Check that the reset connector restarts the duty cycle at its firing window.
+    description: Check that the reset connector restarts the duty cycle at its on window and that a parameter update alone does not.
   - name: Test_Invalid_Parameter
     description: Ensure a staged configuration the algorithm would reject is refused at validation.
   - name: Test_Invalid_Data_Dependency

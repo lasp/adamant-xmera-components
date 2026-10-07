@@ -1,10 +1,10 @@
 --------------------------------------------------------------------------------
--- Thr_Desat_Duty_Cycle Tests
+-- Vector_Duty_Cycle Tests
 --------------------------------------------------------------------------------
 
 with AUnit.Reporter.Text;
 with AUnit.Run;
-with Thr_Desat_Duty_Cycle_Tests.Implementation.Suite;
+with Vector_Duty_Cycle_Tests.Implementation.Suite;
 -- Make sure any terminating tasks are handled and an appropriate
 -- error message is printed.
 with Unit_Test_Termination_Handler;
@@ -12,7 +12,7 @@ pragma Unreferenced (Unit_Test_Termination_Handler);
 
 procedure Test is
    -- Create runner for test suite:
-   procedure Runner is new AUnit.Run.Test_Runner (Thr_Desat_Duty_Cycle_Tests.Implementation.Suite.Get);
+   procedure Runner is new AUnit.Run.Test_Runner (Vector_Duty_Cycle_Tests.Implementation.Suite.Get);
    -- Use the text reporter:
    Reporter : AUnit.Reporter.Text.Text_Reporter;
 begin

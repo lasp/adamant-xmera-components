@@ -1,35 +1,35 @@
 --------------------------------------------------------------------------------
--- Thr_Desat_Duty_Cycle Component Implementation Spec
+-- Vector_Duty_Cycle Component Implementation Spec
 --------------------------------------------------------------------------------
 
 -- Includes:
 with Tick;
 with Parameter_Update;
-with Thr_Desat_Duty_Cycle_Algorithm_C; use Thr_Desat_Duty_Cycle_Algorithm_C;
+with Vector_Duty_Cycle_Algorithm_C; use Vector_Duty_Cycle_Algorithm_C;
 
--- Thruster desaturation duty cycle gate. Passes the commanded thruster forces
--- through for the first firing periods of every cycle and commands zero force for
--- the remaining settling periods, giving the reaction wheels quiet windows to re-
--- stabilize the attitude between desaturation pulses. The cadence is free-running
--- and advances every tick. Wraps the ThrDesatDutyCycleAlgorithm C++ algorithm via
--- its C shim.
-package Component.Thr_Desat_Duty_Cycle.Implementation is
+-- Duty cycle for a body vector. Passes the input vector through for the first on
+-- periods of every cycle and outputs zero for the remaining off periods. In the
+-- desaturation state it sits between momentum management and the thruster force
+-- mapping, so the thrusters fire in pulses with quiet windows in which the reaction
+-- wheels re-stabilize the attitude. The cadence is free-running and advances every
+-- tick. Wraps the VectorDutyCycleAlgorithm C++ algorithm via its C shim.
+package Component.Vector_Duty_Cycle.Implementation is
 
    -- The component class instance record:
-   type Instance is new Thr_Desat_Duty_Cycle.Base_Instance with private;
+   type Instance is new Vector_Duty_Cycle.Base_Instance with private;
 
    --------------------------------------------------
    -- Subprogram for implementation init method:
    --------------------------------------------------
-   -- Initializes the duty cycle gate with the default parameter values.
+   -- Initializes the duty cycle with the default parameter values.
    overriding procedure Init (Self : in out Instance);
    not overriding procedure Destroy (Self : in out Instance);
 
 private
 
    -- The component class instance record:
-   type Instance is new Thr_Desat_Duty_Cycle.Base_Instance with record
-      Alg : Thr_Desat_Duty_Cycle_Algorithm_Access := null;
+   type Instance is new Vector_Duty_Cycle.Base_Instance with record
+      Alg : Vector_Duty_Cycle_Algorithm_Access := null;
    end record;
 
    ---------------------------------------
@@ -47,10 +47,10 @@ private
    ---------------------------------------
    -- Invokee connector primitives:
    ---------------------------------------
-   -- Run the algorithm up to the current time.
+   -- Apply one control period of the duty cycle to the commanded torque.
    overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T);
-   -- Restart the duty cycle at the beginning of its firing window. Called on GNC
-   -- state change.
+   -- Restart the duty cycle at the beginning of its on window. The assembly fires
+   -- this on a state change.
    overriding procedure Reset_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T);
    -- The parameter update connector.
    overriding procedure Parameter_Update_T_Modify (Self : in out Instance; Arg : in out Parameter_Update.T);
@@ -65,7 +65,7 @@ private
    -- Parameter primitives:
    -----------------------------------------------
    -- Description:
-   --    Parameters for the Thr Desat Duty Cycle component.
+   --    Parameters for the Vector Duty Cycle component.
 
    -- Invalid parameter handler. This procedure is called when a parameter's type is found to be invalid:
    -- Null: the staging code rejects the value and returns an error status to the Parameters
@@ -83,18 +83,21 @@ private
    -- overridden if something special needs to happen to further validate a parameter. Examples of this might be validation of
    -- certain parameters beyond individual type ranges, or performing other special functionality that only needs to be
    -- performed after parameters have been validated. Note that range checking is performed during staging, and does not need
-   -- to be implemented here.
+   -- to be implemented here. This function is also called through Assert_Valid_Parameter_Defaults from Set_Id_Bases and from
+   -- unit test setup, before the component is connected or initialized, to check the compiled-in default parameter values. The
+   -- implementation must therefore be a pure function of the passed-in parameter values, with no dependence on Init state and
+   -- no connector invocations.
    overriding function Validate_Parameters (
       Self : in out Instance;
-      Firing_Periods : in Packed_U32.U;
-      Settling_Periods : in Packed_U32.U
+      On_Periods : in Packed_U32.U;
+      Off_Periods : in Packed_U32.U
    ) return Parameter_Validation_Status.E;
 
    -----------------------------------------------
    -- Data dependency primitives:
    -----------------------------------------------
    -- Description:
-   --    Data dependencies for the Thr Desat Duty Cycle component.
+   --    Data dependencies for the Vector Duty Cycle component.
    -- Function which retrieves a data dependency.
    -- The default implementation is to simply call the Data_Product_Fetch_T_Request connector. Change the implementation if this component
    -- needs to do something different.
@@ -103,4 +106,4 @@ private
    -- Invalid data dependency handler. This procedure is called when a data dependency's id or length are found to be invalid:
    overriding procedure Invalid_Data_Dependency (Self : in out Instance; Id : in Data_Product_Types.Data_Product_Id; Ret : in Data_Product_Return.T);
 
-end Component.Thr_Desat_Duty_Cycle.Implementation;
+end Component.Vector_Duty_Cycle.Implementation;

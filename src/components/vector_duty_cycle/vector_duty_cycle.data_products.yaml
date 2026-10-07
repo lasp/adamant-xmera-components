@@ -1,0 +1,6 @@
+---
+description: Data products for the Vector Duty Cycle component.
+data_products:
+  - name: Gated_Torque
+    type: Cmd_Torque_Body.T
+    description: "[Nm] The commanded torque during an on period, zero during an off period. The thruster force mapping takes this as its commanded torque."
