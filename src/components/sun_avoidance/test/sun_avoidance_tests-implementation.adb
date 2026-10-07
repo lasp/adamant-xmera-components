@@ -11,7 +11,6 @@ with Att_Ref;
 with Att_Ref.Assertion; use Att_Ref.Assertion;
 with Packed_F32;
 with Packed_F32x3;
-with Packed_F64x3;
 with Parameter_Enums.Assertion;
 use Parameter_Enums.Parameter_Update_Status;
 use Parameter_Enums.Assertion;
@@ -36,13 +35,14 @@ package body Sun_Avoidance_Tests.Implementation is
       Omega_Rn_N => [0.001, -0.002, 0.003],
       Domega_Rn_N => [0.0001, 0.0002, 0.0003]
    );
-   Zero_Vector : constant Packed_F64x3.T := [0.0, 0.0, 0.0];
+   Zero_Vector : constant Packed_F32x3.T := [0.0, 0.0, 0.0];
 
-   -- Sun directions used by the tests. Along +z the Sun sits on the sweep axis, clear
-   -- of the arc the sensitive axis sweeps, so the slew goes the short way. At 30 degrees
-   -- in the x-y plane the Sun sits inside that arc, so the slew must go the long way.
-   Sun_Clear_Of_Sweep : constant Packed_F64x3.T := [0.0, 0.0, 1.5E11];
-   Sun_Inside_Sweep : constant Packed_F64x3.T := [1.299038106E11, 0.75E11, 0.0];
+   -- Sun directions in the body frame used by the tests. Along +z the Sun sits on the
+   -- sweep axis, clear of the arc the sensitive axis sweeps, so the slew goes the short
+   -- way. At 30 degrees in the x-y plane the Sun sits inside that arc, so the slew must
+   -- go the long way.
+   Sun_Clear_Of_Sweep : constant Packed_F32x3.T := [0.0, 0.0, 1.0];
+   Sun_Inside_Sweep : constant Packed_F32x3.T := [0.866025404, 0.5, 0.0];
 
    -- The MRP of a 10 degree rotation about z, tan (2.5 deg).
    Ten_Degrees : constant Short_Float := 0.043660943;
@@ -65,14 +65,13 @@ package body Sun_Avoidance_Tests.Implementation is
 
    -- Set the inputs and tick at the given number of seconds after the test start time.
    -- The tester stamps the data dependencies with the same time, so they are never stale.
-   procedure Tick_At (Self : in out Instance; Seconds_After_Start : in Natural; Sun_Position : in Packed_F64x3.T) is
+   procedure Tick_At (Self : in out Instance; Seconds_After_Start : in Natural; Sun_Direction : in Packed_F32x3.T) is
       T : Component.Sun_Avoidance.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
       T.System_Time := (Seconds => 10_000 + Unsigned_32 (Seconds_After_Start), Subseconds => 0);
       T.Spacecraft_Attitude := (Time_Tag => 0.0, Sigma_Bn => Body_Attitude, Omega_Bn_B => [0.0, 0.0, 0.0], Veh_Sun_Pnt_Bdy => [0.0, 0.0, 0.0]);
       T.Input_Attitude_Reference := Input_Reference;
-      T.Spacecraft_State := (Position => Zero_Vector, Velocity => Zero_Vector);
-      T.Sun_State := (Position => Sun_Position, Velocity => Zero_Vector);
+      T.Sun_Direction := Sun_Direction;
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Tick_At;
 
@@ -126,21 +125,21 @@ package body Sun_Avoidance_Tests.Implementation is
       Apply_Test_Parameters (Self);
 
       -- At the start the whole 60 degree slew remains, so the reference is the body attitude:
-      Tick_At (Self, Seconds_After_Start => 0, Sun_Position => Sun_Clear_Of_Sweep);
+      Tick_At (Self, Seconds_After_Start => 0, Sun_Direction => Sun_Clear_Of_Sweep);
       Assert_Latest_Output (Self, 1, (
          Sigma_Rn => [0.0, 0.0, 0.0],
          Omega_Rn_N => [0.001, -0.002, 0.003 + Slew_Rate.Value],
          Domega_Rn_N => Input_Reference.Domega_Rn_N));
 
       -- Ten seconds in, the reference has turned 10 degrees about +z:
-      Tick_At (Self, Seconds_After_Start => 10, Sun_Position => Sun_Clear_Of_Sweep);
+      Tick_At (Self, Seconds_After_Start => 10, Sun_Direction => Sun_Clear_Of_Sweep);
       Assert_Latest_Output (Self, 2, (
          Sigma_Rn => [0.0, 0.0, Ten_Degrees],
          Omega_Rn_N => [0.001, -0.002, 0.003 + Slew_Rate.Value],
          Domega_Rn_N => Input_Reference.Domega_Rn_N));
 
       -- Well after the 60 second slew, the input reference passes through:
-      Tick_At (Self, Seconds_After_Start => 100, Sun_Position => Sun_Clear_Of_Sweep);
+      Tick_At (Self, Seconds_After_Start => 100, Sun_Direction => Sun_Clear_Of_Sweep);
       Assert_Latest_Output (Self, 3, Input_Reference);
    end Test;
 
@@ -151,13 +150,13 @@ package body Sun_Avoidance_Tests.Implementation is
    begin
       Apply_Test_Parameters (Self);
 
-      Tick_At (Self, Seconds_After_Start => 0, Sun_Position => Sun_Inside_Sweep);
+      Tick_At (Self, Seconds_After_Start => 0, Sun_Direction => Sun_Inside_Sweep);
       Assert_Latest_Output (Self, 1, (
          Sigma_Rn => [0.0, 0.0, 0.0],
          Omega_Rn_N => [0.001, -0.002, 0.003 - Slew_Rate.Value],
          Domega_Rn_N => Input_Reference.Domega_Rn_N));
 
-      Tick_At (Self, Seconds_After_Start => 10, Sun_Position => Sun_Inside_Sweep);
+      Tick_At (Self, Seconds_After_Start => 10, Sun_Direction => Sun_Inside_Sweep);
       Assert_Latest_Output (Self, 2, (
          Sigma_Rn => [0.0, 0.0, -Ten_Degrees],
          Omega_Rn_N => [0.001, -0.002, 0.003 - Slew_Rate.Value],
@@ -172,19 +171,19 @@ package body Sun_Avoidance_Tests.Implementation is
       Apply_Test_Parameters (Self);
 
       -- With no Sun information, no slew is planned and the reference passes through:
-      Tick_At (Self, Seconds_After_Start => 0, Sun_Position => Zero_Vector);
+      Tick_At (Self, Seconds_After_Start => 0, Sun_Direction => Zero_Vector);
       Assert_Latest_Output (Self, 1, Input_Reference);
-      Tick_At (Self, Seconds_After_Start => 10, Sun_Position => Zero_Vector);
+      Tick_At (Self, Seconds_After_Start => 10, Sun_Direction => Zero_Vector);
       Assert_Latest_Output (Self, 2, Input_Reference);
 
       -- The slew is planned once, so the Sun appearing later changes nothing:
-      Tick_At (Self, Seconds_After_Start => 20, Sun_Position => Sun_Clear_Of_Sweep);
+      Tick_At (Self, Seconds_After_Start => 20, Sun_Direction => Sun_Clear_Of_Sweep);
       Assert_Latest_Output (Self, 3, Input_Reference);
 
       -- After a reset the next tick plans a slew from the current geometry, so the
       -- reference starts over from the body attitude:
       T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
-      Tick_At (Self, Seconds_After_Start => 30, Sun_Position => Sun_Clear_Of_Sweep);
+      Tick_At (Self, Seconds_After_Start => 30, Sun_Direction => Sun_Clear_Of_Sweep);
       Assert_Latest_Output (Self, 4, (
          Sigma_Rn => [0.0, 0.0, 0.0],
          Omega_Rn_N => [0.001, -0.002, 0.003 + Slew_Rate.Value],

@@ -4,12 +4,10 @@
 
 with Att_Ref;
 with Att_Ref.C;
-with Cartesian_State;
 with Nav_Att_Output;
+with Packed_F32x3;
 with Packed_F32x3.C;
 with Packed_F32x3_Record.C;
-with Packed_F64x3.C;
-with Packed_F64x3_Record.C;
 
 package body Component.Sun_Avoidance.Implementation is
 
@@ -47,10 +45,10 @@ package body Component.Sun_Avoidance.Implementation is
       -- Grab data dependencies:
       --
       -- Data_Dependency_Status.E can be Success, Not_Available, Error, or Stale.
-      -- All four inputs are published fresh earlier in the same tick by the attitude
-      -- filter, the upstream guidance, and the ephemeris components, so any other
-      -- status indicates that this component is not wired up correctly in the
-      -- algorithm execution order. That should never happen, so we assert.
+      -- All three inputs are published fresh earlier in the same tick by the attitude
+      -- filter, the upstream guidance and the sunline ephemeris, so any other status
+      -- indicates that this component is not wired up correctly in the algorithm
+      -- execution order. That should never happen, so we assert.
       Attitude : Nav_Att_Output.T;
       Attitude_Status : constant Data_Dependency_Status.E :=
          Self.Get_Spacecraft_Attitude (Value => Attitude, Stale_Reference => Arg.Time);
@@ -59,25 +57,19 @@ package body Component.Sun_Avoidance.Implementation is
       Reference_Status : constant Data_Dependency_Status.E :=
          Self.Get_Input_Attitude_Reference (Value => Reference, Stale_Reference => Arg.Time);
       pragma Assert (Reference_Status = Success);
-      Spacecraft : Cartesian_State.T;
-      Spacecraft_Status : constant Data_Dependency_Status.E :=
-         Self.Get_Spacecraft_State (Value => Spacecraft, Stale_Reference => Arg.Time);
-      pragma Assert (Spacecraft_Status = Success);
-      Sun : Cartesian_State.T;
-      Sun_Status : constant Data_Dependency_Status.E :=
-         Self.Get_Sun_State (Value => Sun, Stale_Reference => Arg.Time);
-      pragma Assert (Sun_Status = Success);
+      Sun_Direction : Packed_F32x3.T;
+      Sun_Direction_Status : constant Data_Dependency_Status.E :=
+         Self.Get_Sun_Direction (Value => Sun_Direction, Stale_Reference => Arg.Time);
+      pragma Assert (Sun_Direction_Status = Success);
 
       -- Convert to the C vectors the algorithm consumes: the attitude MRP, the whole
-      -- input reference, and the spacecraft and Sun positions, each converted straight
-      -- from its packed record. All cross by pointer, so they need objects to point at.
+      -- input reference and the Sun direction, each converted straight from its packed
+      -- record. All cross by pointer, so they need objects to point at.
       Sigma_Bn_C : aliased constant Packed_F32x3_Record.C.U_C :=
          (Value => Packed_F32x3.C.Unpack (Attitude.Sigma_Bn));
       Reference_C : aliased constant Att_Ref.C.U_C := Att_Ref.C.Unpack (Reference);
-      Spacecraft_R_C : aliased constant Packed_F64x3_Record.C.U_C :=
-         (Value => Packed_F64x3.C.Unpack (Spacecraft.Position));
-      Sun_R_C : aliased constant Packed_F64x3_Record.C.U_C :=
-         (Value => Packed_F64x3.C.Unpack (Sun.Position));
+      Sun_Direction_C : aliased constant Packed_F32x3_Record.C.U_C :=
+         (Value => Packed_F32x3.C.Unpack (Sun_Direction));
 
       -- The algorithm measures the elapsed slew from the call time in nanoseconds. The
       -- tick time carries 16-bit binary subseconds.
@@ -96,8 +88,7 @@ package body Component.Sun_Avoidance.Implementation is
             Self.Alg,
             Sigma_Bn  => Sigma_Bn_C'Access,
             Ref       => Reference_C'Access,
-            R_Bn_N    => Spacecraft_R_C'Access,
-            R_Sn_N    => Sun_R_C'Access,
+            S_Hat_B   => Sun_Direction_C'Access,
             Call_Time => Call_Time_Ns))
       ));
    end Tick_T_Recv_Sync;

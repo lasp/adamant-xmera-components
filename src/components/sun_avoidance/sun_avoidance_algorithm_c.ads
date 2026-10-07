@@ -7,7 +7,6 @@ with Interfaces; use Interfaces;
 with Interfaces.C;
 with Att_Ref.C;
 with Packed_F32x3_Record.C;
-with Packed_F64x3_Record.C;
 
 package Sun_Avoidance_Algorithm_C is
 
@@ -73,21 +72,20 @@ package Sun_Avoidance_Algorithm_C is
           External_Name => "SunAvoidanceAlgorithm_reInitialize";
 
    --* @brief Compute the Sun avoidance maneuver adjusted reference frame.
-   --* The C shim's input and output reference structs have the same layout as
-   --* AttRefMsgF32Payload (sigma_RN, omega_RN_N, domega_RN_N), so both cross as Att_Ref.
+   --* The C shim's SunAvoidanceAttRef_c serves as both the input and the output
+   --* reference and has the layout of Att_Ref (sigma_RN, omega_RN_N, domega_RN_N),
+   --* so both cross as Att_Ref.
    --* @param Self      The algorithm instance.
    --* @param Sigma_Bn  [-]  Measured MRP attitude of the body relative to inertial.
    --* @param Ref       The input attitude reference.
-   --* @param R_Bn_N    [m]  Spacecraft inertial position.
-   --* @param R_Sn_N    [m]  Sun inertial position. All zero means no Sun information.
+   --* @param S_Hat_B   [-]  Sun direction in the body frame. All zero means no Sun information.
    --* @param Call_Time [ns] The time of this call, from which the elapsed slew is measured.
    --* @return The maneuver adjusted attitude reference.
    function Update
      (Self      : Sun_Avoidance_Algorithm_Access;
       Sigma_Bn  : access constant Packed_F32x3_Record.C.U_C;
       Ref       : access constant Att_Ref.C.U_C;
-      R_Bn_N    : access constant Packed_F64x3_Record.C.U_C;
-      R_Sn_N    : access constant Packed_F64x3_Record.C.U_C;
+      S_Hat_B   : access constant Packed_F32x3_Record.C.U_C;
       Call_Time : Unsigned_64)
      return Att_Ref.C.U_C
      with Import        => True,
