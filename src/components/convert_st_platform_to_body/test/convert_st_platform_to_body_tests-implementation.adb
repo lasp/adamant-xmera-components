@@ -73,8 +73,8 @@ package body Convert_St_Platform_To_Body_Tests.Implementation is
       -- Case 1: Identity mounting DCM, 30-deg rotation about z, small rate about
       -- [0.01, -0.02, 0.03] rad. With identity DCM sigma_BN = sigma_CN and
       -- omega_BN_B = omega_CN_C.
-      --   q_CN (scalar first) = [cos(pi/12), 0, 0, sin(pi/12)]
-      --                       = [0.96592583, 0, 0, 0.25881905]
+      --   q_CN (scalar last, as the star tracker reports it) = [0, 0, sin(pi/12), cos(pi/12)]
+      --                                                     = [0, 0, 0.25881905, 0.96592583]
       --   sigma_CN = v/(1+s) = [0, 0, 0.25881905/1.96592583]
       --                      = [0, 0, 0.13165250]
       --   |omega| = sqrt(0.0014) ~= 0.03741657
@@ -84,14 +84,14 @@ package body Convert_St_Platform_To_Body_Tests.Implementation is
       --
       -- Case 2: Identity mounting DCM, 60-deg rotation about x, zero rate
       -- (dq = identity). Expect sigma_BN = sigma_CN, omega_BN_B = 0.
-      --   q_CN (scalar first) = [cos(pi/6), sin(pi/6), 0, 0]
-      --                       = [0.86602540, 0.5, 0, 0]
+      --   q_CN (scalar last, as the star tracker reports it) = [sin(pi/6), 0, 0, cos(pi/6)]
+      --                                                     = [0.5, 0, 0, 0.86602540]
       --   sigma_CN = [0.5/1.86602540, 0, 0] = [0.26794919, 0, 0]
       --
       -- Case 3: 45-deg z-axis mounting DCM + 60-deg x-axis case attitude +
       -- omega_CN_C = [-0.015, 0.008, 0.022] rad. Mirrors the Python
       -- test_rotated_dcm in _tests/test_convertStPlatformToBody.py.
-      --   q_CN (scalar first) = [0.86602540, 0.5, 0, 0]
+      --   q_CN (scalar last) = [0.5, 0, 0, 0.86602540]
       --   dq_CN (scalar last) ~= [-0.00750022, 0.00400012, 0.01100032, 0.99990336]
       --   sigma_BN = addMRP(sigma_CN, C2MRP(dcm_CB^T))
       --            ~= [0.25661850, 0.10629486, -0.18410810]
@@ -104,7 +104,7 @@ package body Convert_St_Platform_To_Body_Tests.Implementation is
                        0.0, 0.0, 1.0],
             Platform_Attitude => (
                Time_Tag          => 1_000_000_000,
-               Platform_Attitude => [0.96592583, 0.0, 0.0, 0.25881905]),
+               Platform_Attitude => [0.0, 0.0, 0.25881905, 0.96592583]),
             Platform_Angular_Velocity => (
                Time_Tag                  => 1_000_000_000,
                Platform_Angular_Velocity => [0.00499996, -0.00999992, 0.01499988, 0.99982493]),
@@ -118,7 +118,7 @@ package body Convert_St_Platform_To_Body_Tests.Implementation is
                        0.0, 0.0, 1.0],
             Platform_Attitude => (
                Time_Tag          => 1_500_000_000,
-               Platform_Attitude => [0.86602540, 0.5, 0.0, 0.0]),
+               Platform_Attitude => [0.5, 0.0, 0.0, 0.86602540]),
             Platform_Angular_Velocity => (
                Time_Tag                  => 1_500_000_000,
                Platform_Angular_Velocity => [0.0, 0.0, 0.0, 1.0]),
@@ -132,7 +132,7 @@ package body Convert_St_Platform_To_Body_Tests.Implementation is
                        0.0,         0.0,        1.0],
             Platform_Attitude => (
                Time_Tag          => 2_000_000_000,
-               Platform_Attitude => [0.86602540, 0.5, 0.0, 0.0]),
+               Platform_Attitude => [0.5, 0.0, 0.0, 0.86602540]),
             Platform_Angular_Velocity => (
                Time_Tag                  => 2_000_000_000,
                Platform_Angular_Velocity => [-0.00750022, 0.00400012, 0.01100032, 0.99990336]),
