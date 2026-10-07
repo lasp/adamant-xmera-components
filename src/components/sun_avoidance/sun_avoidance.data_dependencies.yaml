@@ -7,9 +7,6 @@ data_dependencies:
   - name: Input_Attitude_Reference
     type: Att_Ref.T
     description: The attitude reference to slew toward. Its rate and acceleration pass through to the output.
-  - name: Spacecraft_State
-    type: Cartesian_State.T
-    description: "[m, m/s] Spacecraft inertial position and velocity. Only the position is used."
-  - name: Sun_State
-    type: Cartesian_State.T
-    description: "[m, m/s] Sun inertial position and velocity. Only the position is used. An all-zero position means no Sun information, and the input reference then passes through unchanged."
+  - name: Sun_Direction
+    type: Packed_F32x3.T
+    description: "[-] Sun direction in the body frame, a unit vector, the predicted sunline from the ephemerides. An all-zero vector means no Sun information, and the input reference then passes through unchanged."

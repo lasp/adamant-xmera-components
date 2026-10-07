@@ -10,7 +10,7 @@ with Data_Product_Fetch.Representation;
 with Data_Product.Representation;
 with Nav_Att_Output;
 with Att_Ref;
-with Cartesian_State;
+with Packed_F32x3;
 with Data_Product;
 with Att_Ref.Representation;
 
@@ -45,8 +45,7 @@ package Component.Sun_Avoidance.Implementation.Tester is
       -- is made.
       Spacecraft_Attitude : Nav_Att_Output.T;
       Input_Attitude_Reference : Att_Ref.T;
-      Spacecraft_State : Cartesian_State.T;
-      Sun_State : Cartesian_State.T;
+      Sun_Direction : Packed_F32x3.T;
       -- The return status for the data dependency fetch. This can be set
       -- during unit test to return something other than Success.
       Data_Dependency_Return_Status_Override : Data_Product_Enums.Fetch_Status.E := Data_Product_Enums.Fetch_Status.Success;
