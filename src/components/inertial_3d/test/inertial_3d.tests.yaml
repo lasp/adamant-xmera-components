@@ -2,6 +2,6 @@
 description: This is a unit test suite for the Inertial 3D component.
 tests:
   - name: Test
-    description: Run algorithm to ensure integration is sound. The reference attitude is supplied as a data dependency and the published reference echoes it with zero reference rates.
-  - name: Test_Reconfigures_Only_On_Change
-    description: Drive the changed and unchanged reference-attitude paths, checking that the published reference carries the fetched attitude in both cases. Whether the reconfiguration itself was skipped is visible in branch coverage rather than in the published output.
+    description: Run algorithm to ensure integration is sound. The reference attitude is sent through the attitude connector and the returned reference echoes it with zero reference rates.
+  - name: Test_Holds_Attitude_Between_Commands
+    description: A commanded attitude is applied on receipt, later ticks keep it without any new command, and a new command replaces it.

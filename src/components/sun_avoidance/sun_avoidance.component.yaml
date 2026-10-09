@@ -4,9 +4,10 @@ execution: passive
 init:
   description: Initializes the sun avoidance algorithm with the default parameter values.
 connectors:
-  - description: Run the algorithm up to the current time.
-    type: Tick.T
-    kind: recv_sync
+  - description: Adjust the attitude reference in the argument away from the sun, at the tick in the argument, and return the result.
+    type: Att_Ref_Tick.T
+    return_type: Att_Ref.T
+    kind: service
   - description: Discard the planned slew so the next tick plans a new one from the current geometry. Must be called on any transition into the guidance mode that uses this component.
     name: Reset_Tick_T_Recv_Sync
     type: Tick.T
@@ -15,9 +16,6 @@ connectors:
     type: Data_Product_Fetch.T
     return_type: Data_Product_Return.T
     kind: request
-  - description: The data product invoker connector
-    type: Data_Product.T
-    kind: send
   - description: The parameter update connector.
     type: Parameter_Update.T
     kind: modify

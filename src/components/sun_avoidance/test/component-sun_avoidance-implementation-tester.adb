@@ -15,9 +15,6 @@ package body Component.Sun_Avoidance.Implementation.Tester is
       -- Initialize tester heap:
       -- Connector histories:
       Self.Data_Product_Fetch_T_Service_History.Init (Depth => 100);
-      Self.Data_Product_T_Recv_Sync_History.Init (Depth => 100);
-      -- Data product histories:
-      Self.Attitude_Reference_History.Init (Depth => 100);
    end Init_Base;
 
    procedure Final_Base (Self : in out Instance) is
@@ -25,9 +22,6 @@ package body Component.Sun_Avoidance.Implementation.Tester is
       -- Destroy tester heap:
       -- Connector histories:
       Self.Data_Product_Fetch_T_Service_History.Destroy;
-      Self.Data_Product_T_Recv_Sync_History.Destroy;
-      -- Data product histories:
-      Self.Attitude_Reference_History.Destroy;
    end Final_Base;
 
    ---------------------------------------
@@ -36,8 +30,7 @@ package body Component.Sun_Avoidance.Implementation.Tester is
    procedure Connect (Self : in out Instance) is
    begin
       Self.Component_Instance.Attach_Data_Product_Fetch_T_Request (To_Component => Self'Unchecked_Access, Hook => Self.Data_Product_Fetch_T_Service_Access);
-      Self.Component_Instance.Attach_Data_Product_T_Send (To_Component => Self'Unchecked_Access, Hook => Self.Data_Product_T_Recv_Sync_Access);
-      Self.Attach_Tick_T_Send (To_Component => Self.Component_Instance'Unchecked_Access, Hook => Self.Component_Instance.Tick_T_Recv_Sync_Access);
+      Self.Attach_Att_Ref_Tick_T_Request (To_Component => Self.Component_Instance'Unchecked_Access, Hook => Self.Component_Instance.Att_Ref_Tick_T_Service_Access);
       Self.Attach_Reset_Tick_T_Send (To_Component => Self.Component_Instance'Unchecked_Access, Hook => Self.Component_Instance.Reset_Tick_T_Recv_Sync_Access);
       Self.Attach_Parameter_Update_T_Provide (To_Component => Self.Component_Instance'Unchecked_Access, Hook => Self.Component_Instance.Parameter_Update_T_Modify_Access);
    end Connect;
@@ -60,10 +53,8 @@ package body Component.Sun_Avoidance.Implementation.Tester is
          case Arg.Id is
             -- ID for Spacecraft_Attitude:
             when 0 => Id_To_Return := 0;
-            -- ID for Input_Attitude_Reference:
-            when 1 => Id_To_Return := 1;
             -- ID for Sun_Direction:
-            when 2 => Id_To_Return := 2;
+            when 1 => Id_To_Return := 1;
             -- If ID can not be found, then return ID out of range error.
             when others =>
                if Return_Status = Data_Product_Enums.Fetch_Status.Success then
@@ -77,10 +68,8 @@ package body Component.Sun_Avoidance.Implementation.Tester is
          case Arg.Id is
             -- Length for Spacecraft_Attitude:
             when 0 => Length_To_Return := Nav_Att_Output.Size_In_Bytes;
-            -- Length for Input_Attitude_Reference:
-            when 1 => Length_To_Return := Att_Ref.Size_In_Bytes;
             -- Length for Sun_Direction:
-            when 2 => Length_To_Return := Packed_F32x3.Size_In_Bytes;
+            when 1 => Length_To_Return := Packed_F32x3.Size_In_Bytes;
             -- If ID can not be found, then return ID out of range error.
             when others =>
                if Return_Status = Data_Product_Enums.Fetch_Status.Success then
@@ -101,12 +90,8 @@ package body Component.Sun_Avoidance.Implementation.Tester is
             when 0 =>
                Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Nav_Att_Output.Size_In_Bytes - 1) :=
                   Nav_Att_Output.Serialization.To_Byte_Array (Self.Spacecraft_Attitude);
-            -- Length for Input_Attitude_Reference:
-            when 1 =>
-               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Att_Ref.Size_In_Bytes - 1) :=
-                  Att_Ref.Serialization.To_Byte_Array (Self.Input_Attitude_Reference);
             -- Length for Sun_Direction:
-            when 2 =>
+            when 1 =>
                Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Packed_F32x3.Size_In_Bytes - 1) :=
                   Packed_F32x3.Serialization.To_Byte_Array (Self.Sun_Direction);
             -- Do not fill. The ID is not recognized.
@@ -140,28 +125,6 @@ package body Component.Sun_Avoidance.Implementation.Tester is
       Self.Data_Product_Fetch_T_Service_History.Push (Arg);
       return To_Return;
    end Data_Product_Fetch_T_Service;
-
-   -- The data product invoker connector
-   overriding procedure Data_Product_T_Recv_Sync (Self : in out Instance; Arg : in Data_Product.T) is
-   begin
-      -- Push the argument onto the test history for looking at later:
-      Self.Data_Product_T_Recv_Sync_History.Push (Arg);
-      -- Dispatch the data product to the correct handler:
-      Self.Dispatch_Data_Product (Arg);
-   end Data_Product_T_Recv_Sync;
-
-   -----------------------------------------------
-   -- Data product handler primitive:
-   -----------------------------------------------
-   -- Description:
-   --    Data products for the Sun Avoidance component.
-   -- The input attitude reference rotated by the remaining slew, with the slew rate
-   -- added to the reference rate while the slew is in progress.
-   overriding procedure Attitude_Reference (Self : in out Instance; Arg : in Att_Ref.T) is
-   begin
-      -- Push the argument onto the test history for looking at later:
-      Self.Attitude_Reference_History.Push (Arg);
-   end Attitude_Reference;
 
    -----------------------------------------------
    -- Special primitives for aiding in the staging,

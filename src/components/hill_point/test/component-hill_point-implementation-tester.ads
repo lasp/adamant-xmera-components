@@ -7,10 +7,7 @@ with Component.Hill_Point_Reciprocal;
 with Printable_History;
 with Data_Product_Return.Representation;
 with Data_Product_Fetch.Representation;
-with Data_Product.Representation;
 with Cartesian_State;
-with Data_Product;
-with Att_Ref.Representation;
 
 -- Hill point attitude guidance. Computes the Hill frame attitude reference
 -- (attitude, rate, and acceleration of the orbit frame relative to inertial) from
@@ -22,10 +19,6 @@ package Component.Hill_Point.Implementation.Tester is
    -- Invoker connector history packages:
    package Data_Product_Fetch_T_Service_History_Package is new Printable_History (Data_Product_Fetch.T, Data_Product_Fetch.Representation.Image);
    package Data_Product_Fetch_T_Service_Return_History_Package is new Printable_History (Data_Product_Return.T, Data_Product_Return.Representation.Image);
-   package Data_Product_T_Recv_Sync_History_Package is new Printable_History (Data_Product.T, Data_Product.Representation.Image);
-
-   -- Data product history packages:
-   package Attitude_Reference_History_Package is new Printable_History (Att_Ref.T, Att_Ref.Representation.Image);
 
    -- Component class instance:
    type Instance is new Component.Hill_Point_Reciprocal.Base_Instance with record
@@ -33,9 +26,6 @@ package Component.Hill_Point.Implementation.Tester is
       Component_Instance : aliased Component.Hill_Point.Implementation.Instance;
       -- Connector histories:
       Data_Product_Fetch_T_Service_History : Data_Product_Fetch_T_Service_History_Package.Instance;
-      Data_Product_T_Recv_Sync_History : Data_Product_T_Recv_Sync_History_Package.Instance;
-      -- Data product histories:
-      Attitude_Reference_History : Attitude_Reference_History_Package.Instance;
       -- Data dependency return values. These can be set during unit test
       -- and will be returned to the component when a data dependency call
       -- is made.
@@ -74,17 +64,5 @@ package Component.Hill_Point.Implementation.Tester is
    ---------------------------------------
    -- Fetch a data product item from the database.
    overriding function Data_Product_Fetch_T_Service (Self : in out Instance; Arg : in Data_Product_Fetch.T) return Data_Product_Return.T;
-   -- The data product invoker connector
-   overriding procedure Data_Product_T_Recv_Sync (Self : in out Instance; Arg : in Data_Product.T);
-
-   -----------------------------------------------
-   -- Data product handler primitives:
-   -----------------------------------------------
-   -- Description:
-   --    Data products for the Hill Point component.
-   -- Hill frame attitude reference. All three fields are zero when the orbit
-   -- geometry is degenerate (orbit radius under one meter, zero relative velocity,
-   -- or position and velocity nearly collinear).
-   overriding procedure Attitude_Reference (Self : in out Instance; Arg : in Att_Ref.T);
 
 end Component.Hill_Point.Implementation.Tester;

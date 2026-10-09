@@ -4,6 +4,7 @@
 
 -- Includes:
 with Tick;
+with Att_Ref;
 with Parameter_Update;
 with Celestial_Two_Body_Point_Algorithm_C; use Celestial_Two_Body_Point_Algorithm_C;
 
@@ -48,8 +49,9 @@ private
    ---------------------------------------
    -- Invokee connector primitives:
    ---------------------------------------
-   -- Run the algorithm up to the current time.
-   overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T);
+   -- Run the algorithm up to the current time and return the attitude reference it
+   -- produces.
+   overriding function Tick_T_Service (Self : in out Instance; Arg : in Tick.T) return Att_Ref.T;
    -- The parameter update connector.
    overriding procedure Parameter_Update_T_Modify (Self : in out Instance; Arg : in out Parameter_Update.T);
 
@@ -57,7 +59,6 @@ private
    -- Invoker connector primitives:
    ---------------------------------------
    -- This procedure is called when a Data_Product_T_Send message is dropped due to a full queue.
-   overriding procedure Data_Product_T_Send_Dropped (Self : in out Instance; Arg : in Data_Product.T) is null;
 
    -----------------------------------------------
    -- Parameter primitives:
@@ -81,7 +82,10 @@ private
    -- overridden if something special needs to happen to further validate a parameter. Examples of this might be validation of
    -- certain parameters beyond individual type ranges, or performing other special functionality that only needs to be
    -- performed after parameters have been validated. Note that range checking is performed during staging, and does not need
-   -- to be implemented here.
+   -- to be implemented here. This function is also called through Assert_Valid_Parameter_Defaults from Set_Id_Bases and from
+   -- unit test setup, before the component is connected or initialized, to check the compiled-in default parameter values. The
+   -- implementation must therefore be a pure function of the passed-in parameter values, with no dependence on Init state and
+   -- no connector invocations.
    overriding function Validate_Parameters (
       Self : in out Instance;
       Alignment_Threshold : in Packed_F32.U

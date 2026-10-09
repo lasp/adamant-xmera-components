@@ -2,7 +2,6 @@
 -- Sun_Avoidance Component Implementation Body
 --------------------------------------------------------------------------------
 
-with Att_Ref;
 with Att_Ref.C;
 with Nav_Att_Output;
 with Packed_F32x3;
@@ -37,29 +36,26 @@ package body Component.Sun_Avoidance.Implementation is
    ---------------------------------------
    -- Invokee connector primitives:
    ---------------------------------------
-   -- Run the algorithm up to the current time.
-   overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
+   -- Adjust the attitude reference in the argument away from the sun, at the tick in
+   -- the argument, and return the result.
+   overriding function Att_Ref_Tick_T_Service (Self : in out Instance; Arg : in Att_Ref_Tick.T) return Att_Ref.T is
       use Data_Product_Enums;
       use Data_Product_Enums.Data_Dependency_Status;
 
       -- Grab data dependencies:
       --
       -- Data_Dependency_Status.E can be Success, Not_Available, Error, or Stale.
-      -- All three inputs are published fresh earlier in the same tick by the attitude
-      -- filter, the upstream guidance and the sunline ephemeris, so any other status
-      -- indicates that this component is not wired up correctly in the algorithm
-      -- execution order. That should never happen, so we assert.
+      -- Both inputs are published fresh earlier in the same tick by the attitude
+      -- filter and the sunline ephemeris, so any other status indicates that this
+      -- component is not wired up correctly in the algorithm execution order. That
+      -- should never happen, so we assert.
       Attitude : Nav_Att_Output.T;
       Attitude_Status : constant Data_Dependency_Status.E :=
-         Self.Get_Spacecraft_Attitude (Value => Attitude, Stale_Reference => Arg.Time);
+         Self.Get_Spacecraft_Attitude (Value => Attitude, Stale_Reference => Arg.Current_Tick.Time);
       pragma Assert (Attitude_Status = Success);
-      Reference : Att_Ref.T;
-      Reference_Status : constant Data_Dependency_Status.E :=
-         Self.Get_Input_Attitude_Reference (Value => Reference, Stale_Reference => Arg.Time);
-      pragma Assert (Reference_Status = Success);
       Sun_Direction : Packed_F32x3.T;
       Sun_Direction_Status : constant Data_Dependency_Status.E :=
-         Self.Get_Sun_Direction (Value => Sun_Direction, Stale_Reference => Arg.Time);
+         Self.Get_Sun_Direction (Value => Sun_Direction, Stale_Reference => Arg.Current_Tick.Time);
       pragma Assert (Sun_Direction_Status = Success);
 
       -- Convert to the C vectors the algorithm consumes: the attitude MRP, the whole
@@ -67,35 +63,29 @@ package body Component.Sun_Avoidance.Implementation is
       -- record. All cross by pointer, so they need objects to point at.
       Sigma_Bn_C : aliased constant Packed_F32x3_Record.C.U_C :=
          (Value => Packed_F32x3.C.Unpack (Attitude.Sigma_Bn));
-      Reference_C : aliased constant Att_Ref.C.U_C := Att_Ref.C.Unpack (Reference);
+      Reference_C : aliased constant Att_Ref.C.U_C := Att_Ref.C.Unpack (Arg.Reference);
       Sun_Direction_C : aliased constant Packed_F32x3_Record.C.U_C :=
          (Value => Packed_F32x3.C.Unpack (Sun_Direction));
 
-      -- The algorithm measures the elapsed slew from the call time in nanoseconds. The
-      -- tick time carries 16-bit binary subseconds.
-      Call_Time_Ns : constant Unsigned_64 :=
-         Unsigned_64 (Arg.Time.Seconds) * 1_000_000_000 +
-         (Unsigned_64 (Arg.Time.Subseconds) * 1_000_000_000) / 65_536;
    begin
       -- Apply any pending parameter update (e.g. a new sensitive axis or slew rate):
       Self.Update_Parameters;
 
-      -- Call the C algorithm and publish the adjusted reference. Update is qualified
-      -- because Parameter_Enums also declares one.
-      Self.Data_Product_T_Send (Self.Data_Products.Attitude_Reference (
-         Arg.Time,
-         Att_Ref.C.Pack (Sun_Avoidance_Algorithm_C.Update (
-            Self.Alg,
-            Sigma_Bn  => Sigma_Bn_C'Access,
-            Ref       => Reference_C'Access,
-            S_Hat_B   => Sun_Direction_C'Access,
-            Call_Time => Call_Time_Ns))
-      ));
-   end Tick_T_Recv_Sync;
+      -- Call the C algorithm and hand the adjusted reference back to the caller, which
+      -- publishes the reference the control chain tracks. The algorithm measures the
+      -- elapsed slew from the call time. Update is qualified because Parameter_Enums
+      -- also declares one.
+      return Att_Ref.C.Pack (Sun_Avoidance_Algorithm_C.Update (
+         Self.Alg,
+         Sigma_Bn  => Sigma_Bn_C'Access,
+         Ref       => Reference_C'Access,
+         S_Hat_B   => Sun_Direction_C'Access,
+         Call_Time => Arg.Call_Time));
+   end Att_Ref_Tick_T_Service;
 
    -- Discard the planned slew so the next tick plans a new one from the current
-   -- geometry. Must be called on any transition into the guidance mode that uses this
-   -- component.
+   -- geometry. Must be called on any transition into the guidance mode that uses
+   -- this component.
    overriding procedure Reset_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
       Ignore : Tick.T renames Arg;
    begin

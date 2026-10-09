@@ -7,12 +7,8 @@ with Component.Sun_Avoidance_Reciprocal;
 with Printable_History;
 with Data_Product_Return.Representation;
 with Data_Product_Fetch.Representation;
-with Data_Product.Representation;
 with Nav_Att_Output;
-with Att_Ref;
 with Packed_F32x3;
-with Data_Product;
-with Att_Ref.Representation;
 
 -- Sun avoidance attitude guidance. Superimposes a constant rate slew from the
 -- current body attitude onto the input attitude reference, taking the long way
@@ -26,10 +22,6 @@ package Component.Sun_Avoidance.Implementation.Tester is
    -- Invoker connector history packages:
    package Data_Product_Fetch_T_Service_History_Package is new Printable_History (Data_Product_Fetch.T, Data_Product_Fetch.Representation.Image);
    package Data_Product_Fetch_T_Service_Return_History_Package is new Printable_History (Data_Product_Return.T, Data_Product_Return.Representation.Image);
-   package Data_Product_T_Recv_Sync_History_Package is new Printable_History (Data_Product.T, Data_Product.Representation.Image);
-
-   -- Data product history packages:
-   package Attitude_Reference_History_Package is new Printable_History (Att_Ref.T, Att_Ref.Representation.Image);
 
    -- Component class instance:
    type Instance is new Component.Sun_Avoidance_Reciprocal.Base_Instance with record
@@ -37,14 +29,10 @@ package Component.Sun_Avoidance.Implementation.Tester is
       Component_Instance : aliased Component.Sun_Avoidance.Implementation.Instance;
       -- Connector histories:
       Data_Product_Fetch_T_Service_History : Data_Product_Fetch_T_Service_History_Package.Instance;
-      Data_Product_T_Recv_Sync_History : Data_Product_T_Recv_Sync_History_Package.Instance;
-      -- Data product histories:
-      Attitude_Reference_History : Attitude_Reference_History_Package.Instance;
       -- Data dependency return values. These can be set during unit test
       -- and will be returned to the component when a data dependency call
       -- is made.
       Spacecraft_Attitude : Nav_Att_Output.T;
-      Input_Attitude_Reference : Att_Ref.T;
       Sun_Direction : Packed_F32x3.T;
       -- The return status for the data dependency fetch. This can be set
       -- during unit test to return something other than Success.
@@ -79,17 +67,6 @@ package Component.Sun_Avoidance.Implementation.Tester is
    ---------------------------------------
    -- Fetch a data product item from the database.
    overriding function Data_Product_Fetch_T_Service (Self : in out Instance; Arg : in Data_Product_Fetch.T) return Data_Product_Return.T;
-   -- The data product invoker connector
-   overriding procedure Data_Product_T_Recv_Sync (Self : in out Instance; Arg : in Data_Product.T);
-
-   -----------------------------------------------
-   -- Data product handler primitives:
-   -----------------------------------------------
-   -- Description:
-   --    Data products for the Sun Avoidance component.
-   -- The input attitude reference rotated by the remaining slew, with the slew rate
-   -- added to the reference rate while the slew is in progress.
-   overriding procedure Attitude_Reference (Self : in out Instance; Arg : in Att_Ref.T);
 
    -----------------------------------------------
    -- Special primitives for aiding in the staging,

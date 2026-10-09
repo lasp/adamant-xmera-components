@@ -7,10 +7,7 @@ with Component.Celestial_Two_Body_Point_Reciprocal;
 with Printable_History;
 with Data_Product_Return.Representation;
 with Data_Product_Fetch.Representation;
-with Data_Product.Representation;
 with Cartesian_State;
-with Data_Product;
-with Att_Ref.Representation;
 
 -- Celestial two body pointing attitude guidance. Computes the attitude reference
 -- that points the first body axis at a primary celestial body while turning a
@@ -24,10 +21,6 @@ package Component.Celestial_Two_Body_Point.Implementation.Tester is
    -- Invoker connector history packages:
    package Data_Product_Fetch_T_Service_History_Package is new Printable_History (Data_Product_Fetch.T, Data_Product_Fetch.Representation.Image);
    package Data_Product_Fetch_T_Service_Return_History_Package is new Printable_History (Data_Product_Return.T, Data_Product_Return.Representation.Image);
-   package Data_Product_T_Recv_Sync_History_Package is new Printable_History (Data_Product.T, Data_Product.Representation.Image);
-
-   -- Data product history packages:
-   package Attitude_Reference_History_Package is new Printable_History (Att_Ref.T, Att_Ref.Representation.Image);
 
    -- Component class instance:
    type Instance is new Component.Celestial_Two_Body_Point_Reciprocal.Base_Instance with record
@@ -35,9 +28,6 @@ package Component.Celestial_Two_Body_Point.Implementation.Tester is
       Component_Instance : aliased Component.Celestial_Two_Body_Point.Implementation.Instance;
       -- Connector histories:
       Data_Product_Fetch_T_Service_History : Data_Product_Fetch_T_Service_History_Package.Instance;
-      Data_Product_T_Recv_Sync_History : Data_Product_T_Recv_Sync_History_Package.Instance;
-      -- Data product histories:
-      Attitude_Reference_History : Attitude_Reference_History_Package.Instance;
       -- Data dependency return values. These can be set during unit test
       -- and will be returned to the component when a data dependency call
       -- is made.
@@ -77,18 +67,6 @@ package Component.Celestial_Two_Body_Point.Implementation.Tester is
    ---------------------------------------
    -- Fetch a data product item from the database.
    overriding function Data_Product_Fetch_T_Service (Self : in out Instance; Arg : in Data_Product_Fetch.T) return Data_Product_Return.T;
-   -- The data product invoker connector
-   overriding procedure Data_Product_T_Recv_Sync (Self : in out Instance; Arg : in Data_Product.T);
-
-   -----------------------------------------------
-   -- Data product handler primitives:
-   -----------------------------------------------
-   -- Description:
-   --    Data products for the Celestial Two Body Point component.
-   -- Two body pointing attitude reference. All three fields are zero when either
-   -- celestial body is at the spacecraft position, or when the bodies are aligned
-   -- and the orbit normal is undefined.
-   overriding procedure Attitude_Reference (Self : in out Instance; Arg : in Att_Ref.T);
 
    -----------------------------------------------
    -- Special primitives for aiding in the staging,

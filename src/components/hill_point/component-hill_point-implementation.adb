@@ -2,7 +2,6 @@
 -- Hill_Point Component Implementation Body
 --------------------------------------------------------------------------------
 
-with Att_Ref;
 with Att_Ref.C;
 with Cartesian_State;
 with Packed_F64x3.C;
@@ -28,8 +27,9 @@ package body Component.Hill_Point.Implementation is
    ---------------------------------------
    -- Invokee connector primitives:
    ---------------------------------------
-   -- Run the algorithm up to the current time.
-   overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
+   -- Run the algorithm up to the current time and return the attitude reference it
+   -- produces.
+   overriding function Tick_T_Service (Self : in out Instance; Arg : in Tick.T) return Att_Ref.T is
       use Data_Product_Enums;
       use Data_Product_Enums.Data_Dependency_Status;
 
@@ -59,12 +59,9 @@ package body Component.Hill_Point.Implementation is
          V_Pn_N => (Value => Packed_F64x3.C.Unpack (Primary_Body.Velocity))
       );
    begin
-      -- Send out data product:
-      Self.Data_Product_T_Send (Self.Data_Products.Attitude_Reference (
-         Arg.Time,
-         Att_Ref.C.Pack (Reference)
-      ));
-   end Tick_T_Recv_Sync;
+      -- Return the reference to the caller, which publishes it.
+      return Att_Ref.C.Pack (Reference);
+   end Tick_T_Service;
 
    -----------------------------------------------
    -- Data dependency handlers:

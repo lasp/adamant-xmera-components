@@ -4,6 +4,7 @@
 
 -- Includes:
 with Tick;
+with Att_Ref;
 with Hill_Point_Algorithm_C; use Hill_Point_Algorithm_C;
 
 -- Hill point attitude guidance. Computes the Hill frame attitude reference
@@ -44,14 +45,14 @@ private
    ---------------------------------------
    -- Invokee connector primitives:
    ---------------------------------------
-   -- Run the algorithm up to the current time.
-   overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T);
+   -- Run the algorithm up to the current time and return the attitude reference it
+   -- produces.
+   overriding function Tick_T_Service (Self : in out Instance; Arg : in Tick.T) return Att_Ref.T;
 
    ---------------------------------------
    -- Invoker connector primitives:
    ---------------------------------------
    -- This procedure is called when a Data_Product_T_Send message is dropped due to a full queue.
-   overriding procedure Data_Product_T_Send_Dropped (Self : in out Instance; Arg : in Data_Product.T) is null;
 
    -----------------------------------------------
    -- Data dependency primitives:
