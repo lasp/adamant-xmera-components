@@ -1,0 +1,6 @@
+---
+description: Data dependencies for the Inertial Filter component.
+data_dependencies:
+  - name: Star_Tracker_Attitude
+    type: St_Att.T
+    description: Star tracker attitude and body rate in the body frame, with the time tag of the measurement on the system clock. Both are fed to the filter as measurements when the time tag has advanced since the last reading consumed.

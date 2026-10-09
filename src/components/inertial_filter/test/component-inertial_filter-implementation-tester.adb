@@ -1,11 +1,11 @@
 --------------------------------------------------------------------------------
--- Inertial_Ukf Component Tester Body
+-- Inertial_Filter Component Tester Body
 --------------------------------------------------------------------------------
 
 -- Includes:
 with Parameter;
 
-package body Component.Inertial_Ukf.Implementation.Tester is
+package body Component.Inertial_Filter.Implementation.Tester is
 
    ---------------------------------------
    -- Initialize heap variables:
@@ -17,8 +17,10 @@ package body Component.Inertial_Ukf.Implementation.Tester is
       Self.Data_Product_Fetch_T_Service_History.Init (Depth => 100);
       Self.Data_Product_T_Recv_Sync_History.Init (Depth => 100);
       -- Data product histories:
-      Self.Nav_Att_Estimate_History.Init (Depth => 100);
-      Self.Filter_Data_History.Init (Depth => 100);
+      Self.Attitude_Estimate_History.Init (Depth => 100);
+      Self.Filter_State_History.Init (Depth => 100);
+      Self.St_Att_Residuals_History.Init (Depth => 100);
+      Self.Rate_Residuals_History.Init (Depth => 100);
    end Init_Base;
 
    procedure Final_Base (Self : in out Instance) is
@@ -28,8 +30,10 @@ package body Component.Inertial_Ukf.Implementation.Tester is
       Self.Data_Product_Fetch_T_Service_History.Destroy;
       Self.Data_Product_T_Recv_Sync_History.Destroy;
       -- Data product histories:
-      Self.Nav_Att_Estimate_History.Destroy;
-      Self.Filter_Data_History.Destroy;
+      Self.Attitude_Estimate_History.Destroy;
+      Self.Filter_State_History.Destroy;
+      Self.St_Att_Residuals_History.Destroy;
+      Self.Rate_Residuals_History.Destroy;
    end Final_Base;
 
    ---------------------------------------
@@ -39,7 +43,9 @@ package body Component.Inertial_Ukf.Implementation.Tester is
    begin
       Self.Component_Instance.Attach_Data_Product_Fetch_T_Request (To_Component => Self'Unchecked_Access, Hook => Self.Data_Product_Fetch_T_Service_Access);
       Self.Component_Instance.Attach_Data_Product_T_Send (To_Component => Self'Unchecked_Access, Hook => Self.Data_Product_T_Recv_Sync_Access);
-      Self.Attach_Tick_T_Send (To_Component => Self.Component_Instance'Unchecked_Access, Hook => Self.Component_Instance.Tick_T_Recv_Sync_Access);
+      Self.Attach_Algorithm_Tick_T_Send (To_Component => Self.Component_Instance'Unchecked_Access, Hook => Self.Component_Instance.Algorithm_Tick_T_Recv_Sync_Access);
+      Self.Attach_Reset_Estimate_Tick_T_Send (To_Component => Self.Component_Instance'Unchecked_Access, Hook => Self.Component_Instance.Reset_Estimate_Tick_T_Recv_Sync_Access);
+      Self.Attach_Reset_Measurements_Tick_T_Send (To_Component => Self.Component_Instance'Unchecked_Access, Hook => Self.Component_Instance.Reset_Measurements_Tick_T_Recv_Sync_Access);
       Self.Attach_Parameter_Update_T_Provide (To_Component => Self.Component_Instance'Unchecked_Access, Hook => Self.Component_Instance.Parameter_Update_T_Modify_Access);
    end Connect;
 
@@ -59,10 +65,8 @@ package body Component.Inertial_Ukf.Implementation.Tester is
       -- Determine return data product ID:
       if Id_To_Return = 0 then
          case Arg.Id is
-            -- ID for Star_Tracker_Att:
+            -- ID for Star_Tracker_Attitude:
             when 0 => Id_To_Return := 0;
-            -- ID for Rw_Speeds:
-            when 1 => Id_To_Return := 1;
             -- If ID can not be found, then return ID out of range error.
             when others =>
                if Return_Status = Data_Product_Enums.Fetch_Status.Success then
@@ -74,10 +78,8 @@ package body Component.Inertial_Ukf.Implementation.Tester is
       -- Determine return data product length:
       if Length_To_Return = 0 then
          case Arg.Id is
-            -- Length for Star_Tracker_Att:
+            -- Length for Star_Tracker_Attitude:
             when 0 => Length_To_Return := St_Att.Size_In_Bytes;
-            -- Length for Rw_Speeds:
-            when 1 => Length_To_Return := Rwa_Speeds.Size_In_Bytes;
             -- If ID can not be found, then return ID out of range error.
             when others =>
                if Return_Status = Data_Product_Enums.Fetch_Status.Success then
@@ -94,14 +96,10 @@ package body Component.Inertial_Ukf.Implementation.Tester is
       -- Fill the data product buffer:
       if Return_Status = Data_Product_Enums.Fetch_Status.Success then
          case Arg.Id is
-            -- Data for Star_Tracker_Att:
+            -- Length for Star_Tracker_Attitude:
             when 0 =>
                Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + St_Att.Size_In_Bytes - 1) :=
-                  St_Att.Serialization.To_Byte_Array (Self.Star_Tracker_Att);
-            -- Data for Rw_Speeds:
-            when 1 =>
-               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Rwa_Speeds.Size_In_Bytes - 1) :=
-                  Rwa_Speeds.Serialization.To_Byte_Array (Self.Rw_Speeds);
+                  St_Att.Serialization.To_Byte_Array (Self.Star_Tracker_Attitude);
             -- Do not fill. The ID is not recognized.
             when others =>
                Return_Status := Data_Product_Enums.Fetch_Status.Id_Out_Of_Range;
@@ -147,21 +145,37 @@ package body Component.Inertial_Ukf.Implementation.Tester is
    -- Data product handler primitive:
    -----------------------------------------------
    -- Description:
-   --    Data products for the Inertial UKF component.
-   -- Navigation attitude estimate (time tag, MRP body-to-inertial, angular rate, sun
-   -- vector).
-   overriding procedure Nav_Att_Estimate (Self : in out Instance; Arg : in Nav_Att_Output.T) is
+   --    Data products for the Inertial Filter component.
+   -- Estimated body attitude and body rate, stamped with the time the filter
+   -- advanced to. The sun direction is not estimated by this filter and is zero.
+   overriding procedure Attitude_Estimate (Self : in out Instance; Arg : in Nav_Att_Output.T) is
    begin
       -- Push the argument onto the test history for looking at later:
-      Self.Nav_Att_Estimate_History.Push (Arg);
-   end Nav_Att_Estimate;
+      Self.Attitude_Estimate_History.Push (Arg);
+   end Attitude_Estimate;
 
-   -- Inertial filter diagnostic data (time tag, number of observations).
-   overriding procedure Filter_Data (Self : in out Instance; Arg : in Inertial_Filter_Output.T) is
+   -- The filter state after the update, the variance of each state, and the system
+   -- time of the last star tracker reading applied.
+   overriding procedure Filter_State (Self : in out Instance; Arg : in Inertial_Filter_State.T) is
    begin
       -- Push the argument onto the test history for looking at later:
-      Self.Filter_Data_History.Push (Arg);
-   end Filter_Data;
+      Self.Filter_State_History.Push (Arg);
+   end Filter_State;
+
+   -- Star tracker attitude residuals of this update, with whether that measurement
+   -- fired.
+   overriding procedure St_Att_Residuals (Self : in out Instance; Arg : in Inertial_Filter_Fit_Residuals.T) is
+   begin
+      -- Push the argument onto the test history for looking at later:
+      Self.St_Att_Residuals_History.Push (Arg);
+   end St_Att_Residuals;
+
+   -- Rate residuals of this update, with whether that measurement fired.
+   overriding procedure Rate_Residuals (Self : in out Instance; Arg : in Inertial_Filter_Fit_Residuals.T) is
+   begin
+      -- Push the argument onto the test history for looking at later:
+      Self.Rate_Residuals_History.Push (Arg);
+   end Rate_Residuals;
 
    -----------------------------------------------
    -- Special primitives for aiding in the staging,
@@ -226,4 +240,4 @@ package body Component.Inertial_Ukf.Implementation.Tester is
       return Param_Update.Status;
    end Update_Parameters;
 
-end Component.Inertial_Ukf.Implementation.Tester;
+end Component.Inertial_Filter.Implementation.Tester;

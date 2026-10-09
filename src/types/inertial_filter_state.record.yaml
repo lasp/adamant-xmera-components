@@ -1,0 +1,13 @@
+---
+description: State of the inertial filter after an update, the estimated state, the variance of each state, and when the last star tracker reading was consumed. Built from the snapshot the inertialFilter C shim returns, with the N x N covariance reduced to its diagonal.
+fields:
+  - name: State
+    description: "[-] Estimated state, the body attitude MRP followed by the body rate in rad/s."
+    type: Packed_F64x6.T
+  - name: Covariance_Diagonal
+    description: "[-] Diagonal of the state covariance, the variance of each state."
+    type: Packed_F64x6.T
+  - name: Last_Measurement_Time
+    description: "[ns] System time of the last star tracker reading consumed by the filter, zero until one arrives after the filter is built or reset. Tells when the star tracker last fed the filter once this product is sampled into a packet."
+    type: Interfaces.Unsigned_64
+    format: U64

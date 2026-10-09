@@ -1,0 +1,14 @@
+---
+#  typedef struct {
+#      double timeTag;     /*!< [s] measurement time tag */
+#      double sigma_BN[3]; /*!< MRP attitude of body w.r.t. inertial frame */
+#  } InertialStAttData_c;
+description: Star tracker attitude reading for the inertial filter. Maps to InertialStAttData_c in the inertialFilter C shim, which takes it by pointer.
+fields:
+  - name: Time_Tag
+    description: "[s] Measurement time tag. A value greater than zero marks a fresh reading."
+    type: Long_Float
+    format: F64
+  - name: Sigma_Bn
+    description: "[-] MRP attitude of the body with respect to the inertial frame."
+    type: Packed_F64x3.T

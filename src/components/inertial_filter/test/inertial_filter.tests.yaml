@@ -1,0 +1,21 @@
+---
+description: This is a unit test suite for the Inertial Filter component
+tests:
+  - name: Test
+    description: Feed a constant star tracker attitude and check the estimate converges to it while the covariance shrinks, as in the algorithm's Python reference test, to ensure the Ada to C to C++ integration is sound. The filter state and residual products report the update and its time.
+  - name: Test_Rate_Update
+    description: Feed a constant body rate about one axis with the attitude that rotation gives, and check the rate estimate converges to it while the attitude tracks the truth.
+  - name: Test_Propagation
+    description: Ensure a star tracker product whose time tag has not advanced is not fed to the filter, so the estimate holds and the covariance grows under the process noise once the time base is set.
+  - name: Test_Reset
+    description: Ensure the estimate reset re-seeds the state and covariance while the measurements reset keeps them.
+  - name: Test_Reading_Before_Time_Base
+    description: Ensure a star tracker reading not refreshed since before a reset is not consumed again, the first reading newer than the last consumed sets the time base without being applied, and the one after it is applied.
+  - name: Test_Time_Anomalies
+    description: Ensure a reading stamped after the tick is applied at once, and a tick before the time base restarts it at the next reading, without either shutting out the readings that follow for good.
+  - name: Test_Parameter_Update
+    description: Ensure a parameter update reaches the filter while keeping the current estimate, with the new seed showing only at the next estimate reset.
+  - name: Test_Invalid_Parameter
+    description: Ensure a staged configuration the algorithm would reject is refused at validation.
+  - name: Test_Invalid_Data_Dependency
+    description: Ensure a data dependency with the wrong identifier is treated as a wiring defect and fails the tick's assertion.

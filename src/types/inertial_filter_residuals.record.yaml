@@ -1,0 +1,22 @@
+---
+#  typedef struct {
+#      bool valid;            /*!< true iff this measurement fired and was applied this cycle */
+#      double observation[3]; /*!< measured value */
+#      double preFit[3];      /*!< pre-fit residual */
+#      double postFit[3];     /*!< post-fit residual */
+#  } InertialResiduals_c;
+description: Residuals of one measurement kind from one inertial filter update. Maps to InertialResiduals_c in the inertialFilter C shim.
+fields:
+  - name: Valid
+    description: Whether this measurement fired and was applied this update. The other fields are meaningful only when it did. Mirrors the C99 bool in the shim's struct.
+    type: Boolean
+    format: E8
+  - name: Observation
+    description: "[-] Measured value."
+    type: Packed_F64x3.T
+  - name: Pre_Fit
+    description: "[-] Residual before the update."
+    type: Packed_F64x3.T
+  - name: Post_Fit
+    description: "[-] Residual after the update."
+    type: Packed_F64x3.T
