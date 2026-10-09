@@ -4,7 +4,6 @@
 
 with Packed_F32x3;
 with Packed_F32x3.Assertion; use Packed_F32x3.Assertion;
-with Ada.Real_Time;
 with Component.Inertial_3d.Implementation.Tester;
 with Att_Ref;
 with Tick;
@@ -28,9 +27,6 @@ package body Inertial_3d_Tests.Implementation is
 
    overriding procedure Set_Up_Test (Self : in out Instance) is
    begin
-      -- Allocate heap memory to component:
-      Self.Tester.Init_Base;
-
       -- Make necessary connections between tester and component:
       Self.Tester.Connect;
 
@@ -45,7 +41,6 @@ package body Inertial_3d_Tests.Implementation is
    begin
       -- Free component heap:
       Self.Tester.Component_Instance.Destroy;
-      Self.Tester.Final_Base;
    end Tear_Down_Test;
 
    -------------------------------------------------------------------------
@@ -70,8 +65,8 @@ package body Inertial_3d_Tests.Implementation is
       Epsilon : constant := 1.0E-6;
    begin
       for I in Test_Cases'Range loop
-         -- Provide sigma reference input for this tick.
-         T.Sigma_Reference := (Value => Test_Cases (I).Sigma_Input);
+         -- Send the attitude to hold for this tick.
+         T.Attitude_T_Send ((Value => Test_Cases (I).Sigma_Input));
 
          -- Trigger the component execution and check the reference it returns.
          declare
@@ -84,39 +79,35 @@ package body Inertial_3d_Tests.Implementation is
       end loop;
    end Test;
 
-   -- The reference attitude is commanded sporadically, so the component applies a
-   -- fresh value and keeps the last one while the dependency comes back stale. The
-   -- tester serves the product with the timestamp override, and the dependency is
-   -- mapped with a one second stale limit, so a tick a few seconds past the product
-   -- fetches it stale.
-   overriding procedure Test_Keeps_Attitude_While_Stale (Self : in out Instance) is
+   -- The attitude to hold is commanded sporadically, so the component applies it
+   -- on receipt and keeps it over the ticks that follow until a new one arrives.
+   overriding procedure Test_Holds_Attitude_Between_Commands (Self : in out Instance) is
       T : Component.Inertial_3d.Implementation.Tester.Instance_Access renames Self.Tester;
       Attitude : constant Packed_F32x3.T := [0.4, 0.5, -0.6];
       Moved : constant Packed_F32x3.T := [-0.1, 0.2, 0.3];
       Zero_Vector : constant Packed_F32x3.T := [0.0, 0.0, 0.0];
       Epsilon : constant := 1.0E-6;
    begin
-      T.Component_Instance.Map_Data_Dependencies (Sigma_Reference_Id => 0, Sigma_Reference_Stale_Limit => Ada.Real_Time.Seconds (1));
+      -- Before any command the reference holds the zero attitude the algorithm is
+      -- built with.
+      Packed_F32x3_Assert.Eq (Request_Tick (Self, (Time => (Seconds => 10, Subseconds => 0), Count => 0)).Sigma_Rn, Zero_Vector, Epsilon => Epsilon);
 
-      -- A tick at the time of the product fetches it fresh and applies the attitude.
-      T.Sigma_Reference := (Value => Attitude);
-      T.Data_Dependency_Timestamp_Override := (Seconds => 10, Subseconds => 0);
-      Packed_F32x3_Assert.Eq (Request_Tick (Self, (Time => (Seconds => 10, Subseconds => 0), Count => 0)).Sigma_Rn, Attitude, Epsilon => Epsilon);
+      -- A commanded attitude is applied on receipt and returned on the next tick.
+      T.Attitude_T_Send ((Value => Attitude));
+      Packed_F32x3_Assert.Eq (Request_Tick (Self, (Time => (Seconds => 11, Subseconds => 0), Count => 1)).Sigma_Rn, Attitude, Epsilon => Epsilon);
 
-      -- A tick well past the product fetches it stale, so a moved attitude is not
-      -- applied and the reference keeps the one last given.
-      T.Sigma_Reference := (Value => Moved);
+      -- Later ticks keep it without any new command.
       declare
-         Output : constant Att_Ref.T := Request_Tick (Self, (Time => (Seconds => 15, Subseconds => 0), Count => 1));
+         Output : constant Att_Ref.T := Request_Tick (Self, (Time => (Seconds => 15, Subseconds => 0), Count => 2));
       begin
          Packed_F32x3_Assert.Eq (Output.Sigma_Rn, Attitude, Epsilon => Epsilon);
          Packed_F32x3_Assert.Eq (Output.Omega_Rn_N, Zero_Vector, Epsilon => Epsilon);
          Packed_F32x3_Assert.Eq (Output.Domega_Rn_N, Zero_Vector, Epsilon => Epsilon);
       end;
 
-      -- Once the product is fresh again the moved attitude is applied.
-      T.Data_Dependency_Timestamp_Override := (Seconds => 15, Subseconds => 0);
-      Packed_F32x3_Assert.Eq (Request_Tick (Self, (Time => (Seconds => 15, Subseconds => 0), Count => 2)).Sigma_Rn, Moved, Epsilon => Epsilon);
-   end Test_Keeps_Attitude_While_Stale;
+      -- A new command replaces it.
+      T.Attitude_T_Send ((Value => Moved));
+      Packed_F32x3_Assert.Eq (Request_Tick (Self, (Time => (Seconds => 16, Subseconds => 0), Count => 3)).Sigma_Rn, Moved, Epsilon => Epsilon);
+   end Test_Holds_Attitude_Between_Commands;
 
 end Inertial_3d_Tests.Implementation;

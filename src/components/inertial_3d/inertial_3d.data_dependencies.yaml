@@ -1,6 +1,0 @@
----
-description: Data dependencies for the Inertial 3D component.
-data_dependencies:
-  - name: Sigma_Reference
-    type: Packed_F32x3_Record.T
-    description: MRP vector from inertial frame N to corrected reference frame R. It is commanded sporadically on entry into the state, so it is normally stale, and a fresh value reconfigures the algorithm. The publisher is required to publish a finite vector, which the tick asserts.

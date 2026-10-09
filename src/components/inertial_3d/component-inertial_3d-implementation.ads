@@ -3,15 +3,16 @@
 --------------------------------------------------------------------------------
 
 -- Includes:
-with Tick;
 with Att_Ref;
+with Tick;
+with Packed_F32x3_Record;
 with Inertial_3d_Algorithm_C; use Inertial_3d_Algorithm_C;
 
 -- Inertial 3D algorithm produces a fixed inertial attitude reference message. The
 -- algorithm holds the reference attitude as configuration and returns it
--- unchanged on every tick. The attitude is supplied as a data dependency,
--- published by the GNC state manager when it commands the inertial-hold state, so
--- it is normally stale and a fresh value reconfigures the algorithm.
+-- unchanged on every tick. The attitude arrives through a connector from the
+-- component that commands the inertial-hold state, and reconfigures the algorithm
+-- on receipt.
 package Component.Inertial_3d.Implementation is
 
    -- The component class instance record:
@@ -49,23 +50,9 @@ private
    -- Run the algorithm up to the current time and return the attitude reference it
    -- produces.
    overriding function Tick_T_Service (Self : in out Instance; Arg : in Tick.T) return Att_Ref.T;
-
-   ---------------------------------------
-   -- Invoker connector primitives:
-   ---------------------------------------
-   -- This procedure is called when a Data_Product_T_Send message is dropped due to a full queue.
-
-   -----------------------------------------------
-   -- Data dependency primitives:
-   -----------------------------------------------
-   -- Description:
-   --    Data dependencies for the Inertial 3D component.
-   -- Function which retrieves a data dependency.
-   -- The default implementation is to simply call the Data_Product_Fetch_T_Request connector. Change the implementation if this component
-   -- needs to do something different.
-   overriding function Get_Data_Dependency (Self : in out Instance; Id : in Data_Product_Types.Data_Product_Id) return Data_Product_Return.T is (Self.Data_Product_Fetch_T_Request ((Id => Id)));
-
-   -- Invalid data dependency handler. This procedure is called when a data dependency's id or length are found to be invalid:
-   overriding procedure Invalid_Data_Dependency (Self : in out Instance; Id : in Data_Product_Types.Data_Product_Id; Ret : in Data_Product_Return.T);
+   -- Set the inertial attitude the reference holds, as the MRP from the inertial
+   -- frame N to the reference frame R. The sender is required to send a finite
+   -- vector, and a new attitude reconfigures the algorithm on receipt.
+   overriding procedure Attitude_T_Recv_Sync (Self : in out Instance; Arg : in Packed_F32x3_Record.T);
 
 end Component.Inertial_3d.Implementation;

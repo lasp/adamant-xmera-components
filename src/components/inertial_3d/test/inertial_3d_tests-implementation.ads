@@ -14,11 +14,13 @@ private
    overriding procedure Set_Up_Test (Self : in out Instance);
    overriding procedure Tear_Down_Test (Self : in out Instance);
 
-   -- Run algorithm to ensure integration is sound.
+   -- Run algorithm to ensure integration is sound. The reference attitude is sent
+   -- through the attitude connector and the returned reference echoes it with zero
+   -- reference rates.
    overriding procedure Test (Self : in out Instance);
-   -- A fresh reference attitude is applied and a stale one keeps the attitude
-   -- last given.
-   overriding procedure Test_Keeps_Attitude_While_Stale (Self : in out Instance);
+   -- A commanded attitude is applied on receipt, later ticks keep it without any new
+   -- command, and a new command replaces it.
+   overriding procedure Test_Holds_Attitude_Between_Commands (Self : in out Instance);
 
    -- Test data and state:
    type Instance is new Inertial_3d_Tests.Base_Instance with record
