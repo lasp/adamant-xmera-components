@@ -1,0 +1,18 @@
+---
+description: Data products for the Sunline Filter component.
+data_products:
+  - name: Sun_Direction_Estimate
+    type: Nav_Att_Output.T
+    description: Estimated sun direction in the body frame and body rate, stamped with the time the filter advanced to. The attitude is not estimated by this filter and is zero.
+  - name: Filter_State
+    type: Sunline_Filter_State.T
+    description: The filter state after the update, the variance of each state, and the system time of the last coarse sun sensor and body rate readings applied.
+  - name: Css_Pre_Fit_Residuals
+    type: Sunline_Filter_Css_Fit_Residuals.T
+    description: Coarse sun sensor residuals before this update, with whether that measurement fired and how many sensors were active.
+  - name: Css_Post_Fit_Residuals
+    type: Sunline_Filter_Css_Fit_Residuals.T
+    description: Coarse sun sensor residuals after this update, with whether that measurement fired and how many sensors were active.
+  - name: Rate_Residuals
+    type: Sunline_Filter_Rate_Fit_Residuals.T
+    description: Gyro rate residuals of this update, with whether that measurement fired.

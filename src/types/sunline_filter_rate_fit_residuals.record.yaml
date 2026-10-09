@@ -1,0 +1,13 @@
+---
+description: Gyro rate residuals of one sunline filter update, before and after the update. Built from the residuals the sunlineFilter C shim returns, without the measured rate, which is already published by the body rate product.
+fields:
+  - name: Valid
+    description: Whether the rate measurement fired and was applied this update. The residuals are meaningful only when it did.
+    type: Boolean
+    format: E8
+  - name: Pre_Fit
+    description: "[-] Residual before the update."
+    type: Packed_F64x3.T
+  - name: Post_Fit
+    description: "[-] Residual after the update."
+    type: Packed_F64x3.T

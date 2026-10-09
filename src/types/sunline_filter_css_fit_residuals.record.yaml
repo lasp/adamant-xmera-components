@@ -1,0 +1,14 @@
+---
+description: Coarse sun sensor residuals of one sunline filter update, either before or after the update. Built from the residuals the sunlineFilter C shim returns, without the measured cosines, which are already published by the sensor product.
+fields:
+  - name: Valid
+    description: Whether the coarse sun sensor measurement fired and was applied this update. The other fields are meaningful only when it did.
+    type: Boolean
+    format: E8
+  - name: Number_Of_Active_Css
+    description: "[-] Number of sensors above the sensor threshold. Only that many entries of the residuals are meaningful."
+    type: Interfaces.Integer_32
+    format: I32
+  - name: Residuals
+    description: "[-] Residual of each sensor slot."
+    type: Packed_F64x8.T

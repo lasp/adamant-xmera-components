@@ -1,0 +1,27 @@
+---
+description: Sunline filter. Estimates the sun direction in the body frame, the body rate, and the coarse sun sensor intensity bias from the coarse sun sensor cosines and the body rate with a square root unscented Kalman filter, and publishes the estimate for the guidance algorithms. The filter state, the variance of each state, and the residuals of each measurement are published as data products. The filter keeps its own time base, which starts at the first measurement after it is built or reset, and takes the time of each measurement from its data product. Wraps the SunlineFilterAlgorithm C++ algorithm via its C shim.
+execution: passive
+init:
+  description: Initializes the sunline filter with the default parameter values, which seed the filter state and covariance.
+connectors:
+  - description: Run the filter up to the tick's call time, folding in the coarse sun sensor and body rate readings that are new since the last tick.
+    type: Algorithm_Tick.T
+    kind: recv_sync
+  - description: Re-seed the filter state and covariance from the configured initial values and clear the pending measurements and residuals. The filter's time base restarts at the next measurement. The assembly fires this on every entry to the navigation state, where the filter is first put into use.
+    name: Reset_Estimate_Tick_T_Recv_Sync
+    type: Tick.T
+    kind: recv_sync
+  - description: Clear the pending measurements and residuals, keeping the filter state and covariance. The filter's time base restarts at the next measurement. The assembly fires this on every transition between pointing states.
+    name: Reset_Measurements_Tick_T_Recv_Sync
+    type: Tick.T
+    kind: recv_sync
+  - description: Fetch a data product item from the database.
+    type: Data_Product_Fetch.T
+    return_type: Data_Product_Return.T
+    kind: request
+  - description: The data product invoker connector
+    type: Data_Product.T
+    kind: send
+  - description: The parameter update connector.
+    type: Parameter_Update.T
+    kind: modify

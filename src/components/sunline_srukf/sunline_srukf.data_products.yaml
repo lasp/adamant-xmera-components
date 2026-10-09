@@ -1,6 +1,0 @@
----
-description: Data products for the Sunline SRuKF component.
-data_products:
-  - name: Sunline_Srukf_State
-    type: Sunline_Srukf_Output.T
-    description: Output state from the sunline SRuKF algorithm (timeTag, sigma_BN, omega_BN_B, vehSunPntBdy).

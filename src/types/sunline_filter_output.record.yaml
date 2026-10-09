@@ -1,0 +1,17 @@
+---
+#  typedef struct {
+#      SunlineFilterStateOutput_c filterState;     /*!< [-] filter state and covariance snapshot */
+#      SunlineCssResidualsOutput_c cssResiduals;   /*!< [-] CSS residuals for this cycle */
+#      SunlineRateResidualsOutput_c rateResiduals; /*!< [-] rate residuals for this cycle */
+#  } SunlineFilterOutput_c;
+description: Snapshot of the sunline filter after an update. Maps to SunlineFilterOutput_c in the sunlineFilter C shim, which returns it by value.
+fields:
+  - name: Filter_State
+    description: The state and covariance after the update.
+    type: Sunline_Filter_State_Output.T
+  - name: Css_Residuals
+    description: Coarse sun sensor residuals of this update.
+    type: Sunline_Filter_Css_Residuals.T
+  - name: Rate_Residuals
+    description: Gyro rate residuals of this update.
+    type: Sunline_Filter_Rate_Residuals.T
