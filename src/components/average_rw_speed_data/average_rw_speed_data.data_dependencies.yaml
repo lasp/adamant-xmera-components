@@ -1,0 +1,6 @@
+---
+description: Data dependencies for the Average Rw Speed Data component.
+data_dependencies:
+  - name: Wheel_Speeds
+    type: Rwa_Speeds.T
+    description: "[rad/s] The measured speed of each reaction wheel, stamped with the time of the measurement. It is measured on every tick, and the assembly gives it a stale limit shorter than the tick period, so a missed measurement reads stale and fails the tick's assertion."

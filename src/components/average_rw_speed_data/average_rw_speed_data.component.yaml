@@ -1,0 +1,23 @@
+---
+description: Rolling average of the reaction wheel speeds. Keeps the speed samples of a configurable time window and publishes the mean speed of each wheel over the samples in the window, so the controllers see smoothed wheel speeds. The wheel speed measurement of every tick is taken as a sample, and the averaged speeds are stamped with the time of that measurement. Wraps the AverageRwSpeedDataAlgorithm C++ algorithm via its C shim.
+execution: passive
+init:
+  description: Initializes the averaging algorithm with the default parameter values.
+connectors:
+  - description: Take the wheel speed measurement of this tick as a sample and publish the averaged speeds.
+    type: Tick.T
+    kind: recv_sync
+  - description: Clear the stored samples, so the average starts over from the next sample. The assembly fires this on a state change.
+    name: Reset_Tick_T_Recv_Sync
+    type: Tick.T
+    kind: recv_sync
+  - description: Fetch a data product item from the database.
+    type: Data_Product_Fetch.T
+    return_type: Data_Product_Return.T
+    kind: request
+  - description: The data product invoker connector
+    type: Data_Product.T
+    kind: send
+  - description: The parameter update connector.
+    type: Parameter_Update.T
+    kind: modify
