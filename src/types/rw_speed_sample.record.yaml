@@ -1,0 +1,16 @@
+---
+#  /*! @brief POD equivalent of RwSpeedSample. All wheels share the measurement time.
+#   *  A sample with measTime 0 is not ingested. */
+#  typedef struct {
+#      uint64_t measTime;             /*!< [ns] measurement time of the sample */
+#      float wheelSpeeds[RW_EFF_CNT]; /*!< [r/s] reaction-wheel speeds */
+#  } RwSpeedSample_c;
+description: One reaction wheel speed sample as the averaging algorithm takes it. The speeds are carried as the reaction wheel assembly speeds record, which is exactly the C array with one speed per wheel.
+fields:
+  - name: Meas_Time
+    description: "[ns] Measurement time of the sample, shared by all wheels. Zero marks a sample with no data, which the algorithm does not ingest."
+    type: Interfaces.Unsigned_64
+    format: U64
+  - name: Wheel_Speeds
+    description: "[rad/s] Speed of each reaction wheel."
+    type: Rwa_Speeds.T
