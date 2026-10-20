@@ -1,0 +1,15 @@
+---
+description: This is a unit test suite for the Average Rw Speed Data component
+tests:
+  - name: Test
+    description: Feed a ramp of wheel speed measurements and check the output is the mean of the samples in the window, including the sample at the window's edge, and is stamped with the time of the measurement, to ensure the Ada to C to C++ integration is sound.
+  - name: Test_Stale_Data_Dependency
+    description: Ensure a tick on which the wheel speed product is stale is treated as a wiring defect and fails the tick's assertion, since the speeds are measured on every tick.
+  - name: Test_Window_Update
+    description: Ensure a new averaging window reaches the algorithm on the next tick and is applied to the stored samples.
+  - name: Test_Reset
+    description: Ensure the reset connector clears the stored samples, so the next measurement is averaged alone.
+  - name: Test_Invalid_Parameter
+    description: Ensure a staged averaging window the algorithm would reject is refused at validation.
+  - name: Test_Invalid_Data_Dependency
+    description: Ensure a data dependency with the wrong identifier is treated as a wiring defect and fails the tick's assertion.
