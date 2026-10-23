@@ -203,27 +203,33 @@ package body Css_Comm_Tests.Implementation is
 
    -- The corrected value of every sensor slot is a cosine, so the algorithm clamps
    -- it to [0, 1]. A correction that overflows carries no measurement, and the
-   -- algorithm publishes zero for that slot rather than the clamped one. This
-   -- test loads the Chebyshev correction into the highest order term alone and
-   -- feeds a full scale count that overflows it, next to a small count that only
-   -- saturates it.
+   -- algorithm publishes zero for that slot rather than the clamped one. The
+   -- Chebyshev evaluation clamps the normalized reading to [-1, 1], so no term
+   -- can exceed its coefficient, and only coefficients that sum past the largest
+   -- double overflow. This test splits the correction between T0 and T10 and
+   -- feeds readings where the sum overflows next to one where it only saturates.
    overriding procedure Test_Non_Finite_Correction_Is_No_Signal (Self : in out Instance) is
       T : Component.Css_Comm.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Css_Comm_Parameters.Instance;
 
       Max_Sensor_Val : constant Packed_F64.T := (Value => 100.0);
       Cheby_Count_Val : constant Packed_U32.T := (Value => 11);
-      -- Only the tenth order term is non zero, so the correction is 1.0e300
-      -- times T10 of the normalized reading.
-      Cheby_Poly_Val : constant Packed_F64x11.T := [10 => 1.0e300, others => 0.0];
+      -- Only T0 and T10 have non zero coefficients, and T0 is always 1, so the
+      -- correction is 1.0e308 * (1 + T10) of the normalized reading. The
+      -- evaluation clamps the reading to [-1, 1], where every Chebyshev term
+      -- stays in [-1, 1], so no single term can exceed its coefficient, and one
+      -- finite coefficient can never overflow. The largest double is about
+      -- 1.797e308, so the two terms together (up to 2.0e308) overflow.
+      Cheby_Poly_Val : constant Packed_F64x11.T := [0 => 1.0e308, 10 => 1.0e308, others => 0.0];
 
-      -- Slot 1 normalizes to 1.0, where T10 is 1, so its correction is a huge
-      -- finite value that saturates to 1.0. Slot 2 normalizes to 655.35, where
-      -- T10 overflows to infinity, so it is reported as no signal. The zero
-      -- readings normalize to 0.0, where T10 is -1, and the negative correction
-      -- clamps them to 0.0.
+      -- Slot 1 normalizes to 0.5, where T10 is -0.5, so its correction is a huge
+      -- finite value that saturates to 1.0. Slot 2 normalizes to 1.0, where T10
+      -- is 1, so the correction overflows to infinity and is reported as no
+      -- signal. Slot 3 normalizes to 655.35, which clamps to 1.0 and overflows
+      -- the same way. The zero readings normalize to 0.0, where T10 is -1, so
+      -- the correction cancels exactly to 0.0.
       Input_Data : constant Css_Array_Adc_8.T := (
-         Adc_Value => [100, 65535, 0, 0, 0, 0, 0, 0]
+         Adc_Value => [50, 100, 65535, 0, 0, 0, 0, 0]
       );
       Expected_Output : constant Packed_F64x8.T := [1.0, others => 0.0];
 
