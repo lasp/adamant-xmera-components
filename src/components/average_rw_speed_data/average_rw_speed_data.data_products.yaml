@@ -1,0 +1,6 @@
+---
+description: Data products for the Average Rw Speed Data component.
+data_products:
+  - name: Averaged_Wheel_Speeds
+    type: Rwa_Speeds.T
+    description: "[rad/s] The mean speed of each reaction wheel over the samples in the averaging window, stamped with the time of the newest measurement in it. The controllers take this in place of the measured speeds."

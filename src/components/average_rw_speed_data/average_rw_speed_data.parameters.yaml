@@ -1,0 +1,7 @@
+---
+description: Parameters for the Average Rw Speed Data component.
+parameters:
+  - name: Averaging_Window
+    description: "[s] Length of the time window over which the wheel speeds are averaged, measured back from the newest sample. Must be greater than zero and at most two seconds. The algorithm's sample ring is sized to hold a two second window at the 5 Hz wheel speed measurement rate."
+    type: Packed_F32.T
+    default: "(Value => 1.0)"
