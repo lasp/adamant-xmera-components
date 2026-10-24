@@ -1,0 +1,9 @@
+---
+#  typedef struct {
+#      double data[SUNLINE_FILTER_NUM_STATES]; /*!< [-] one entry per filter state */
+#  } SunlineFilterStateVector_c;
+description: Record wrapping a state vector of the sunline filter, one entry per state. The states are the sun direction in the body frame, the body rate, and the CSS intensity bias. Maps to SunlineFilterStateVector_c in the sunlineFilter C shim, which takes it by pointer.
+fields:
+  - name: Value
+    description: "[-] One entry per filter state."
+    type: Packed_F64x7.T

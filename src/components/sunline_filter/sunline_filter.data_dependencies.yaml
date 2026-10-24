@@ -1,0 +1,9 @@
+---
+description: Data dependencies for the Sunline Filter component. Each product is fed to the filter as a measurement when its timestamp has advanced since the last one consumed, so the timestamp is the measurement time.
+data_dependencies:
+  - name: Body_Rate
+    type: Packed_F32x3.T
+    description: "[rad/s] Selected body rate in body frame components, the gyro measurement of the filter."
+  - name: Css_Cosines
+    type: Css_Sensor_Values.T
+    description: "[-] Corrected cosine value of each coarse sun sensor slot, the sun sensor measurement of the filter. Only the first configured number of sensors is read."
