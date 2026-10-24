@@ -39,6 +39,7 @@ package body Component.Solar_Array_Reference.Implementation.Tester is
       Self.Component_Instance.Attach_Data_Product_T_Send (To_Component => Self'Unchecked_Access, Hook => Self.Data_Product_T_Recv_Sync_Access);
       Self.Attach_Tick_T_Send (To_Component => Self.Component_Instance'Unchecked_Access, Hook => Self.Component_Instance.Tick_T_Recv_Sync_Access);
       Self.Attach_Reset_Tick_T_Send (To_Component => Self.Component_Instance'Unchecked_Access, Hook => Self.Component_Instance.Reset_Tick_T_Recv_Sync_Access);
+      Self.Attach_Solar_Array_Reference_Command_T_Send (To_Component => Self.Component_Instance'Unchecked_Access, Hook => Self.Component_Instance.Solar_Array_Reference_Command_T_Recv_Sync_Access);
       Self.Attach_Parameter_Update_T_Provide (To_Component => Self.Component_Instance'Unchecked_Access, Hook => Self.Component_Instance.Parameter_Update_T_Modify_Access);
    end Connect;
 
@@ -64,12 +65,6 @@ package body Component.Solar_Array_Reference.Implementation.Tester is
             when 1 => Id_To_Return := 1;
             -- ID for Sun_Direction_Body:
             when 2 => Id_To_Return := 2;
-            -- ID for Tracking_Mode:
-            when 3 => Id_To_Return := 3;
-            -- ID for Specified_Array_Angle:
-            when 4 => Id_To_Return := 4;
-            -- ID for Offset_Angle:
-            when 5 => Id_To_Return := 5;
             -- If ID can not be found, then return ID out of range error.
             when others =>
                if Return_Status = Data_Product_Enums.Fetch_Status.Success then
@@ -87,12 +82,6 @@ package body Component.Solar_Array_Reference.Implementation.Tester is
             when 1 => Length_To_Return := Att_Ref.Size_In_Bytes;
             -- Length for Sun_Direction_Body:
             when 2 => Length_To_Return := Packed_F32x3.Size_In_Bytes;
-            -- Length for Tracking_Mode:
-            when 3 => Length_To_Return := Packed_Tracking_Mode.Size_In_Bytes;
-            -- Length for Specified_Array_Angle:
-            when 4 => Length_To_Return := Packed_Array_Angle.Size_In_Bytes;
-            -- Length for Offset_Angle:
-            when 5 => Length_To_Return := Packed_Array_Angle.Size_In_Bytes;
             -- If ID can not be found, then return ID out of range error.
             when others =>
                if Return_Status = Data_Product_Enums.Fetch_Status.Success then
@@ -121,18 +110,6 @@ package body Component.Solar_Array_Reference.Implementation.Tester is
             when 2 =>
                Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Packed_F32x3.Size_In_Bytes - 1) :=
                   Packed_F32x3.Serialization.To_Byte_Array (Self.Sun_Direction_Body);
-            -- Length for Tracking_Mode:
-            when 3 =>
-               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Packed_Tracking_Mode.Size_In_Bytes - 1) :=
-                  Packed_Tracking_Mode.Serialization.To_Byte_Array (Self.Tracking_Mode);
-            -- Length for Specified_Array_Angle:
-            when 4 =>
-               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Packed_Array_Angle.Size_In_Bytes - 1) :=
-                  Packed_Array_Angle.Serialization.To_Byte_Array (Self.Specified_Array_Angle);
-            -- Length for Offset_Angle:
-            when 5 =>
-               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Packed_Array_Angle.Size_In_Bytes - 1) :=
-                  Packed_Array_Angle.Serialization.To_Byte_Array (Self.Offset_Angle);
             -- Do not fill. The ID is not recognized.
             when others =>
                Return_Status := Data_Product_Enums.Fetch_Status.Id_Out_Of_Range;
