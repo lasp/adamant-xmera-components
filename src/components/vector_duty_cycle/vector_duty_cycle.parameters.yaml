@@ -2,10 +2,10 @@
 description: Parameters for the Vector Duty Cycle component.
 parameters:
   - name: On_Periods
-    description: "[-] Control periods at the start of each cycle in which the output equals the input vector. Must be at least 1."
+    description: "[-] Control periods at the start of each cycle in which the output equals the input vector. Zero keeps the output at zero and needs at least one off period."
     type: Packed_U32.T
     default: "(Value => 1)"
   - name: Off_Periods
-    description: "[-] Control periods in which the output is zero. Any value whose sum with On_Periods fits in 32 bits. Zero disables the duty cycle."
+    description: "[-] Control periods in which the output is zero. Any value whose sum with On_Periods is at least 1 and fits in 32 bits. Zero disables the duty cycle."
     type: Packed_U32.T
     default: "(Value => 0)"

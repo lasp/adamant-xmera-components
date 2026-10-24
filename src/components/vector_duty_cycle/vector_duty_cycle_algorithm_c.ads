@@ -20,9 +20,10 @@ package Vector_Duty_Cycle_Algorithm_C is
    type Vector_Duty_Cycle_Algorithm_Access is access all Vector_Duty_Cycle_Algorithm;
 
    --* @brief Report whether a configuration would be accepted by Create/Set_Config.
-   --* @param On_Periods  [-] Control periods in which the output equals the input; must be at least 1.
+   --* @param On_Periods  [-] Control periods in which the output equals the input. Zero keeps the
+   --*                        output at zero and needs at least one off period.
    --* @param Off_Periods [-] Control periods in which the output is zero; any value whose sum with
-   --*                        On_Periods still fits in 32 bits.
+   --*                        On_Periods is at least 1 and still fits in 32 bits.
    --* @return True if the configuration is valid. Never throws, so it can guard the
    --* throwing Create/Set_Config from an invalid configuration.
    function Validate_Config
