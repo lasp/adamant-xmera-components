@@ -17,15 +17,15 @@ private
    -- Run the algorithm on the sun tracking cases of the Python reference test to
    -- ensure the Ada to C to C++ integration is sound.
    overriding procedure Test (Self : in out Instance);
-   -- Check the aligned sun fallback to the retained angle, the offset in sun tracking
-   -- mode, and the commanded angle mode against the Python reference model.
+   -- Check the aligned sun fallback to the retained angle, the offset in sun
+   -- tracking mode, and the commanded angle mode against the Python reference model.
    overriding procedure Test_Tracking_Mode_Variants (Self : in out Instance);
    -- Ensure the reset connector zeroes the retained reference angle and leaves the
    -- configuration in place.
    overriding procedure Test_Reset (Self : in out Instance);
-   -- Ensure a stale command leaves the last configuration in place, including across
+   -- Ensure a command stays in effect on the ticks that follow it, including across
    -- a parameter update.
-   overriding procedure Test_Stale_Command (Self : in out Instance);
+   overriding procedure Test_Command_Retained (Self : in out Instance);
    -- Ensure a staged configuration the algorithm would reject is refused at
    -- validation.
    overriding procedure Test_Invalid_Parameter (Self : in out Instance);
@@ -35,9 +35,6 @@ private
    -- Ensure the specified angle mode runs without the attitude inputs and the sun
    -- tracking mode requires them.
    overriding procedure Test_Specified_Angle_Without_Attitude (Self : in out Instance);
-   -- Ensure a Disabled tracking mode fails the tick's assertion without
-   -- publishing.
-   overriding procedure Test_Disabled_Mode (Self : in out Instance);
    -- Ensure a data dependency with the wrong identifier is treated as a wiring
    -- defect and fails the tick's assertion.
    overriding procedure Test_Invalid_Data_Dependency (Self : in out Instance);

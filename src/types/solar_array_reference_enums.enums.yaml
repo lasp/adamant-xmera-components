@@ -11,7 +11,7 @@ enums:
         value: 1
         description: The reference angle is the specified array angle.
   - name: Commanded_Tracking_Mode
-    description: This is the tracking mode commanded to the solar array reference component through its data dependency. It adds Disabled to the modes of the algorithm, so the commanding component can also report that the solar arrays are not controlled. The component converts it to Tracking_Mode before calling the algorithm.
+    description: This is the tracking mode of the solar arrays as reported by the commanding component. It adds Disabled to the modes of the algorithm, for the states that do not control the solar arrays. The command to the solar array reference component carries Tracking_Mode instead, since the component is only commanded while the arrays are controlled.
     literals:
       - name: Disabled
         value: 0
