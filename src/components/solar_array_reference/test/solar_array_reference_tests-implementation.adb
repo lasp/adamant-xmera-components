@@ -7,23 +7,22 @@ with Ada.Real_Time;
 with AUnit.Assertions;
 with Parameter;
 with Basic_Assertions; use Basic_Assertions;
+with Basic_Types;
 with Packed_F32.Assertion; use Packed_F32.Assertion;
 with Packed_F32;
 with Packed_F32x3;
 with Packed_F32x3.C;
 with Packed_F32x3_Record.C;
 with Interfaces;
-with Packed_Array_Angle;
-with Packed_Array_Angle.Validation;
-with Packed_Tracking_Mode;
 with Parameter_Enums.Assertion;
 use Parameter_Enums.Parameter_Update_Status;
 use Parameter_Enums.Assertion;
+with Solar_Array_Reference_Command;
+with Solar_Array_Reference_Command.Validation;
 with Solar_Array_Reference_Enums; use Solar_Array_Reference_Enums;
 with Solar_Array_Reference_Algorithm_C;
 with Solar_Array_Reference_Parameters;
 with Solar_Array_Reference_Types; use Solar_Array_Reference_Types;
-with Sys_Time;
 
 package body Solar_Array_Reference_Tests.Implementation is
 
@@ -39,9 +38,8 @@ package body Solar_Array_Reference_Tests.Implementation is
    Surface_Normal : constant Packed_F32x3.T := [0.0, 1.0, 0.0];
    Alignment_Threshold : constant Packed_F32.T := (Value => 0.1);
    Zero_Attitude : constant Packed_F32x3.T := [0.0, 0.0, 0.0];
-   Auto_Track : constant Packed_Tracking_Mode.T := (Value => Commanded_Tracking_Mode.Auto_Track);
-   Specified_Angle : constant Packed_Tracking_Mode.T := (Value => Commanded_Tracking_Mode.Specified_Angle);
-   Disabled : constant Packed_Tracking_Mode.T := (Value => Commanded_Tracking_Mode.Disabled);
+   Auto_Track : constant Tracking_Mode.E := Tracking_Mode.Auto_Track;
+   Specified_Angle : constant Tracking_Mode.E := Tracking_Mode.Specified_Angle;
    Attitude_A : constant Packed_F32x3.T := [0.1, 0.2, 0.3];
    Reference_A : constant Packed_F32x3.T := [0.3, 0.2, 0.1];
    Attitude_B : constant Packed_F32x3.T := [0.5, 0.4, 0.3];
@@ -72,20 +70,12 @@ package body Solar_Array_Reference_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
    end Apply_Configuration;
 
-   -- Give only the commanded dependencies a stale limit, so they alone come back Stale
-   -- once the tick time runs ahead of the product time.
-   procedure Map_Commands_With_Stale_Limit (Self : in out Instance) is
-      Never : constant Ada.Real_Time.Time_Span := Ada.Real_Time.Time_Span_Zero;
-      One_Second : constant Ada.Real_Time.Time_Span := Ada.Real_Time.Seconds (1);
+   -- Command the mode and the angles.
+   procedure Send_Command (Self : in out Instance; Mode : in Tracking_Mode.E; Specified : in Array_Angle; Offset : in Array_Angle) is
+      T : Component.Solar_Array_Reference.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
-      Self.Tester.Component_Instance.Map_Data_Dependencies (
-         Navigation_Attitude_Id => 0, Navigation_Attitude_Stale_Limit => Never,
-         Attitude_Reference_Id => 1, Attitude_Reference_Stale_Limit => Never,
-         Sun_Direction_Body_Id => 2, Sun_Direction_Body_Stale_Limit => Never,
-         Tracking_Mode_Id => 3, Tracking_Mode_Stale_Limit => One_Second,
-         Specified_Array_Angle_Id => 4, Specified_Array_Angle_Stale_Limit => One_Second,
-         Offset_Angle_Id => 5, Offset_Angle_Stale_Limit => One_Second);
-   end Map_Commands_With_Stale_Limit;
+      T.Solar_Array_Reference_Command_T_Send ((Mode => Mode, Specified_Array_Angle => Specified, Offset_Angle => Offset));
+   end Send_Command;
 
    -- Map the attitude, the reference, and the sun direction to identifiers the tester
    -- does not serve, so any fetch of them fails the tick's assertion.
@@ -95,10 +85,7 @@ package body Solar_Array_Reference_Tests.Implementation is
       Self.Tester.Component_Instance.Map_Data_Dependencies (
          Navigation_Attitude_Id => 10, Navigation_Attitude_Stale_Limit => Never,
          Attitude_Reference_Id => 11, Attitude_Reference_Stale_Limit => Never,
-         Sun_Direction_Body_Id => 12, Sun_Direction_Body_Stale_Limit => Never,
-         Tracking_Mode_Id => 3, Tracking_Mode_Stale_Limit => Never,
-         Specified_Array_Angle_Id => 4, Specified_Array_Angle_Stale_Limit => Never,
-         Offset_Angle_Id => 5, Offset_Angle_Stale_Limit => Never);
+         Sun_Direction_Body_Id => 12, Sun_Direction_Body_Stale_Limit => Never);
    end Map_Attitude_Inputs_Unavailable;
 
    -- Send one tick and expect it to fail an assertion without publishing anything.
@@ -116,37 +103,11 @@ package body Solar_Array_Reference_Tests.Implementation is
       Natural_Assert.Eq (T.Reference_Angle_History.Get_Count, Published_Before);
    end Send_Tick_And_Expect_Assertion;
 
-   -- Send one tick at the given time, well ahead of the commands so they come back
-   -- stale, with the given attitude, reference, and sun direction, and check the
-   -- published reference angle.
-   procedure Send_Stale_Tick_And_Check (
-      Self : in out Instance;
-      Tick_Number : in Natural;
-      Tick_Time : in Sys_Time.T;
-      Attitude : in Packed_F32x3.T;
-      Reference : in Packed_F32x3.T;
-      Sun_Body : in Packed_F32x3.T;
-      Expected_Angle : in Short_Float
-   ) is
-      T : Component.Solar_Array_Reference.Implementation.Tester.Instance_Access renames Self.Tester;
-   begin
-      T.Data_Dependency_Timestamp_Override := (Seconds => 1, Subseconds => 0);
-      T.Navigation_Attitude := (Time_Tag => 0.0, Sigma_Bn => Attitude, Omega_Bn_B => [0.0, 0.0, 0.0], Veh_Sun_Pnt_Bdy => [0.0, 0.0, 0.0]);
-      T.Attitude_Reference := (Sigma_Rn => Reference, Omega_Rn_N => [0.0, 0.0, 0.0], Domega_Rn_N => [0.0, 0.0, 0.0]);
-      T.Sun_Direction_Body := Sun_Body;
-      T.Tick_T_Send ((Time => Tick_Time, Count => 0));
-      Natural_Assert.Eq (T.Reference_Angle_History.Get_Count, Tick_Number);
-      Packed_F32_Assert.Eq (T.Reference_Angle_History.Get (Tick_Number), (Value => Expected_Angle), Epsilon => Epsilon);
-   end Send_Stale_Tick_And_Check;
-
-   -- Command the mode and angles, send one tick with the given attitude, reference, and
+   -- Send one tick, without a new command, with the given attitude, reference, and
    -- sun direction, and check the published reference angle.
    procedure Send_Tick_And_Check (
       Self : in out Instance;
       Tick_Number : in Natural;
-      Mode : in Packed_Tracking_Mode.T;
-      Specified : in Short_Float;
-      Offset : in Short_Float;
       Attitude : in Packed_F32x3.T;
       Reference : in Packed_F32x3.T;
       Sun_Body : in Packed_F32x3.T;
@@ -154,9 +115,6 @@ package body Solar_Array_Reference_Tests.Implementation is
    ) is
       T : Component.Solar_Array_Reference.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
-      T.Tracking_Mode := Mode;
-      T.Specified_Array_Angle := (Value => Specified);
-      T.Offset_Angle := (Value => Offset);
       T.Navigation_Attitude := (Time_Tag => 0.0, Sigma_Bn => Attitude, Omega_Bn_B => [0.0, 0.0, 0.0], Veh_Sun_Pnt_Bdy => [0.0, 0.0, 0.0]);
       T.Attitude_Reference := (Sigma_Rn => Reference, Omega_Rn_N => [0.0, 0.0, 0.0], Domega_Rn_N => [0.0, 0.0, 0.0]);
       T.Sun_Direction_Body := Sun_Body;
@@ -165,6 +123,24 @@ package body Solar_Array_Reference_Tests.Implementation is
       Natural_Assert.Eq (T.Reference_Angle_History.Get_Count, Tick_Number);
       Packed_F32_Assert.Eq (T.Reference_Angle_History.Get (Tick_Number), (Value => Expected_Angle), Epsilon => Epsilon);
    end Send_Tick_And_Check;
+
+   -- Command the mode and angles, send one tick with the given attitude, reference, and
+   -- sun direction, and check the published reference angle.
+   procedure Command_Tick_And_Check (
+      Self : in out Instance;
+      Tick_Number : in Natural;
+      Mode : in Tracking_Mode.E;
+      Specified : in Array_Angle;
+      Offset : in Array_Angle;
+      Attitude : in Packed_F32x3.T;
+      Reference : in Packed_F32x3.T;
+      Sun_Body : in Packed_F32x3.T;
+      Expected_Angle : in Short_Float
+   ) is
+   begin
+      Send_Command (Self, Mode, Specified, Offset);
+      Send_Tick_And_Check (Self, Tick_Number, Attitude, Reference, Sun_Body, Expected_Angle);
+   end Command_Tick_And_Check;
 
    -------------------------------------------------------------------------
    -- Fixtures:
@@ -204,10 +180,10 @@ package body Solar_Array_Reference_Tests.Implementation is
    overriding procedure Test (Self : in out Instance) is
    begin
       Apply_Configuration (Self, Threshold => Alignment_Threshold);
-      Send_Tick_And_Check (Self, 1, Auto_Track, 0.0, 0.0, Attitude_A, Reference_A, Sun_X_From_A, 1.4252804701);
-      Send_Tick_And_Check (Self, 2, Auto_Track, 0.0, 0.0, Attitude_A, Reference_A, Sun_Z_From_A, 0.2144368067);
-      Send_Tick_And_Check (Self, 3, Auto_Track, 0.0, 0.0, Attitude_B, Reference_B, Sun_X_From_B, 0.3706993963);
-      Send_Tick_And_Check (Self, 4, Auto_Track, 0.0, 0.0, Attitude_B, Reference_B, Sun_Z_From_B, -1.0129138132);
+      Command_Tick_And_Check (Self, 1, Auto_Track, 0.0, 0.0, Attitude_A, Reference_A, Sun_X_From_A, 1.4252804701);
+      Command_Tick_And_Check (Self, 2, Auto_Track, 0.0, 0.0, Attitude_A, Reference_A, Sun_Z_From_A, 0.2144368067);
+      Command_Tick_And_Check (Self, 3, Auto_Track, 0.0, 0.0, Attitude_B, Reference_B, Sun_X_From_B, 0.3706993963);
+      Command_Tick_And_Check (Self, 4, Auto_Track, 0.0, 0.0, Attitude_B, Reference_B, Sun_Z_From_B, -1.0129138132);
    end Test;
 
    -- Check the aligned sun fallback to the retained angle, the offset in sun tracking
@@ -218,21 +194,21 @@ package body Solar_Array_Reference_Tests.Implementation is
 
       -- With the sun along the drive axis the array has no preferred angle, so the
       -- reference holds the angle from the previous tick, which starts at zero:
-      Send_Tick_And_Check (Self, 1, Auto_Track, 0.0, 0.0, Zero_Attitude, Zero_Attitude, Drive_Axis, 0.0);
+      Command_Tick_And_Check (Self, 1, Auto_Track, 0.0, 0.0, Zero_Attitude, Zero_Attitude, Drive_Axis, 0.0);
 
       -- The commanded offset is added to the tracked angle:
-      Send_Tick_And_Check (Self, 2, Auto_Track, 0.0, 0.3, Attitude_A, Reference_A, Sun_Z_From_A, 0.5144368067);
+      Command_Tick_And_Check (Self, 2, Auto_Track, 0.0, 0.3, Attitude_A, Reference_A, Sun_Z_From_A, 0.5144368067);
 
       -- Back along the drive axis, the reference holds the tracked angle. The offset is
       -- not added a second time:
-      Send_Tick_And_Check (Self, 3, Auto_Track, 0.0, 0.3, Zero_Attitude, Zero_Attitude, Drive_Axis, 0.5144368067);
+      Command_Tick_And_Check (Self, 3, Auto_Track, 0.0, 0.3, Zero_Attitude, Zero_Attitude, Drive_Axis, 0.5144368067);
 
       -- The commanded angle mode ignores the attitude and sun inputs and the offset:
-      Send_Tick_And_Check (Self, 4, Specified_Angle, 0.5, 0.3, Attitude_A, Reference_A, Sun_Z_From_A, 0.5);
-      Send_Tick_And_Check (Self, 5, Specified_Angle, -2.0, 2.0, Attitude_A, Reference_A, Sun_Z_From_A, -2.0);
+      Command_Tick_And_Check (Self, 4, Specified_Angle, 0.5, 0.3, Attitude_A, Reference_A, Sun_Z_From_A, 0.5);
+      Command_Tick_And_Check (Self, 5, Specified_Angle, -2.0, 2.0, Attitude_A, Reference_A, Sun_Z_From_A, -2.0);
 
       -- The commanded angle is retained too, so it is what the aligned sun falls back to:
-      Send_Tick_And_Check (Self, 6, Auto_Track, 0.0, 0.0, Zero_Attitude, Zero_Attitude, Drive_Axis, -2.0);
+      Command_Tick_And_Check (Self, 6, Auto_Track, 0.0, 0.0, Zero_Attitude, Zero_Attitude, Drive_Axis, -2.0);
    end Test_Tracking_Mode_Variants;
 
    -- The reset connector zeroes the reference angle the algorithm retains, so an
@@ -240,48 +216,41 @@ package body Solar_Array_Reference_Tests.Implementation is
    overriding procedure Test_Reset (Self : in out Instance) is
       T : Component.Solar_Array_Reference.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
-      Map_Commands_With_Stale_Limit (Self);
       Apply_Configuration (Self, Threshold => Alignment_Threshold);
 
       -- Track the sun with an offset, so the retained angle and the configuration are
       -- both away from their defaults:
-      Send_Tick_And_Check (Self, 1, Auto_Track, 0.0, 0.3, Attitude_A, Reference_A, Sun_Z_From_A, 0.5144368067);
+      Command_Tick_And_Check (Self, 1, Auto_Track, 0.0, 0.3, Attitude_A, Reference_A, Sun_Z_From_A, 0.5144368067);
 
-      -- With the commands stale, an aligned sun falls back to the retained angle:
-      Send_Stale_Tick_And_Check (Self, 2, (Seconds => 100, Subseconds => 0), Zero_Attitude, Zero_Attitude, Drive_Axis, 0.5144368067);
+      -- Without a new command, an aligned sun falls back to the retained angle:
+      Send_Tick_And_Check (Self, 2, Zero_Attitude, Zero_Attitude, Drive_Axis, 0.5144368067);
 
       -- After a reset it falls back to zero:
       T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
-      Send_Stale_Tick_And_Check (Self, 3, (Seconds => 101, Subseconds => 0), Zero_Attitude, Zero_Attitude, Drive_Axis, 0.0);
+      Send_Tick_And_Check (Self, 3, Zero_Attitude, Zero_Attitude, Drive_Axis, 0.0);
 
       -- The configuration survived the reset: the offset is still applied.
-      Send_Stale_Tick_And_Check (Self, 4, (Seconds => 102, Subseconds => 0), Attitude_A, Reference_A, Sun_Z_From_A, 0.5144368067);
+      Send_Tick_And_Check (Self, 4, Attitude_A, Reference_A, Sun_Z_From_A, 0.5144368067);
    end Test_Reset;
 
-   -- The mode and angles are commanded sporadically, so on most ticks they come back
-   -- stale. A stale command must leave the last configuration in place, and a
-   -- parameter update in the meantime must reapply that configuration rather than
-   -- the defaults.
-   overriding procedure Test_Stale_Command (Self : in out Instance) is
-      T : Component.Solar_Array_Reference.Implementation.Tester.Instance_Access renames Self.Tester;
+   -- The mode and angles are commanded on GNC state transitions, so most ticks arrive
+   -- without a new command. The last command must stay in effect on them, and a
+   -- parameter update in the meantime must reapply that command rather than the
+   -- defaults.
+   overriding procedure Test_Command_Retained (Self : in out Instance) is
    begin
-      Map_Commands_With_Stale_Limit (Self);
       Apply_Configuration (Self, Threshold => Alignment_Threshold);
 
-      -- A fresh command configures the algorithm:
-      Send_Tick_And_Check (Self, 1, Specified_Angle, 0.5, 0.3, Attitude_A, Reference_A, Sun_Z_From_A, 0.5);
+      -- A command configures the algorithm:
+      Command_Tick_And_Check (Self, 1, Specified_Angle, 0.5, 0.3, Attitude_A, Reference_A, Sun_Z_From_A, 0.5);
 
-      -- The commands go stale: the products are stamped in the past and the tick runs
-      -- well ahead of them. Different commanded values are offered, and ignored:
-      T.Tracking_Mode := Auto_Track;
-      T.Specified_Array_Angle := (Value => 1.0);
-      T.Offset_Angle := (Value => 1.0);
-      Send_Stale_Tick_And_Check (Self, 2, (Seconds => 100, Subseconds => 0), Attitude_A, Reference_A, Sun_Z_From_A, 0.5);
+      -- A tick without a new command keeps it:
+      Send_Tick_And_Check (Self, 2, Attitude_A, Reference_A, Sun_Z_From_A, 0.5);
 
       -- A parameter update reapplies the last command rather than the defaults:
       Apply_Configuration (Self, Threshold => (Value => 0.2));
-      Send_Stale_Tick_And_Check (Self, 3, (Seconds => 101, Subseconds => 0), Attitude_A, Reference_A, Sun_Z_From_A, 0.5);
-   end Test_Stale_Command;
+      Send_Tick_And_Check (Self, 3, Attitude_A, Reference_A, Sun_Z_From_A, 0.5);
+   end Test_Command_Retained;
 
    -- The algorithm requires unit and orthogonal array axes and an alignment threshold
    -- in [1e-3, pi/2]. Validation is the only guard keeping a rejected value out of the
@@ -341,11 +310,11 @@ package body Solar_Array_Reference_Tests.Implementation is
    end Test_Invalid_Parameter;
 
    -- The commanded angles are not validated by this component: their type carries the
-   -- range the algorithm accepts, so the command that sets them is rejected at receipt
-   -- instead. That only holds if the Ada bounds are exactly the algorithm's, so ask
-   -- the algorithm's own predicate about both bounds and the first value outside
-   -- each, and check that the record validation, which is what command receipt runs,
-   -- draws the same line.
+   -- range the algorithm accepts, so the ground command that sets them is rejected at
+   -- receipt by the commanding component instead. That only holds if the Ada bounds
+   -- are exactly the algorithm's, so ask the algorithm's own predicate about both
+   -- bounds and the first value outside each, and check that the validation of the
+   -- command record draws the same line.
    overriding procedure Test_Array_Angle_Range (Self : in out Instance) is
       Ignore : Instance renames Self;
       Axis : aliased constant Packed_F32x3_Record.C.U_C := (Value => Packed_F32x3.C.Unpack (Drive_Axis));
@@ -363,13 +332,18 @@ package body Solar_Array_Reference_Tests.Implementation is
             Specified_Array_Angle => Angle,
             Offset_Angle          => Angle)));
 
-      -- Whether the record validation accepts the angle. The bytes are built through
-      -- the unconstrained record, because a value outside the range cannot be written
-      -- into the constrained one.
+      -- Whether the record validation accepts the angle as both the specified and the
+      -- offset angle. The bytes are assembled by hand, because a value outside the
+      -- range cannot be written into the constrained record: the mode byte, then the
+      -- two big-endian floats.
       function Accepted_By_Validation (Angle : in Short_Float) return Boolean is
+         use type Basic_Types.Byte_Array;
+         Angle_Bytes : constant Basic_Types.Byte_Array := Packed_F32.Serialization.To_Byte_Array ((Value => Angle));
+         Bytes : constant Basic_Types.Byte_Array :=
+            [Basic_Types.Byte (Tracking_Mode.E'Enum_Rep (Specified_Angle))] & Angle_Bytes & Angle_Bytes;
          Errant_Field : Interfaces.Unsigned_32;
       begin
-         return Packed_Array_Angle.Validation.Valid (Packed_F32.Serialization.To_Byte_Array ((Value => Angle)), Errant_Field);
+         return Solar_Array_Reference_Command.Validation.Valid (Bytes, Errant_Field);
       end Accepted_By_Validation;
    begin
       -- Both bounds are accepted, so the type reaches everything the algorithm allows:
@@ -391,40 +365,27 @@ package body Solar_Array_Reference_Tests.Implementation is
    -- still runs the algorithm and publishes the specified angle. Switching to the sun
    -- tracking mode then needs them, so the tick fails its assertion.
    overriding procedure Test_Specified_Angle_Without_Attitude (Self : in out Instance) is
-      T : Component.Solar_Array_Reference.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
       Map_Attitude_Inputs_Unavailable (Self);
       Apply_Configuration (Self, Threshold => Alignment_Threshold);
 
       -- The specified angle mode publishes the specified angle, wrapped by the
       -- algorithm, without the attitude inputs:
-      Send_Tick_And_Check (Self, 1, Specified_Angle, 0.5, 0.3, Attitude_A, Reference_A, Sun_Z_From_A, 0.5);
-      Send_Tick_And_Check (Self, 2, Specified_Angle, -2.0, 0.0, Attitude_A, Reference_A, Sun_Z_From_A, -2.0);
+      Command_Tick_And_Check (Self, 1, Specified_Angle, 0.5, 0.3, Attitude_A, Reference_A, Sun_Z_From_A, 0.5);
+      Command_Tick_And_Check (Self, 2, Specified_Angle, -2.0, 0.0, Attitude_A, Reference_A, Sun_Z_From_A, -2.0);
 
       -- The sun tracking mode fetches them and fails its assertion:
-      T.Tracking_Mode := Auto_Track;
+      Send_Command (Self, Auto_Track, 0.0, 0.0);
       Send_Tick_And_Expect_Assertion (Self, "The sun tracking mode should have failed an assertion without the attitude inputs.");
    end Test_Specified_Angle_Without_Attitude;
-
-   -- The commanding component does not tick this component while the solar arrays are
-   -- not controlled, so a Disabled mode on a tick is a sequencing defect. The component
-   -- asserts rather than publishing anything.
-   overriding procedure Test_Disabled_Mode (Self : in out Instance) is
-      T : Component.Solar_Array_Reference.Implementation.Tester.Instance_Access renames Self.Tester;
-   begin
-      Apply_Configuration (Self, Threshold => Alignment_Threshold);
-      T.Tracking_Mode := Disabled;
-      Send_Tick_And_Expect_Assertion (Self, "A Disabled tracking mode should have failed an assertion.");
-
-      -- A controlled mode runs again afterwards:
-      Send_Tick_And_Check (Self, 1, Specified_Angle, 0.5, 0.0, Attitude_A, Reference_A, Sun_Z_From_A, 0.5);
-   end Test_Disabled_Mode;
 
    -- A data dependency that comes back with the wrong identifier means the assembly
    -- is wired incorrectly. The component asserts rather than publishing anything.
    overriding procedure Test_Invalid_Data_Dependency (Self : in out Instance) is
       T : Component.Solar_Array_Reference.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
+      -- The dependencies are only fetched in the sun tracking mode:
+      Send_Command (Self, Auto_Track, 0.0, 0.0);
       T.Data_Dependency_Return_Id_Override := 999;
       begin
          T.Tick_T_Send ((Time => T.System_Time, Count => 0));

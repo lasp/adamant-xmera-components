@@ -8,8 +8,6 @@ with Packed_F32;
 with Packed_F32x3;
 with Packed_F32x3.C;
 with Packed_F32x3_Record.C;
-with Packed_Array_Angle;
-with Packed_Tracking_Mode;
 
 package body Component.Solar_Array_Reference.Implementation is
 
@@ -29,20 +27,28 @@ package body Component.Solar_Array_Reference.Implementation is
       (Drive_Axis => (Value => Packed_F32x3.C.To_C (Drive_Axis)),
        Surface_Normal => (Value => Packed_F32x3.C.To_C (Surface_Normal)));
 
+   -- Whether the applied parameters together with the last commanded mode and
+   -- angles form a configuration the algorithm accepts.
+   function Config_Is_Valid (Self : in Instance) return Boolean is
+      Cfg : aliased constant Pointer_Config := To_Pointer_Config (Self.Drive_Axis, Self.Surface_Normal);
+   begin
+      return Boolean (Validate_Config (
+         Drive_Axis            => Cfg.Drive_Axis'Access,
+         Surface_Normal        => Cfg.Surface_Normal'Access,
+         Alignment_Threshold   => Self.Alignment_Threshold.Value,
+         Tracking_Mode         => Self.Commanded_Mode,
+         Specified_Array_Angle => Self.Commanded_Angle,
+         Offset_Angle          => Self.Commanded_Offset));
+   end Config_Is_Valid;
+
    -- Push the component's current configuration, the parameters and the last
    -- commanded mode and angles, into the C++ algorithm. Every reconfiguration path
    -- goes through here so the configuration is assembled in exactly one place.
    --
-   -- Nothing is validated here, which is an exception to the usual guard in front
-   -- of the throwing Set_Config. The parameters were validated at staging by
+   -- Nothing is validated here. The parameters were validated at staging by
    -- Validate_Parameters, against the same commanded values that are applied here.
-   -- The commanded values are valid to the algorithm by type: the mode is an
-   -- enumeration with exactly the algorithm's values, and the angles are
-   -- Array_Angle, whose range is the algorithm's accepted range. They originate as
-   -- command arguments of the commanding component, where Adamant validates them
-   -- against these types before the command is accepted. A value the algorithm
-   -- would reject therefore cannot reach this component, and the tick does not
-   -- check for one.
+   -- The commanded values are valid to the algorithm by type, as the command handler
+   -- explains.
    procedure Apply_Config (Self : in out Instance) is
       Cfg : aliased constant Pointer_Config := To_Pointer_Config (Self.Drive_Axis, Self.Surface_Normal);
    begin
@@ -86,49 +92,12 @@ package body Component.Solar_Array_Reference.Implementation is
    ---------------------------------------
    -- Invokee connector primitives:
    ---------------------------------------
-   -- The commanded tracking modes the algorithm has a mode for.
-   subtype Controlled_Tracking_Mode is Solar_Array_Reference_Enums.Commanded_Tracking_Mode.E range
-      Solar_Array_Reference_Enums.Commanded_Tracking_Mode.Auto_Track .. Solar_Array_Reference_Enums.Commanded_Tracking_Mode.Specified_Angle;
-
-   -- Convert a commanded tracking mode to the tracking mode of the algorithm. Disabled
-   -- has no algorithm mode, so the caller asserts it is never Disabled first.
-   function To_Algorithm_Mode (Mode : in Controlled_Tracking_Mode) return Solar_Array_Reference_Enums.Tracking_Mode.C.E_C is
-      (case Mode is
-         when Solar_Array_Reference_Enums.Commanded_Tracking_Mode.Auto_Track => Solar_Array_Reference_Enums.Tracking_Mode.C.Auto_Track,
-         when Solar_Array_Reference_Enums.Commanded_Tracking_Mode.Specified_Angle => Solar_Array_Reference_Enums.Tracking_Mode.C.Specified_Angle);
-
    -- Run the algorithm up to the current time.
    overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
       use Data_Product_Enums;
       use Data_Product_Enums.Data_Dependency_Status;
       use Solar_Array_Reference_Enums;
       use type Solar_Array_Reference_Enums.Tracking_Mode.C.E_C;
-      use type Solar_Array_Reference_Enums.Commanded_Tracking_Mode.E;
-
-      -- Grab the commanded data dependencies:
-      --
-      -- Data_Dependency_Status.E can be Success, Not_Available, Error, or Stale.
-      -- The tracking mode and the angles are commanded sporadically, at state
-      -- transitions rather than every control cycle, so on most ticks they come back
-      -- Stale. Stale is a normal state here: the algorithm keeps the configuration it
-      -- was last given. Success means a new command arrived this tick. Any other
-      -- status indicates that this component is not wired up correctly, so we assert.
-      Mode : Packed_Tracking_Mode.T;
-      Mode_Status : constant Data_Dependency_Status.E :=
-         Self.Get_Tracking_Mode (Value => Mode, Stale_Reference => Arg.Time);
-      pragma Assert (Mode_Status = Success or else Mode_Status = Stale);
-      Specified_Angle : Packed_Array_Angle.T;
-      Specified_Angle_Status : constant Data_Dependency_Status.E :=
-         Self.Get_Specified_Array_Angle (Value => Specified_Angle, Stale_Reference => Arg.Time);
-      pragma Assert (Specified_Angle_Status = Success or else Specified_Angle_Status = Stale);
-      Offset : Packed_Array_Angle.T;
-      Offset_Status : constant Data_Dependency_Status.E :=
-         Self.Get_Offset_Angle (Value => Offset, Stale_Reference => Arg.Time);
-      pragma Assert (Offset_Status = Success or else Offset_Status = Stale);
-      -- The commanding component does not tick this component while the solar arrays
-      -- are not controlled, so a Disabled mode means the component is sequenced
-      -- incorrectly. That should never happen, so we assert.
-      pragma Assert (Mode.Value /= Commanded_Tracking_Mode.Disabled);
 
       -- The attitudes and the sun direction the algorithm is called with. They are
       -- only fetched in the sun tracking mode. In the specified angle mode the
@@ -139,19 +108,6 @@ package body Component.Solar_Array_Reference.Implementation is
    begin
       -- Apply any pending parameter update:
       Self.Update_Parameters;
-
-      -- A new command reconfigures the algorithm. The commanded values are
-      -- configuration to it, so the whole configuration is pushed at once. They are
-      -- not validated here: see Apply_Config.
-      if Mode_Status = Success or else
-         Specified_Angle_Status = Success or else
-         Offset_Status = Success
-      then
-         Self.Commanded_Mode := To_Algorithm_Mode (Mode.Value);
-         Self.Commanded_Angle := Specified_Angle.Value;
-         Self.Commanded_Offset := Offset.Value;
-         Apply_Config (Self);
-      end if;
 
       -- In the sun tracking mode, grab the attitude, the reference, and the sun
       -- direction. They are produced earlier in the same tick, so any status other
@@ -199,6 +155,30 @@ package body Component.Solar_Array_Reference.Implementation is
    begin
       Re_Initialize (Self.Alg);
    end Reset_Tick_T_Recv_Sync;
+
+   -- Command the tracking mode and the angles. The commanding component sends it on
+   -- every GNC state transition into a state that controls the solar arrays, between
+   -- ticks, and it reconfigures the algorithm for the ticks that follow.
+   overriding procedure Solar_Array_Reference_Command_T_Recv_Sync (Self : in out Instance; Arg : in Solar_Array_Reference_Command.T) is
+   begin
+      -- Record the command, then push the whole configuration into the algorithm.
+      --
+      -- Set_Config throws on a configuration the algorithm rejects, and there is no
+      -- recourse here: the command has already been accepted by the time it arrives.
+      -- The guard is the Ada type system, at the commanding component's command
+      -- validation. The mode is an enumeration with exactly the algorithm's values,
+      -- and the angles are Array_Angle, whose range is exactly the range the
+      -- algorithm accepts, so the ground command that carries them is rejected at
+      -- receipt when the algorithm would reject them, and a value the algorithm
+      -- refuses cannot reach this connector. The applied parameters were validated
+      -- at staging and do not interact with the commanded values. The assertion only
+      -- confirms this.
+      Self.Commanded_Mode := Solar_Array_Reference_Enums.Tracking_Mode.C.To_C (Arg.Mode);
+      Self.Commanded_Angle := Arg.Specified_Array_Angle;
+      Self.Commanded_Offset := Arg.Offset_Angle;
+      pragma Assert (Config_Is_Valid (Self), "Solar_Array_Reference: algorithm rejected the commanded mode and angles");
+      Apply_Config (Self);
+   end Solar_Array_Reference_Command_T_Recv_Sync;
 
    -- The parameter update connector.
    overriding procedure Parameter_Update_T_Modify (Self : in out Instance; Arg : in out Parameter_Update.T) is

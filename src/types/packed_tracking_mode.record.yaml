@@ -1,5 +1,5 @@
 ---
-description: This record holds the commanded solar array tracking mode, packed as an 8-bit enumeration. Values outside the enumeration fail type validation during parameter staging.
+description: This record holds the commanded solar array tracking mode, packed as an 8-bit enumeration, for reporting it as a data product.
 fields:
   - name: Value
     description: This is the commanded tracking mode.
