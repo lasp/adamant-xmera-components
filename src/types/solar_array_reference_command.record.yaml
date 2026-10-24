@@ -1,0 +1,15 @@
+---
+description: This is the command to the solar array reference guidance of one SADA. The commanding component sends it on every GNC state transition into a state that controls the solar arrays, so it always describes what the SADA does while it is controlled. In Auto_Track the array tracks the sun and the offset angle is added to the tracking angle. In Specified_Angle the array is held at the specified angle.
+fields:
+  - name: Mode
+    description: This mode selects what the SADA does. In Auto_Track it tracks the sun. In Specified_Angle it is held at the specified angle. The enumeration has exactly the modes the algorithm accepts.
+    type: Solar_Array_Reference_Enums.Tracking_Mode.E
+    format: E8
+  - name: Specified_Array_Angle
+    description: "[rad] The angle the array is held at in Specified_Angle. It is ignored in the other modes. The type carries the range the algorithm accepts."
+    type: Solar_Array_Reference_Types.Array_Angle
+    format: F32
+  - name: Offset_Angle
+    description: "[rad] The offset added to the sun tracking angle in Auto_Track. It is ignored in the other modes. The type carries the range the algorithm accepts."
+    type: Solar_Array_Reference_Types.Array_Angle
+    format: F32

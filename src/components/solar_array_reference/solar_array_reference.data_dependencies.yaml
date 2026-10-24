@@ -10,12 +10,3 @@ data_dependencies:
   - name: Sun_Direction_Body
     type: Packed_F32x3.T
     description: "[-] This is the unit vector from the spacecraft to the sun in body frame components. It is fetched only in the sun tracking mode."
-  - name: Tracking_Mode
-    type: Packed_Tracking_Mode.T
-    description: "[-] This mode selects whether the reference angle tracks the sun or holds the specified array angle. It is commanded sporadically at state transitions, so it is normally stale, and a fresh value reconfigures the algorithm. It is never Disabled while the component is ticked, since the commanding component does not tick it while the solar arrays are not controlled, and the tick asserts this. The enumeration otherwise has exactly the modes the algorithm accepts, so the tick does not validate it again."
-  - name: Specified_Array_Angle
-    type: Packed_Array_Angle.T
-    description: "[rad] Reference array angle used in the specified angle mode. Commanded sporadically at state transitions, so it is normally stale; a fresh value reconfigures the algorithm. The type carries the range the algorithm accepts, so the command that sets it is validated at receipt and the tick does not validate it again."
-  - name: Offset_Angle
-    type: Packed_Array_Angle.T
-    description: "[rad] Offset added to the sun tracking reference angle. Not applied in the specified angle mode. Commanded sporadically at state transitions, so it is normally stale; a fresh value reconfigures the algorithm. The type carries the range the algorithm accepts, so the command that sets it is validated at receipt and the tick does not validate it again."

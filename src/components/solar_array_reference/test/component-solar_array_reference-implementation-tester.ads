@@ -11,17 +11,15 @@ with Data_Product.Representation;
 with Nav_Att_Output;
 with Att_Ref;
 with Packed_F32x3;
-with Packed_Tracking_Mode;
-with Packed_F32;
-with Packed_Array_Angle;
 with Data_Product;
 with Packed_F32.Representation;
 
 -- Solar array reference angle guidance. Computes the array rotation angle that
 -- turns the array surface normal toward the sun in the reference attitude, or
 -- holds a commanded angle, and publishes it for the array drive controller. The
--- tracking mode and the angles are commanded through data products. Wraps the
--- SolarArrayReferenceAlgorithm C++ algorithm via its C shim.
+-- tracking mode and the angles are commanded through a connector on GNC state
+-- transitions. Wraps the SolarArrayReferenceAlgorithm C++ algorithm via its C
+-- shim.
 package Component.Solar_Array_Reference.Implementation.Tester is
 
    use Component.Solar_Array_Reference_Reciprocal;
@@ -48,9 +46,6 @@ package Component.Solar_Array_Reference.Implementation.Tester is
       Navigation_Attitude : Nav_Att_Output.T;
       Attitude_Reference : Att_Ref.T;
       Sun_Direction_Body : Packed_F32x3.T;
-      Tracking_Mode : Packed_Tracking_Mode.T;
-      Specified_Array_Angle : Packed_Array_Angle.T;
-      Offset_Angle : Packed_Array_Angle.T;
       -- The return status for the data dependency fetch. This can be set
       -- during unit test to return something other than Success.
       Data_Dependency_Return_Status_Override : Data_Product_Enums.Fetch_Status.E := Data_Product_Enums.Fetch_Status.Success;
