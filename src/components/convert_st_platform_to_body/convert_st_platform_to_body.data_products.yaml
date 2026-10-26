@@ -3,4 +3,4 @@ description: Data products for the Convert St Platform To Body component.
 data_products:
   - name: Star_Tracker_Body_Attitude
     type: St_Att.T
-    description: Star tracker attitude output in the spacecraft body frame (time tag, MRP, body-frame angular velocity).
+    description: Star tracker attitude output in the spacecraft body frame (time tag, MRP, body-frame angular velocity), stamped with the timestamp of the attitude solution it converts.

@@ -39,10 +39,12 @@ package body Component.Convert_St_Platform_To_Body.Implementation is
       -- last received solution regardless of staleness (the value is populated on
       -- Stale). Not_Available (no value was ever made available) and Error
       -- (ID/length mismatch) indicate an assembly/configuration defect, so we
-      -- assert.
+      -- assert. The attitude solution's timestamp is the time of the measurement,
+      -- which the output is stamped with.
       Platform_Attitude_Dep : St_Platform_Attitude.T;
+      Platform_Attitude_Time : Sys_Time.T;
       Platform_Attitude_Status : constant Data_Product_Enums.Data_Dependency_Status.E :=
-         Self.Get_Platform_Attitude (Value => Platform_Attitude_Dep, Stale_Reference => Arg.Time);
+         Self.Get_Platform_Attitude (Value => Platform_Attitude_Dep, Timestamp => Platform_Attitude_Time, Stale_Reference => Arg.Time);
       Platform_Angular_Velocity_Dep : St_Platform_Angular_Velocity.T;
       Platform_Angular_Velocity_Status : constant Data_Product_Enums.Data_Dependency_Status.E :=
          Self.Get_Platform_Angular_Velocity (Value => Platform_Angular_Velocity_Dep, Stale_Reference => Arg.Time);
@@ -65,9 +67,10 @@ package body Component.Convert_St_Platform_To_Body.Implementation is
       -- Apply any pending parameter update (e.g. new Dcm_Cb):
       Self.Update_Parameters;
 
-      -- Call the C algorithm and publish the resulting body-frame attitude:
+      -- Call the C algorithm and publish the resulting body-frame attitude, stamped
+      -- with the time of the solution it converts:
       Self.Data_Product_T_Send (Self.Data_Products.Star_Tracker_Body_Attitude (
-         Arg.Time,
+         Platform_Attitude_Time,
          St_Att.C.Pack (Update (Self.Alg, Measurement => Measurement_C'Access))
       ));
    end Tick_T_Recv_Sync;

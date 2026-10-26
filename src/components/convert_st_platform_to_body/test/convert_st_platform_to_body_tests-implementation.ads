@@ -14,7 +14,8 @@ private
    overriding procedure Set_Up_Test (Self : in out Instance);
    overriding procedure Tear_Down_Test (Self : in out Instance);
 
-   -- Run algorithm to ensure integration is sound.
+   -- Run algorithm to ensure integration is sound, and check the output is stamped
+   -- with the timestamp of the attitude solution.
    overriding procedure Test (Self : in out Instance);
 
    -- Ensure a staged mounting DCM the algorithm would reject is refused at validation.
