@@ -119,6 +119,9 @@ package body Vector_Duty_Cycle_Tests.Implementation is
       Run_Cadence (On_Periods => 2, Off_Periods => 1);
       -- An off window longer than the run passes once and then stays at zero:
       Run_Cadence (On_Periods => 1, Off_Periods => 20);
+      -- No on period keeps the output at zero at every update:
+      Run_Cadence (On_Periods => 0, Off_Periods => 1);
+      Run_Cadence (On_Periods => 0, Off_Periods => 3);
    end Test;
 
    -- Check that the reset connector restarts the duty cycle at its on window, and
@@ -148,7 +151,7 @@ package body Vector_Duty_Cycle_Tests.Implementation is
       Tick_And_Expect (Self, 8, On => True);
    end Test_Reset;
 
-   -- The algorithm requires at least one on period and a cycle length that fits in
+   -- The algorithm requires a cycle length of at least one period that fits in
    -- 32 bits. Validation is the only guard keeping a rejected value out of the
    -- throwing Set_Config, so exercise it directly.
    overriding procedure Test_Invalid_Parameter (Self : in out Instance) is
@@ -169,9 +172,17 @@ package body Vector_Duty_Cycle_Tests.Implementation is
       Stage_Valid_Configuration;
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
 
-      -- Zero on periods would hold the output at zero forever, so it is rejected:
+      -- Zero on periods with a single off period is the shortest cycle that keeps the
+      -- output at zero, so it is accepted:
       Stage_Valid_Configuration;
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.On_Periods ((Value => 0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Off_Periods ((Value => 1))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
+
+      -- Zero on periods and zero off periods give an empty cycle, so it is rejected:
+      Stage_Valid_Configuration;
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.On_Periods ((Value => 0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Off_Periods ((Value => 0))), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
 
       -- A cycle length that would wrap around 32 bits is rejected:
