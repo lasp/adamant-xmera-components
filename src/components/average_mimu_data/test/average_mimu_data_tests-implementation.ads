@@ -14,10 +14,11 @@ private
    overriding procedure Set_Up_Test (Self : in out Instance);
    overriding procedure Tear_Down_Test (Self : in out Instance);
 
-   -- Identity DCM and uniform data - output equals scaled input.
-   overriding procedure Test_Identity_Dcm (Self : in out Instance);
-   -- 90-degree Z-rotation DCM transforms the averaged result into the body frame.
-   overriding procedure Test_Dcm_Rotation (Self : in out Instance);
+   -- Zero mounting MRP and uniform data - output equals scaled input.
+   overriding procedure Test_Zero_Mounting (Self : in out Instance);
+   -- A 90-degree Z-rotation mounting attitude transforms the averaged result into
+   -- the body frame.
+   overriding procedure Test_Rotated_Mounting (Self : in out Instance);
    -- Non-uniform data with negative values averages correctly across signs.
    overriding procedure Test_Mixed_Signs (Self : in out Instance);
    -- Per-sample time windowing excludes samples older than the averaging window.
@@ -28,14 +29,16 @@ private
    overriding procedure Test_Multi_Packet (Self : in out Instance);
    -- A packet beyond the buffer capacity triggers the overflow event and is dropped.
    overriding procedure Test_Buffer_Overflow (Self : in out Instance);
-   -- Test that an invalid parameter throws the appropriate event and out-of-range windows are rejected.
+   -- Test that an invalid parameter throws the appropriate event and out-of-range
+   -- windows are rejected.
    overriding procedure Test_Invalid_Parameter (Self : in out Instance);
-   -- Independent gyro and accel averaging windows select different sample sets from one packet.
+   -- Independent gyro and accel averaging windows select different sample sets from
+   -- one packet.
    overriding procedure Test_Asymmetric_Windows (Self : in out Instance);
    -- A 0.0 s averaging window keeps only the single newest sample.
    overriding procedure Test_Zero_Window (Self : in out Instance);
-
-   -- Ensure staged parameter values the algorithm would reject are refused at validation.
+   -- Ensure staged parameter values the algorithm would reject are refused at
+   -- validation.
    overriding procedure Test_Invalid_Config_Parameter (Self : in out Instance);
 
    -- Test data and state:

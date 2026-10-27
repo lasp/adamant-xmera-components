@@ -9,7 +9,7 @@ parameters:
     description: "[s] Allowable time difference from latest measurement for the accel averaging window (valid range [0.0, 2.0])"
     type: Packed_F32.T
     default: "(Value => 0.0)"
-  - name: Dcm_Pltf_To_Bdy
-    description: "[-] Direction cosine matrix from platform frame to body frame (3x3 row-major, 9 elements)"
-    type: Packed_F32x9.T
-    default: "[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]"
+  - name: Sigma_Cb
+    description: "[-] MRP attitude of the platform frame relative to the body frame. The averaged rates and accelerations are rotated through it from the platform frame into the body frame. Must be finite."
+    type: Packed_F32x3.T
+    default: "[0.0, 0.0, 0.0]"
