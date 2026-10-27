@@ -21,3 +21,7 @@ parameters:
     description: "[-] Number of coarse sun sensors that must see the sun, at or above which the sun is considered acquired and the search hands over to pointing. Checked only after the first rotation completes. Zero hands over as soon as the first rotation completes."
     type: Packed_Observation_Threshold.T
     default: "(Value => 4)"
+  - name: Deadband_Angle
+    description: "[rad] Attitude deadband applied during the pointing phase. The commanded attitude error is the sun angle error less this band, and zero inside it, so the controller holds the vehicle at the band edge rather than driving the error to zero. Must be finite and not negative."
+    type: Packed_F32.T
+    default: "(Value => 0.0)"

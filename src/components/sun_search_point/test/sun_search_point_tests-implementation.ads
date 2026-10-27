@@ -25,6 +25,10 @@ private
    -- Verify the reset connector re-arms the search sequence after the terminal
    -- pointing phase.
    overriding procedure Test_Reset (Self : in out Instance);
+   -- Verify the pointing phase controls to the edge of the attitude deadband,
+   -- commanding no attitude error inside the band and the error less the band outside
+   -- it.
+   overriding procedure Test_Deadband (Self : in out Instance);
    -- Ensure staged parameter values the algorithm would reject are refused at
    -- validation.
    overriding procedure Test_Invalid_Parameter (Self : in out Instance);

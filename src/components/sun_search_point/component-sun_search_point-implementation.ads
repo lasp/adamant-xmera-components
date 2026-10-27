@@ -92,7 +92,8 @@ private
       S_Hat_Bdy_Cmd : in Packed_F32x3.U;
       Sun_Axis_Spin_Rate : in Packed_F32.U;
       Omega_Rn_B_Cfg : in Packed_F32x3.U;
-      Observation_Threshold : in Packed_Observation_Threshold.U
+      Observation_Threshold : in Packed_Observation_Threshold.U;
+      Deadband_Angle : in Packed_F32.U
    ) return Parameter_Validation_Status.E;
 
    -----------------------------------------------
