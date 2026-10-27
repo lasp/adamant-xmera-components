@@ -2,6 +2,6 @@
 description: This is a unit test suite for the Convert St Platform To Body component
 tests:
   - name: Test
-    description: Run algorithm to ensure integration is sound.
+    description: Run algorithm to ensure integration is sound, and check the output is stamped with the timestamp of the attitude solution.
   - name: Test_Invalid_Parameter
     description: Ensure a staged mounting DCM the algorithm would reject is refused at validation.

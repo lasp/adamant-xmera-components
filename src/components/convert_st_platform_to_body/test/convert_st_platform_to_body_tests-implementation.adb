@@ -13,6 +13,8 @@ with Convert_St_Platform_To_Body_Parameters;
 with Parameter_Enums.Assertion;
 use Parameter_Enums.Parameter_Update_Status;
 use Parameter_Enums.Assertion;
+with Sys_Time;
+with Sys_Time.Assertion; use Sys_Time.Assertion;
 
 package body Convert_St_Platform_To_Body_Tests.Implementation is
 
@@ -97,6 +99,11 @@ package body Convert_St_Platform_To_Body_Tests.Implementation is
       --            ~= [0.25661850, 0.10629486, -0.18410810]
       --   omega_BN_B = dcm_CB^T * omega_CN_C
       --            ~= [-0.01626346, -0.00494975, 0.022]
+      -- The solution of case I is stamped I seconds before the tick.
+      Tick_Time : constant Sys_Time.T := (Seconds => 10, Subseconds => 0);
+      function Solution_Time (Case_Number : in Positive) return Sys_Time.T is
+         ((Seconds => Tick_Time.Seconds - Unsigned_32 (Case_Number), Subseconds => 0));
+
       Test_Cases : constant array (1 .. 3) of Test_Vector := [
          (
             Dcm_Cb => [1.0, 0.0, 0.0,
@@ -148,16 +155,19 @@ package body Convert_St_Platform_To_Body_Tests.Implementation is
            (T.Stage_Parameter (Params.Dcm_Cb (Test_Cases (I).Dcm_Cb)), Success);
          Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
 
-         -- Set data dependencies:
+         -- Set data dependencies, stamped with the time of the solution, which is
+         -- before the tick:
          T.Platform_Attitude := Test_Cases (I).Platform_Attitude;
          T.Platform_Angular_Velocity := Test_Cases (I).Platform_Angular_Velocity;
+         T.Data_Dependency_Timestamp_Override := Solution_Time (I);
 
          -- Send tick to trigger algorithm:
-         T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+         T.Tick_T_Send ((Time => Tick_Time, Count => 0));
 
-         -- Verify output was produced:
+         -- Verify output was produced, stamped with the time of the solution:
          Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, I);
          Natural_Assert.Eq (T.Star_Tracker_Body_Attitude_History.Get_Count, I);
+         Sys_Time_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get (I).Header.Time, Solution_Time (I));
 
          -- Check output matches expected values:
          declare
