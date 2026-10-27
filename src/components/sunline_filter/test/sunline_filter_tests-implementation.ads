@@ -32,9 +32,8 @@ private
    -- the tick reaches them, without shutting out the readings that follow, and
    -- products stale by their stamp are still read.
    overriding procedure Test_Time_Anomalies (Self : in out Instance);
-   -- Ensure only the configured number of sensors is read and only those above the
-   -- threshold count as active.
-   overriding procedure Test_Fewer_Sensors (Self : in out Instance);
+   -- Ensure only the sensors reading above the threshold count as active.
+   overriding procedure Test_Sensor_Threshold (Self : in out Instance);
    -- Ensure the estimate reset re-seeds the state and covariance while the
    -- measurements reset keeps them.
    overriding procedure Test_Reset (Self : in out Instance);

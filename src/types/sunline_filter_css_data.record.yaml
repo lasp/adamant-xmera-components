@@ -10,5 +10,5 @@ fields:
     type: Long_Float
     format: F64
   - name: Cos_Values
-    description: "[-] Cosine reading of each sensor slot. Only the first configured number of sensors is read."
+    description: "[-] Cosine reading of each sensor slot."
     type: Packed_F64x8.T

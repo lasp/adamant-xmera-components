@@ -16,7 +16,6 @@ with Packed_F32x3;
 with Packed_F64;
 with Packed_F64x7;
 with Packed_F64x8;
-with Packed_U32;
 with Parameter;
 with Parameter_Enums.Assertion;
 use Parameter_Enums.Parameter_Update_Status;
@@ -50,7 +49,6 @@ package body Sunline_Filter_Tests.Implementation is
        -0.70710678, +0.00000000, -0.70710678,
        -0.70710678, -0.70710678, +0.00000000];
    Css_Scale_Factor : constant Packed_F64x8.T := [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0];
-   Number_Of_Css : constant Packed_U32.T := (Value => 8);
    Sensor_Threshold : constant Packed_F64.T := (Value => 0.0);
    Css_Noise : constant Packed_F64.T := (Value => 1.0E-4);
    Gyro_Noise : constant Packed_F64.T := (Value => 1.0E-5);
@@ -95,7 +93,7 @@ package body Sunline_Filter_Tests.Implementation is
    end Truth_Cosines;
 
    -- Stage and apply the whole configuration.
-   procedure Apply_Configuration (Self : in out Instance; Initial_State : in Packed_F64x7.T := Seed; Gyro_Noise_Std : in Packed_F64.T := Gyro_Noise; Sensors : in Packed_U32.T := Number_Of_Css; Threshold : in Packed_F64.T := Sensor_Threshold; Measurement_Delay : in Packed_F64.T := (Value => 0.0)) is
+   procedure Apply_Configuration (Self : in out Instance; Initial_State : in Packed_F64x7.T := Seed; Gyro_Noise_Std : in Packed_F64.T := Gyro_Noise; Threshold : in Packed_F64.T := Sensor_Threshold; Measurement_Delay : in Packed_F64.T := (Value => 0.0)) is
       T : Component.Sunline_Filter.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Sunline_Filter_Parameters.Instance;
    begin
@@ -108,7 +106,6 @@ package body Sunline_Filter_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Bias_Upper_Bound (Bias_Upper_Bound)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Css_N_Hat_B (Css_N_Hat_B)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Css_Scale_Factor (Css_Scale_Factor)), Success);
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Number_Of_Css (Sensors)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Sensor_Threshold (Threshold)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Css_Measurement_Noise_Std (Css_Noise)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Gyro_Measurement_Noise_Std (Gyro_Noise_Std)), Success);
@@ -411,13 +408,13 @@ package body Sunline_Filter_Tests.Implementation is
       Unsigned_64_Assert.Eq (Filter_State (Self).Last_Css_Measurement_Time, Sys_Time.Arithmetic.To_Nanoseconds (Tick_Time (9)));
    end Test_Time_Anomalies;
 
-   -- Only the first configured number of sensor slots is read, and of those only the
-   -- ones reading above the threshold count as active. With the sun near the first
-   -- body axis, the four sensors on that side each read about 0.7.
-   overriding procedure Test_Fewer_Sensors (Self : in out Instance) is
+   -- Only the sensors reading above the threshold count as active. With the sun near
+   -- the first body axis, the four sensors on that side each read about 0.7 and the
+   -- four on the far side read below zero.
+   overriding procedure Test_Sensor_Threshold (Self : in out Instance) is
       Steps : constant := 10;
    begin
-      Apply_Configuration (Self, Sensors => (Value => 4), Threshold => (Value => 0.5));
+      Apply_Configuration (Self, Threshold => (Value => 0.5));
       for Step in 1 .. Steps loop
          Send_Tick (Self, Step);
       end loop;
@@ -426,10 +423,10 @@ package body Sunline_Filter_Tests.Implementation is
       Check_Estimate (Self, Steps, Sun_Epsilon => 2.0E-2, Rate_Epsilon => 1.0E-3);
 
       -- A threshold above their reading leaves no sensor active:
-      Apply_Configuration (Self, Sensors => (Value => 4), Threshold => (Value => 0.8));
+      Apply_Configuration (Self, Threshold => (Value => 0.8));
       Send_Tick (Self, Steps + 1);
       Natural_Assert.Eq (Active_Css (Self), 0);
-   end Test_Fewer_Sensors;
+   end Test_Sensor_Threshold;
 
    -- Ensure the estimate reset re-seeds the state and covariance while the
    -- measurements reset keeps them.
@@ -527,11 +524,11 @@ package body Sunline_Filter_Tests.Implementation is
    end Test_Measurement_Delay;
 
    -- The algorithm requires alpha in (0, 1], beta in [0, 2], positive semi-definite
-   -- noise and covariance, a finite initial state, ordered positive bias bounds, a
-   -- sensor count in [1, 8], unit boresights, and scale factors, a threshold, noise
-   -- deviations, and a measurement delay that are not negative. Validation is the only
-   -- guard keeping a rejected value out of the throwing Create and Set_Config, so
-   -- exercise it directly.
+   -- noise and covariance, a finite initial state, ordered positive bias bounds,
+   -- unit boresights, and scale factors, a threshold, noise deviations, and a
+   -- measurement delay that are not negative. Validation is the only guard keeping a
+   -- rejected value out of the throwing Create and Set_Config, so exercise it
+   -- directly.
    overriding procedure Test_Invalid_Parameter (Self : in out Instance) is
       T : Component.Sunline_Filter.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Sunline_Filter_Parameters.Instance;
@@ -549,7 +546,6 @@ package body Sunline_Filter_Tests.Implementation is
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Bias_Upper_Bound (Bias_Upper_Bound)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Css_N_Hat_B (Css_N_Hat_B)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Css_Scale_Factor (Css_Scale_Factor)), Success);
-         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Number_Of_Css (Number_Of_Css)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Sensor_Threshold (Sensor_Threshold)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Css_Measurement_Noise_Std (Css_Noise)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Gyro_Measurement_Noise_Std (Gyro_Noise)), Success);
@@ -579,8 +575,6 @@ package body Sunline_Filter_Tests.Implementation is
       Not_Unit (0) := 2.0;
       Expect_Rejection (Params.Css_N_Hat_B (Not_Unit));
       Expect_Rejection (Params.Css_Scale_Factor ([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, -1.0]));
-      Expect_Rejection (Params.Number_Of_Css ((Value => 0)));
-      Expect_Rejection (Params.Number_Of_Css ((Value => 9)));
       Expect_Rejection (Params.Sensor_Threshold ((Value => -0.1)));
       Expect_Rejection (Params.Css_Measurement_Noise_Std ((Value => -0.1)));
       Expect_Rejection (Params.Gyro_Measurement_Noise_Std ((Value => -0.1)));

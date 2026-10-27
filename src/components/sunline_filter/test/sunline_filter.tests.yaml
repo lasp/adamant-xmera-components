@@ -9,8 +9,8 @@ tests:
     description: Ensure a product not refreshed since before a reset is not consumed again, products stamped before the tick the filter synchronized its time to are consumed and dropped, and the ones after it are applied.
   - name: Test_Time_Anomalies
     description: Ensure products stamped after the tick are applied at once and not again when the tick reaches them, without shutting out the readings that follow, and products stale by their stamp are still read.
-  - name: Test_Fewer_Sensors
-    description: Ensure only the configured number of sensors is read and only those above the threshold count as active.
+  - name: Test_Sensor_Threshold
+    description: Ensure only the sensors reading above the threshold count as active.
   - name: Test_Reset
     description: Ensure the estimate reset re-seeds the state and covariance while the measurements reset keeps them.
   - name: Test_Parameter_Update

@@ -19,7 +19,7 @@ package Sunline_Filter_Algorithm_C is
    type Sunline_Filter_Algorithm is limited private;
    type Sunline_Filter_Algorithm_Access is access all Sunline_Filter_Algorithm;
 
-   --* @brief Get the SUNLINE_FILTER_MAX_CSS constant for Ada validation.
+   --* @brief Get the MAX_NUM_CSS_SENSORS constant for Ada validation.
    --* @return The maximum number of coarse sun sensors.
    function Get_Max_Css return Unsigned_32
      with Import        => True,
@@ -34,7 +34,7 @@ package Sunline_Filter_Algorithm_C is
           External_Name => "SunlineFilterAlgorithm_getNumStates";
 
    -- ABI validation: the arrays crossing the FFI boundary are sized by the C-side
-   -- SUNLINE_FILTER_NUM_STATES and SUNLINE_FILTER_MAX_CSS, checked at elaboration. The
+   -- SUNLINE_FILTER_NUM_STATES and MAX_NUM_CSS_SENSORS, checked at elaboration. The
    -- count and the footprint of each wrapped array are tied to the getters, so a change
    -- to a C constant fails here rather than as silent memory corruption in the shim.
    pragma Assert (Sunline_Filter_State_Vector.C.U_C'Size = Sunline_Filter_State_Vector.T'Size);
@@ -56,7 +56,6 @@ package Sunline_Filter_Algorithm_C is
    --* @param Bias_Upper_Bound           [-]     Upper clamp on the CSS bias state; > the lower bound.
    --* @param Css_N_Hat                  [-]     Per-CSS boresight unit vectors in body frame.
    --* @param Css_Scale_Factor           [-]     Per-CSS calibration scale factor; each >= 0.
-   --* @param Number_Of_Css              [-]     Number of active CSS; in [1, SUNLINE_FILTER_MAX_CSS].
    --* @param Sensor_Threshold           [-]     Minimum cosine value that counts a sensor as active; >= 0.
    --* @param Css_Measurement_Noise_Std  [-]     CSS measurement noise std; >= 0.
    --* @param Gyro_Measurement_Noise_Std [rad/s] Gyro measurement noise std; >= 0.
@@ -73,7 +72,6 @@ package Sunline_Filter_Algorithm_C is
       Bias_Upper_Bound           : Long_Float;
       Css_N_Hat                  : access constant Sunline_Filter_Css_Matrix.C.U_C;
       Css_Scale_Factor           : access constant Sunline_Filter_Css_Vector.C.U_C;
-      Number_Of_Css              : Unsigned_32;
       Sensor_Threshold           : Long_Float;
       Css_Measurement_Noise_Std  : Long_Float;
       Gyro_Measurement_Noise_Std : Long_Float;
@@ -97,7 +95,6 @@ package Sunline_Filter_Algorithm_C is
       Bias_Upper_Bound           : Long_Float;
       Css_N_Hat                  : access constant Sunline_Filter_Css_Matrix.C.U_C;
       Css_Scale_Factor           : access constant Sunline_Filter_Css_Vector.C.U_C;
-      Number_Of_Css              : Unsigned_32;
       Sensor_Threshold           : Long_Float;
       Css_Measurement_Noise_Std  : Long_Float;
       Gyro_Measurement_Noise_Std : Long_Float;
@@ -130,7 +127,6 @@ package Sunline_Filter_Algorithm_C is
       Bias_Upper_Bound           : Long_Float;
       Css_N_Hat                  : access constant Sunline_Filter_Css_Matrix.C.U_C;
       Css_Scale_Factor           : access constant Sunline_Filter_Css_Vector.C.U_C;
-      Number_Of_Css              : Unsigned_32;
       Sensor_Threshold           : Long_Float;
       Css_Measurement_Noise_Std  : Long_Float;
       Gyro_Measurement_Noise_Std : Long_Float;
