@@ -1,9 +1,0 @@
----
-#  /*! @brief Abstracted gyro measurement input. */
-#  typedef struct {
-#      float gyro_B[3]; /*!< Gyro measurement in body frame (rad/s) */
-#  } GyroInput_c;
-fields:
-  - name: Gyro_B
-    type: Packed_F32x3.T
-    description: "[rad/s] Gyro measurement in body frame"

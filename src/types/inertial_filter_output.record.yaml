@@ -1,15 +1,21 @@
 ---
-#  /*! @brief Abstracted inertial filter output. */
 #  typedef struct {
-#      double timeTag; /*!< Time tag of filter solution (s) */
-#      int numObs;     /*!< Number of observations used in filter update */
+#      double state[INERTIAL_FILTER_NUM_STATES];                                  /*!< estimated state */
+#      double covariance[INERTIAL_FILTER_NUM_STATES][INERTIAL_FILTER_NUM_STATES]; /*!< N x N covariance (row-major) */
+#      InertialResiduals_c stAttResiduals;                                        /*!< star-tracker attitude residuals */
+#      InertialResiduals_c rateResiduals;                                         /*!< rate residuals */
 #  } InertialFilterOutput_c;
+description: Snapshot of the inertial filter after an update. Maps to InertialFilterOutput_c in the inertialFilter C shim, which returns it by value.
 fields:
-  - name: Time_Tag
-    type: Long_Float
-    format: F64
-    description: "[s] Time tag of filter solution"
-  - name: Num_Obs
-    type: Interfaces.Integer_32
-    format: I32
-    description: "[-] Number of observations used in filter update"
+  - name: State
+    description: "[-] Estimated state, the body attitude MRP followed by the body rate in rad/s."
+    type: Packed_F64x6.T
+  - name: Covariance
+    description: "[-] N x N state covariance in row major order."
+    type: Packed_F64x36.T
+  - name: St_Att_Residuals
+    description: Star tracker attitude residuals of this update.
+    type: Inertial_Filter_Residuals.T
+  - name: Rate_Residuals
+    description: Rate residuals of this update.
+    type: Inertial_Filter_Residuals.T

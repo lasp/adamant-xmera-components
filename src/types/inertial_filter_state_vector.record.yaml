@@ -1,0 +1,9 @@
+---
+#  typedef struct {
+#      double data[INERTIAL_FILTER_NUM_STATES]; /*!< [-] one entry per filter state */
+#  } InertialFilterStateVector_c;
+description: Record wrapping a state vector of the inertial filter, one entry per state. The states are the body attitude MRP followed by the body rate. Maps to InertialFilterStateVector_c in the inertialFilter C shim, which takes it by pointer.
+fields:
+  - name: Value
+    description: "[-] One entry per filter state."
+    type: Packed_F64x6.T

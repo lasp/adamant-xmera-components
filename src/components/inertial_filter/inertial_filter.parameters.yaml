@@ -1,0 +1,31 @@
+---
+description: Parameters for the Inertial Filter component. The process noise and the initial covariance are given by their diagonals, since the full matrices do not fit in a parameter.
+parameters:
+  - name: Alpha
+    description: "[-] Sigma point spread. Must be in (0, 1]."
+    type: Packed_F64.T
+    default: "(Value => 0.02)"
+  - name: Beta
+    description: "[-] Prior knowledge tunable. Must be in [0, 2]."
+    type: Packed_F64.T
+    default: "(Value => 2.0)"
+  - name: Process_Noise_Diagonal
+    description: "[-] Diagonal of the N x N process noise covariance, one entry per state: the attitude MRP followed by the body rate. Every entry must be finite and not negative."
+    type: Packed_F64x6.T
+    default: "[1.0E-14, 1.0E-14, 1.0E-14, 1.0E-16, 1.0E-16, 1.0E-16]"
+  - name: Initial_State
+    description: "[-] State the filter is seeded with, the attitude MRP followed by the body rate in rad/s. Must be finite."
+    type: Packed_F64x6.T
+    default: "[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]"
+  - name: Initial_Covariance_Diagonal
+    description: "[-] Diagonal of the N x N covariance the filter is seeded with, one entry per state. Every entry must be finite and not negative."
+    type: Packed_F64x6.T
+    default: "[1.0E-4, 1.0E-4, 1.0E-4, 1.0E-4, 1.0E-4, 1.0E-4]"
+  - name: St_Measurement_Noise_Std
+    description: "[-] Standard deviation of the star tracker attitude measurement noise. Must not be negative."
+    type: Packed_F64.T
+    default: "(Value => 1.0E-4)"
+  - name: Rate_Measurement_Noise_Std
+    description: "[rad/s] Standard deviation of the rate measurement noise. Must not be negative."
+    type: Packed_F64.T
+    default: "(Value => 0.001)"
