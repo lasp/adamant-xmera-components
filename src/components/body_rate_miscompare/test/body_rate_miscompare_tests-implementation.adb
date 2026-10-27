@@ -31,14 +31,14 @@ package body Body_Rate_Miscompare_Tests.Implementation is
       -- Make necessary connections between tester and component:
       Self.Tester.Connect;
 
+      -- Reset the component's fault transition tracking state and Use_Imu_Rates
+      -- override before Init seeds the algorithm from them: on targets where the
+      -- tester is statically allocated and reused across tests (bareboard), the
+      -- instance record defaults are not re-applied between tests.
+      Self.Tester.Reset_Instance_State;
+
       -- Call component init here.
       Self.Tester.Component_Instance.Init;
-
-      -- Reset the component's fault transition tracking state: on targets
-      -- where the tester is statically allocated and reused across tests
-      -- (bareboard), the instance record defaults are not re-applied between
-      -- tests.
-      Self.Tester.Reset_Prev_Fault_Latched;
 
       -- Call the component set up method that the assembly would normally call.
       Self.Tester.Component_Instance.Set_Up;

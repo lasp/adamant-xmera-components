@@ -95,13 +95,14 @@ package Component.Body_Rate_Miscompare.Implementation.Tester is
    -- Test initialization functions:
    ---------------------------------------
    procedure Connect (Self : in out Instance);
-   -- Reset the component's fault transition tracking state. On targets where
-   -- the tester is statically allocated and reused across tests (bareboard),
-   -- the component instance's record defaults are not re-applied between
-   -- tests, so the fixture resets this state explicitly. The tester is a
-   -- child of the implementation package and so has visibility into the
-   -- private instance record.
-   procedure Reset_Prev_Fault_Latched (Self : in out Instance);
+   -- Reset the component's fault transition tracking state and Use_Imu_Rates
+   -- override to their record defaults. On targets where the tester is
+   -- statically allocated and reused across tests (bareboard), the component
+   -- instance's record defaults are not re-applied between tests, so the
+   -- fixture resets this state explicitly. The tester is a child of the
+   -- implementation package and so has visibility into the private instance
+   -- record.
+   procedure Reset_Instance_State (Self : in out Instance);
 
    ---------------------------------------
    -- Invokee connector primitives:

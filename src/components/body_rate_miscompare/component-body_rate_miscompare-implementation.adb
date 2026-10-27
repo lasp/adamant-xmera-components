@@ -126,7 +126,7 @@ package body Component.Body_Rate_Miscompare.Implementation is
    -----------------------------------------------
    -- Force the algorithm to always output IMU rates (Value => True) or resume normal
    -- miscompare logic (Value => False). Drives the algorithm's setUseImuRates, which
-   -- also clears a latched fault when set False.
+   -- also clears a latched fault when set False. Defaults to True at initialization.
    overriding function Use_Imu_Rates (Self : in out Instance; Arg : in Packed_Boolean.T) return Command_Execution_Status.E is
       use Command_Execution_Status;
    begin
