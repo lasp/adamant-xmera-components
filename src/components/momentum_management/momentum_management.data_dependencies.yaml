@@ -1,0 +1,6 @@
+---
+description: Data dependencies for the Momentum Management component.
+data_dependencies:
+  - name: Wheel_Speeds
+    type: Rwa_Speeds.T
+    description: "[rad/s] Current speed of each reaction wheel."
