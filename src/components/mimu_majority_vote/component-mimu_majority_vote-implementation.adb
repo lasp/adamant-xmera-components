@@ -15,6 +15,10 @@ package body Component.Mimu_Majority_Vote.Implementation is
    -- Every reconfiguration path goes through here so the configuration is assembled in
    -- exactly one place. Init cannot use it, because it constructs the handle rather than
    -- reconfiguring one.
+   --
+   -- TODO: review whether the Re_Initialize below belongs here or in the algorithm's
+   -- setConfig. What a reconfiguration does to runtime state should be decided once,
+   -- in the algorithm, for every algorithm that carries state.
    procedure Apply_Config (Self : in out Instance) is
    begin
       Set_Config (
