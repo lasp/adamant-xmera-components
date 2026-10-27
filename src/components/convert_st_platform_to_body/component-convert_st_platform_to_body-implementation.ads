@@ -8,7 +8,7 @@ with Parameter_Update;
 with Convert_St_Platform_To_Body_Algorithm_C; use Convert_St_Platform_To_Body_Algorithm_C;
 
 -- Converts the star tracker case-frame attitude and angular velocity to the
--- spacecraft body frame using a fixed platform-to-body DCM.
+-- spacecraft body frame using a fixed case mounting attitude.
 package Component.Convert_St_Platform_To_Body.Implementation is
 
    -- The component class instance record:
@@ -79,7 +79,7 @@ private
    -- to be implemented here.
    overriding function Validate_Parameters (
       Self : in out Instance;
-      Dcm_Cb : in Packed_F32x9.U
+      Sigma_Cb : in Packed_F32x3.U
    ) return Parameter_Validation_Status.E;
 
    -----------------------------------------------

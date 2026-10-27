@@ -15,7 +15,7 @@ with Data_Product;
 with St_Att.Representation;
 
 -- Converts the star tracker case-frame attitude and angular velocity to the
--- spacecraft body frame using a fixed platform-to-body DCM.
+-- spacecraft body frame using a fixed case mounting attitude.
 package Component.Convert_St_Platform_To_Body.Implementation.Tester is
 
    use Component.Convert_St_Platform_To_Body_Reciprocal;

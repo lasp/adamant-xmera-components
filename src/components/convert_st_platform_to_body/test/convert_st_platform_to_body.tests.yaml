@@ -4,4 +4,4 @@ tests:
   - name: Test
     description: Run algorithm to ensure integration is sound, and check the output is stamped with the timestamp of the attitude solution.
   - name: Test_Invalid_Parameter
-    description: Ensure a staged mounting DCM the algorithm would reject is refused at validation.
+    description: Ensure a staged mounting attitude the algorithm would reject is refused at validation.

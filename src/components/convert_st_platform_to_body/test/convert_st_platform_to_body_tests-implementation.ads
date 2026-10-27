@@ -18,7 +18,8 @@ private
    -- with the timestamp of the attitude solution.
    overriding procedure Test (Self : in out Instance);
 
-   -- Ensure a staged mounting DCM the algorithm would reject is refused at validation.
+   -- Ensure a staged mounting attitude the algorithm would reject is refused at
+   -- validation.
    overriding procedure Test_Invalid_Parameter (Self : in out Instance);
 
    -- Test data and state:

@@ -7,7 +7,7 @@ with St_Platform_Angular_Velocity;
 with St_Platform_Measurement;
 with St_Platform_Measurement.C;
 with St_Att.C;
-with Packed_F32x9.C;
+with Packed_F32x3.C;
 
 package body Component.Convert_St_Platform_To_Body.Implementation is
 
@@ -17,7 +17,7 @@ package body Component.Convert_St_Platform_To_Body.Implementation is
    -- Initializes the convert star tracker platform to body algorithm.
    overriding procedure Init (Self : in out Instance) is
    begin
-      Self.Alg := Create (Dcm_Cb => (Value => Packed_F32x9.C.To_C (Self.Dcm_Cb)));
+      Self.Alg := Create (Sigma_Cb => (Value => Packed_F32x3.C.To_C (Self.Sigma_Cb)));
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -64,7 +64,7 @@ package body Component.Convert_St_Platform_To_Body.Implementation is
          Platform_Angular_Velocity => Platform_Angular_Velocity_U.Platform_Angular_Velocity
       ));
    begin
-      -- Apply any pending parameter update (e.g. new Dcm_Cb):
+      -- Apply any pending parameter update (e.g. new Sigma_Cb):
       Self.Update_Parameters;
 
       -- Call the C algorithm and publish the resulting body-frame attitude, stamped
@@ -86,30 +86,42 @@ package body Component.Convert_St_Platform_To_Body.Implementation is
    -- Parameter handlers:
    -----------------------------------------------
    -- This procedure is called when the parameters of a component have been updated. In this case we
-   -- push the body-to-case DCM into the C algorithm so subsequent updates use the new platform
-   -- alignment.
+   -- push the case mounting attitude into the C algorithm so subsequent updates use the new
+   -- platform alignment.
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
    begin
-      -- Rebuild the algorithm configuration from the updated DCM parameter. The value was
+      -- Rebuild the algorithm configuration from the updated mounting attitude. The value was
       -- checked by Validate_Parameters at staging, so Set_Config will not reject it.
-      Set_Config (Self.Alg, Dcm_Cb => (Value => Packed_F32x9.C.To_C (Self.Dcm_Cb)));
+      Set_Config (Self.Alg, Sigma_Cb => (Value => Packed_F32x3.C.To_C (Self.Sigma_Cb)));
    end Update_Parameters_Action;
 
-   -- Validate a staged Dcm_Cb before it is applied by asking the algorithm's own
-   -- non-throwing Validate_Config predicate (a valid DCM is orthonormal with det +1), so
+   -- Validate a staged Sigma_Cb before it is applied by asking the algorithm's own
+   -- non-throwing Validate_Config predicate (a valid mounting attitude is finite), so
    -- the config rules live solely in the algorithm. Rejecting an invalid update here at
    -- staging keeps it from reaching the throwing Create/Set_Config across the FFI boundary.
    overriding function Validate_Parameters (
       Self : in out Instance;
-      Dcm_Cb : in Packed_F32x9.U
+      Sigma_Cb : in Packed_F32x3.U
    ) return Parameter_Validation_Status.E is
       pragma Unreferenced (Self);
    begin
-      if Validate_Config (Dcm_Cb => (Value => Packed_F32x9.C.To_C (Dcm_Cb))) then
+      if Validate_Config (Sigma_Cb => (Value => Packed_F32x3.C.To_C (Sigma_Cb))) then
          return Parameter_Validation_Status.Valid;
       else
          return Parameter_Validation_Status.Invalid;
       end if;
+   exception
+      -- Reachable, and the parameter rejection test covers it: float array staging accepts a
+      -- non-finite value, and marshalling it in Packed_F32x3.C.To_C raises. Rejecting the set
+      -- here keeps that from unwinding into the Parameters component.
+      -- TODO: The generated validation of the staged bytes should reject a non-finite
+      -- value, but GNAT Pro 25.2 evaluates 'Valid on an element of a packed float array
+      -- with a non native Scalar_Storage_Order on the unswapped bytes, so at staging a
+      -- NaN or infinity passes. FSF GCC fixed this in 60f5887173a4. Once the compiler
+      -- fix arrives this handler is unreachable and can go, along with the injection in
+      -- the parameter rejection test.
+      when Constraint_Error =>
+         return Parameter_Validation_Status.Invalid;
    end Validate_Parameters;
 
    -----------------------------------------------
