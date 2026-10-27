@@ -1,0 +1,27 @@
+---
+#  typedef struct {
+#      bool valid;                                 /*!< [-] true iff a CSS measurement fired this cycle */
+#      int32_t numberOfActiveCss;                  /*!< [-] number of CSS above the sensor threshold */
+#      double observation[SUNLINE_FILTER_MAX_CSS]; /*!< [-] measured CSS cosine values */
+#      double preFit[SUNLINE_FILTER_MAX_CSS];      /*!< [-] pre-update CSS residuals */
+#      double postFit[SUNLINE_FILTER_MAX_CSS];     /*!< [-] post-update CSS residuals */
+#  } SunlineCssResidualsOutput_c;
+description: Residuals of the coarse sun sensor measurement from one sunline filter update. Maps to SunlineCssResidualsOutput_c in the sunlineFilter C shim.
+fields:
+  - name: Valid
+    description: Whether a CSS measurement fired this update. The other fields are meaningful only when it did. Mirrors the C99 bool in the shim's struct.
+    type: Boolean
+    format: E8
+  - name: Number_Of_Active_Css
+    description: "[-] Number of sensors above the sensor threshold. Only that many entries of each array are meaningful."
+    type: Interfaces.Integer_32
+    format: I32
+  - name: Observation
+    description: "[-] Measured cosine values."
+    type: Packed_F64x8.T
+  - name: Pre_Fit
+    description: "[-] Residuals before the update."
+    type: Packed_F64x8.T
+  - name: Post_Fit
+    description: "[-] Residuals after the update."
+    type: Packed_F64x8.T

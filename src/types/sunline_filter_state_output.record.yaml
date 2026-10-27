@@ -1,0 +1,13 @@
+---
+#  typedef struct {
+#      double state[SUNLINE_FILTER_NUM_STATES];                                 /*!< [-] filter state estimate */
+#      double covariance[SUNLINE_FILTER_NUM_STATES][SUNLINE_FILTER_NUM_STATES]; /*!< [-] N x N state covariance */
+#  } SunlineFilterStateOutput_c;
+description: State and covariance of the sunline filter after an update. Maps to SunlineFilterStateOutput_c in the sunlineFilter C shim.
+fields:
+  - name: State
+    description: "[-] Estimated state: the sun direction in the body frame, the body rate in rad/s, and the CSS intensity bias."
+    type: Packed_F64x7.T
+  - name: Covariance
+    description: "[-] N x N state covariance in row major order."
+    type: Packed_F64x49.T

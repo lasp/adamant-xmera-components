@@ -1,0 +1,22 @@
+---
+#  typedef struct {
+#      bool valid;            /*!< [-] true iff a rate measurement fired this cycle */
+#      double observation[3]; /*!< [rad/s] measured body rate */
+#      double preFit[3];      /*!< [rad/s] pre-update rate residuals */
+#      double postFit[3];     /*!< [rad/s] post-update rate residuals */
+#  } SunlineRateResidualsOutput_c;
+description: Residuals of the gyro rate measurement from one sunline filter update. Maps to SunlineRateResidualsOutput_c in the sunlineFilter C shim.
+fields:
+  - name: Valid
+    description: Whether a rate measurement fired this update. The other fields are meaningful only when it did. Mirrors the C99 bool in the shim's struct.
+    type: Boolean
+    format: E8
+  - name: Observation
+    description: "[rad/s] Measured body rate."
+    type: Packed_F64x3.T
+  - name: Pre_Fit
+    description: "[rad/s] Residuals before the update."
+    type: Packed_F64x3.T
+  - name: Post_Fit
+    description: "[rad/s] Residuals after the update."
+    type: Packed_F64x3.T

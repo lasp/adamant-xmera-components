@@ -1,0 +1,9 @@
+---
+#  typedef struct {
+#      double data[SUNLINE_FILTER_MAX_CSS]; /*!< [-] one entry per CSS */
+#  } SunlineFilterCssVector_c;
+description: Record wrapping one value per coarse sun sensor slot. Maps to SunlineFilterCssVector_c in the sunlineFilter C shim, which takes it by pointer.
+fields:
+  - name: Value
+    description: "[-] One entry per coarse sun sensor slot."
+    type: Packed_F64x8.T

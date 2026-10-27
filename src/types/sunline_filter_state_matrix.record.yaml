@@ -1,0 +1,9 @@
+---
+#  typedef struct {
+#      double data[SUNLINE_FILTER_NUM_STATES * SUNLINE_FILTER_NUM_STATES]; /*!< [-] row-major N x N */
+#  } SunlineFilterStateMatrix_c;
+description: Record wrapping a state matrix of the sunline filter, N x N in row major order. Maps to SunlineFilterStateMatrix_c in the sunlineFilter C shim, which takes it by pointer.
+fields:
+  - name: Value
+    description: "[-] N x N matrix in row major order."
+    type: Packed_F64x49.T
