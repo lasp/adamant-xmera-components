@@ -117,7 +117,6 @@ private
       Bias_Upper_Bound : in Packed_F64.U;
       Css_N_Hat_B : in Packed_F32x24.U;
       Css_Scale_Factor : in Packed_F64x8.U;
-      Number_Of_Css : in Packed_U32.U;
       Sensor_Threshold : in Packed_F64.U;
       Css_Measurement_Noise_Std : in Packed_F64.U;
       Gyro_Measurement_Noise_Std : in Packed_F64.U;

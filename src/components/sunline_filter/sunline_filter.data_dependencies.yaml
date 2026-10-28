@@ -6,4 +6,4 @@ data_dependencies:
     description: "[rad/s] Selected body rate in body frame components, the gyro measurement of the filter."
   - name: Css_Cosines
     type: Css_Sensor_Values.T
-    description: "[-] Corrected cosine value of each coarse sun sensor slot, the sun sensor measurement of the filter. Only the first configured number of sensors is read."
+    description: "[-] Corrected cosine value of each coarse sun sensor slot, the sun sensor measurement of the filter."

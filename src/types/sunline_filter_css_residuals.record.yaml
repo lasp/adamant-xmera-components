@@ -1,10 +1,10 @@
 ---
 #  typedef struct {
-#      bool valid;                                 /*!< [-] true iff a CSS measurement fired this cycle */
-#      int32_t numberOfActiveCss;                  /*!< [-] number of CSS above the sensor threshold */
-#      double observation[SUNLINE_FILTER_MAX_CSS]; /*!< [-] measured CSS cosine values */
-#      double preFit[SUNLINE_FILTER_MAX_CSS];      /*!< [-] pre-update CSS residuals */
-#      double postFit[SUNLINE_FILTER_MAX_CSS];     /*!< [-] post-update CSS residuals */
+#      bool valid;                              /*!< [-] true iff a CSS measurement fired this cycle */
+#      int32_t numberOfActiveCss;               /*!< [-] number of CSS above the sensor threshold */
+#      double observation[MAX_NUM_CSS_SENSORS]; /*!< [-] measured CSS cosine values */
+#      double preFit[MAX_NUM_CSS_SENSORS];      /*!< [-] pre-update CSS residuals */
+#      double postFit[MAX_NUM_CSS_SENSORS];     /*!< [-] post-update CSS residuals */
 #  } SunlineCssResidualsOutput_c;
 description: Residuals of the coarse sun sensor measurement from one sunline filter update. Maps to SunlineCssResidualsOutput_c in the sunlineFilter C shim.
 fields:

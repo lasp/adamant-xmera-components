@@ -1,7 +1,7 @@
 ---
 #  typedef struct {
-#      double timeTag;                           /*!< [s] time tag of the CSS reading */
-#      double cosValues[SUNLINE_FILTER_MAX_CSS]; /*!< [-] CSS cosine measurement values */
+#      double timeTag;                        /*!< [s] time tag of the CSS reading */
+#      double cosValues[MAX_NUM_CSS_SENSORS]; /*!< [-] CSS cosine measurement values */
 #  } SunlineCssData_c;
 description: Coarse sun sensor reading for the sunline filter. Maps to SunlineCssData_c in the sunlineFilter C shim, which takes it by pointer.
 fields:
@@ -10,5 +10,5 @@ fields:
     type: Long_Float
     format: F64
   - name: Cos_Values
-    description: "[-] Cosine reading of each sensor slot. Only the first configured number of sensors is read."
+    description: "[-] Cosine reading of each sensor slot."
     type: Packed_F64x8.T

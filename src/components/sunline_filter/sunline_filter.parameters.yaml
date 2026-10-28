@@ -30,7 +30,7 @@ parameters:
     type: Packed_F64.T
     default: "(Value => 1.5)"
   - name: Css_N_Hat_B
-    description: "[-] Boresight unit vector of each coarse sun sensor slot in body frame components, three per sensor in row major order. The first configured number of sensors must be unit vectors to within 1e-3."
+    description: "[-] Boresight unit vector of each coarse sun sensor slot in body frame components, three per sensor in row major order. Each must be a unit vector to within 1e-3."
     type: Packed_F32x24.T
     default: "[+0.70710678, -0.50000000, +0.50000000,
                +0.70710678, -0.50000000, -0.50000000,
@@ -44,10 +44,6 @@ parameters:
     description: "[-] Calibration scale factor of each coarse sun sensor slot. One means the nominal response. Every entry must not be negative."
     type: Packed_F64x8.T
     default: "[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]"
-  - name: Number_Of_Css
-    description: "[-] Number of coarse sun sensors in use, the first that many slots. Must be in [1, 8]."
-    type: Packed_U32.T
-    default: "(Value => 8)"
   - name: Sensor_Threshold
     description: "[-] Cosine value above which a sensor counts as active in a measurement. Must not be negative."
     type: Packed_F64.T
