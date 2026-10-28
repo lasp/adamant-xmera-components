@@ -31,14 +31,14 @@ package body Body_Rate_Miscompare_Tests.Implementation is
       -- Make necessary connections between tester and component:
       Self.Tester.Connect;
 
+      -- Reset the component's fault transition tracking state and Use_Imu_Rates
+      -- override before Init seeds the algorithm from them: on targets where the
+      -- tester is statically allocated and reused across tests (bareboard), the
+      -- instance record defaults are not re-applied between tests.
+      Self.Tester.Reset_Instance_State;
+
       -- Call component init here.
       Self.Tester.Component_Instance.Init;
-
-      -- Reset the component's fault transition tracking state: on targets
-      -- where the tester is statically allocated and reused across tests
-      -- (bareboard), the instance record defaults are not re-applied between
-      -- tests.
-      Self.Tester.Reset_Prev_Fault_Latched;
 
       -- Call the component set up method that the assembly would normally call.
       Self.Tester.Component_Instance.Set_Up;
@@ -90,6 +90,10 @@ package body Body_Rate_Miscompare_Tests.Implementation is
 
       Expected_Dp_Count : Natural := 0;
    begin
+      -- The component defaults to forcing IMU rates, so turn the override off to
+      -- exercise the miscompare logic:
+      T.Command_T_Send (T.Commands.Use_Imu_Rates ((Value => False)));
+
       -- Stage and apply the threshold parameter:
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Body_Rate_Threshold (Threshold)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
@@ -230,6 +234,10 @@ package body Body_Rate_Miscompare_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Fault_Persistence_Limit ((Value => 3))), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
 
+      -- The component defaults to forcing IMU rates, so turn the override off to
+      -- exercise the miscompare persistence logic:
+      T.Command_T_Send (T.Commands.Use_Imu_Rates ((Value => False)));
+
       -- Persistent disagreement:
       T.Imu_Body := (Gyro => (Average => Imu_Rate, Fault_Detected => False, Imu_Difference_Mag => [others => 0.0], Imu_Valid => [others => True]), Accel => (Average => [others => 0.0], Fault_Detected => False, Imu_Difference_Mag => [others => 0.0], Imu_Valid => [others => True]));
       T.Star_Tracker_Attitude := (Time_Tag => 0, Sigma_Bn => [0.0, 0.0, 0.0], Omega_Bn_B => St_Rate);
@@ -270,6 +278,10 @@ package body Body_Rate_Miscompare_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Body_Rate_Threshold ((Value => 1.0))), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Fault_Persistence_Limit ((Value => 1))), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+
+      -- The component defaults to forcing IMU rates, so turn the override off to
+      -- start from the miscompare logic:
+      T.Command_T_Send (T.Commands.Use_Imu_Rates ((Value => False)));
 
       T.Imu_Body := (Gyro => (Average => Imu_Rate, Fault_Detected => False, Imu_Difference_Mag => [others => 0.0], Imu_Valid => [others => True]), Accel => (Average => [others => 0.0], Fault_Detected => False, Imu_Difference_Mag => [others => 0.0], Imu_Valid => [others => True]));
 

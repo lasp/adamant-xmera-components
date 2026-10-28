@@ -30,8 +30,9 @@ private
       Prev_Fault_Latched : Boolean := False;
       -- Command-settable override forcing IMU rates. It has no parameter, so this
       -- field is the Ada-side source of truth, folded into the config alongside the
-      -- threshold/persistence parameters.
-      Use_Imu_Rates : Boolean := False;
+      -- threshold/persistence parameters. Defaults to True so the component starts
+      -- out trusting the IMU until the ground commands the miscompare logic on.
+      Use_Imu_Rates : Boolean := True;
    end record;
 
    ---------------------------------------
@@ -75,7 +76,7 @@ private
    --    Commands for the Body Rate Miscompare component.
    -- Force the algorithm to always output IMU rates (Value => True) or resume normal
    -- miscompare logic (Value => False). Drives the algorithm's setUseImuRates, which
-   -- also clears a latched fault when set False.
+   -- also clears a latched fault when set False. Defaults to True at initialization.
    overriding function Use_Imu_Rates (Self : in out Instance; Arg : in Packed_Boolean.T) return Command_Execution_Status.E;
 
    -- Invalid command handler. This procedure is called when a command's arguments are found to be invalid:

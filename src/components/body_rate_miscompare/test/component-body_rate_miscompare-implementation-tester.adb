@@ -66,12 +66,14 @@ package body Component.Body_Rate_Miscompare.Implementation.Tester is
       Self.Attach_Command_T_Send (To_Component => Self.Component_Instance'Unchecked_Access, Hook => Self.Component_Instance.Command_T_Recv_Sync_Access);
    end Connect;
 
-   -- Reset the component's fault transition tracking state, for test
-   -- isolation on targets that reuse a statically allocated tester.
-   procedure Reset_Prev_Fault_Latched (Self : in out Instance) is
+   -- Reset the component's fault transition tracking state and Use_Imu_Rates
+   -- override, for test isolation on targets that reuse a statically allocated
+   -- tester.
+   procedure Reset_Instance_State (Self : in out Instance) is
    begin
       Self.Component_Instance.Prev_Fault_Latched := False;
-   end Reset_Prev_Fault_Latched;
+      Self.Component_Instance.Use_Imu_Rates := True;
+   end Reset_Instance_State;
 
    -- Helper function for returning data dependencies:
    function Return_Data_Dependency (Self : in out Instance; Arg : in Data_Product_Fetch.T) return Data_Product_Return.T is
