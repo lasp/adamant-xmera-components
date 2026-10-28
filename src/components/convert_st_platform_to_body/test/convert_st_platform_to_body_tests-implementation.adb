@@ -5,7 +5,7 @@
 with Interfaces; use Interfaces;
 with Basic_Assertions; use Basic_Assertions;
 with Packed_F32x3.Assertion; use Packed_F32x3.Assertion;
-with Packed_F32x9;
+with Parameter;
 with St_Platform_Attitude;
 with St_Platform_Angular_Velocity;
 with St_Att;
@@ -64,7 +64,7 @@ package body Convert_St_Platform_To_Body_Tests.Implementation is
       Params : Convert_St_Platform_To_Body_Parameters.Instance;
 
       type Test_Vector is record
-         Dcm_Cb                    : Packed_F32x9.T;
+         Sigma_Cb                  : Packed_F32x3.T;
          Platform_Attitude         : St_Platform_Attitude.T;
          Platform_Angular_Velocity : St_Platform_Angular_Velocity.T;
          Expected_Time_Tag         : Interfaces.Unsigned_64;
@@ -72,8 +72,8 @@ package body Convert_St_Platform_To_Body_Tests.Implementation is
          Expected_Omega_Bn_B       : Packed_F32x3.T;
       end record;
 
-      -- Case 1: Identity mounting DCM, 30-deg rotation about z, small rate about
-      -- [0.01, -0.02, 0.03] rad. With identity DCM sigma_BN = sigma_CN and
+      -- Case 1: Zero mounting MRP, 30-deg rotation about z, small rate about
+      -- [0.01, -0.02, 0.03] rad. With a zero mounting MRP sigma_BN = sigma_CN and
       -- omega_BN_B = omega_CN_C.
       --   q_CN (scalar last, as the star tracker reports it) = [0, 0, sin(pi/12), cos(pi/12)]
       --                                                     = [0, 0, 0.25881905, 0.96592583]
@@ -84,18 +84,18 @@ package body Convert_St_Platform_To_Body_Tests.Implementation is
       --   dq (scalar last) = [axis*sin(|omega|/2), cos(|omega|/2)]
       --                    ~= [0.00499996, -0.00999992, 0.01499988, 0.99982493]
       --
-      -- Case 2: Identity mounting DCM, 60-deg rotation about x, zero rate
+      -- Case 2: Zero mounting MRP, 60-deg rotation about x, zero rate
       -- (dq = identity). Expect sigma_BN = sigma_CN, omega_BN_B = 0.
       --   q_CN (scalar last, as the star tracker reports it) = [sin(pi/6), 0, 0, cos(pi/6)]
       --                                                     = [0.5, 0, 0, 0.86602540]
       --   sigma_CN = [0.5/1.86602540, 0, 0] = [0.26794919, 0, 0]
       --
-      -- Case 3: 45-deg z-axis mounting DCM + 60-deg x-axis case attitude +
-      -- omega_CN_C = [-0.015, 0.008, 0.022] rad. Mirrors the Python
-      -- test_rotated_dcm in _tests/test_convertStPlatformToBody.py.
+      -- Case 3: 45-deg z-axis mounting attitude, the MRP [0, 0, tan(pi/16)], + 60-deg
+      -- x-axis case attitude + omega_CN_C = [-0.015, 0.008, 0.022] rad. Mirrors the
+      -- Python test_rotated_mounting in _tests/test_convertStPlatformToBody.py.
       --   q_CN (scalar last) = [0.5, 0, 0, 0.86602540]
       --   dq_CN (scalar last) ~= [-0.00750022, 0.00400012, 0.01100032, 0.99990336]
-      --   sigma_BN = addMRP(sigma_CN, C2MRP(dcm_CB^T))
+      --   sigma_BN = addMRP(sigma_CN, -sigma_CB)
       --            ~= [0.25661850, 0.10629486, -0.18410810]
       --   omega_BN_B = dcm_CB^T * omega_CN_C
       --            ~= [-0.01626346, -0.00494975, 0.022]
@@ -106,9 +106,7 @@ package body Convert_St_Platform_To_Body_Tests.Implementation is
 
       Test_Cases : constant array (1 .. 3) of Test_Vector := [
          (
-            Dcm_Cb => [1.0, 0.0, 0.0,
-                       0.0, 1.0, 0.0,
-                       0.0, 0.0, 1.0],
+            Sigma_Cb => [0.0, 0.0, 0.0],
             Platform_Attitude => (
                Time_Tag          => 1_000_000_000,
                Platform_Attitude => [0.0, 0.0, 0.25881905, 0.96592583]),
@@ -120,9 +118,7 @@ package body Convert_St_Platform_To_Body_Tests.Implementation is
             Expected_Omega_Bn_B    => [0.01, -0.02, 0.03]
          ),
          (
-            Dcm_Cb => [1.0, 0.0, 0.0,
-                       0.0, 1.0, 0.0,
-                       0.0, 0.0, 1.0],
+            Sigma_Cb => [0.0, 0.0, 0.0],
             Platform_Attitude => (
                Time_Tag          => 1_500_000_000,
                Platform_Attitude => [0.5, 0.0, 0.0, 0.86602540]),
@@ -134,9 +130,7 @@ package body Convert_St_Platform_To_Body_Tests.Implementation is
             Expected_Omega_Bn_B    => [0.0, 0.0, 0.0]
          ),
          (
-            Dcm_Cb => [0.70710678,  0.70710678, 0.0,
-                      -0.70710678,  0.70710678, 0.0,
-                       0.0,         0.0,        1.0],
+            Sigma_Cb => [0.0, 0.0, 0.19891237],
             Platform_Attitude => (
                Time_Tag          => 2_000_000_000,
                Platform_Attitude => [0.5, 0.0, 0.0, 0.86602540]),
@@ -150,9 +144,9 @@ package body Convert_St_Platform_To_Body_Tests.Implementation is
       ];
    begin
       for I in Test_Cases'Range loop
-         -- Stage and apply the mounting DCM parameter for this case:
+         -- Stage and apply the mounting attitude parameter for this case:
          Parameter_Update_Status_Assert.Eq
-           (T.Stage_Parameter (Params.Dcm_Cb (Test_Cases (I).Dcm_Cb)), Success);
+           (T.Stage_Parameter (Params.Sigma_Cb (Test_Cases (I).Sigma_Cb)), Success);
          Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
 
          -- Set data dependencies, stamped with the time of the solution, which is
@@ -186,45 +180,36 @@ package body Convert_St_Platform_To_Body_Tests.Implementation is
       end loop;
    end Test;
 
-   -- The mounting DCM is the component's only parameter, and the algorithm requires
-   -- it to be orthonormal with determinant +1. Validation is the only guard keeping a
-   -- rejected value out of the throwing Set_Config, so exercise it directly.
+   -- The mounting attitude is the component's only parameter, and the algorithm requires
+   -- it to be finite. Validation is the only guard keeping a rejected value out of the
+   -- throwing Set_Config, so exercise it directly.
    overriding procedure Test_Invalid_Parameter (Self : in out Instance) is
       T : Component.Convert_St_Platform_To_Body.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Convert_St_Platform_To_Body_Parameters.Instance;
 
-      Valid_Dcm : constant Packed_F32x9.T := [1.0, 0.0, 0.0,
-                                              0.0, 1.0, 0.0,
-                                              0.0, 0.0, 1.0];
+      Zero_Mounting : constant Packed_F32x3.T := [0.0, 0.0, 0.0];
    begin
-      -- The identity mounting DCM is accepted:
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Dcm_Cb (Valid_Dcm)), Success);
+      -- The zero mounting MRP is accepted:
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Sigma_Cb (Zero_Mounting)), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
 
-      -- An all-zero matrix is rejected (singular, so not orthonormal):
-      Parameter_Update_Status_Assert.Eq
-        (T.Stage_Parameter (Params.Dcm_Cb ([0.0, 0.0, 0.0,
-                                            0.0, 0.0, 0.0,
-                                            0.0, 0.0, 0.0])), Success);
+      -- A non-finite mounting attitude is rejected. The value is injected as raw bytes
+      -- because the compiler will not let a non-finite Short_Float be written as a
+      -- literal, and because that is how one would arrive: as bytes from the ground.
+      -- Staging accepts it, and converting it for the algorithm raises, which validation
+      -- reports as a rejection.
+      declare
+         Par : Parameter.T := Params.Sigma_Cb (Zero_Mounting);
+      begin
+         -- Overwrite the first of the three big-endian floats with +infinity.
+         Par.Buffer (Par.Buffer'First .. Par.Buffer'First + 3) := [16#7F#, 16#80#, 16#00#, 16#00#];
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Par), Success);
+      end;
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
 
-      -- A scaled identity is rejected (orthogonal columns, but determinant 8):
-      Parameter_Update_Status_Assert.Eq
-        (T.Stage_Parameter (Params.Dcm_Cb ([2.0, 0.0, 0.0,
-                                            0.0, 2.0, 0.0,
-                                            0.0, 0.0, 2.0])), Success);
-      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
-
-      -- A reflection is rejected (orthonormal, but determinant -1):
-      Parameter_Update_Status_Assert.Eq
-        (T.Stage_Parameter (Params.Dcm_Cb ([1.0, 0.0,  0.0,
-                                            0.0, 1.0,  0.0,
-                                            0.0, 0.0, -1.0])), Success);
-      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
-
-      -- Restoring a valid DCM makes the set acceptable again, so the rejections above
-      -- were caused by the perturbed values rather than by sticky staging state:
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Dcm_Cb (Valid_Dcm)), Success);
+      -- Restoring a finite attitude makes the set acceptable again, so the rejection above
+      -- was caused by the perturbed value rather than by sticky staging state:
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Sigma_Cb (Zero_Mounting)), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
    end Test_Invalid_Parameter;

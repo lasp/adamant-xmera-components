@@ -16,15 +16,13 @@ package Mrp_Pd_Algorithm_C is
    --* @brief Report whether a configuration would be accepted by Create/Set_Config.
    --* @param K [Nm] Proportional gain on the MRP attitude error; must be >= 0.
    --* @param P [Nms] Rate error feedback gain; must be >= 0.
-   --* @param Known_Torque_Pnt_B_B [Nm] Known external torque in body frame components; must be finite.
    --* @param Iscpnt_B_B [kg m^2] Spacecraft inertia about point B; must be a valid inertia matrix.
    --* @return True if the configuration is valid. Never throws, so it can guard the
    --* throwing Create/Set_Config from an invalid configuration.
    function Validate_Config
-     (K                    : Short_Float;
-      P                    : Short_Float;
-      Known_Torque_Pnt_B_B : Packed_F32x3_Record.C.U_C;
-      Iscpnt_B_B           : Packed_F32x9_Record.C.U_C)
+     (K          : Short_Float;
+      P          : Short_Float;
+      Iscpnt_B_B : Packed_F32x9_Record.C.U_C)
      return Interfaces.C.C_bool
      with Import        => True,
           Convention    => C,
@@ -34,14 +32,12 @@ package Mrp_Pd_Algorithm_C is
    --* Validate the values with Validate_Config before calling; throws on invalid input.
    --* @param K [Nm] Proportional gain on the MRP attitude error.
    --* @param P [Nms] Rate error feedback gain.
-   --* @param Known_Torque_Pnt_B_B [Nm] Known external torque in body frame components.
    --* @param Iscpnt_B_B [kg m^2] Spacecraft inertia about point B.
    --* @return The new algorithm instance, which must be released with Destroy.
    function Create
-     (K                    : Short_Float;
-      P                    : Short_Float;
-      Known_Torque_Pnt_B_B : Packed_F32x3_Record.C.U_C;
-      Iscpnt_B_B           : Packed_F32x9_Record.C.U_C)
+     (K          : Short_Float;
+      P          : Short_Float;
+      Iscpnt_B_B : Packed_F32x9_Record.C.U_C)
      return Mrp_Pd_Algorithm_Access
      with Import        => True,
           Convention    => C,
@@ -59,14 +55,12 @@ package Mrp_Pd_Algorithm_C is
    --* @param Self The algorithm instance.
    --* @param K [Nm] Proportional gain on the MRP attitude error.
    --* @param P [Nms] Rate error feedback gain.
-   --* @param Known_Torque_Pnt_B_B [Nm] Known external torque in body frame components.
    --* @param Iscpnt_B_B [kg m^2] Spacecraft inertia about point B.
    procedure Set_Config
-     (Self                 : Mrp_Pd_Algorithm_Access;
-      K                    : Short_Float;
-      P                    : Short_Float;
-      Known_Torque_Pnt_B_B : Packed_F32x3_Record.C.U_C;
-      Iscpnt_B_B           : Packed_F32x9_Record.C.U_C)
+     (Self       : Mrp_Pd_Algorithm_Access;
+      K          : Short_Float;
+      P          : Short_Float;
+      Iscpnt_B_B : Packed_F32x9_Record.C.U_C)
      with Import        => True,
           Convention    => C,
           External_Name => "MrpPDAlgorithm_setConfig";

@@ -1,7 +1,7 @@
 ---
 description: Parameters for the Convert St Platform To Body component.
 parameters:
-  - name: Dcm_Cb
-    description: "DCM from body to star tracker case frame (3x3, row-major, 9 elements)"
-    type: Packed_F32x9.T
-    default: "[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]"
+  - name: Sigma_Cb
+    description: "[-] MRP attitude of the star tracker case frame relative to the body frame. Must be finite."
+    type: Packed_F32x3.T
+    default: "[0.0, 0.0, 0.0]"

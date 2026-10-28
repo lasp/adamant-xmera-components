@@ -18,10 +18,9 @@ package body Component.Mrp_Pd.Implementation is
    overriding procedure Init (Self : in out Instance) is
    begin
       Self.Alg := Create (
-         K                    => Self.Proportional_Gain_K.Value,
-         P                    => Self.Derivative_Gain_P.Value,
-         Known_Torque_Pnt_B_B => (Value => Packed_F32x3.C.To_C (Self.Known_Torque_Pnt_B_B)),
-         Iscpnt_B_B           => (Value => Packed_F32x9.C.To_C (Self.Inertia))
+         K          => Self.Proportional_Gain_K.Value,
+         P          => Self.Derivative_Gain_P.Value,
+         Iscpnt_B_B => (Value => Packed_F32x9.C.To_C (Self.Inertia))
       );
    end Init;
 
@@ -81,40 +80,37 @@ package body Component.Mrp_Pd.Implementation is
    -- Parameter handlers:
    -----------------------------------------------
    -- This procedure is called when the parameters of a component have been updated. In this case we
-   -- push the whole configuration into the C algorithm so subsequent updates use the new gains,
-   -- known torque, and inertia.
+   -- push the whole configuration into the C algorithm so subsequent updates use the new gains
+   -- and inertia.
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
    begin
       -- The values were checked by Validate_Parameters at staging, so Set_Config will not
       -- reject them.
       Set_Config (
          Self.Alg,
-         K                    => Self.Proportional_Gain_K.Value,
-         P                    => Self.Derivative_Gain_P.Value,
-         Known_Torque_Pnt_B_B => (Value => Packed_F32x3.C.To_C (Self.Known_Torque_Pnt_B_B)),
-         Iscpnt_B_B           => (Value => Packed_F32x9.C.To_C (Self.Inertia))
+         K          => Self.Proportional_Gain_K.Value,
+         P          => Self.Derivative_Gain_P.Value,
+         Iscpnt_B_B => (Value => Packed_F32x9.C.To_C (Self.Inertia))
       );
    end Update_Parameters_Action;
 
    -- Validate a staged configuration before it is applied by asking the algorithm's own
-   -- non-throwing Validate_Config predicate (non-negative gains, a finite known torque, and a
-   -- valid inertia matrix), so the config rules live solely in the algorithm. Rejecting an
+   -- non-throwing Validate_Config predicate (non-negative gains and a valid inertia matrix),
+   -- so the config rules live solely in the algorithm. Rejecting an
    -- invalid update here at staging keeps it from reaching the throwing Create/Set_Config
    -- across the FFI boundary.
    overriding function Validate_Parameters (
       Self : in out Instance;
       Proportional_Gain_K : in Packed_F32.U;
       Derivative_Gain_P : in Packed_F32.U;
-      Known_Torque_Pnt_B_B : in Packed_F32x3.U;
       Inertia : in Packed_F32x9.U
    ) return Parameter_Validation_Status.E is
       pragma Unreferenced (Self);
    begin
       if Validate_Config (
-         K                    => Proportional_Gain_K.Value,
-         P                    => Derivative_Gain_P.Value,
-         Known_Torque_Pnt_B_B => (Value => Packed_F32x3.C.To_C (Known_Torque_Pnt_B_B)),
-         Iscpnt_B_B           => (Value => Packed_F32x9.C.To_C (Inertia)))
+         K          => Proportional_Gain_K.Value,
+         P          => Derivative_Gain_P.Value,
+         Iscpnt_B_B => (Value => Packed_F32x9.C.To_C (Inertia)))
       then
          return Parameter_Validation_Status.Valid;
       else

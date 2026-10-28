@@ -54,6 +54,7 @@ package Sun_Search_Point_Algorithm_C is
    --* @param Omega_Rn_B            [rad/s] Fallback body rate when no sun direction is available, must be finite.
    --* @param Observation_Threshold [-] CSS count at or above which to transition to pointing; must be at most Get_Max_Observation_Threshold.
    --* @param Control_Period        [s] Per-update time step, must be finite and > 0.
+   --* @param Deadband_Angle        [rad] Attitude deadband while pointing: the commanded error is the sun angle error less this band, and zero inside it. Must be finite and >= 0.
    --* @return True if the configuration is valid. Never throws, so it can guard the
    --* throwing Create/Set_Config from an invalid configuration.
    function Validate_Config
@@ -62,7 +63,8 @@ package Sun_Search_Point_Algorithm_C is
       Sun_Axis_Spin_Rate    : Short_Float;
       Omega_Rn_B            : Packed_F32x3_Record.C.U_C;
       Observation_Threshold : Unsigned_32;
-      Control_Period        : Short_Float)
+      Control_Period        : Short_Float;
+      Deadband_Angle        : Short_Float)
      return Interfaces.C.C_bool
      with Import        => True,
           Convention    => C,
@@ -76,6 +78,7 @@ package Sun_Search_Point_Algorithm_C is
    --* @param Omega_Rn_B            [rad/s] Fallback body rate when no sun direction is available, must be finite.
    --* @param Observation_Threshold [-] CSS count at or above which to transition to pointing; must be at most Get_Max_Observation_Threshold.
    --* @param Control_Period        [s] Per-update time step, must be finite and > 0.
+   --* @param Deadband_Angle        [rad] Attitude deadband while pointing: the commanded error is the sun angle error less this band, and zero inside it. Must be finite and >= 0.
    --* @return The new algorithm instance, which must be released with Destroy.
    function Create
      (Rotations             : access constant Rotation_Properties_X4_Record.C.U_C;
@@ -83,7 +86,8 @@ package Sun_Search_Point_Algorithm_C is
       Sun_Axis_Spin_Rate    : Short_Float;
       Omega_Rn_B            : Packed_F32x3_Record.C.U_C;
       Observation_Threshold : Unsigned_32;
-      Control_Period        : Short_Float)
+      Control_Period        : Short_Float;
+      Deadband_Angle        : Short_Float)
      return Sun_Search_Point_Algorithm_Access
      with Import        => True,
           Convention    => C,
@@ -107,6 +111,7 @@ package Sun_Search_Point_Algorithm_C is
    --* @param Omega_Rn_B            [rad/s] Fallback body rate when no sun direction is available, must be finite.
    --* @param Observation_Threshold [-] CSS count at or above which to transition to pointing; must be at most Get_Max_Observation_Threshold.
    --* @param Control_Period        [s] Per-update time step, must be finite and > 0.
+   --* @param Deadband_Angle        [rad] Attitude deadband while pointing: the commanded error is the sun angle error less this band, and zero inside it. Must be finite and >= 0.
    procedure Set_Config
      (Self                  : Sun_Search_Point_Algorithm_Access;
       Rotations             : access constant Rotation_Properties_X4_Record.C.U_C;
@@ -114,7 +119,8 @@ package Sun_Search_Point_Algorithm_C is
       Sun_Axis_Spin_Rate    : Short_Float;
       Omega_Rn_B            : Packed_F32x3_Record.C.U_C;
       Observation_Threshold : Unsigned_32;
-      Control_Period        : Short_Float)
+      Control_Period        : Short_Float;
+      Deadband_Angle        : Short_Float)
      with Import        => True,
           Convention    => C,
           External_Name => "SunSearchPointAlgorithm_setConfig";

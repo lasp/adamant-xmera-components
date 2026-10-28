@@ -77,15 +77,21 @@ package body Sun_Search_Point_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Sun_Axis_Spin_Rate ((Value => 0.0))), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Omega_Rn_B_Cfg (Zero_Vector)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Observation_Threshold (Test_Observation_Threshold)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Deadband_Angle ((Value => 0.0))), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
    end Apply_Test_Parameters;
 
-   -- Report the given observation count and the aligned sun direction, then tick once.
-   procedure Tick_With (Self : in out Instance; Num_Css_Viewing_Sun : in Unsigned_32) is
+   -- Report the given observation count and sun direction, aligned with the commanded
+   -- body vector unless given, then tick once.
+   procedure Tick_With (
+      Self : in out Instance;
+      Num_Css_Viewing_Sun : in Unsigned_32;
+      Sun_Direction : in Packed_F32x3.T := Test_S_Hat_Bdy_Cmd
+   ) is
       T : Component.Sun_Search_Point.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
       T.Omega_Bn_B := Test_Omega_Bn_B;
-      T.R_Hat_Sb_B := Test_S_Hat_Bdy_Cmd;
+      T.R_Hat_Sb_B := Sun_Direction;
       T.Num_Css_Viewing_Sun := (Value => Num_Css_Viewing_Sun);
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Tick_With;
@@ -94,12 +100,15 @@ package body Sun_Search_Point_Tests.Implementation is
    function Expected_Omega_Br_B (Omega_Rn_B : in Packed_F32x3.T) return Packed_F32x3.T is
       ([for I in Omega_Rn_B'Range => Test_Omega_Bn_B (I) - Omega_Rn_B (I)]);
 
-   -- Assert the outputs of the most recent tick.
+   -- Assert the outputs of the most recent tick. The attitude error is zero unless
+   -- given: the search commands none, and the pointing tests align the sun with the
+   -- commanded body vector.
    procedure Assert_Latest_Output (
       Self : in out Instance;
       Tick_Number : in Natural;
       Omega_Rn_B : in Packed_F32x3.T;
-      Status : in Sun_Search_Point_Enums.Sun_Search_Status.E
+      Status : in Sun_Search_Point_Enums.Sun_Search_Status.E;
+      Sigma_Br : in Packed_F32x3.T := Zero_Vector
    ) is
       T : Component.Sun_Search_Point.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
@@ -107,10 +116,9 @@ package body Sun_Search_Point_Tests.Implementation is
       Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, Tick_Number * 2);
       Natural_Assert.Eq (T.Attitude_Guidance_History.Get_Count, Tick_Number);
 
-      -- The sun is aligned with the commanded body vector, so the attitude error is
-      -- zero in both phases. The reference acceleration is always zero.
+      -- The reference acceleration is always zero.
       Att_Guid_Assert.Eq (T.Attitude_Guidance_History.Get (Tick_Number), (
-         Sigma_Br => Zero_Vector,
+         Sigma_Br => Sigma_Br,
          Omega_Br_B => Expected_Omega_Br_B (Omega_Rn_B),
          Omega_Rn_B => Omega_Rn_B,
          Domega_Rn_B => Zero_Vector
@@ -230,6 +238,38 @@ package body Sun_Search_Point_Tests.Implementation is
       Assert_Latest_Output (Self, Tick_Number => 10, Omega_Rn_B => [0.1, 0.0, 0.0], Status => Sun_Search_Status.Sun_Found);
    end Test_Reset;
 
+   -- Verify the pointing phase controls to the edge of the attitude deadband. The sun
+   -- is reported 0.3 rad off the commanded body vector, rotated about the body y axis,
+   -- so the pointing error axis is -y. With a 0.1 rad band the commanded error is the
+   -- remaining 0.2 rad, an MRP of tan(0.05) about -y. A sun 0.05 rad off, inside the
+   -- band, commands no attitude error at all.
+   overriding procedure Test_Deadband (Self : in out Instance) is
+      T : Component.Sun_Search_Point.Implementation.Tester.Instance_Access renames Self.Tester;
+      Params : Sun_Search_Point_Parameters.Instance;
+      Sun_Outside_Band : constant Packed_F32x3.T := [0.29552021, 0.0, 0.95533649];
+      Sun_Inside_Band : constant Packed_F32x3.T := [0.04997917, 0.0, 0.99875026];
+   begin
+      Apply_Test_Parameters (Self);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Deadband_Angle ((Value => 0.1))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+
+      -- The first rotation runs to completion before the sun can be acquired, and the
+      -- search commands no attitude error whatever the sun direction:
+      for I in 1 .. 2 loop
+         Tick_With (Self, Num_Css_Viewing_Sun => 4, Sun_Direction => Sun_Outside_Band);
+         Assert_Latest_Output (Self, Tick_Number => I, Omega_Rn_B => [0.1, 0.0, 0.0], Status => Sun_Search_Status.Sun_Found);
+      end loop;
+
+      -- Pointing at a sun outside the band commands the error less the band:
+      Tick_With (Self, Num_Css_Viewing_Sun => 4, Sun_Direction => Sun_Outside_Band);
+      Assert_Latest_Output (Self, Tick_Number => 3, Omega_Rn_B => Zero_Vector, Status => Sun_Search_Status.Sun_Found,
+         Sigma_Br => [0.0, -0.05004171, 0.0]);
+
+      -- Pointing at a sun inside the band commands no attitude error:
+      Tick_With (Self, Num_Css_Viewing_Sun => 4, Sun_Direction => Sun_Inside_Band);
+      Assert_Latest_Output (Self, Tick_Number => 4, Omega_Rn_B => Zero_Vector, Status => Sun_Search_Status.Sun_Found);
+   end Test_Deadband;
+
    -- Ensure staged parameter values the algorithm would reject are refused at
    -- validation.
    overriding procedure Test_Invalid_Parameter (Self : in out Instance) is
@@ -245,6 +285,7 @@ package body Sun_Search_Point_Tests.Implementation is
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Sun_Axis_Spin_Rate ((Value => 0.0))), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Omega_Rn_B_Cfg (Zero_Vector)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Observation_Threshold (Test_Observation_Threshold)), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Deadband_Angle ((Value => 0.0))), Success);
       end Stage_Valid_Set;
 
    begin
@@ -282,6 +323,11 @@ package body Sun_Search_Point_Tests.Implementation is
          Par.Buffer (Par.Buffer'First + 4 .. Par.Buffer'First + 7) := [16#7F#, 16#80#, 16#00#, 16#00#];
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Par), Success);
       end;
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- A negative deadband is rejected:
+      Stage_Valid_Set;
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Deadband_Angle ((Value => -0.1))), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
 
       -- Restoring validity makes the set acceptable again, so the rejections above

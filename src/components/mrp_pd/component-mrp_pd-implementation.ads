@@ -82,7 +82,6 @@ private
       Self : in out Instance;
       Proportional_Gain_K : in Packed_F32.U;
       Derivative_Gain_P : in Packed_F32.U;
-      Known_Torque_Pnt_B_B : in Packed_F32x3.U;
       Inertia : in Packed_F32x9.U
    ) return Parameter_Validation_Status.E;
 

@@ -9,6 +9,8 @@ tests:
     description: Verify the full rotation sequence elapsing without acquiring the sun forces pointing and latches the search-failure flag.
   - name: Test_Reset
     description: Verify the reset connector re-arms the search sequence after the terminal pointing phase.
+  - name: Test_Deadband
+    description: Verify the pointing phase controls to the edge of the attitude deadband, commanding no attitude error inside the band and the error less the band outside it.
   - name: Test_Invalid_Parameter
     description: Ensure staged parameter values the algorithm would reject are refused at validation.
   - name: Test_Observation_Threshold_Range

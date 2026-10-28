@@ -97,7 +97,7 @@ package body Average_Mimu_Data_Tests.Implementation is
       ]
    );
 
-   -- Stage identity DCM plus the given gyro/accel windows and apply them.
+   -- Stage the zero mounting MRP plus the given gyro/accel windows and apply them.
    procedure Apply_Standard_Params (
       T : Tester_Ref;
       Gyro_Window : Short_Float;
@@ -109,12 +109,7 @@ package body Average_Mimu_Data_Tests.Implementation is
          Params.Gyro_Time_Delta ((Value => Gyro_Window))), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
          Params.Accel_Time_Delta ((Value => Accel_Window))), Success);
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
-         Params.Dcm_Pltf_To_Bdy ([
-            1.0, 0.0, 0.0,
-            0.0, 1.0, 0.0,
-            0.0, 0.0, 1.0
-         ])), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Sigma_Cb ([0.0, 0.0, 0.0])), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
    end Apply_Standard_Params;
 
@@ -148,8 +143,8 @@ package body Average_Mimu_Data_Tests.Implementation is
    -- Tests:
    -------------------------------------------------------------------------
 
-   -- Identity DCM, uniform data - output equals scaled input.
-   overriding procedure Test_Identity_Dcm (Self : in out Instance) is
+   -- Zero mounting MRP, uniform data - output equals scaled input.
+   overriding procedure Test_Zero_Mounting (Self : in out Instance) is
       T : Tester_Ref renames Self.Tester;
    begin
       Apply_Standard_Params (T, Gyro_Window => 1.0, Accel_Window => 1.0);
@@ -170,12 +165,13 @@ package body Average_Mimu_Data_Tests.Implementation is
          Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [GyroA, GyroB, GyroC], Epsilon => 0.0001);
          Packed_F32x3_Assert.Eq (Output.Accel_Body, [AccelA, AccelB, AccelC], Epsilon => 0.0001);
       end;
-   end Test_Identity_Dcm;
+   end Test_Zero_Mounting;
 
-   -- 90-degree Z-rotation DCM = [0, -1, 0; 1, 0, 0; 0, 0, 1]
+   -- A 90-degree Z-rotation of the platform frame relative to the body frame, the MRP
+   -- [0, 0, tan(pi/8)], gives the platform to body DCM = [0, -1, 0; 1, 0, 0; 0, 0, 1]
    --   DCM * [GyroA,GyroB,GyroC] = [-GyroB, GyroA, GyroC]
    --   DCM * [AccelA,AccelB,AccelC] = [-AccelB, AccelA, AccelC]
-   overriding procedure Test_Dcm_Rotation (Self : in out Instance) is
+   overriding procedure Test_Rotated_Mounting (Self : in out Instance) is
       T : Tester_Ref renames Self.Tester;
       Params : Average_Mimu_Data_Parameters.Instance;
    begin
@@ -183,12 +179,7 @@ package body Average_Mimu_Data_Tests.Implementation is
          Params.Gyro_Time_Delta ((Value => 1.0))), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
          Params.Accel_Time_Delta ((Value => 1.0))), Success);
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
-         Params.Dcm_Pltf_To_Bdy ([
-            0.0, -1.0, 0.0,
-            1.0,  0.0, 0.0,
-            0.0,  0.0, 1.0
-         ])), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Sigma_Cb ([0.0, 0.0, 0.41421356])), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
 
       T.Mimu_Eng_Packet_T_Send (Uniform_Packet (1, 0));
@@ -202,9 +193,9 @@ package body Average_Mimu_Data_Tests.Implementation is
          Packed_F32x3_Assert.Eq (Output.Ang_Vel_Body, [-GyroB, GyroA, GyroC], Epsilon => 0.0001);
          Packed_F32x3_Assert.Eq (Output.Accel_Body, [-AccelB, AccelA, AccelC], Epsilon => 0.0001);
       end;
-   end Test_Dcm_Rotation;
+   end Test_Rotated_Mounting;
 
-   -- Non-uniform data with negative values, identity DCM. Tests signed
+   -- Non-uniform data with negative values, zero mounting MRP. Tests signed
    -- Integer_32-to-float conversion and averaging across mixed signs.
    overriding procedure Test_Mixed_Signs (Self : in out Instance) is
       T : Tester_Ref renames Self.Tester;
@@ -390,8 +381,8 @@ package body Average_Mimu_Data_Tests.Implementation is
       end;
    end Test_Zero_Window;
 
-   -- The averaging windows must lie in [0, 2] seconds and the mounting DCM must be
-   -- orthonormal with determinant +1. A zero window is valid -- see Test_Zero_Window --
+   -- The averaging windows must lie in [0, 2] seconds and the mounting attitude must be
+   -- finite. A zero window is valid -- see Test_Zero_Window --
    -- so the rejections below use negative and over-range values instead.
    overriding procedure Test_Invalid_Config_Parameter (Self : in out Instance) is
       T : Tester_Ref renames Self.Tester;
@@ -405,12 +396,7 @@ package body Average_Mimu_Data_Tests.Implementation is
             Params.Gyro_Time_Delta ((Value => 0.1))), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
             Params.Accel_Time_Delta ((Value => 0.1))), Success);
-         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
-            Params.Dcm_Pltf_To_Bdy ([
-               1.0, 0.0, 0.0,
-               0.0, 1.0, 0.0,
-               0.0, 0.0, 1.0
-            ])), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Sigma_Cb ([0.0, 0.0, 0.0])), Success);
       end Stage_Valid_Set;
    begin
       -- The baseline set is accepted:
@@ -435,14 +421,19 @@ package body Average_Mimu_Data_Tests.Implementation is
          Params.Accel_Time_Delta ((Value => -0.1))), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
 
-      -- An all-zero mounting DCM is rejected (singular, so not orthonormal):
+      -- A non-finite mounting attitude is rejected. The value is injected as raw bytes
+      -- because the compiler will not let a non-finite Short_Float be written as a
+      -- literal, and because that is how one would arrive: as bytes from the ground.
+      -- Staging accepts it, and converting it for the algorithm raises, which validation
+      -- reports as a rejection.
       Stage_Valid_Set;
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (
-         Params.Dcm_Pltf_To_Bdy ([
-            0.0, 0.0, 0.0,
-            0.0, 0.0, 0.0,
-            0.0, 0.0, 0.0
-         ])), Success);
+      declare
+         Par : Parameter.T := Params.Sigma_Cb ([0.0, 0.0, 0.0]);
+      begin
+         -- Overwrite the first of the three big-endian floats with +infinity.
+         Par.Buffer (Par.Buffer'First .. Par.Buffer'First + 3) := [16#7F#, 16#80#, 16#00#, 16#00#];
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Par), Success);
+      end;
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
 
       -- Restoring validity makes the set acceptable again, so the rejections above

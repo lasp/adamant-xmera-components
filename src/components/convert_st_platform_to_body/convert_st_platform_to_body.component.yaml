@@ -1,5 +1,5 @@
 ---
-description: Converts the star tracker case-frame attitude and angular velocity to the spacecraft body frame using a fixed platform-to-body DCM.
+description: Converts the star tracker case-frame attitude and angular velocity to the spacecraft body frame using a fixed case mounting attitude.
 execution: passive
 init:
   description: Initializes the convert star tracker platform to body algorithm.

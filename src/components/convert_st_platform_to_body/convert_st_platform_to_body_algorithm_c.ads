@@ -7,7 +7,7 @@ with Interfaces; use Interfaces;
 with Interfaces.C;
 with St_Platform_Measurement.C;
 with St_Att.C;
-with Packed_F32x9_Record.C;
+with Packed_F32x3_Record.C;
 
 package Convert_St_Platform_To_Body_Algorithm_C is
 
@@ -16,22 +16,22 @@ package Convert_St_Platform_To_Body_Algorithm_C is
    type Convert_St_Platform_To_Body_Algorithm_Access is access all Convert_St_Platform_To_Body_Algorithm;
 
    --* @brief Report whether a configuration would be accepted by Create/Set_Config.
-   --* @param Dcm_Cb 3x3 row-major DCM from body to case frame (orthonormal, det +1).
+   --* @param Sigma_Cb MRP of the case frame relative to the body frame; must be finite.
    --* @return True if the configuration is valid. Never throws, so it can guard the
    --* throwing Create/Set_Config from an invalid configuration.
    function Validate_Config
-     (Dcm_Cb : Packed_F32x9_Record.C.U_C)
+     (Sigma_Cb : Packed_F32x3_Record.C.U_C)
      return Interfaces.C.C_bool
      with Import        => True,
           Convention    => C,
           External_Name => "ConvertStPlatformToBodyAlgorithm_validateConfig";
 
    --* @brief Construct a new ConvertStPlatformToBodyAlgorithm from a configuration.
-   --* Validate the DCM with Validate_Config before calling; throws on invalid input.
-   --* @param Dcm_Cb 3x3 row-major DCM from body to case frame (orthonormal, det +1).
+   --* Validate the values with Validate_Config before calling; throws on invalid input.
+   --* @param Sigma_Cb MRP of the case frame relative to the body frame; must be finite.
    --* @return The new algorithm instance, which must be released with Destroy.
    function Create
-     (Dcm_Cb : Packed_F32x9_Record.C.U_C)
+     (Sigma_Cb : Packed_F32x3_Record.C.U_C)
      return Convert_St_Platform_To_Body_Algorithm_Access
      with Import        => True,
           Convention    => C,
@@ -46,11 +46,11 @@ package Convert_St_Platform_To_Body_Algorithm_C is
           External_Name => "ConvertStPlatformToBodyAlgorithm_destroy";
 
    --* @brief Apply a new configuration (validated; throws on invalid input).
-   --* @param Self   The algorithm instance.
-   --* @param Dcm_Cb 3x3 row-major DCM from body to case frame.
+   --* @param Self     The algorithm instance.
+   --* @param Sigma_Cb MRP of the case frame relative to the body frame; must be finite.
    procedure Set_Config
-     (Self   : Convert_St_Platform_To_Body_Algorithm_Access;
-      Dcm_Cb : Packed_F32x9_Record.C.U_C)
+     (Self     : Convert_St_Platform_To_Body_Algorithm_Access;
+      Sigma_Cb : Packed_F32x3_Record.C.U_C)
      with Import        => True,
           Convention    => C,
           External_Name => "ConvertStPlatformToBodyAlgorithm_setConfig";

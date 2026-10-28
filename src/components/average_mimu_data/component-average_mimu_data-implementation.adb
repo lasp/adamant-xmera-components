@@ -5,7 +5,7 @@
 with Mimu_Input_Packet.C;
 with Mimu_Sample_X10.C;
 with Averaged_Imu_Data.C;
-with Packed_F32x9.C;
+with Packed_F32x3.C;
 
 package body Component.Average_Mimu_Data.Implementation is
 
@@ -18,7 +18,7 @@ package body Component.Average_Mimu_Data.Implementation is
       Self.Alg := Create (
          Gyro_Averaging_Window  => Self.Gyro_Time_Delta.Value,
          Accel_Averaging_Window => Self.Accel_Time_Delta.Value,
-         Dcm_Bc                 => (Value => Packed_F32x9.C.To_C (Self.Dcm_Pltf_To_Bdy))
+         Sigma_Cb               => (Value => Packed_F32x3.C.To_C (Self.Sigma_Cb))
       );
    end Init;
 
@@ -102,7 +102,7 @@ package body Component.Average_Mimu_Data.Implementation is
          Self.Alg,
          Gyro_Averaging_Window  => Self.Gyro_Time_Delta.Value,
          Accel_Averaging_Window => Self.Accel_Time_Delta.Value,
-         Dcm_Bc                 => (Value => Packed_F32x9.C.To_C (Self.Dcm_Pltf_To_Bdy))
+         Sigma_Cb               => (Value => Packed_F32x3.C.To_C (Self.Sigma_Cb))
       );
    end Update_Parameters_Action;
 
@@ -114,19 +114,31 @@ package body Component.Average_Mimu_Data.Implementation is
       Self : in out Instance;
       Gyro_Time_Delta : in Packed_F32.U;
       Accel_Time_Delta : in Packed_F32.U;
-      Dcm_Pltf_To_Bdy : in Packed_F32x9.U
+      Sigma_Cb : in Packed_F32x3.U
    ) return Parameter_Validation_Status.E is
       pragma Unreferenced (Self);
    begin
       if Validate_Config (
          Gyro_Averaging_Window  => Gyro_Time_Delta.Value,
          Accel_Averaging_Window => Accel_Time_Delta.Value,
-         Dcm_Bc                 => (Value => Packed_F32x9.C.To_C (Dcm_Pltf_To_Bdy)))
+         Sigma_Cb               => (Value => Packed_F32x3.C.To_C (Sigma_Cb)))
       then
          return Parameter_Validation_Status.Valid;
       else
          return Parameter_Validation_Status.Invalid;
       end if;
+   exception
+      -- Reachable, and the parameter rejection test covers it: float array staging accepts a
+      -- non-finite value, and marshalling it in Packed_F32x3.C.To_C raises. Rejecting the set
+      -- here keeps that from unwinding into the Parameters component.
+      -- TODO: The generated validation of the staged bytes should reject a non-finite
+      -- value, but GNAT Pro 25.2 evaluates 'Valid on an element of a packed float array
+      -- with a non native Scalar_Storage_Order on the unswapped bytes, so at staging a
+      -- NaN or infinity passes. FSF GCC fixed this in 60f5887173a4. Once the compiler
+      -- fix arrives this handler is unreachable and can go, along with the injection in
+      -- the parameter rejection test.
+      when Constraint_Error =>
+         return Parameter_Validation_Status.Invalid;
    end Validate_Parameters;
 
 end Component.Average_Mimu_Data.Implementation;

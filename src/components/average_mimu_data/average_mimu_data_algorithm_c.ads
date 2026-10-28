@@ -10,7 +10,7 @@ with Mimu_Sample_X10.C;
 with Mimu_Input_Packet.C;
 with Mimu_Input_Packet_X4.C;
 with Mimu_Input_Packets.C;
-with Packed_F32x9_Record.C;
+with Packed_F32x3_Record.C;
 with Averaged_Imu_Data.C;
 
 package Average_Mimu_Data_Algorithm_C is
@@ -48,13 +48,13 @@ package Average_Mimu_Data_Algorithm_C is
    --* @brief Report whether a configuration would be accepted by Create/Set_Config.
    --* @param Gyro_Averaging_Window  [s] gyro averaging window, in [0.0, 2.0].
    --* @param Accel_Averaging_Window [s] accel averaging window, in [0.0, 2.0].
-   --* @param Dcm_Bc                 CHU-to-body DCM (row-major 3x3, orthonormal, det +1).
+   --* @param Sigma_Cb               MRP of the platform frame relative to the body frame; must be finite.
    --* @return True if the configuration is valid. Never throws, so it can guard the
    --* throwing Create/Set_Config from an invalid configuration.
    function Validate_Config
      (Gyro_Averaging_Window  : Short_Float;
       Accel_Averaging_Window : Short_Float;
-      Dcm_Bc                 : Packed_F32x9_Record.C.U_C)
+      Sigma_Cb               : Packed_F32x3_Record.C.U_C)
      return Interfaces.C.C_bool
      with Import       => True,
           Convention   => C,
@@ -64,12 +64,12 @@ package Average_Mimu_Data_Algorithm_C is
    --* Validate the values with Validate_Config before calling; throws on invalid input.
    --* @param Gyro_Averaging_Window  [s] gyro averaging window, in [0.0, 2.0].
    --* @param Accel_Averaging_Window [s] accel averaging window, in [0.0, 2.0].
-   --* @param Dcm_Bc                 CHU-to-body DCM (row-major 3x3, orthonormal, det +1).
+   --* @param Sigma_Cb               MRP of the platform frame relative to the body frame; must be finite.
    --* @return The new algorithm instance, which must be released with Destroy.
    function Create
      (Gyro_Averaging_Window  : Short_Float;
       Accel_Averaging_Window : Short_Float;
-      Dcm_Bc                 : Packed_F32x9_Record.C.U_C)
+      Sigma_Cb               : Packed_F32x3_Record.C.U_C)
      return Average_Mimu_Data_Algorithm_Access
      with Import       => True,
           Convention   => C,
@@ -88,12 +88,12 @@ package Average_Mimu_Data_Algorithm_C is
    --* @param Self                   The algorithm instance.
    --* @param Gyro_Averaging_Window  [s] gyro averaging window, in [0.0, 2.0].
    --* @param Accel_Averaging_Window [s] accel averaging window, in [0.0, 2.0].
-   --* @param Dcm_Bc                 CHU-to-body DCM (row-major 3x3, orthonormal, det +1).
+   --* @param Sigma_Cb               MRP of the platform frame relative to the body frame; must be finite.
    procedure Set_Config
      (Self                   : Average_Mimu_Data_Algorithm_Access;
       Gyro_Averaging_Window  : Short_Float;
       Accel_Averaging_Window : Short_Float;
-      Dcm_Bc                 : Packed_F32x9_Record.C.U_C)
+      Sigma_Cb               : Packed_F32x3_Record.C.U_C)
      with Import       => True,
           Convention   => C,
           External_Name => "AverageMimuDataAlgorithm_setConfig";

@@ -29,7 +29,8 @@ package body Component.Sun_Search_Point.Implementation is
          Sun_Axis_Spin_Rate    => Self.Sun_Axis_Spin_Rate.Value,
          Omega_Rn_B            => (Value => Packed_F32x3.C.To_C (Self.Omega_Rn_B_Cfg)),
          Observation_Threshold => Unsigned_32 (Self.Observation_Threshold.Value),
-         Control_Period        => Self.Control_Period);
+         Control_Period        => Self.Control_Period,
+         Deadband_Angle        => Self.Deadband_Angle.Value);
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -129,7 +130,8 @@ package body Component.Sun_Search_Point.Implementation is
          Sun_Axis_Spin_Rate    => Self.Sun_Axis_Spin_Rate.Value,
          Omega_Rn_B            => (Value => Packed_F32x3.C.To_C (Self.Omega_Rn_B_Cfg)),
          Observation_Threshold => Unsigned_32 (Self.Observation_Threshold.Value),
-         Control_Period        => Self.Control_Period);
+         Control_Period        => Self.Control_Period,
+         Deadband_Angle        => Self.Deadband_Angle.Value);
    end Update_Parameters_Action;
 
    -- Validate a staged parameter set before it is applied by asking the algorithm's own
@@ -142,7 +144,8 @@ package body Component.Sun_Search_Point.Implementation is
       S_Hat_Bdy_Cmd : in Packed_F32x3.U;
       Sun_Axis_Spin_Rate : in Packed_F32.U;
       Omega_Rn_B_Cfg : in Packed_F32x3.U;
-      Observation_Threshold : in Packed_Observation_Threshold.U
+      Observation_Threshold : in Packed_Observation_Threshold.U;
+      Deadband_Angle : in Packed_F32.U
    ) return Parameter_Validation_Status.E is
       -- Validate_Config takes the rotation sequence by pointer, so it needs an object to point at.
       Rotations_C : aliased constant Rotation_Properties_X4_Record.C.U_C :=
@@ -154,7 +157,8 @@ package body Component.Sun_Search_Point.Implementation is
             Sun_Axis_Spin_Rate    => Sun_Axis_Spin_Rate.Value,
             Omega_Rn_B            => (Value => Packed_F32x3.C.To_C (Omega_Rn_B_Cfg)),
             Observation_Threshold => Unsigned_32 (Observation_Threshold.Value),
-            Control_Period        => Self.Control_Period)
+            Control_Period        => Self.Control_Period,
+            Deadband_Angle        => Deadband_Angle.Value)
       then
          return Parameter_Validation_Status.Valid;
       else
