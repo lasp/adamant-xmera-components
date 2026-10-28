@@ -1,0 +1,6 @@
+---
+description: Data products for the Momentum Management component.
+data_products:
+  - name: Commanded_Torque
+    type: Cmd_Torque_Body.T
+    description: "[Nm] Requested body frame torque that drives the reaction wheel momentum toward the desired momentum. Zero while the dumpable momentum difference is below the threshold."
