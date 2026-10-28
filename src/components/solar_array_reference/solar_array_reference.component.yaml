@@ -1,8 +1,8 @@
 ---
-description: Solar array reference angle guidance. Computes the array rotation angle that turns the array surface normal toward the sun in the reference attitude, or holds a commanded angle, and publishes it for the array drive controller. The tracking mode and the angles are commanded through data products. Wraps the SolarArrayReferenceAlgorithm C++ algorithm via its C shim.
+description: Solar array reference angle guidance. Computes the array rotation angle that turns the array surface normal toward the sun in the reference attitude, or holds a commanded angle, and publishes it for the array drive controller. The tracking mode and the angles are commanded through a connector on GNC state transitions. Wraps the SolarArrayReferenceAlgorithm C++ algorithm via its C shim.
 execution: passive
 init:
-  description: Initializes the solar array reference algorithm with the default parameter values, sun tracking, and zero angles. The commanded mode and angles take effect on the first tick.
+  description: Initializes the solar array reference algorithm with the default parameter values, sun tracking, and zero angles. The commanded mode and angles take effect when they are first received.
 connectors:
   - description: Run the algorithm up to the current time.
     type: Tick.T
@@ -10,6 +10,9 @@ connectors:
   - description: Zero the reference angle the algorithm retains from the previous tick, which is its fallback when the sun is aligned with the drive axis. The configuration is untouched.
     name: Reset_Tick_T_Recv_Sync
     type: Tick.T
+    kind: recv_sync
+  - description: Command the tracking mode and the angles. The commanding component sends it on every GNC state transition into a state that controls the solar arrays, between ticks, and it reconfigures the algorithm for the ticks that follow. The component is not ticked, and not commanded, while the solar arrays are not controlled.
+    type: Solar_Array_Reference_Command.T
     kind: recv_sync
   - description: Fetch a data product item from the database.
     type: Data_Product_Fetch.T

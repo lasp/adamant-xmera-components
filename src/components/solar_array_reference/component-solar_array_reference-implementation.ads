@@ -6,6 +6,7 @@
 with Tick;
 with Parameter_Update;
 with Solar_Array_Reference_Algorithm_C; use Solar_Array_Reference_Algorithm_C;
+with Solar_Array_Reference_Command;
 with Solar_Array_Reference_Enums;
 with Solar_Array_Reference_Types;
 
@@ -31,11 +32,11 @@ private
    -- The component class instance record:
    type Instance is new Solar_Array_Reference.Base_Instance with record
       Alg : Solar_Array_Reference_Algorithm_Access := null;
-      -- The last commanded tracking mode and angles. They are commanded sporadically,
-      -- so they are remembered here for the parameter update path, which
-      -- reconfigures the algorithm without a new command. The mode is kept as the C
-      -- type so it is converted once, when commanded. The angles keep the ranged
-      -- type of their data products, so a value held here is always one the
+      -- The last commanded tracking mode and angles. They are commanded on GNC
+      -- state transitions, so they are remembered here for the parameter update
+      -- path, which reconfigures the algorithm without a new command. The mode is
+      -- kept as the C type so it is converted once, when commanded. The angles keep
+      -- the ranged type of the command, so a value held here is always one the
       -- algorithm accepts. The defaults keep the configuration valid for the
       -- generated parameter default check, which runs before Init.
       Commanded_Mode : Solar_Array_Reference_Enums.Tracking_Mode.C.E_C := Solar_Array_Reference_Enums.Tracking_Mode.C.Auto_Track;
@@ -64,6 +65,12 @@ private
    -- its fallback when the sun is aligned with the drive axis. The configuration is
    -- untouched.
    overriding procedure Reset_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T);
+   -- Command the tracking mode and the angles. The commanding component sends it on
+   -- every GNC state transition into a state that controls the solar arrays, between
+   -- ticks, and it reconfigures the algorithm for the ticks that follow. The
+   -- component is not ticked, and not commanded, while the solar arrays are not
+   -- controlled.
+   overriding procedure Solar_Array_Reference_Command_T_Recv_Sync (Self : in out Instance; Arg : in Solar_Array_Reference_Command.T);
    -- The parameter update connector.
    overriding procedure Parameter_Update_T_Modify (Self : in out Instance; Arg : in out Parameter_Update.T);
 
