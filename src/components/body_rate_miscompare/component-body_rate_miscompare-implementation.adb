@@ -50,17 +50,18 @@ package body Component.Body_Rate_Miscompare.Implementation is
       -- Grab data dependencies:
       --
       -- Data_Dependency_Status.E can be Success, Not_Available, Error, or Stale.
-      -- All return values besides Success indicate that this component is not
-      -- wired up correctly in the algorithm execution order and received errant,
-      -- stale, or no data. This should never happen, so we assert.
+      -- A stale reading still carries the last value received, and the rates are
+      -- compared as usual: a sensor that falls behind is not an error. Not_Available
+      -- and Error indicate that this component is not wired up correctly in the
+      -- algorithm execution order. That should never happen, so we assert.
       Imu_Body : Mimu_Majority_Vote_Output.T;
       Imu_Body_Status : constant Data_Dependency_Status.E :=
          Self.Get_Imu_Body (Value => Imu_Body, Stale_Reference => Arg.Time);
-      pragma Assert (Imu_Body_Status = Success);
+      pragma Assert (Imu_Body_Status = Success or else Imu_Body_Status = Stale);
       St_Body : St_Att.T;
       St_Body_Status : constant Data_Dependency_Status.E :=
          Self.Get_Star_Tracker_Attitude (Value => St_Body, Stale_Reference => Arg.Time);
-      pragma Assert (St_Body_Status = Success);
+      pragma Assert (St_Body_Status = Success or else St_Body_Status = Stale);
    begin
       -- Update the parameters:
       Self.Update_Parameters;
