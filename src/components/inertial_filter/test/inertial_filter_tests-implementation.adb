@@ -52,7 +52,7 @@ package body Inertial_Filter_Tests.Implementation is
    -------------------------------------------------------------------------
 
    -- Stage and apply the whole configuration.
-   procedure Apply_Configuration (Self : in out Instance; Initial_State : in Packed_F64x6.T := Zero_State) is
+   procedure Apply_Configuration (Self : in out Instance; Initial_State : in Packed_F64x6.T := Zero_State; Measurement_Delay : in Packed_F64.T := (Value => 0.0)) is
       T : Component.Inertial_Filter.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Inertial_Filter_Parameters.Instance;
    begin
@@ -63,6 +63,7 @@ package body Inertial_Filter_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Initial_Covariance_Diagonal (Initial_Covariance)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.St_Measurement_Noise_Std (St_Noise)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Rate_Measurement_Noise_Std (Rate_Noise)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Measurement_Delay (Measurement_Delay)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
    end Apply_Configuration;
 
@@ -444,10 +445,52 @@ package body Inertial_Filter_Tests.Implementation is
       end loop;
    end Test_Parameter_Update;
 
-   -- The algorithm requires alpha in (0, 1], beta in [0, 2], positive semi-definite
-   -- noise and covariance, a finite initial state, and noise deviations that are not
-   -- negative. Validation is the only guard keeping a rejected value out of the
-   -- throwing Create and Set_Config, so exercise it directly.
+   -- A reading is held in the filter's queue until the filter time has reached its
+   -- time tag plus the configured delay. A reading stamped at step I is offered at the
+   -- tick of step I, half a second later, so with a delay of three quarters of a second
+   -- it is applied one tick after it arrives. The queue holds five readings, two of
+   -- which arrive per tick, so a delay that held a reading longer would have it drop
+   -- readings.
+   overriding procedure Test_Measurement_Delay (Self : in out Instance) is
+      Attitude : constant Packed_F32x3.T := [0.3, 0.4, 0.5];
+   begin
+      Apply_Configuration (Self, Measurement_Delay => (Value => 0.75));
+
+      -- The first tick only synchronizes the filter time. The first reading waits a
+      -- tick, and from there the readings of the previous tick are applied each tick.
+      -- The filter state reports the reading last consumed, not the one applied:
+      Send_Tick (Self, 0, Zero_Vector, Zero_Vector, Fresh => False);
+      Send_Tick (Self, 1, Attitude, Zero_Vector);
+      Boolean_Assert.Eq (St_Att_Valid (Self), False);
+      Boolean_Assert.Eq (Rate_Valid (Self), False);
+      for Step in 2 .. 10 loop
+         Send_Tick (Self, Step, Attitude, Zero_Vector);
+         Boolean_Assert.Eq (St_Att_Valid (Self), True);
+         Boolean_Assert.Eq (Rate_Valid (Self), True);
+         Unsigned_64_Assert.Eq (Filter_State (Self).Last_Measurement_Time, Unsigned_64 (Step) * Half_Second_Ns);
+      end loop;
+
+      -- A tick with no new reading still applies the held one of the previous tick:
+      Send_Tick (Self, 11, Attitude, Zero_Vector, Fresh => False);
+      Boolean_Assert.Eq (St_Att_Valid (Self), True);
+      Boolean_Assert.Eq (Rate_Valid (Self), True);
+
+      -- With the delay removed a new reading is applied at once, so a tick with no new
+      -- reading applies none:
+      Apply_Configuration (Self, Measurement_Delay => (Value => 0.0));
+      Send_Tick (Self, 12, Attitude, Zero_Vector);
+      Boolean_Assert.Eq (St_Att_Valid (Self), True);
+      Boolean_Assert.Eq (Rate_Valid (Self), True);
+      Send_Tick (Self, 13, Attitude, Zero_Vector, Fresh => False);
+      Boolean_Assert.Eq (St_Att_Valid (Self), False);
+      Boolean_Assert.Eq (Rate_Valid (Self), False);
+   end Test_Measurement_Delay;
+
+   -- The algorithm requires alpha in (0, 1], beta in [alpha**2, 2], positive
+   -- semi-definite noise and covariance, a finite initial state, positive noise
+   -- deviations, and a measurement delay that is not negative. Validation is the only
+   -- guard keeping a rejected value out of the throwing Create and Set_Config, so
+   -- exercise it directly.
    overriding procedure Test_Invalid_Parameter (Self : in out Instance) is
       T : Component.Inertial_Filter.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Inertial_Filter_Parameters.Instance;
@@ -463,6 +506,7 @@ package body Inertial_Filter_Tests.Implementation is
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Initial_Covariance_Diagonal (Initial_Covariance)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.St_Measurement_Noise_Std (St_Noise)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Rate_Measurement_Noise_Std (Rate_Noise)), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Measurement_Delay ((Value => 0.0))), Success);
       end Stage_Valid_Configuration;
 
       -- Stage one perturbed parameter on top of the valid set and check the set is rejected.
@@ -479,10 +523,16 @@ package body Inertial_Filter_Tests.Implementation is
 
       Expect_Rejection (Params.Alpha ((Value => 0.0)));
       Expect_Rejection (Params.Beta ((Value => 3.0)));
+      -- Beta below alpha**2 (4.0E-4 for the reference alpha):
+      Expect_Rejection (Params.Beta ((Value => 0.0)));
       Expect_Rejection (Params.Process_Noise_Diagonal ([-1.0E-6, 2.89E-6, 2.89E-6, 2.89E-8, 2.89E-8, 2.89E-8]));
       Expect_Rejection (Params.Initial_Covariance_Diagonal ([0.04, 0.04, 0.04, 0.004, 0.004, -0.004]));
       Expect_Rejection (Params.St_Measurement_Noise_Std ((Value => -0.1)));
       Expect_Rejection (Params.Rate_Measurement_Noise_Std ((Value => -0.1)));
+      -- A zero noise deviation would make the measurement noise singular:
+      Expect_Rejection (Params.St_Measurement_Noise_Std ((Value => 0.0)));
+      Expect_Rejection (Params.Rate_Measurement_Noise_Std ((Value => 0.0)));
+      Expect_Rejection (Params.Measurement_Delay ((Value => -0.1)));
 
       -- A non-finite initial state is rejected. The value is injected as raw bytes because
       -- the compiler will not let a non-finite Long_Float be written as a literal, and

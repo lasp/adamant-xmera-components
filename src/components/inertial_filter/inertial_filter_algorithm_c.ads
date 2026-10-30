@@ -35,12 +35,13 @@ package Inertial_Filter_Algorithm_C is
 
    --* @brief Report whether a configuration would be accepted by Create.
    --* @param Alpha                      [-]     Sigma point spread; in (0, 1].
-   --* @param Beta                       [-]     Prior knowledge tunable; in [0, 2].
-   --* @param Process_Noise              [-]     N x N process noise; positive semi-definite.
+   --* @param Beta                       [-]     Prior knowledge tunable; in [Alpha**2, 2].
+   --* @param Process_Noise              [-]     N x N process noise; finite, symmetric, and positive semi-definite.
    --* @param Initial_State              [-]     N element initial state seed; finite.
-   --* @param Initial_Covariance         [-]     N x N initial covariance; positive semi-definite.
-   --* @param St_Measurement_Noise_Std   [-]     Star tracker attitude measurement noise std; >= 0.
-   --* @param Rate_Measurement_Noise_Std [rad/s] Rate measurement noise std; >= 0.
+   --* @param Initial_Covariance         [-]     N x N initial covariance; finite, symmetric, and positive semi-definite.
+   --* @param St_Measurement_Noise_Std   [-]     Star tracker attitude measurement noise std; > 0.
+   --* @param Rate_Measurement_Noise_Std [rad/s] Rate measurement noise std; > 0.
+   --* @param Measurement_Delay          [s]     Processing delay for late measurements; >= 0.
    --* @return True when the configuration is valid. Never throws, so it can guard the
    --* throwing Create from an invalid configuration.
    function Validate_Config
@@ -50,7 +51,8 @@ package Inertial_Filter_Algorithm_C is
       Initial_State              : access constant Inertial_Filter_State_Vector.C.U_C;
       Initial_Covariance         : access constant Inertial_Filter_State_Matrix.C.U_C;
       St_Measurement_Noise_Std   : Long_Float;
-      Rate_Measurement_Noise_Std : Long_Float)
+      Rate_Measurement_Noise_Std : Long_Float;
+      Measurement_Delay          : Long_Float)
      return Interfaces.C.C_bool
      with Import        => True,
           Convention    => C,
@@ -67,7 +69,8 @@ package Inertial_Filter_Algorithm_C is
       Initial_State              : access constant Inertial_Filter_State_Vector.C.U_C;
       Initial_Covariance         : access constant Inertial_Filter_State_Matrix.C.U_C;
       St_Measurement_Noise_Std   : Long_Float;
-      Rate_Measurement_Noise_Std : Long_Float)
+      Rate_Measurement_Noise_Std : Long_Float;
+      Measurement_Delay          : Long_Float)
      return Inertial_Filter_Algorithm_Access
      with Import        => True,
           Convention    => C,
@@ -85,7 +88,8 @@ package Inertial_Filter_Algorithm_C is
       Initial_State              : access constant Inertial_Filter_State_Vector.C.U_C;
       Initial_Covariance         : access constant Inertial_Filter_State_Matrix.C.U_C;
       St_Measurement_Noise_Std   : Long_Float;
-      Rate_Measurement_Noise_Std : Long_Float)
+      Rate_Measurement_Noise_Std : Long_Float;
+      Measurement_Delay          : Long_Float)
      with Import        => True,
           Convention    => C,
           External_Name => "InertialFilterAlgorithm_setConfig";

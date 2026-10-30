@@ -40,6 +40,9 @@ private
    -- Ensure a parameter update reaches the filter while keeping the current
    -- estimate, with the new seed showing only at the next estimate reset.
    overriding procedure Test_Parameter_Update (Self : in out Instance);
+   -- Ensure a configured measurement delay holds a reading until the filter time has
+   -- reached its time tag plus the delay, then applies it.
+   overriding procedure Test_Measurement_Delay (Self : in out Instance);
    -- Ensure a staged configuration the algorithm would reject is refused at
    -- validation.
    overriding procedure Test_Invalid_Parameter (Self : in out Instance);

@@ -6,7 +6,7 @@ parameters:
     type: Packed_F64.T
     default: "(Value => 0.02)"
   - name: Beta
-    description: "[-] Prior knowledge tunable. Must be in [0, 2]."
+    description: "[-] Prior knowledge tunable. Must be in [Alpha**2, 2]."
     type: Packed_F64.T
     default: "(Value => 2.0)"
   - name: Process_Noise_Diagonal
@@ -22,10 +22,14 @@ parameters:
     type: Packed_F64x6.T
     default: "[1.0E-4, 1.0E-4, 1.0E-4, 1.0E-4, 1.0E-4, 1.0E-4]"
   - name: St_Measurement_Noise_Std
-    description: "[-] Standard deviation of the star tracker attitude measurement noise. Must not be negative."
+    description: "[-] Standard deviation of the star tracker attitude measurement noise. Must be greater than zero."
     type: Packed_F64.T
     default: "(Value => 1.0E-4)"
   - name: Rate_Measurement_Noise_Std
-    description: "[rad/s] Standard deviation of the rate measurement noise. Must not be negative."
+    description: "[rad/s] Standard deviation of the rate measurement noise. Must be greater than zero."
     type: Packed_F64.T
     default: "(Value => 0.001)"
+  - name: Measurement_Delay
+    description: "[s] Processing delay for late readings. A reading is applied only once the filter time has reached its time tag plus the delay. Both readings come from the one star tracker product, so they always arrive in time order and zero, which applies every reading at once, is the right setting until a source with another latency is added. The filter queue holds five readings and two arrive per tick, so it holds the readings of two ticks: a delay that holds a reading past the tick after the one it arrives on drops readings. Must not be negative."
+    type: Packed_F64.T
+    default: "(Value => 0.0)"

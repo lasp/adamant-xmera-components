@@ -43,6 +43,9 @@ private
    -- Ensure a configured measurement delay holds a reading until the filter time has
    -- reached its time tag plus the delay, then applies it.
    overriding procedure Test_Measurement_Delay (Self : in out Instance);
+   -- Ensure a bias estimate that leaves its bounds is reset to its seed value and
+   -- variance rather than held at the bound.
+   overriding procedure Test_Bias_Reset (Self : in out Instance);
    -- Ensure a staged configuration the algorithm would reject is refused at
    -- validation.
    overriding procedure Test_Invalid_Parameter (Self : in out Instance);

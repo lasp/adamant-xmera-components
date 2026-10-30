@@ -48,17 +48,17 @@ package Sunline_Filter_Algorithm_C is
 
    --* @brief Report whether a configuration would be accepted by Create/Set_Config.
    --* @param Alpha                      [-]     Sigma point spread; in (0, 1].
-   --* @param Beta                       [-]     Prior knowledge tunable; in [0, 2].
-   --* @param Process_Noise              [-]     N x N process noise; positive semi-definite.
-   --* @param Initial_State              [-]     N element initial state seed; finite.
-   --* @param Initial_Covariance         [-]     N x N initial covariance; positive semi-definite.
-   --* @param Bias_Lower_Bound           [-]     Lower clamp on the CSS bias state; > 0 and < the upper bound.
-   --* @param Bias_Upper_Bound           [-]     Upper clamp on the CSS bias state; > the lower bound.
+   --* @param Beta                       [-]     Prior knowledge tunable; in [Alpha**2, 2].
+   --* @param Process_Noise              [-]     N x N process noise; finite, symmetric, and positive semi-definite.
+   --* @param Initial_State              [-]     N element initial state seed; finite, with the bias within the bias bounds.
+   --* @param Initial_Covariance         [-]     N x N initial covariance; finite, symmetric, and positive semi-definite.
+   --* @param Bias_Lower_Bound           [-]     CSS bias lower bound, below which the bias is reset; > 0 and < the upper bound.
+   --* @param Bias_Upper_Bound           [-]     CSS bias upper bound, above which the bias is reset; > the lower bound.
    --* @param Css_N_Hat                  [-]     Per-CSS boresight unit vectors in body frame.
    --* @param Css_Scale_Factor           [-]     Per-CSS calibration scale factor; each >= 0.
    --* @param Sensor_Threshold           [-]     Minimum cosine value that counts a sensor as active; >= 0.
-   --* @param Css_Measurement_Noise_Std  [-]     CSS measurement noise std; >= 0.
-   --* @param Gyro_Measurement_Noise_Std [rad/s] Gyro measurement noise std; >= 0.
+   --* @param Css_Measurement_Noise_Std  [-]     CSS measurement noise std; > 0.
+   --* @param Gyro_Measurement_Noise_Std [rad/s] Gyro measurement noise std; > 0.
    --* @param Measurement_Delay          [s]     Processing delay for late measurements; >= 0.
    --* @return True when the configuration is valid. Never throws, so it can guard the
    --* throwing Create/Set_Config from an invalid configuration.
