@@ -1,11 +1,11 @@
 --------------------------------------------------------------------------------
--- Vector_Duty_Cycle Component Tester Body
+-- Torque_Duty_Cycle Component Tester Body
 --------------------------------------------------------------------------------
 
 -- Includes:
 with Parameter;
 
-package body Component.Vector_Duty_Cycle.Implementation.Tester is
+package body Component.Torque_Duty_Cycle.Implementation.Tester is
 
    ---------------------------------------
    -- Initialize heap variables:
@@ -138,7 +138,7 @@ package body Component.Vector_Duty_Cycle.Implementation.Tester is
    -- Data product handler primitive:
    -----------------------------------------------
    -- Description:
-   --    Data products for the Vector Duty Cycle component.
+   --    Data products for the Torque Duty Cycle component.
    -- [Nm] The commanded torque during an on period, zero during an off period. The
    -- thruster force mapping takes this as its commanded torque.
    overriding procedure Gated_Torque (Self : in out Instance; Arg : in Cmd_Torque_Body.T) is
@@ -210,4 +210,4 @@ package body Component.Vector_Duty_Cycle.Implementation.Tester is
       return Param_Update.Status;
    end Update_Parameters;
 
-end Component.Vector_Duty_Cycle.Implementation.Tester;
+end Component.Torque_Duty_Cycle.Implementation.Tester;

@@ -3,17 +3,19 @@ pragma Ada_2012;
 pragma Style_Checks (Off);
 pragma Warnings (Off, "-gnatwu");
 
-with Cmd_Torque_Body.C;
+with Packed_F32x3_Record.C;
 with Interfaces; use Interfaces;
 with Interfaces.C;
 with Packed_F32x3.C;
 
 package Vector_Duty_Cycle_Algorithm_C is
 
-   -- ABI validation: the vector crosses the FFI boundary as the commanded torque
-   -- record, which must be exactly the shim's Vector3f_c, float data[3]. The shape is
-   -- fixed with no C getter behind it, so the only check available is the footprint.
-   pragma Assert (Cmd_Torque_Body.C.U_C'Object_Size = Packed_F32x3.C.U_C'Object_Size);
+   -- ABI validation: the vector crosses the FFI boundary as the three float record,
+   -- which must be exactly the shim's Vector3f_c, float data[3]. The shape is fixed
+   -- with no C getter behind it, so the only check available is the footprint. The
+   -- wrappers of the torque and the force duty cycles share this binding, each
+   -- converting its own record to and from this one.
+   pragma Assert (Packed_F32x3_Record.C.U_C'Object_Size = Packed_F32x3.C.U_C'Object_Size);
 
    --* Opaque handle for a VectorDutyCycleAlgorithm instance.
    type Vector_Duty_Cycle_Algorithm is limited private;
@@ -80,12 +82,12 @@ package Vector_Duty_Cycle_Algorithm_C is
    --* @brief Apply one control period of the duty cycle to the input vector.
    --* Advances the position in the cycle.
    --* @param Self         The algorithm instance.
-   --* @param Input_Vector [Nm] The commanded torque.
-   --* @return [Nm] The input vector in an on period, zero in an off period.
+   --* @param Input_Vector The vector the gate applies to, a torque or a force.
+   --* @return The input vector in an on period, zero in an off period.
    function Update
      (Self         : Vector_Duty_Cycle_Algorithm_Access;
-      Input_Vector : access constant Cmd_Torque_Body.C.U_C)
-     return Cmd_Torque_Body.C.U_C
+      Input_Vector : access constant Packed_F32x3_Record.C.U_C)
+     return Packed_F32x3_Record.C.U_C
      with Import        => True,
           Convention    => C,
           External_Name => "VectorDutyCycleAlgorithm_update";

@@ -1,9 +1,9 @@
 --------------------------------------------------------------------------------
--- Vector_Duty_Cycle Component Tester Spec
+-- Torque_Duty_Cycle Component Tester Spec
 --------------------------------------------------------------------------------
 
 -- Includes:
-with Component.Vector_Duty_Cycle_Reciprocal;
+with Component.Torque_Duty_Cycle_Reciprocal;
 with Printable_History;
 with Data_Product_Return.Representation;
 with Data_Product_Fetch.Representation;
@@ -19,9 +19,9 @@ with Cmd_Torque_Body.Representation;
 -- reaction wheels re-stabilize the attitude. The cadence is free-running and
 -- advances every tick. Wraps the VectorDutyCycleAlgorithm C++ algorithm via its C
 -- shim.
-package Component.Vector_Duty_Cycle.Implementation.Tester is
+package Component.Torque_Duty_Cycle.Implementation.Tester is
 
-   use Component.Vector_Duty_Cycle_Reciprocal;
+   use Component.Torque_Duty_Cycle_Reciprocal;
    -- Invoker connector history packages:
    package Data_Product_Fetch_T_Service_History_Package is new Printable_History (Data_Product_Fetch.T, Data_Product_Fetch.Representation.Image);
    package Data_Product_Fetch_T_Service_Return_History_Package is new Printable_History (Data_Product_Return.T, Data_Product_Return.Representation.Image);
@@ -31,9 +31,9 @@ package Component.Vector_Duty_Cycle.Implementation.Tester is
    package Gated_Torque_History_Package is new Printable_History (Cmd_Torque_Body.T, Cmd_Torque_Body.Representation.Image);
 
    -- Component class instance:
-   type Instance is new Component.Vector_Duty_Cycle_Reciprocal.Base_Instance with record
+   type Instance is new Component.Torque_Duty_Cycle_Reciprocal.Base_Instance with record
       -- The component instance under test:
-      Component_Instance : aliased Component.Vector_Duty_Cycle.Implementation.Instance;
+      Component_Instance : aliased Component.Torque_Duty_Cycle.Implementation.Instance;
       -- Connector histories:
       Data_Product_Fetch_T_Service_History : Data_Product_Fetch_T_Service_History_Package.Instance;
       Data_Product_T_Recv_Sync_History : Data_Product_T_Recv_Sync_History_Package.Instance;
@@ -83,7 +83,7 @@ package Component.Vector_Duty_Cycle.Implementation.Tester is
    -- Data product handler primitives:
    -----------------------------------------------
    -- Description:
-   --    Data products for the Vector Duty Cycle component.
+   --    Data products for the Torque Duty Cycle component.
    -- [Nm] The commanded torque during an on period, zero during an off period. The
    -- thruster force mapping takes this as its commanded torque.
    overriding procedure Gated_Torque (Self : in out Instance; Arg : in Cmd_Torque_Body.T);
@@ -104,4 +104,4 @@ package Component.Vector_Duty_Cycle.Implementation.Tester is
    -- working parameter values with the staged values.
    not overriding function Update_Parameters (Self : in out Instance) return Parameter_Update_Status.E;
 
-end Component.Vector_Duty_Cycle.Implementation.Tester;
+end Component.Torque_Duty_Cycle.Implementation.Tester;

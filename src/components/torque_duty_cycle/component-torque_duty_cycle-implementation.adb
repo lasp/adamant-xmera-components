@@ -1,10 +1,11 @@
 --------------------------------------------------------------------------------
--- Vector_Duty_Cycle Component Implementation Body
+-- Torque_Duty_Cycle Component Implementation Body
 --------------------------------------------------------------------------------
 
-with Cmd_Torque_Body.C;
+with Packed_F32x3.C;
+with Packed_F32x3_Record.C;
 
-package body Component.Vector_Duty_Cycle.Implementation is
+package body Component.Torque_Duty_Cycle.Implementation is
 
    --------------------------------------------------
    -- Subprogram for implementation init method:
@@ -46,10 +47,9 @@ package body Component.Vector_Duty_Cycle.Implementation is
          Self.Get_Commanded_Torque (Value => Torque_Dep, Stale_Reference => Arg.Time);
       pragma Assert (Torque_Status = Success);
 
-      -- The torque record is exactly the vector the shim takes, so the dependency
-      -- crosses the FFI boundary unpacked, with no intermediate array. It crosses by
-      -- pointer, so it needs an object to point at.
-      Torque_C : aliased constant Cmd_Torque_Body.C.U_C := Cmd_Torque_Body.C.Unpack (Torque_Dep);
+      -- The torque vector crosses the FFI boundary as the three float record the
+      -- shared binding takes. It crosses by pointer, so it needs an object to point at.
+      Torque_C : aliased constant Packed_F32x3_Record.C.U_C := (Value => Packed_F32x3.C.Unpack (Torque_Dep.Torque_Request_Body));
    begin
       -- Apply any pending parameter update (e.g. a new cadence):
       Self.Update_Parameters;
@@ -58,7 +58,7 @@ package body Component.Vector_Duty_Cycle.Implementation is
       -- is qualified because Parameter_Enums also declares one.
       Self.Data_Product_T_Send (Self.Data_Products.Gated_Torque (
          Arg.Time,
-         Cmd_Torque_Body.C.Pack (Vector_Duty_Cycle_Algorithm_C.Update (Self.Alg, Input_Vector => Torque_C'Access))
+         (Torque_Request_Body => Packed_F32x3.C.Pack (Vector_Duty_Cycle_Algorithm_C.Update (Self.Alg, Input_Vector => Torque_C'Access).Value))
       ));
    end Tick_T_Recv_Sync;
 
@@ -85,7 +85,7 @@ package body Component.Vector_Duty_Cycle.Implementation is
    -- Parameter handlers:
    -----------------------------------------------
    -- Description:
-   --    Parameters for the Vector Duty Cycle component.
+   --    Parameters for the Torque Duty Cycle component.
    -- This procedure is called when the parameters of a component have been updated. In this case we
    -- push the whole configuration into the C algorithm. The position in the cycle is kept, so the
    -- new cycle length takes effect without restarting the cycle.
@@ -125,7 +125,7 @@ package body Component.Vector_Duty_Cycle.Implementation is
    -- Data dependency handlers:
    -----------------------------------------------
    -- Description:
-   --    Data dependencies for the Vector Duty Cycle component.
+   --    Data dependencies for the Torque Duty Cycle component.
    -- Invalid data dependency handler. This procedure is called when a data dependency's id or length are found to be invalid:
    overriding procedure Invalid_Data_Dependency (Self : in out Instance; Id : in Data_Product_Types.Data_Product_Id; Ret : in Data_Product_Return.T) is
       pragma Annotate (GNATSAS, Intentional, "subp always fails", "intentional assertion");
@@ -134,4 +134,4 @@ package body Component.Vector_Duty_Cycle.Implementation is
       pragma Assert (False);
    end Invalid_Data_Dependency;
 
-end Component.Vector_Duty_Cycle.Implementation;
+end Component.Torque_Duty_Cycle.Implementation;

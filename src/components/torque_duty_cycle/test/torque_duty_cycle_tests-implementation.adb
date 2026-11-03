@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
--- Vector_Duty_Cycle Tests Body
+-- Torque_Duty_Cycle Tests Body
 --------------------------------------------------------------------------------
 
 with Interfaces; use Interfaces;
@@ -12,9 +12,9 @@ with Packed_U32;
 with Parameter_Enums.Assertion;
 use Parameter_Enums.Parameter_Update_Status;
 use Parameter_Enums.Assertion;
-with Vector_Duty_Cycle_Parameters;
+with Torque_Duty_Cycle_Parameters;
 
-package body Vector_Duty_Cycle_Tests.Implementation is
+package body Torque_Duty_Cycle_Tests.Implementation is
 
    -------------------------------------------------------------------------
    -- Test configuration:
@@ -30,8 +30,8 @@ package body Vector_Duty_Cycle_Tests.Implementation is
 
    -- Stage and apply a cadence.
    procedure Apply_Cadence (Self : in out Instance; On_Periods : in Unsigned_32; Off_Periods : in Unsigned_32) is
-      T : Component.Vector_Duty_Cycle.Implementation.Tester.Instance_Access renames Self.Tester;
-      Params : Vector_Duty_Cycle_Parameters.Instance;
+      T : Component.Torque_Duty_Cycle.Implementation.Tester.Instance_Access renames Self.Tester;
+      Params : Torque_Duty_Cycle_Parameters.Instance;
    begin
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.On_Periods ((Value => On_Periods))), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Off_Periods ((Value => Off_Periods))), Success);
@@ -40,7 +40,7 @@ package body Vector_Duty_Cycle_Tests.Implementation is
 
    -- Tick once with the nominal torque and check that one output was published.
    procedure Tick (Self : in out Instance; Tick_Number : in Natural) is
-      T : Component.Vector_Duty_Cycle.Implementation.Tester.Instance_Access renames Self.Tester;
+      T : Component.Torque_Duty_Cycle.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
       T.Commanded_Torque := Nominal_Torque;
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
@@ -51,7 +51,7 @@ package body Vector_Duty_Cycle_Tests.Implementation is
    -- Tick once and check the output. The duty cycle does no arithmetic on the vector,
    -- so a passed-through torque compares exactly.
    procedure Tick_And_Expect (Self : in out Instance; Tick_Number : in Natural; On : in Boolean) is
-      T : Component.Vector_Duty_Cycle.Implementation.Tester.Instance_Access renames Self.Tester;
+      T : Component.Torque_Duty_Cycle.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
       Tick (Self, Tick_Number);
       Cmd_Torque_Body_Assert.Eq (T.Gated_Torque_History.Get (Tick_Number), (if On then Nominal_Torque else No_Torque));
@@ -95,7 +95,7 @@ package body Vector_Duty_Cycle_Tests.Implementation is
    -- ticks once and then resets to start at the on window, as the reference test
    -- starts each cadence fresh.
    overriding procedure Test (Self : in out Instance) is
-      T : Component.Vector_Duty_Cycle.Implementation.Tester.Instance_Access renames Self.Tester;
+      T : Component.Torque_Duty_Cycle.Implementation.Tester.Instance_Access renames Self.Tester;
       Tick_Number : Natural := 0;
 
       procedure Run_Cadence (On_Periods : in Unsigned_32; Off_Periods : in Unsigned_32) is
@@ -127,7 +127,7 @@ package body Vector_Duty_Cycle_Tests.Implementation is
    -- Check that the reset connector restarts the duty cycle at its on window, and
    -- that a parameter update alone does not.
    overriding procedure Test_Reset (Self : in out Instance) is
-      T : Component.Vector_Duty_Cycle.Implementation.Tester.Instance_Access renames Self.Tester;
+      T : Component.Torque_Duty_Cycle.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
       -- Init built the default cadence, on every period, and its first update was the
       -- on window. One on period then two off periods reaches the algorithm on the
@@ -155,8 +155,8 @@ package body Vector_Duty_Cycle_Tests.Implementation is
    -- 32 bits. Validation is the only guard keeping a rejected value out of the
    -- throwing Set_Config, so exercise it directly.
    overriding procedure Test_Invalid_Parameter (Self : in out Instance) is
-      T : Component.Vector_Duty_Cycle.Implementation.Tester.Instance_Access renames Self.Tester;
-      Params : Vector_Duty_Cycle_Parameters.Instance;
+      T : Component.Torque_Duty_Cycle.Implementation.Tester.Instance_Access renames Self.Tester;
+      Params : Torque_Duty_Cycle_Parameters.Instance;
       One : constant Packed_U32.T := (Value => 1);
       Two : constant Packed_U32.T := (Value => 2);
 
@@ -205,7 +205,7 @@ package body Vector_Duty_Cycle_Tests.Implementation is
    -- A data dependency that comes back with the wrong identifier means the assembly
    -- is wired incorrectly. The component asserts rather than publishing anything.
    overriding procedure Test_Invalid_Data_Dependency (Self : in out Instance) is
-      T : Component.Vector_Duty_Cycle.Implementation.Tester.Instance_Access renames Self.Tester;
+      T : Component.Torque_Duty_Cycle.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
       T.Data_Dependency_Return_Id_Override := 999;
       begin
@@ -218,4 +218,4 @@ package body Vector_Duty_Cycle_Tests.Implementation is
       Natural_Assert.Eq (T.Gated_Torque_History.Get_Count, 0);
    end Test_Invalid_Data_Dependency;
 
-end Vector_Duty_Cycle_Tests.Implementation;
+end Torque_Duty_Cycle_Tests.Implementation;

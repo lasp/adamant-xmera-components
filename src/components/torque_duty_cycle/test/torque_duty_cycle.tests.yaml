@@ -1,5 +1,5 @@
 ---
-description: This is a unit test suite for the Vector Duty Cycle component
+description: This is a unit test suite for the Torque Duty Cycle component
 tests:
   - name: Test
     description: Run the cadences of the Python reference test to ensure the Ada to C to C++ integration is sound.
