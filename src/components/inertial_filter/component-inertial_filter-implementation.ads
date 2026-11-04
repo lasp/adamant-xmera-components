@@ -114,7 +114,8 @@ private
       Initial_State : in Packed_F64x6.U;
       Initial_Covariance_Diagonal : in Packed_F64x6.U;
       St_Measurement_Noise_Std : in Packed_F64.U;
-      Rate_Measurement_Noise_Std : in Packed_F64.U
+      Rate_Measurement_Noise_Std : in Packed_F64.U;
+      Measurement_Delay : in Packed_F64.U
    ) return Parameter_Validation_Status.E;
 
    -----------------------------------------------
