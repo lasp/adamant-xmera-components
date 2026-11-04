@@ -52,8 +52,8 @@ package Sunline_Filter_Algorithm_C is
    --* @param Process_Noise              [-]     N x N process noise; finite, symmetric, and positive semi-definite.
    --* @param Initial_State              [-]     N element initial state seed; finite, with the bias within the bias bounds.
    --* @param Initial_Covariance         [-]     N x N initial covariance; finite, symmetric, and positive semi-definite.
-   --* @param Bias_Lower_Bound           [-]     Lower clamp on the CSS bias state; > 0 and < the upper bound.
-   --* @param Bias_Upper_Bound           [-]     Upper clamp on the CSS bias state; > the lower bound.
+   --* @param Bias_Lower_Bound           [-]     CSS bias lower bound, below which the bias is reset; > 0 and < the upper bound.
+   --* @param Bias_Upper_Bound           [-]     CSS bias upper bound, above which the bias is reset; > the lower bound.
    --* @param Css_N_Hat                  [-]     Per-CSS boresight unit vectors in body frame.
    --* @param Css_Scale_Factor           [-]     Per-CSS calibration scale factor; each >= 0.
    --* @param Sensor_Threshold           [-]     Minimum cosine value that counts a sensor as active; >= 0.
