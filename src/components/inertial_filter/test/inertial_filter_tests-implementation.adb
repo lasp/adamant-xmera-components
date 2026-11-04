@@ -487,9 +487,10 @@ package body Inertial_Filter_Tests.Implementation is
    end Test_Measurement_Delay;
 
    -- The algorithm requires alpha in (0, 1], beta in [0, 2], positive semi-definite
-   -- noise and covariance, a finite initial state, and noise deviations that are not
-   -- negative. Validation is the only guard keeping a rejected value out of the
-   -- throwing Create and Set_Config, so exercise it directly.
+   -- noise and covariance, a finite initial state, noise deviations that are not
+   -- negative, and a measurement delay that is not negative. Validation is the only
+   -- guard keeping a rejected value out of the throwing Create and Set_Config, so
+   -- exercise it directly.
    overriding procedure Test_Invalid_Parameter (Self : in out Instance) is
       T : Component.Inertial_Filter.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Inertial_Filter_Parameters.Instance;
@@ -505,6 +506,7 @@ package body Inertial_Filter_Tests.Implementation is
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Initial_Covariance_Diagonal (Initial_Covariance)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.St_Measurement_Noise_Std (St_Noise)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Rate_Measurement_Noise_Std (Rate_Noise)), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Measurement_Delay ((Value => 0.0))), Success);
       end Stage_Valid_Configuration;
 
       -- Stage one perturbed parameter on top of the valid set and check the set is rejected.
@@ -525,6 +527,7 @@ package body Inertial_Filter_Tests.Implementation is
       Expect_Rejection (Params.Initial_Covariance_Diagonal ([0.04, 0.04, 0.04, 0.004, 0.004, -0.004]));
       Expect_Rejection (Params.St_Measurement_Noise_Std ((Value => -0.1)));
       Expect_Rejection (Params.Rate_Measurement_Noise_Std ((Value => -0.1)));
+      Expect_Rejection (Params.Measurement_Delay ((Value => -0.1)));
 
       -- A non-finite initial state is rejected. The value is injected as raw bytes because
       -- the compiler will not let a non-finite Long_Float be written as a literal, and
