@@ -57,8 +57,8 @@ package Sunline_Filter_Algorithm_C is
    --* @param Css_N_Hat                  [-]     Per-CSS boresight unit vectors in body frame.
    --* @param Css_Scale_Factor           [-]     Per-CSS calibration scale factor; each >= 0.
    --* @param Sensor_Threshold           [-]     Minimum cosine value that counts a sensor as active; >= 0.
-   --* @param Css_Measurement_Noise_Std  [-]     CSS measurement noise std; >= 0.
-   --* @param Gyro_Measurement_Noise_Std [rad/s] Gyro measurement noise std; >= 0.
+   --* @param Css_Measurement_Noise_Std  [-]     CSS measurement noise std; > 0.
+   --* @param Gyro_Measurement_Noise_Std [rad/s] Gyro measurement noise std; > 0.
    --* @param Measurement_Delay          [s]     Processing delay for late measurements; >= 0.
    --* @return True when the configuration is valid. Never throws, so it can guard the
    --* throwing Create/Set_Config from an invalid configuration.
