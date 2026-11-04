@@ -1,14 +1,13 @@
 ---
-description: Inertial 3D algorithm produces a fixed inertial attitude reference message. The algorithm holds the reference attitude as configuration and returns it unchanged on every tick. The attitude arrives through a connector from the component that commands the inertial-hold state, and reconfigures the algorithm on receipt.
+description: Inertial 3D algorithm produces a fixed inertial attitude reference message. The algorithm holds the reference attitude as configuration and returns it unchanged on every tick. The attitude is a parameter, and the algorithm validates it before it is applied.
 execution: passive
 init:
-  description: Initializes the inertial 3D algorithm instance.
+  description: Initializes the inertial 3D algorithm instance with the default parameter value.
 connectors:
   - description: Run the algorithm up to the current time and return the attitude reference it produces.
     type: Tick.T
     return_type: Att_Ref.T
     kind: service
-  - description: Set the inertial attitude the reference holds, as the MRP from the inertial frame N to the reference frame R. The sender is required to send a finite vector, and a new attitude reconfigures the algorithm on receipt.
-    name: Attitude_T_Recv_Sync
-    type: Packed_F32x3_Record.T
-    kind: recv_sync
+  - description: The parameter update connector.
+    type: Parameter_Update.T
+    kind: modify

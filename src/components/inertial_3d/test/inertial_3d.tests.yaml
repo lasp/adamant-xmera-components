@@ -2,6 +2,8 @@
 description: This is a unit test suite for the Inertial 3D component.
 tests:
   - name: Test
-    description: Run algorithm to ensure integration is sound. The reference attitude is sent through the attitude connector and the returned reference echoes it with zero reference rates.
-  - name: Test_Holds_Attitude_Between_Commands
-    description: A commanded attitude is applied on receipt, later ticks keep it without any new command, and a new command replaces it.
+    description: Run algorithm to ensure integration is sound. The reference attitude is set as a parameter and the returned reference echoes it with zero reference rates.
+  - name: Test_Holds_Attitude_Between_Updates
+    description: An updated attitude is applied on the next tick, later ticks keep it without any new update, and a new update replaces it.
+  - name: Test_Invalid_Parameter
+    description: Ensure a non-finite attitude is refused at validation and the attitude in effect is kept.
