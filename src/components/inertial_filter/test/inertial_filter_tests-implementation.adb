@@ -523,6 +523,11 @@ package body Inertial_Filter_Tests.Implementation is
 
       Expect_Rejection (Params.Alpha ((Value => 0.0)));
       Expect_Rejection (Params.Beta ((Value => 3.0)));
+      -- Beta at its lower bound of 0 is accepted, and below it is rejected:
+      Stage_Valid_Configuration;
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Beta ((Value => 0.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
+      Expect_Rejection (Params.Beta ((Value => -0.1)));
       Expect_Rejection (Params.Process_Noise_Diagonal ([-1.0E-6, 2.89E-6, 2.89E-6, 2.89E-8, 2.89E-8, 2.89E-8]));
       Expect_Rejection (Params.Initial_Covariance_Diagonal ([0.04, 0.04, 0.04, 0.004, 0.004, -0.004]));
       Expect_Rejection (Params.St_Measurement_Noise_Std ((Value => -0.1)));
