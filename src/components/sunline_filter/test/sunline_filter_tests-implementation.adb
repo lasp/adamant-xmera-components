@@ -523,12 +523,12 @@ package body Sunline_Filter_Tests.Implementation is
       Boolean_Assert.Eq (Rate_Valid (Self), False);
    end Test_Measurement_Delay;
 
-   -- The algorithm requires alpha in (0, 1], beta in [0, 2], positive semi-definite
-   -- noise and covariance, a finite initial state, ordered positive bias bounds,
-   -- unit boresights, scale factors and a threshold that are not negative, positive
-   -- noise deviations, and a measurement delay that is not negative. Validation is the
-   -- only guard keeping a rejected value out of the throwing Create and Set_Config, so
-   -- exercise it directly.
+   -- The algorithm requires alpha in (0, 1], beta in [0, 2], positive
+   -- semi-definite noise and covariance, a finite initial state with its bias within
+   -- the bounds, ordered positive bias bounds, unit boresights, scale factors and a
+   -- threshold that are not negative, positive noise deviations, and a measurement
+   -- delay that is not negative. Validation is the only guard keeping a rejected value
+   -- out of the throwing Create and Set_Config, so exercise it directly.
    overriding procedure Test_Invalid_Parameter (Self : in out Instance) is
       T : Component.Sunline_Filter.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Sunline_Filter_Parameters.Instance;
@@ -572,6 +572,9 @@ package body Sunline_Filter_Tests.Implementation is
       Expect_Rejection (Params.Initial_Covariance_Diagonal ([1.0E-4, 1.0E-4, 1.0E-4, 1.0E-4, 1.0E-4, 1.0E-4, -1.0]));
       Expect_Rejection (Params.Bias_Lower_Bound ((Value => 0.0)));
       Expect_Rejection (Params.Bias_Upper_Bound ((Value => 0.4)));
+      -- A seed bias outside the bounds:
+      Expect_Rejection (Params.Initial_State ([1.0, 0.0, 0.0, 0.0, 0.0, Rate, 2.0]));
+      Expect_Rejection (Params.Bias_Upper_Bound ((Value => 0.9)));
       Not_Unit (0) := 2.0;
       Expect_Rejection (Params.Css_N_Hat_B (Not_Unit));
       Expect_Rejection (Params.Css_Scale_Factor ([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, -1.0]));

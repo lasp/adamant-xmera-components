@@ -14,7 +14,7 @@ parameters:
     type: Packed_F64x7.T
     default: "[1.0E-12, 1.0E-12, 1.0E-12, 1.0E-16, 1.0E-16, 1.0E-16, 1.0E-10]"
   - name: Initial_State
-    description: "[-] State the filter is seeded with: the sun direction in the body frame, the body rate in rad/s, and the intensity bias. Must be finite. The seed is taken when the filter is built and at the estimate reset; a parameter update alone keeps the running estimate."
+    description: "[-] State the filter is seeded with: the sun direction in the body frame, the body rate in rad/s, and the intensity bias. Must be finite, with the bias within the bias bounds. The seed is taken when the filter is built and at the estimate reset; a parameter update alone keeps the running estimate."
     type: Packed_F64x7.T
     default: "[0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]"
   - name: Initial_Covariance_Diagonal

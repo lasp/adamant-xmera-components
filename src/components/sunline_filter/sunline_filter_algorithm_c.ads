@@ -50,7 +50,7 @@ package Sunline_Filter_Algorithm_C is
    --* @param Alpha                      [-]     Sigma point spread; in (0, 1].
    --* @param Beta                       [-]     Prior knowledge tunable; in [0, 2].
    --* @param Process_Noise              [-]     N x N process noise; finite, symmetric, and positive semi-definite.
-   --* @param Initial_State              [-]     N element initial state seed; finite.
+   --* @param Initial_State              [-]     N element initial state seed; finite, with the bias within the bias bounds.
    --* @param Initial_Covariance         [-]     N x N initial covariance; finite, symmetric, and positive semi-definite.
    --* @param Bias_Lower_Bound           [-]     Lower clamp on the CSS bias state; > 0 and < the upper bound.
    --* @param Bias_Upper_Bound           [-]     Upper clamp on the CSS bias state; > the lower bound.
