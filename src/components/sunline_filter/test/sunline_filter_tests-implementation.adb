@@ -599,6 +599,11 @@ package body Sunline_Filter_Tests.Implementation is
 
       Expect_Rejection (Params.Alpha ((Value => 0.0)));
       Expect_Rejection (Params.Beta ((Value => 3.0)));
+      -- Beta at its lower bound of 0 is accepted, and below it is rejected:
+      Stage_Valid_Configuration;
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Beta ((Value => 0.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
+      Expect_Rejection (Params.Beta ((Value => -0.1)));
       Expect_Rejection (Params.Process_Noise_Diagonal ([-1.0E-10, 1.0E-10, 1.0E-10, 1.0E-10, 1.0E-10, 1.0E-10, 1.0E-10]));
       Expect_Rejection (Params.Initial_Covariance_Diagonal ([1.0E-4, 1.0E-4, 1.0E-4, 1.0E-4, 1.0E-4, 1.0E-4, -1.0]));
       Expect_Rejection (Params.Bias_Lower_Bound ((Value => 0.0)));
