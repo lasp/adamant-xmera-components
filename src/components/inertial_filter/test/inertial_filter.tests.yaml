@@ -15,6 +15,8 @@ tests:
     description: Ensure a reading stamped after the tick is applied at once without shutting out the readings that follow for good, and a product stale between star tracker solutions is still read.
   - name: Test_Parameter_Update
     description: Ensure a parameter update reaches the filter while keeping the current estimate, with the new seed showing only at the next estimate reset.
+  - name: Test_Measurement_Delay
+    description: Ensure a configured measurement delay holds a reading until the filter time has reached its time tag plus the delay, then applies it.
   - name: Test_Invalid_Parameter
     description: Ensure a staged configuration the algorithm would reject is refused at validation.
   - name: Test_Invalid_Data_Dependency
