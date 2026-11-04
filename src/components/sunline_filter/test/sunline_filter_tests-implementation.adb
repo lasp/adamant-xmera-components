@@ -523,6 +523,37 @@ package body Sunline_Filter_Tests.Implementation is
       Boolean_Assert.Eq (Rate_Valid (Self), False);
    end Test_Measurement_Delay;
 
+   -- The sensors read with a bias above the upper bound, so the bias estimate climbs
+   -- toward it. Each time the estimate passes the bound, the bias is reset to its seed
+   -- value and variance rather than held at the bound, so the published bias never
+   -- leaves the bounds.
+   overriding procedure Test_Bias_Reset (Self : in out Instance) is
+      Sensor_Bias : constant Long_Float := 2.0;
+      Resets : Natural := 0;
+   begin
+      Apply_Configuration (Self);
+
+      -- The first tick only synchronizes the filter time, so it still reports the
+      -- seed and is not counted as a reset:
+      Send_Tick (Self, 1, Bias => Sensor_Bias);
+      for Step in 2 .. 100 loop
+         Send_Tick (Self, Step, Bias => Sensor_Bias);
+         declare
+            State : constant Sunline_Filter_State.U := Filter_State (Self);
+         begin
+            -- The algorithm compares the bias with the bounds in single precision:
+            Long_Float_Assert.Ge (State.State (6), Bias_Lower_Bound.Value - 1.0E-6);
+            Long_Float_Assert.Le (State.State (6), Bias_Upper_Bound.Value + 1.0E-6);
+            -- A reset puts back the seed bias with the seed variance, which a
+            -- measurement update would have shrunk:
+            if abs (State.State (6) - Seed (6)) < 1.0E-6 and then abs (Variance (State, 6) - Initial_Covariance (6)) < 1.0E-4 then
+               Resets := Resets + 1;
+            end if;
+         end;
+      end loop;
+      Natural_Assert.Gt (Resets, 0);
+   end Test_Bias_Reset;
+
    -- The algorithm requires alpha in (0, 1], beta in [0, 2], positive
    -- semi-definite noise and covariance, a finite initial state with its bias within
    -- the bounds, ordered positive bias bounds, unit boresights, scale factors and a
