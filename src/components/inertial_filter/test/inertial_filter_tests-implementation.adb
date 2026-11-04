@@ -486,9 +486,9 @@ package body Inertial_Filter_Tests.Implementation is
       Boolean_Assert.Eq (Rate_Valid (Self), False);
    end Test_Measurement_Delay;
 
-   -- The algorithm requires alpha in (0, 1], beta in [0, 2], positive semi-definite
-   -- noise and covariance, a finite initial state, noise deviations that are not
-   -- negative, and a measurement delay that is not negative. Validation is the only
+   -- The algorithm requires alpha in (0, 1], beta in [0, 2], positive
+   -- semi-definite noise and covariance, a finite initial state, positive noise
+   -- deviations, and a measurement delay that is not negative. Validation is the only
    -- guard keeping a rejected value out of the throwing Create and Set_Config, so
    -- exercise it directly.
    overriding procedure Test_Invalid_Parameter (Self : in out Instance) is
@@ -527,6 +527,9 @@ package body Inertial_Filter_Tests.Implementation is
       Expect_Rejection (Params.Initial_Covariance_Diagonal ([0.04, 0.04, 0.04, 0.004, 0.004, -0.004]));
       Expect_Rejection (Params.St_Measurement_Noise_Std ((Value => -0.1)));
       Expect_Rejection (Params.Rate_Measurement_Noise_Std ((Value => -0.1)));
+      -- A zero noise deviation would make the measurement noise singular:
+      Expect_Rejection (Params.St_Measurement_Noise_Std ((Value => 0.0)));
+      Expect_Rejection (Params.Rate_Measurement_Noise_Std ((Value => 0.0)));
       Expect_Rejection (Params.Measurement_Delay ((Value => -0.1)));
 
       -- A non-finite initial state is rejected. The value is injected as raw bytes because

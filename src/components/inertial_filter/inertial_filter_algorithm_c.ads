@@ -39,8 +39,8 @@ package Inertial_Filter_Algorithm_C is
    --* @param Process_Noise              [-]     N x N process noise; positive semi-definite.
    --* @param Initial_State              [-]     N element initial state seed; finite.
    --* @param Initial_Covariance         [-]     N x N initial covariance; positive semi-definite.
-   --* @param St_Measurement_Noise_Std   [-]     Star tracker attitude measurement noise std; >= 0.
-   --* @param Rate_Measurement_Noise_Std [rad/s] Rate measurement noise std; >= 0.
+   --* @param St_Measurement_Noise_Std   [-]     Star tracker attitude measurement noise std; > 0.
+   --* @param Rate_Measurement_Noise_Std [rad/s] Rate measurement noise std; > 0.
    --* @param Measurement_Delay          [s]     Processing delay for late measurements; >= 0.
    --* @return True when the configuration is valid. Never throws, so it can guard the
    --* throwing Create from an invalid configuration.
