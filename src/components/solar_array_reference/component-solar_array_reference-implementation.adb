@@ -4,15 +4,14 @@
 
 with Att_Ref;
 with Nav_Att_Output;
-with Packed_F32;
-with Packed_F32x3;
 with Packed_F32x3.C;
 with Packed_F32x3_Record.C;
+with Solar_Array_Reference_Enums;
 
 package body Component.Solar_Array_Reference.Implementation is
 
    -- The parts of the configuration the shim takes by pointer, held together so a
-   -- caller can pass 'Access of each field. Init, Apply_Config, and
+   -- caller can pass 'Access of each field. Init, Update_Parameters_Action, and
    -- Validate_Parameters all marshal the same values, so it is assembled in one place.
    type Pointer_Config is record
       Drive_Axis : aliased Packed_F32x3_Record.C.U_C;
@@ -27,47 +26,11 @@ package body Component.Solar_Array_Reference.Implementation is
       (Drive_Axis => (Value => Packed_F32x3.C.To_C (Drive_Axis)),
        Surface_Normal => (Value => Packed_F32x3.C.To_C (Surface_Normal)));
 
-   -- Whether the applied parameters together with the last commanded mode and
-   -- angles form a configuration the algorithm accepts.
-   function Config_Is_Valid (Self : in Instance) return Boolean is
-      Cfg : aliased constant Pointer_Config := To_Pointer_Config (Self.Drive_Axis, Self.Surface_Normal);
-   begin
-      return Boolean (Validate_Config (
-         Drive_Axis            => Cfg.Drive_Axis'Access,
-         Surface_Normal        => Cfg.Surface_Normal'Access,
-         Alignment_Threshold   => Self.Alignment_Threshold.Value,
-         Tracking_Mode         => Self.Commanded_Mode,
-         Specified_Array_Angle => Self.Commanded_Angle,
-         Offset_Angle          => Self.Commanded_Offset));
-   end Config_Is_Valid;
-
-   -- Push the component's current configuration, the parameters and the last
-   -- commanded mode and angles, into the C++ algorithm. Every reconfiguration path
-   -- goes through here so the configuration is assembled in exactly one place.
-   --
-   -- Nothing is validated here. The parameters were validated at staging by
-   -- Validate_Parameters, against the same commanded values that are applied here.
-   -- The commanded values are valid to the algorithm by type, as the command handler
-   -- explains.
-   procedure Apply_Config (Self : in out Instance) is
-      Cfg : aliased constant Pointer_Config := To_Pointer_Config (Self.Drive_Axis, Self.Surface_Normal);
-   begin
-      Set_Config (
-         Self.Alg,
-         Drive_Axis            => Cfg.Drive_Axis'Access,
-         Surface_Normal        => Cfg.Surface_Normal'Access,
-         Alignment_Threshold   => Self.Alignment_Threshold.Value,
-         Tracking_Mode         => Self.Commanded_Mode,
-         Specified_Array_Angle => Self.Commanded_Angle,
-         Offset_Angle          => Self.Commanded_Offset);
-   end Apply_Config;
-
    --------------------------------------------------
    -- Subprogram for implementation init method:
    --------------------------------------------------
    -- Initializes the solar array reference algorithm with the default parameter
-   -- values, sun tracking, and zero angles. The commanded mode and angles take effect
-   -- when they are first received.
+   -- values.
    overriding procedure Init (Self : in out Instance) is
       Cfg : aliased constant Pointer_Config := To_Pointer_Config (Self.Drive_Axis, Self.Surface_Normal);
    begin
@@ -78,9 +41,9 @@ package body Component.Solar_Array_Reference.Implementation is
          Drive_Axis            => Cfg.Drive_Axis'Access,
          Surface_Normal        => Cfg.Surface_Normal'Access,
          Alignment_Threshold   => Self.Alignment_Threshold.Value,
-         Tracking_Mode         => Self.Commanded_Mode,
-         Specified_Array_Angle => Self.Commanded_Angle,
-         Offset_Angle          => Self.Commanded_Offset);
+         Tracking_Mode         => Solar_Array_Reference_Enums.Tracking_Mode.C.To_C (Self.Mode.Value),
+         Specified_Array_Angle => Self.Specified_Array_Angle.Value,
+         Offset_Angle          => Self.Offset_Angle.Value);
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -97,8 +60,7 @@ package body Component.Solar_Array_Reference.Implementation is
       use Data_Product_Enums;
       use Data_Product_Enums.Data_Dependency_Status;
       use Solar_Array_Reference_Enums;
-      use type Solar_Array_Reference_Enums.Tracking_Mode.C.E_C;
-
+      use type Solar_Array_Reference_Enums.Tracking_Mode.E;
       -- The attitudes and the sun direction the algorithm is called with. They are
       -- only fetched in the sun tracking mode. In the specified angle mode the
       -- algorithm reads none of them, so they are left at zero.
@@ -106,7 +68,8 @@ package body Component.Solar_Array_Reference.Implementation is
       Sigma_Rn : Packed_F32x3.T := [0.0, 0.0, 0.0];
       Sun_Direction : Packed_F32x3.T := [0.0, 0.0, 0.0];
    begin
-      -- Apply any pending parameter update:
+      -- Apply any pending parameter update, so a new tracking mode and angles take
+      -- effect on the tick after their update:
       Self.Update_Parameters;
 
       -- In the sun tracking mode, grab the attitude, the reference, and the sun
@@ -115,7 +78,7 @@ package body Component.Solar_Array_Reference.Implementation is
       -- algorithm execution order. That should never happen, so we assert. Only the
       -- attitudes are taken from the navigation and reference records, straight from
       -- the packed fields the shim needs.
-      if Self.Commanded_Mode = Tracking_Mode.C.Auto_Track then
+      if Self.Mode.Value = Tracking_Mode.Auto_Track then
          declare
             Attitude : Nav_Att_Output.T;
             Attitude_Status : constant Data_Dependency_Status.E :=
@@ -156,32 +119,6 @@ package body Component.Solar_Array_Reference.Implementation is
       Re_Initialize (Self.Alg);
    end Reset_Tick_T_Recv_Sync;
 
-   -- Command the tracking mode and the angles. The commanding component sends it on
-   -- every GNC state transition into a state that controls the solar arrays, between
-   -- ticks, and it reconfigures the algorithm for the ticks that follow.
-   overriding procedure Solar_Array_Reference_Command_T_Recv_Sync (Self : in out Instance; Arg : in Solar_Array_Reference_Command.T) is
-   begin
-      -- Record the command, then push the whole configuration into the algorithm.
-      --
-      -- Set_Config throws on a configuration the algorithm rejects, and there is no
-      -- recourse here: the command has already been accepted by the time it arrives.
-      -- The guard is the Ada type system, at the commanding component's command
-      -- validation. The mode is an enumeration with exactly the algorithm's values,
-      -- and the angles are Array_Angle, whose range is exactly the range the
-      -- algorithm accepts, so the ground command that carries them is rejected at
-      -- receipt when the algorithm would reject them, and a value the algorithm
-      -- refuses cannot reach this connector. The applied parameters were validated
-      -- at staging and do not interact with the commanded values.
-      Self.Commanded_Mode := Solar_Array_Reference_Enums.Tracking_Mode.C.To_C (Arg.Mode);
-      Self.Commanded_Angle := Arg.Specified_Array_Angle;
-      Self.Commanded_Offset := Arg.Offset_Angle;
-      -- The algorithm rejected the commanded mode and angles together with the
-      -- applied parameters. This cannot happen for the reasons above, so it is a
-      -- defect in the type bounds or in the algorithm's validation rules.
-      pragma Assert (Config_Is_Valid (Self));
-      Apply_Config (Self);
-   end Solar_Array_Reference_Command_T_Recv_Sync;
-
    -- The parameter update connector.
    overriding procedure Parameter_Update_T_Modify (Self : in out Instance; Arg : in out Parameter_Update.T) is
    begin
@@ -193,27 +130,43 @@ package body Component.Solar_Array_Reference.Implementation is
    -- Parameter handlers:
    -----------------------------------------------
    -- Description:
-   --    Parameters for the Solar Array Reference component.
+   --    Parameters for the Solar Array Reference component. The algorithm validates
+   --    them all together, so a mode, angle, or axis it rejects never reaches it.
+
    -- This procedure is called when the parameters of a component have been updated. In this case we
-   -- push the whole configuration into the C algorithm so subsequent updates use the new axes and
-   -- threshold together with the last commanded mode and angles.
+   -- push the whole configuration into the C algorithm so subsequent updates use the new values.
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
+      Cfg : aliased constant Pointer_Config := To_Pointer_Config (Self.Drive_Axis, Self.Surface_Normal);
    begin
-      Apply_Config (Self);
+      -- The values were checked by Validate_Parameters at staging, so Set_Config will not
+      -- reject them.
+      Set_Config (
+         Self.Alg,
+         Drive_Axis            => Cfg.Drive_Axis'Access,
+         Surface_Normal        => Cfg.Surface_Normal'Access,
+         Alignment_Threshold   => Self.Alignment_Threshold.Value,
+         Tracking_Mode         => Solar_Array_Reference_Enums.Tracking_Mode.C.To_C (Self.Mode.Value),
+         Specified_Array_Angle => Self.Specified_Array_Angle.Value,
+         Offset_Angle          => Self.Offset_Angle.Value);
    end Update_Parameters_Action;
 
    -- Validate a staged parameter set before it is applied by asking the algorithm's own
    -- non-throwing Validate_Config predicate, so the config rules live solely in the
-   -- algorithm. The predicate is asked together with the last commanded mode and
-   -- angles, so it covers the whole configuration rather than only the staged half.
-   -- Rejecting an invalid update here at staging keeps it from reaching the throwing
-   -- Set_Config across the FFI boundary.
+   -- algorithm. The set holds the staged values together with the active values of
+   -- the parameters the requesting table did not stage, so the mode and angles are
+   -- validated against the array axes and vice versa. Rejecting an invalid set here
+   -- at staging keeps it from reaching the throwing Set_Config across the FFI
+   -- boundary.
    overriding function Validate_Parameters (
       Self : in out Instance;
       Drive_Axis : in Packed_F32x3.U;
       Surface_Normal : in Packed_F32x3.U;
-      Alignment_Threshold : in Packed_F32.U
+      Alignment_Threshold : in Packed_F32.U;
+      Mode : in Packed_Tracking_Mode.U;
+      Specified_Array_Angle : in Packed_Array_Angle.U;
+      Offset_Angle : in Packed_Array_Angle.U
    ) return Parameter_Validation_Status.E is
+      Ignore : Instance renames Self;
       -- Filled in below, inside the handled part of the function, so that a conversion
       -- that raises is caught here.
       Cfg : aliased Pointer_Config;
@@ -223,9 +176,9 @@ package body Component.Solar_Array_Reference.Implementation is
          Drive_Axis            => Cfg.Drive_Axis'Access,
          Surface_Normal        => Cfg.Surface_Normal'Access,
          Alignment_Threshold   => Alignment_Threshold.Value,
-         Tracking_Mode         => Self.Commanded_Mode,
-         Specified_Array_Angle => Self.Commanded_Angle,
-         Offset_Angle          => Self.Commanded_Offset)
+         Tracking_Mode         => Solar_Array_Reference_Enums.Tracking_Mode.C.To_C (Mode.Value),
+         Specified_Array_Angle => Specified_Array_Angle.Value,
+         Offset_Angle          => Offset_Angle.Value)
       then
          return Parameter_Validation_Status.Valid;
       else
@@ -234,7 +187,13 @@ package body Component.Solar_Array_Reference.Implementation is
    exception
       -- Reachable, and the parameter rejection test covers it: float staging accepts a
       -- non-finite value, and marshalling it above raises. Rejecting the set here keeps
-      -- that from unwinding into the Parameters component.
+      -- that from unwinding into the caller.
+      -- TODO: The generated validation of the staged bytes should reject a non-finite
+      -- value, but GNAT Pro 25.2 evaluates 'Valid on an element of a packed float array
+      -- with a non native Scalar_Storage_Order on the unswapped bytes, so at staging a
+      -- NaN or infinity passes. FSF GCC fixed this in 60f5887173a4. Once the compiler
+      -- fix arrives this handler is unreachable and can go, along with the injection in
+      -- the parameter rejection test.
       when Constraint_Error =>
          return Parameter_Validation_Status.Invalid;
    end Validate_Parameters;
@@ -244,6 +203,7 @@ package body Component.Solar_Array_Reference.Implementation is
    -----------------------------------------------
    -- Description:
    --    Data dependencies for the Solar Array Reference component.
+
    -- Invalid data dependency handler. This procedure is called when a data dependency's id or length are found to be invalid:
    overriding procedure Invalid_Data_Dependency (Self : in out Instance; Id : in Data_Product_Types.Data_Product_Id; Ret : in Data_Product_Return.T) is
       pragma Annotate (GNATSAS, Intentional, "subp always fails", "intentional assertion");

@@ -16,10 +16,10 @@ with Packed_F32.Representation;
 
 -- Solar array reference angle guidance. Computes the array rotation angle that
 -- turns the array surface normal toward the sun in the reference attitude, or
--- holds a commanded angle, and publishes it for the array drive controller. The
--- tracking mode and the angles are commanded through a connector on GNC state
--- transitions. Wraps the SolarArrayReferenceAlgorithm C++ algorithm via its C
--- shim.
+-- holds a specified angle, and publishes it for the array drive controller. The
+-- tracking mode and the angles are parameters alongside the array axes and the
+-- alignment threshold, and the algorithm validates the whole set before it is
+-- applied. Wraps the SolarArrayReferenceAlgorithm C++ algorithm via its C shim.
 package Component.Solar_Array_Reference.Implementation.Tester is
 
    use Component.Solar_Array_Reference_Reciprocal;
