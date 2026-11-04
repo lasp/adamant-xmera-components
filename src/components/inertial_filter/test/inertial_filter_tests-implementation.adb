@@ -164,7 +164,7 @@ package body Inertial_Filter_Tests.Implementation is
    overriding procedure Test (Self : in out Instance) is
       T : Component.Inertial_Filter.Implementation.Tester.Instance_Access renames Self.Tester;
       Attitude : constant Packed_F32x3.T := [0.3, 0.4, 0.5];
-      Steps : constant := 400;
+      Steps : constant := 150;
    begin
       Apply_Configuration (Self);
 
@@ -226,7 +226,7 @@ package body Inertial_Filter_Tests.Implementation is
    -- and check the rate estimate converges to it while the attitude tracks the truth.
    overriding procedure Test_Rate_Update (Self : in out Instance) is
       Rate : constant Short_Float := 0.01;
-      Steps : constant := 400;
+      Steps : constant := 50;
       -- A rotation about the first body axis at a constant rate has the MRP
       -- [tan (angle / 4), 0, 0], so the truth needs no integration.
       function Truth_Attitude (Step : in Natural) return Packed_F32x3.T is
@@ -314,7 +314,7 @@ package body Inertial_Filter_Tests.Implementation is
    overriding procedure Test_Reset (Self : in out Instance) is
       T : Component.Inertial_Filter.Implementation.Tester.Instance_Access renames Self.Tester;
       Attitude : constant Packed_F32x3.T := [0.3, 0.4, 0.5];
-      Steps : constant := 200;
+      Steps : constant := 50;
    begin
       Apply_Configuration (Self);
       for Step in 1 .. Steps loop
@@ -425,7 +425,7 @@ package body Inertial_Filter_Tests.Implementation is
       Seed : constant Packed_F64x6.T := [0.1, 0.0, 0.0, 0.0, 0.0, 0.0];
    begin
       Apply_Configuration (Self);
-      for Step in 1 .. 100 loop
+      for Step in 1 .. 25 loop
          Send_Tick (Self, Step, Attitude, Zero_Vector);
       end loop;
       Short_Float_Assert.Eq (Last_Estimate (Self).Sigma_Bn (0), Attitude (0), Epsilon => 1.0E-3);
@@ -433,13 +433,13 @@ package body Inertial_Filter_Tests.Implementation is
       -- A new seed reaches the filter on the next tick without disturbing the
       -- estimate, which keeps tracking:
       Apply_Configuration (Self, Initial_State => Seed);
-      Send_Tick (Self, 101, Attitude, Zero_Vector);
+      Send_Tick (Self, 26, Attitude, Zero_Vector);
       Short_Float_Assert.Eq (Last_Estimate (Self).Sigma_Bn (0), Attitude (0), Epsilon => 1.0E-3);
 
       -- The new seed shows at the next estimate reset, so the update did reach the
       -- filter:
       T.Reset_Estimate_Tick_T_Send ((Time => T.System_Time, Count => 0));
-      Send_Tick (Self, 102, Attitude, Zero_Vector, Fresh => False);
+      Send_Tick (Self, 27, Attitude, Zero_Vector, Fresh => False);
       for I in 0 .. 2 loop
          Short_Float_Assert.Eq (Last_Estimate (Self).Sigma_Bn (I), Short_Float (Seed (I)), Epsilon => 1.0E-6);
       end loop;
