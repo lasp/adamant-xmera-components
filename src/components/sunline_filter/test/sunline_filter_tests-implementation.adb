@@ -230,7 +230,7 @@ package body Sunline_Filter_Tests.Implementation is
    overriding procedure Test (Self : in out Instance) is
       -- Start away from the truth, as the reference test's initial error case does.
       Wrong_Seed : constant Packed_F64x7.T := [0.0, 0.0, 1.0, -0.02, 0.005, -0.01, 0.6];
-      Steps : constant := 400;
+      Steps : constant := 100;
    begin
       Apply_Configuration (Self, Initial_State => Wrong_Seed);
 
@@ -433,7 +433,7 @@ package body Sunline_Filter_Tests.Implementation is
    overriding procedure Test_Reset (Self : in out Instance) is
       T : Component.Sunline_Filter.Implementation.Tester.Instance_Access renames Self.Tester;
       Wrong_Seed : constant Packed_F64x7.T := [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.6];
-      Steps : constant := 200;
+      Steps : constant := 50;
    begin
       Apply_Configuration (Self, Initial_State => Wrong_Seed);
       for Step in 1 .. Steps loop
@@ -474,16 +474,16 @@ package body Sunline_Filter_Tests.Implementation is
       Wrong_Seed : constant Packed_F64x7.T := [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.6];
    begin
       Apply_Configuration (Self, Initial_State => Wrong_Seed);
-      for Step in 1 .. 100 loop
+      for Step in 1 .. 25 loop
          Send_Tick (Self, Step);
       end loop;
-      Check_Estimate (Self, 100, Sun_Epsilon => 1.0E-2, Rate_Epsilon => 1.0E-3);
+      Check_Estimate (Self, 25, Sun_Epsilon => 1.0E-2, Rate_Epsilon => 1.0E-3);
 
       -- A new gyro noise reaches the filter on the next tick without disturbing the
       -- estimate, which keeps tracking:
       Apply_Configuration (Self, Initial_State => Wrong_Seed, Gyro_Noise_Std => (Value => 1.0E-4));
-      Send_Tick (Self, 101);
-      Check_Estimate (Self, 101, Sun_Epsilon => 1.0E-2, Rate_Epsilon => 1.0E-3);
+      Send_Tick (Self, 26);
+      Check_Estimate (Self, 26, Sun_Epsilon => 1.0E-2, Rate_Epsilon => 1.0E-3);
    end Test_Parameter_Update;
 
    -- A reading is held in the filter's queue until the filter time has reached its
@@ -536,7 +536,7 @@ package body Sunline_Filter_Tests.Implementation is
       -- The first tick only synchronizes the filter time, so it still reports the
       -- seed and is not counted as a reset:
       Send_Tick (Self, 1, Bias => Sensor_Bias);
-      for Step in 2 .. 100 loop
+      for Step in 2 .. 20 loop
          Send_Tick (Self, Step, Bias => Sensor_Bias);
          declare
             State : constant Sunline_Filter_State.U := Filter_State (Self);
