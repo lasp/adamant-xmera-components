@@ -1,7 +1,7 @@
 ---
-description: Single component record for holding a solar array angle in [-pi, pi], the range the solar array reference algorithm accepts. Used for reporting and for the parameters that carry the commanded angles of the Solar Array Reference component, so a value of this type is rejected at staging when the algorithm would reject it.
+description: Single component record for holding a solar array angle. It carries the angle parameters of the Solar Array Reference component, whose algorithm accepts angles in [-pi, pi] and rejects the rest at validation, and reports the angles as data products.
 fields:
   - name: Value
-    description: "[rad] The array angle in [-pi, pi]."
-    type: Solar_Array_Reference_Types.Array_Angle
+    description: "[rad] The array angle."
+    type: Short_Float
     format: F32

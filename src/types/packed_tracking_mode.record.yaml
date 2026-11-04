@@ -1,0 +1,7 @@
+---
+description: This record holds the solar array tracking mode of the Solar Array Reference component, packed as an 8-bit enumeration, as a parameter of that component.
+fields:
+  - name: Value
+    description: This is the tracking mode. The enumeration has exactly the modes the algorithm accepts.
+    type: Solar_Array_Reference_Enums.Tracking_Mode.E
+    format: E8

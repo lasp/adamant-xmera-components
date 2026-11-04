@@ -1,5 +1,5 @@
 ---
-description: Parameters for the Solar Array Reference component.
+description: Parameters for the Solar Array Reference component. The algorithm validates them all together, so a mode, angle, or axis it rejects never reaches it.
 parameters:
   - name: Drive_Axis
     description: "[-] Solar array drive axis in body frame components. Must be finite, within 1e-3 of unit length, and orthogonal to the surface normal."
@@ -13,3 +13,15 @@ parameters:
     description: "[rad] Angle between the sun direction and the drive axis below which the array has no preferred angle and the reference holds the current angle. Must be in [1e-3, pi/2]."
     type: Packed_F32.T
     default: "(Value => 0.1)"
+  - name: Mode
+    description: This mode selects what the array does. In Auto_Track the reference angle turns the surface normal toward the sun, plus the offset angle. In Specified_Angle the reference angle is the specified array angle.
+    type: Packed_Tracking_Mode.T
+    default: "(Value => Solar_Array_Reference_Enums.Tracking_Mode.Specified_Angle)"
+  - name: Specified_Array_Angle
+    description: "[rad] The angle the array is held at in Specified_Angle. It is ignored in the other mode. Must be in [-pi, pi]."
+    type: Packed_Array_Angle.T
+    default: "(Value => 0.0)"
+  - name: Offset_Angle
+    description: "[rad] The offset added to the sun tracking angle in Auto_Track. It is ignored in the other mode. Must be in [-pi, pi]."
+    type: Packed_Array_Angle.T
+    default: "(Value => 0.0)"

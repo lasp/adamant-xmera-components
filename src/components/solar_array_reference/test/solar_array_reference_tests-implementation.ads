@@ -15,23 +15,26 @@ private
    overriding procedure Tear_Down_Test (Self : in out Instance);
 
    -- Run the algorithm on the sun tracking cases of the Python reference test to
-   -- ensure the Ada to C to C++ integration is sound.
+   -- ensure the Ada to C to C++ integration is sound. The mode and the angles are
+   -- set as parameters.
    overriding procedure Test (Self : in out Instance);
    -- Check the aligned sun fallback to the retained angle, the offset in sun
-   -- tracking mode, and the commanded angle mode against the Python reference model.
+   -- tracking mode, and the specified angle mode against the Python reference model.
    overriding procedure Test_Tracking_Mode_Variants (Self : in out Instance);
    -- Ensure the reset connector zeroes the retained reference angle and leaves the
    -- configuration in place.
    overriding procedure Test_Reset (Self : in out Instance);
-   -- Ensure a command stays in effect on the ticks that follow it, including across
-   -- a parameter update.
-   overriding procedure Test_Command_Retained (Self : in out Instance);
+   -- Ensure the mode and angles stay in effect on the ticks that follow their
+   -- update, including across a later update of the array axes alone.
+   overriding procedure Test_Mode_Retained (Self : in out Instance);
    -- Ensure a staged configuration the algorithm would reject is refused at
-   -- validation.
+   -- validation, whether the rejected value is an array axis, the threshold, or an
+   -- angle.
    overriding procedure Test_Invalid_Parameter (Self : in out Instance);
-   -- Ensure the range of the commanded angle type is exactly the range the algorithm
-   -- accepts, so command validation rejects what the algorithm would.
-   overriding procedure Test_Array_Angle_Range (Self : in out Instance);
+   -- Ensure the angle bounds the algorithm accepts, plus and minus pi, pass
+   -- validation and the first values outside them are rejected, so an angle is
+   -- refused exactly when the algorithm would refuse it.
+   overriding procedure Test_Angle_Range (Self : in out Instance);
    -- Ensure the specified angle mode runs without the attitude inputs and the sun
    -- tracking mode requires them.
    overriding procedure Test_Specified_Angle_Without_Attitude (Self : in out Instance);

@@ -6,14 +6,13 @@
 with Tick;
 with Parameter_Update;
 with Solar_Array_Reference_Algorithm_C; use Solar_Array_Reference_Algorithm_C;
-with Solar_Array_Reference_Command;
-with Solar_Array_Reference_Enums;
-with Solar_Array_Reference_Types;
 
 -- Solar array reference angle guidance. Computes the array rotation angle that
 -- turns the array surface normal toward the sun in the reference attitude, or
--- holds a specified angle, and publishes it for the array drive controller. Wraps
--- the SolarArrayReferenceAlgorithm C++ algorithm via its C shim.
+-- holds a specified angle, and publishes it for the array drive controller. The
+-- tracking mode and the angles are parameters alongside the array axes and the
+-- alignment threshold, and the algorithm validates the whole set before it is
+-- applied. Wraps the SolarArrayReferenceAlgorithm C++ algorithm via its C shim.
 package Component.Solar_Array_Reference.Implementation is
 
    -- The component class instance record:
@@ -32,16 +31,6 @@ private
    -- The component class instance record:
    type Instance is new Solar_Array_Reference.Base_Instance with record
       Alg : Solar_Array_Reference_Algorithm_Access := null;
-      -- The last commanded tracking mode and angles. They are commanded on GNC
-      -- state transitions, so they are remembered here for the parameter update
-      -- path, which reconfigures the algorithm without a new command. The mode is
-      -- kept as the C type so it is converted once, when commanded. The angles keep
-      -- the ranged type of the command, so a value held here is always one the
-      -- algorithm accepts. The defaults keep the configuration valid for the
-      -- generated parameter default check, which runs before Init.
-      Commanded_Mode : Solar_Array_Reference_Enums.Tracking_Mode.C.E_C := Solar_Array_Reference_Enums.Tracking_Mode.C.Auto_Track;
-      Commanded_Angle : Solar_Array_Reference_Types.Array_Angle := 0.0;
-      Commanded_Offset : Solar_Array_Reference_Types.Array_Angle := 0.0;
    end record;
 
    ---------------------------------------
@@ -65,12 +54,6 @@ private
    -- its fallback when the sun is aligned with the drive axis. The configuration is
    -- untouched.
    overriding procedure Reset_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T);
-   -- Command the tracking mode and the angles. The commanding component sends it on
-   -- every GNC state transition into a state that controls the solar arrays, between
-   -- ticks, and it reconfigures the algorithm for the ticks that follow. The
-   -- component is not ticked, and not commanded, while the solar arrays are not
-   -- controlled.
-   overriding procedure Solar_Array_Reference_Command_T_Recv_Sync (Self : in out Instance; Arg : in Solar_Array_Reference_Command.T);
    -- The parameter update connector.
    overriding procedure Parameter_Update_T_Modify (Self : in out Instance; Arg : in out Parameter_Update.T);
 
@@ -84,7 +67,8 @@ private
    -- Parameter primitives:
    -----------------------------------------------
    -- Description:
-   --    Parameters for the Solar Array Reference component.
+   --    Parameters for the Solar Array Reference component. The algorithm validates
+   --    them all together, so a mode, angle, or axis it rejects never reaches it.
 
    -- Invalid parameter handler. This procedure is called when a parameter's type is found to be invalid:
    -- Null: the staging code rejects the value and returns an error status to the Parameters
@@ -110,7 +94,10 @@ private
       Self : in out Instance;
       Drive_Axis : in Packed_F32x3.U;
       Surface_Normal : in Packed_F32x3.U;
-      Alignment_Threshold : in Packed_F32.U
+      Alignment_Threshold : in Packed_F32.U;
+      Mode : in Packed_Tracking_Mode.U;
+      Specified_Array_Angle : in Packed_Array_Angle.U;
+      Offset_Angle : in Packed_Array_Angle.U
    ) return Parameter_Validation_Status.E;
 
    -----------------------------------------------

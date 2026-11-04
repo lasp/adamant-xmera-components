@@ -1,5 +1,5 @@
 ---
-description: This record holds the commanded solar array tracking mode, packed as an 8-bit enumeration, for reporting it as a data product.
+description: This record holds the solar array tracking mode of the current GNC state as the commanding component reports it, packed as an 8-bit enumeration, for reporting it as a data product.
 fields:
   - name: Value
     description: This is the commanded tracking mode.

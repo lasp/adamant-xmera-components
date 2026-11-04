@@ -2,17 +2,17 @@
 description: This is a unit test suite for the Solar Array Reference component
 tests:
   - name: Test
-    description: Run the algorithm on the sun tracking cases of the Python reference test to ensure the Ada to C to C++ integration is sound.
+    description: Run the algorithm on the sun tracking cases of the Python reference test to ensure the Ada to C to C++ integration is sound. The mode and the angles are set as parameters.
   - name: Test_Tracking_Mode_Variants
-    description: Check the aligned sun fallback to the retained angle, the offset in sun tracking mode, and the commanded angle mode against the Python reference model.
+    description: Check the aligned sun fallback to the retained angle, the offset in sun tracking mode, and the specified angle mode against the Python reference model.
   - name: Test_Reset
     description: Ensure the reset connector zeroes the retained reference angle and leaves the configuration in place.
-  - name: Test_Command_Retained
-    description: Ensure a command stays in effect on the ticks that follow it, including across a parameter update.
+  - name: Test_Mode_Retained
+    description: Ensure the mode and angles stay in effect on the ticks that follow their update, including across a later update of the array axes alone.
   - name: Test_Invalid_Parameter
-    description: Ensure a staged configuration the algorithm would reject is refused at validation.
-  - name: Test_Array_Angle_Range
-    description: Ensure the range of the commanded angle type is exactly the range the algorithm accepts, so command validation rejects what the algorithm would.
+    description: Ensure a staged configuration the algorithm would reject is refused at validation, whether the rejected value is an array axis, the threshold, or an angle.
+  - name: Test_Angle_Range
+    description: Ensure the angle bounds the algorithm accepts, plus and minus pi, pass validation and the first values outside them are rejected, so an angle is refused exactly when the algorithm would refuse it.
   - name: Test_Specified_Angle_Without_Attitude
     description: Ensure the specified angle mode runs without the attitude inputs and the sun tracking mode requires them.
   - name: Test_Invalid_Data_Dependency
