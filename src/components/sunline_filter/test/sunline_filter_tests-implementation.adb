@@ -79,13 +79,13 @@ package body Sunline_Filter_Tests.Implementation is
 
    -- The cosine each sensor reads for the sun direction at step I, scaled by the bias.
    -- The packed tables are unpacked first, so each element is read whole.
-   function Truth_Cosines (Step : in Natural) return Css_Sensor_Values.T is
+   function Truth_Cosines (Step : in Natural; Bias : in Long_Float := Truth_Bias) return Css_Sensor_Values.T is
       Sun : constant Packed_F32x3.U := Packed_F32x3.Unpack (Truth_Sun (Step));
       N_Hat : constant Packed_F32x24.U := Packed_F32x24.Unpack (Css_N_Hat_B);
       Cosines : Packed_F64x8.U;
    begin
       for Sensor in 0 .. 7 loop
-         Cosines (Sensor) := Truth_Bias * (Long_Float (N_Hat (Sensor * 3)) * Long_Float (Sun (0))
+         Cosines (Sensor) := Bias * (Long_Float (N_Hat (Sensor * 3)) * Long_Float (Sun (0))
             + Long_Float (N_Hat (Sensor * 3 + 1)) * Long_Float (Sun (1))
             + Long_Float (N_Hat (Sensor * 3 + 2)) * Long_Float (Sun (2)));
       end loop;
@@ -123,15 +123,15 @@ package body Sunline_Filter_Tests.Implementation is
 
    -- Offer the truth readings for step I and send its tick. The products are stamped
    -- with the tick time when Fresh is set, as the producers earlier in the same tick
-   -- would stamp them, and are left at the previous stamp otherwise. The histories
-   -- only hold the outputs of this tick, since the reference runs are far longer than
-   -- the history depth.
-   procedure Send_Tick (Self : in out Instance; Step : in Natural; Fresh : in Boolean := True) is
+   -- would stamp them, and are left at the previous stamp otherwise. The cosines are
+   -- scaled by Bias. The histories only hold the outputs of this tick, since the
+   -- reference runs are far longer than the history depth.
+   procedure Send_Tick (Self : in out Instance; Step : in Natural; Fresh : in Boolean := True; Bias : in Long_Float := Truth_Bias) is
       T : Component.Sunline_Filter.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
       if Fresh then
          T.Body_Rate := Truth_Rate;
-         T.Css_Cosines := Truth_Cosines (Step);
+         T.Css_Cosines := Truth_Cosines (Step, Bias);
          T.Data_Dependency_Timestamp_Override := Tick_Time (Step);
       end if;
       T.Data_Product_Fetch_T_Service_History.Clear;
