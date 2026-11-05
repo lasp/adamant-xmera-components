@@ -69,7 +69,8 @@ package body Component.Inertial_Filter.Implementation is
          Initial_State              => Cfg.Initial_State'Access,
          Initial_Covariance         => Cfg.Initial_Covariance'Access,
          St_Measurement_Noise_Std   => Self.St_Measurement_Noise_Std.Value,
-         Rate_Measurement_Noise_Std => Self.Rate_Measurement_Noise_Std.Value);
+         Rate_Measurement_Noise_Std => Self.Rate_Measurement_Noise_Std.Value,
+         Measurement_Delay          => Self.Measurement_Delay.Value);
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -242,7 +243,8 @@ package body Component.Inertial_Filter.Implementation is
          Initial_State              => Cfg.Initial_State'Access,
          Initial_Covariance         => Cfg.Initial_Covariance'Access,
          St_Measurement_Noise_Std   => Self.St_Measurement_Noise_Std.Value,
-         Rate_Measurement_Noise_Std => Self.Rate_Measurement_Noise_Std.Value);
+         Rate_Measurement_Noise_Std => Self.Rate_Measurement_Noise_Std.Value,
+         Measurement_Delay          => Self.Measurement_Delay.Value);
    end Update_Parameters_Action;
 
    -- Validate a staged parameter set before it is applied by asking the algorithm's own
@@ -257,7 +259,8 @@ package body Component.Inertial_Filter.Implementation is
       Initial_State : in Packed_F64x6.U;
       Initial_Covariance_Diagonal : in Packed_F64x6.U;
       St_Measurement_Noise_Std : in Packed_F64.U;
-      Rate_Measurement_Noise_Std : in Packed_F64.U
+      Rate_Measurement_Noise_Std : in Packed_F64.U;
+      Measurement_Delay : in Packed_F64.U
    ) return Parameter_Validation_Status.E is
       Ignore : Instance renames Self;
       -- Filled in below, inside the handled part of the function, so that a conversion
@@ -272,7 +275,8 @@ package body Component.Inertial_Filter.Implementation is
          Initial_State              => Cfg.Initial_State'Access,
          Initial_Covariance         => Cfg.Initial_Covariance'Access,
          St_Measurement_Noise_Std   => St_Measurement_Noise_Std.Value,
-         Rate_Measurement_Noise_Std => Rate_Measurement_Noise_Std.Value)
+         Rate_Measurement_Noise_Std => Rate_Measurement_Noise_Std.Value,
+         Measurement_Delay          => Measurement_Delay.Value)
       then
          return Parameter_Validation_Status.Valid;
       else

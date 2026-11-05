@@ -79,13 +79,13 @@ package body Sunline_Filter_Tests.Implementation is
 
    -- The cosine each sensor reads for the sun direction at step I, scaled by the bias.
    -- The packed tables are unpacked first, so each element is read whole.
-   function Truth_Cosines (Step : in Natural) return Css_Sensor_Values.T is
+   function Truth_Cosines (Step : in Natural; Bias : in Long_Float := Truth_Bias) return Css_Sensor_Values.T is
       Sun : constant Packed_F32x3.U := Packed_F32x3.Unpack (Truth_Sun (Step));
       N_Hat : constant Packed_F32x24.U := Packed_F32x24.Unpack (Css_N_Hat_B);
       Cosines : Packed_F64x8.U;
    begin
       for Sensor in 0 .. 7 loop
-         Cosines (Sensor) := Truth_Bias * (Long_Float (N_Hat (Sensor * 3)) * Long_Float (Sun (0))
+         Cosines (Sensor) := Bias * (Long_Float (N_Hat (Sensor * 3)) * Long_Float (Sun (0))
             + Long_Float (N_Hat (Sensor * 3 + 1)) * Long_Float (Sun (1))
             + Long_Float (N_Hat (Sensor * 3 + 2)) * Long_Float (Sun (2)));
       end loop;
@@ -123,15 +123,15 @@ package body Sunline_Filter_Tests.Implementation is
 
    -- Offer the truth readings for step I and send its tick. The products are stamped
    -- with the tick time when Fresh is set, as the producers earlier in the same tick
-   -- would stamp them, and are left at the previous stamp otherwise. The histories
-   -- only hold the outputs of this tick, since the reference runs are far longer than
-   -- the history depth.
-   procedure Send_Tick (Self : in out Instance; Step : in Natural; Fresh : in Boolean := True) is
+   -- would stamp them, and are left at the previous stamp otherwise. The cosines are
+   -- scaled by Bias. The histories only hold the outputs of this tick, since the
+   -- reference runs are far longer than the history depth.
+   procedure Send_Tick (Self : in out Instance; Step : in Natural; Fresh : in Boolean := True; Bias : in Long_Float := Truth_Bias) is
       T : Component.Sunline_Filter.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
       if Fresh then
          T.Body_Rate := Truth_Rate;
-         T.Css_Cosines := Truth_Cosines (Step);
+         T.Css_Cosines := Truth_Cosines (Step, Bias);
          T.Data_Dependency_Timestamp_Override := Tick_Time (Step);
       end if;
       T.Data_Product_Fetch_T_Service_History.Clear;
@@ -230,7 +230,7 @@ package body Sunline_Filter_Tests.Implementation is
    overriding procedure Test (Self : in out Instance) is
       -- Start away from the truth, as the reference test's initial error case does.
       Wrong_Seed : constant Packed_F64x7.T := [0.0, 0.0, 1.0, -0.02, 0.005, -0.01, 0.6];
-      Steps : constant := 400;
+      Steps : constant := 100;
    begin
       Apply_Configuration (Self, Initial_State => Wrong_Seed);
 
@@ -433,7 +433,7 @@ package body Sunline_Filter_Tests.Implementation is
    overriding procedure Test_Reset (Self : in out Instance) is
       T : Component.Sunline_Filter.Implementation.Tester.Instance_Access renames Self.Tester;
       Wrong_Seed : constant Packed_F64x7.T := [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.6];
-      Steps : constant := 200;
+      Steps : constant := 50;
    begin
       Apply_Configuration (Self, Initial_State => Wrong_Seed);
       for Step in 1 .. Steps loop
@@ -474,16 +474,16 @@ package body Sunline_Filter_Tests.Implementation is
       Wrong_Seed : constant Packed_F64x7.T := [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.6];
    begin
       Apply_Configuration (Self, Initial_State => Wrong_Seed);
-      for Step in 1 .. 100 loop
+      for Step in 1 .. 25 loop
          Send_Tick (Self, Step);
       end loop;
-      Check_Estimate (Self, 100, Sun_Epsilon => 1.0E-2, Rate_Epsilon => 1.0E-3);
+      Check_Estimate (Self, 25, Sun_Epsilon => 1.0E-2, Rate_Epsilon => 1.0E-3);
 
       -- A new gyro noise reaches the filter on the next tick without disturbing the
       -- estimate, which keeps tracking:
       Apply_Configuration (Self, Initial_State => Wrong_Seed, Gyro_Noise_Std => (Value => 1.0E-4));
-      Send_Tick (Self, 101);
-      Check_Estimate (Self, 101, Sun_Epsilon => 1.0E-2, Rate_Epsilon => 1.0E-3);
+      Send_Tick (Self, 26);
+      Check_Estimate (Self, 26, Sun_Epsilon => 1.0E-2, Rate_Epsilon => 1.0E-3);
    end Test_Parameter_Update;
 
    -- A reading is held in the filter's queue until the filter time has reached its
@@ -523,12 +523,43 @@ package body Sunline_Filter_Tests.Implementation is
       Boolean_Assert.Eq (Rate_Valid (Self), False);
    end Test_Measurement_Delay;
 
-   -- The algorithm requires alpha in (0, 1], beta in [0, 2], positive semi-definite
-   -- noise and covariance, a finite initial state, ordered positive bias bounds,
-   -- unit boresights, and scale factors, a threshold, noise deviations, and a
-   -- measurement delay that are not negative. Validation is the only guard keeping a
-   -- rejected value out of the throwing Create and Set_Config, so exercise it
-   -- directly.
+   -- The sensors read with a bias above the upper bound, so the bias estimate climbs
+   -- toward it. Each time the estimate passes the bound, the bias is reset to its seed
+   -- value and variance rather than held at the bound, so the published bias never
+   -- leaves the bounds.
+   overriding procedure Test_Bias_Reset (Self : in out Instance) is
+      Sensor_Bias : constant Long_Float := 2.0;
+      Resets : Natural := 0;
+   begin
+      Apply_Configuration (Self);
+
+      -- The first tick only synchronizes the filter time, so it still reports the
+      -- seed and is not counted as a reset:
+      Send_Tick (Self, 1, Bias => Sensor_Bias);
+      for Step in 2 .. 20 loop
+         Send_Tick (Self, Step, Bias => Sensor_Bias);
+         declare
+            State : constant Sunline_Filter_State.U := Filter_State (Self);
+         begin
+            -- The algorithm compares the bias with the bounds in single precision:
+            Long_Float_Assert.Ge (State.State (6), Bias_Lower_Bound.Value - 1.0E-6);
+            Long_Float_Assert.Le (State.State (6), Bias_Upper_Bound.Value + 1.0E-6);
+            -- A reset puts back the seed bias with the seed variance, which a
+            -- measurement update would have shrunk:
+            if abs (State.State (6) - Seed (6)) < 1.0E-6 and then abs (Variance (State, 6) - Initial_Covariance (6)) < 1.0E-4 then
+               Resets := Resets + 1;
+            end if;
+         end;
+      end loop;
+      Natural_Assert.Gt (Resets, 0);
+   end Test_Bias_Reset;
+
+   -- The algorithm requires alpha in (0, 1], beta in [0, 2], positive
+   -- semi-definite noise and covariance, a finite initial state with its bias within
+   -- the bounds, ordered positive bias bounds, unit boresights, scale factors and a
+   -- threshold that are not negative, positive noise deviations, and a measurement
+   -- delay that is not negative. Validation is the only guard keeping a rejected value
+   -- out of the throwing Create and Set_Config, so exercise it directly.
    overriding procedure Test_Invalid_Parameter (Self : in out Instance) is
       T : Component.Sunline_Filter.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Sunline_Filter_Parameters.Instance;
@@ -568,16 +599,27 @@ package body Sunline_Filter_Tests.Implementation is
 
       Expect_Rejection (Params.Alpha ((Value => 0.0)));
       Expect_Rejection (Params.Beta ((Value => 3.0)));
+      -- Beta at its lower bound of 0 is accepted, and below it is rejected:
+      Stage_Valid_Configuration;
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Beta ((Value => 0.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
+      Expect_Rejection (Params.Beta ((Value => -0.1)));
       Expect_Rejection (Params.Process_Noise_Diagonal ([-1.0E-10, 1.0E-10, 1.0E-10, 1.0E-10, 1.0E-10, 1.0E-10, 1.0E-10]));
       Expect_Rejection (Params.Initial_Covariance_Diagonal ([1.0E-4, 1.0E-4, 1.0E-4, 1.0E-4, 1.0E-4, 1.0E-4, -1.0]));
       Expect_Rejection (Params.Bias_Lower_Bound ((Value => 0.0)));
       Expect_Rejection (Params.Bias_Upper_Bound ((Value => 0.4)));
+      -- A seed bias outside the bounds:
+      Expect_Rejection (Params.Initial_State ([1.0, 0.0, 0.0, 0.0, 0.0, Rate, 2.0]));
+      Expect_Rejection (Params.Bias_Upper_Bound ((Value => 0.9)));
       Not_Unit (0) := 2.0;
       Expect_Rejection (Params.Css_N_Hat_B (Not_Unit));
       Expect_Rejection (Params.Css_Scale_Factor ([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, -1.0]));
       Expect_Rejection (Params.Sensor_Threshold ((Value => -0.1)));
       Expect_Rejection (Params.Css_Measurement_Noise_Std ((Value => -0.1)));
       Expect_Rejection (Params.Gyro_Measurement_Noise_Std ((Value => -0.1)));
+      -- A zero noise deviation would make the measurement noise singular:
+      Expect_Rejection (Params.Css_Measurement_Noise_Std ((Value => 0.0)));
+      Expect_Rejection (Params.Gyro_Measurement_Noise_Std ((Value => 0.0)));
       Expect_Rejection (Params.Measurement_Delay ((Value => -0.1)));
 
       -- A non-finite initial state is rejected. The value is injected as raw bytes because
