@@ -17,6 +17,8 @@ tests:
     description: Ensure a parameter update reaches the filter while keeping the current estimate, with the new seed showing only at the next estimate reset.
   - name: Test_Reset_Applies_Pending_Parameters
     description: Ensure an estimate reset applies a configuration that was updated but not yet ticked, so the filter restarts from the new seed.
+  - name: Test_Reset_Measurements_Applies_Pending_Parameters
+    description: Ensure a measurements reset applies a configuration that was updated but not yet ticked while keeping the estimate, so a new delay holds the readings that follow.
   - name: Test_Measurement_Delay
     description: Ensure a configured measurement delay holds a reading until the filter time has reached its time tag plus the delay, then applies it.
   - name: Test_Invalid_Parameter
