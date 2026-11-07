@@ -20,6 +20,9 @@ private
    -- Ensure a staged configuration the algorithm would reject is refused at
    -- validation.
    overriding procedure Test_Invalid_Parameter (Self : in out Instance);
+   -- Ensure a reset applies a configuration that was updated but not yet ticked, so
+   -- the rotation restarts from the new initial attitude.
+   overriding procedure Test_Reset_Applies_Pending_Parameters (Self : in out Instance);
 
    -- Test data and state:
    type Instance is new Mrp_Rotation_Tests.Base_Instance with record

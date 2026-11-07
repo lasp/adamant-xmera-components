@@ -106,6 +106,9 @@ package body Component.Sun_Search_Point.Implementation is
    overriding procedure Reset_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
       Ignore : Tick.T renames Arg;
    begin
+      -- Apply any pending parameter update first, so the reset starts from the
+      -- configuration the component runs with next:
+      Self.Update_Parameters;
       -- Clears the runtime state machine only; the configuration is untouched.
       Re_Initialize (Self.Alg);
    end Reset_Tick_T_Recv_Sync;
