@@ -1,0 +1,9 @@
+---
+description: Data products for the Dv Maneuver component.
+data_products:
+  - name: Commanded_Force
+    type: Cmd_Force_Body.T
+    description: "[N] The configured body force while the burn executes, zero once it is complete."
+  - name: Burn_State
+    type: Packed_Burn_State.T
+    description: Whether the burn is executing or complete.

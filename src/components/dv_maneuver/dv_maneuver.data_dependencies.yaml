@@ -1,0 +1,6 @@
+---
+description: Data dependencies for the Dv Maneuver component.
+data_dependencies:
+  - name: Accumulated_Delta_V
+    type: Packed_F32x3.T
+    description: "[m/s] Delta-V accumulated in body frame components since the burn was set up. Its magnitude is compared with that of the commanded delta-V. It is produced every tick, ahead of this component."
