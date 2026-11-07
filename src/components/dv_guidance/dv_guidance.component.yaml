@@ -1,0 +1,13 @@
+---
+description: Delta-V guidance. Produces the inertially fixed attitude reference for a delta-V burn. The burn frame has its third axis along the commanded delta-V and its second axis as close as possible to a preferred direction. Both are parameters, set by the state manager when a burn is commanded, so the reference attitude is a constant between burn commands and the reference rate and acceleration are zero. The algorithm validates the frame before it is applied. A rotation about the burn axis, when wanted, is applied by a downstream reference rotation taking this reference as its base. Wraps the DvGuidanceAlgorithm C++ algorithm via its C shim.
+execution: passive
+init:
+  description: Initializes the delta-V guidance algorithm with the default parameter values, a stand-in burn frame which the first burn command replaces.
+connectors:
+  - description: Run the algorithm up to the current time and return the attitude reference it produces.
+    type: Tick.T
+    return_type: Att_Ref.T
+    kind: service
+  - description: The parameter update connector.
+    type: Parameter_Update.T
+    kind: modify
