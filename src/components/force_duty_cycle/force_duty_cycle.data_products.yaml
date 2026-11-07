@@ -1,0 +1,6 @@
+---
+description: Data products for the Force Duty Cycle component.
+data_products:
+  - name: Gated_Force
+    type: Cmd_Force_Body.T
+    description: "[N] The commanded force during an on period, zero during an off period. The thruster force mapping takes this as its commanded force."

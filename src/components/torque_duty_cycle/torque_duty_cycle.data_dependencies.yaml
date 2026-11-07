@@ -1,5 +1,5 @@
 ---
-description: Data dependencies for the Vector Duty Cycle component.
+description: Data dependencies for the Torque Duty Cycle component.
 data_dependencies:
   - name: Commanded_Torque
     type: Cmd_Torque_Body.T

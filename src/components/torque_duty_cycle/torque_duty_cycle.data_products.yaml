@@ -1,5 +1,5 @@
 ---
-description: Data products for the Vector Duty Cycle component.
+description: Data products for the Torque Duty Cycle component.
 data_products:
   - name: Gated_Torque
     type: Cmd_Torque_Body.T

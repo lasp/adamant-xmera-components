@@ -1,10 +1,10 @@
 ---
-description: Duty cycle for a body vector. Passes the input vector through for the first on periods of every cycle and outputs zero for the remaining off periods. In the desaturation state it sits between momentum management and the thruster force mapping, so the thrusters fire in pulses with quiet windows in which the reaction wheels re-stabilize the attitude. The cadence is free-running and advances every tick. Wraps the VectorDutyCycleAlgorithm C++ algorithm via its C shim.
+description: Duty cycle for a commanded body force. Passes the force through for the first on periods of every cycle and outputs zero for the remaining off periods. In a delta-V burn it sits between the burn executor and the thruster force mapping of a thruster group, so the thrusters fire in pulses with quiet windows in which the attitude control settles. The cadence is free-running and advances every tick. Wraps the VectorDutyCycleAlgorithm C++ algorithm via its C shim, which it shares with the torque duty cycle.
 execution: passive
 init:
   description: Initializes the duty cycle with the default parameter values.
 connectors:
-  - description: Apply one control period of the duty cycle to the commanded torque.
+  - description: Apply one control period of the duty cycle to the commanded force.
     type: Tick.T
     kind: recv_sync
   - description: Restart the duty cycle at the beginning of its on window. The assembly fires this on a state change.

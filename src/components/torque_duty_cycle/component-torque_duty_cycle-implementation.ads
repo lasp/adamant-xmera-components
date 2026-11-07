@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
--- Vector_Duty_Cycle Component Implementation Spec
+-- Torque_Duty_Cycle Component Implementation Spec
 --------------------------------------------------------------------------------
 
 -- Includes:
@@ -7,16 +7,17 @@ with Tick;
 with Parameter_Update;
 with Vector_Duty_Cycle_Algorithm_C; use Vector_Duty_Cycle_Algorithm_C;
 
--- Duty cycle for a body vector. Passes the input vector through for the first on
+-- Duty cycle for a commanded body torque. Passes the torque through for the first on
 -- periods of every cycle and outputs zero for the remaining off periods. In the
 -- desaturation state it sits between momentum management and the thruster force
 -- mapping, so the thrusters fire in pulses with quiet windows in which the reaction
 -- wheels re-stabilize the attitude. The cadence is free-running and advances every
--- tick. Wraps the VectorDutyCycleAlgorithm C++ algorithm via its C shim.
-package Component.Vector_Duty_Cycle.Implementation is
+-- tick. Wraps the VectorDutyCycleAlgorithm C++ algorithm via its C shim, which it
+-- shares with the force duty cycle.
+package Component.Torque_Duty_Cycle.Implementation is
 
    -- The component class instance record:
-   type Instance is new Vector_Duty_Cycle.Base_Instance with private;
+   type Instance is new Torque_Duty_Cycle.Base_Instance with private;
 
    --------------------------------------------------
    -- Subprogram for implementation init method:
@@ -28,7 +29,7 @@ package Component.Vector_Duty_Cycle.Implementation is
 private
 
    -- The component class instance record:
-   type Instance is new Vector_Duty_Cycle.Base_Instance with record
+   type Instance is new Torque_Duty_Cycle.Base_Instance with record
       Alg : Vector_Duty_Cycle_Algorithm_Access := null;
    end record;
 
@@ -65,7 +66,7 @@ private
    -- Parameter primitives:
    -----------------------------------------------
    -- Description:
-   --    Parameters for the Vector Duty Cycle component.
+   --    Parameters for the Torque Duty Cycle component.
 
    -- Invalid parameter handler. This procedure is called when a parameter's type is found to be invalid:
    -- Null: the staging code rejects the value and returns an error status to the Parameters
@@ -97,7 +98,7 @@ private
    -- Data dependency primitives:
    -----------------------------------------------
    -- Description:
-   --    Data dependencies for the Vector Duty Cycle component.
+   --    Data dependencies for the Torque Duty Cycle component.
    -- Function which retrieves a data dependency.
    -- The default implementation is to simply call the Data_Product_Fetch_T_Request connector. Change the implementation if this component
    -- needs to do something different.
@@ -106,4 +107,4 @@ private
    -- Invalid data dependency handler. This procedure is called when a data dependency's id or length are found to be invalid:
    overriding procedure Invalid_Data_Dependency (Self : in out Instance; Id : in Data_Product_Types.Data_Product_Id; Ret : in Data_Product_Return.T);
 
-end Component.Vector_Duty_Cycle.Implementation;
+end Component.Torque_Duty_Cycle.Implementation;

@@ -1,12 +1,12 @@
 --------------------------------------------------------------------------------
--- Vector_Duty_Cycle Tests Spec
+-- Torque_Duty_Cycle Tests Spec
 --------------------------------------------------------------------------------
 
--- This is a unit test suite for the Vector Duty Cycle component
-package Vector_Duty_Cycle_Tests.Implementation is
+-- This is a unit test suite for the Torque Duty Cycle component
+package Torque_Duty_Cycle_Tests.Implementation is
 
    -- Test data and state:
-   type Instance is new Vector_Duty_Cycle_Tests.Base_Instance with private;
+   type Instance is new Torque_Duty_Cycle_Tests.Base_Instance with private;
    type Class_Access is access all Instance'Class;
 
 private
@@ -28,7 +28,7 @@ private
    overriding procedure Test_Invalid_Data_Dependency (Self : in out Instance);
 
    -- Test data and state:
-   type Instance is new Vector_Duty_Cycle_Tests.Base_Instance with record
+   type Instance is new Torque_Duty_Cycle_Tests.Base_Instance with record
       null;
    end record;
-end Vector_Duty_Cycle_Tests.Implementation;
+end Torque_Duty_Cycle_Tests.Implementation;
