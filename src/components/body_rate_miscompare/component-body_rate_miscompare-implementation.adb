@@ -108,6 +108,9 @@ package body Component.Body_Rate_Miscompare.Implementation is
    overriding procedure Reset_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
       Ignore : Tick.T renames Arg;
    begin
+      -- Apply any pending parameter update first, so the reset starts from the
+      -- configuration the component runs with next:
+      Self.Update_Parameters;
       -- Clear the algorithm's fault persistence counter so rate disagreement must
       -- re-accumulate from zero after a state change. A latched fault is preserved.
       Re_Initialize_Except_Persistent_States (Self.Alg);
