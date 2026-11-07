@@ -135,9 +135,11 @@ package body Component.Body_Rate_Miscompare.Implementation is
       use Command_Execution_Status;
    begin
       -- Record the override as the Ada-side source of truth, then push it into the C
-      -- algorithm via a config swap. Threshold and persistence come from the already-
-      -- applied parameters, so the config is always valid here.
+      -- algorithm via a config swap. Any pending parameter update is applied first, so
+      -- the threshold and persistence are the ones the component runs with next, and
+      -- the config is always valid here.
       Self.Use_Imu_Rates := Arg.Value;
+      Self.Update_Parameters;
       Apply_Config (Self);
       -- Re-seed the latched fault state from the new Use_Imu_Rates: forces IMU rates
       -- when True, and clears a latched fault when set False.

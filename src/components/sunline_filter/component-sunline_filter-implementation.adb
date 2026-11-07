@@ -240,6 +240,9 @@ package body Component.Sunline_Filter.Implementation is
    overriding procedure Reset_Estimate_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
       Ignore : Tick.T renames Arg;
    begin
+      -- Apply any pending parameter update first, so the reset starts from the
+      -- configuration the component runs with next:
+      Self.Update_Parameters;
       Re_Initialize (Self.Alg);
    end Reset_Estimate_Tick_T_Recv_Sync;
 
@@ -249,6 +252,9 @@ package body Component.Sunline_Filter.Implementation is
    overriding procedure Reset_Measurements_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
       Ignore : Tick.T renames Arg;
    begin
+      -- Apply any pending parameter update first, so the reset starts from the
+      -- configuration the component runs with next:
+      Self.Update_Parameters;
       -- Clearing the pending measurements also drops the filter's time anchor, so it
       -- synchronizes again at the next tick.
       Re_Initialize_Except_Persistent_States (Self.Alg);

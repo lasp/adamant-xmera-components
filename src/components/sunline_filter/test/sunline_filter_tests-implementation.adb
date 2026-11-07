@@ -658,4 +658,24 @@ package body Sunline_Filter_Tests.Implementation is
       Natural_Assert.Eq (T.Sun_Direction_Estimate_History.Get_Count, 0);
    end Test_Invalid_Data_Dependency;
 
+   overriding procedure Test_Reset_Applies_Pending_Parameters (Self : in out Instance) is
+      T : Component.Sunline_Filter.Implementation.Tester.Instance_Access renames Self.Tester;
+      Wrong_Seed : constant Packed_F64x7.T := [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.6];
+   begin
+      Apply_Configuration (Self);
+      for Step in 1 .. 25 loop
+         Send_Tick (Self, Step);
+      end loop;
+
+      -- A new seed loaded while the filter is not ticked is still pending when the
+      -- estimate reset arrives. The reset applies it first, so the filter restarts
+      -- from the new seed at once rather than at the reset after:
+      Apply_Configuration (Self, Initial_State => Wrong_Seed);
+      T.Reset_Estimate_Tick_T_Send ((Time => T.System_Time, Count => 0));
+      Send_Tick (Self, 26, Fresh => False);
+      for I in 0 .. 2 loop
+         Short_Float_Assert.Eq (Last_Estimate (Self).Veh_Sun_Pnt_Bdy (I), Short_Float (Wrong_Seed (I)), Epsilon => 1.0E-6);
+      end loop;
+   end Test_Reset_Applies_Pending_Parameters;
+
 end Sunline_Filter_Tests.Implementation;
