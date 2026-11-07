@@ -181,4 +181,27 @@ package body Mrp_Rotation_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
    end Test_Invalid_Parameter;
 
+   -- A configuration updated while the component is not being ticked is still
+   -- pending when a state change resets it. The reset applies it before re-seeding,
+   -- so the first tick rotates from the new initial attitude rather than the default
+   -- zero seed.
+   overriding procedure Test_Reset_Applies_Pending_Parameters (Self : in out Instance) is
+      T : Component.Mrp_Rotation.Implementation.Tester.Instance_Access renames Self.Tester;
+      -- The first two frames of the sequence after a reset in Test:
+      Expected : constant array (1 .. 2) of Att_Ref.T := [
+         (Sigma_Rn => [0.0304858985, 0.9422136797, 0.2255949944],
+          Omega_Rn_N => [0.0982615064, 0.0001319004, -0.0000801032],
+          Domega_Rn_N => [0.0, 0.0000080103, 0.0000131900]),
+         (Sigma_Rn => [0.0304994707, 0.9423245984, 0.2251868890],
+          Omega_Rn_N => [0.0982615064, 0.0001319003, -0.0000801031],
+          Domega_Rn_N => [0.0, 0.0000080103, 0.0000131900])
+      ];
+   begin
+      Apply_Configuration (Self);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
+      for I in Expected'Range loop
+         Send_Tick_And_Check (Self, Expected (I));
+      end loop;
+   end Test_Reset_Applies_Pending_Parameters;
+
 end Mrp_Rotation_Tests.Implementation;

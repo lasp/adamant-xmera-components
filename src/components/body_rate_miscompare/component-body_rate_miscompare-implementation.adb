@@ -108,6 +108,9 @@ package body Component.Body_Rate_Miscompare.Implementation is
    overriding procedure Reset_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
       Ignore : Tick.T renames Arg;
    begin
+      -- Apply any pending parameter update first, so the reset starts from the
+      -- configuration the component runs with next:
+      Self.Update_Parameters;
       -- Clear the algorithm's fault persistence counter so rate disagreement must
       -- re-accumulate from zero after a state change. A latched fault is preserved.
       Re_Initialize_Except_Persistent_States (Self.Alg);
@@ -132,9 +135,11 @@ package body Component.Body_Rate_Miscompare.Implementation is
       use Command_Execution_Status;
    begin
       -- Record the override as the Ada-side source of truth, then push it into the C
-      -- algorithm via a config swap. Threshold and persistence come from the already-
-      -- applied parameters, so the config is always valid here.
+      -- algorithm via a config swap. Any pending parameter update is applied first, so
+      -- the threshold and persistence are the ones the component runs with next, and
+      -- the config is always valid here.
       Self.Use_Imu_Rates := Arg.Value;
+      Self.Update_Parameters;
       Apply_Config (Self);
       -- Re-seed the latched fault state from the new Use_Imu_Rates: forces IMU rates
       -- when True, and clears a latched fault when set False.

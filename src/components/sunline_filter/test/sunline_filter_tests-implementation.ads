@@ -40,6 +40,13 @@ private
    -- Ensure a parameter update reaches the filter while keeping the current
    -- estimate.
    overriding procedure Test_Parameter_Update (Self : in out Instance);
+   -- Ensure an estimate reset applies a configuration that was updated but not yet
+   -- ticked, so the filter restarts from the new seed.
+   overriding procedure Test_Reset_Applies_Pending_Parameters (Self : in out Instance);
+   -- Ensure a measurements reset applies a configuration that was updated but not
+   -- yet ticked while keeping the estimate, so a new delay holds the readings that
+   -- follow.
+   overriding procedure Test_Reset_Measurements_Applies_Pending_Parameters (Self : in out Instance);
    -- Ensure a configured measurement delay holds a reading until the filter time has
    -- reached its time tag plus the delay, then applies it.
    overriding procedure Test_Measurement_Delay (Self : in out Instance);

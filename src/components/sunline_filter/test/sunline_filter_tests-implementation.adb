@@ -658,4 +658,56 @@ package body Sunline_Filter_Tests.Implementation is
       Natural_Assert.Eq (T.Sun_Direction_Estimate_History.Get_Count, 0);
    end Test_Invalid_Data_Dependency;
 
+   overriding procedure Test_Reset_Applies_Pending_Parameters (Self : in out Instance) is
+      T : Component.Sunline_Filter.Implementation.Tester.Instance_Access renames Self.Tester;
+      Wrong_Seed : constant Packed_F64x7.T := [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.6];
+   begin
+      Apply_Configuration (Self);
+      for Step in 1 .. 25 loop
+         Send_Tick (Self, Step);
+      end loop;
+
+      -- A new seed loaded while the filter is not ticked is still pending when the
+      -- estimate reset arrives. The reset applies it first, so the filter restarts
+      -- from the new seed at once rather than at the reset after:
+      Apply_Configuration (Self, Initial_State => Wrong_Seed);
+      T.Reset_Estimate_Tick_T_Send ((Time => T.System_Time, Count => 0));
+      Send_Tick (Self, 26, Fresh => False);
+      for I in 0 .. 2 loop
+         Short_Float_Assert.Eq (Last_Estimate (Self).Veh_Sun_Pnt_Bdy (I), Short_Float (Wrong_Seed (I)), Epsilon => 1.0E-6);
+      end loop;
+   end Test_Reset_Applies_Pending_Parameters;
+
+   overriding procedure Test_Reset_Measurements_Applies_Pending_Parameters (Self : in out Instance) is
+      T : Component.Sunline_Filter.Implementation.Tester.Instance_Access renames Self.Tester;
+      Steps : constant := 25;
+   begin
+      Apply_Configuration (Self);
+      for Step in 1 .. Steps loop
+         Send_Tick (Self, Step);
+      end loop;
+
+      -- A delay loaded while the filter is not ticked is still pending when the
+      -- measurements reset arrives. The reset applies it and keeps the estimate, so
+      -- the tick after it only synchronizes the filter time again and holds the
+      -- converged estimate, and the first readings after that wait a tick:
+      Apply_Configuration (Self, Measurement_Delay => (Value => 0.5));
+      T.Reset_Measurements_Tick_T_Send ((Time => T.System_Time, Count => 0));
+      Send_Tick (Self, Steps + 1, Fresh => False);
+      declare
+         Estimate : constant Nav_Att_Output.U := Last_Estimate (Self);
+         Sun : constant Packed_F32x3.T := Truth_Sun (Steps);
+      begin
+         for I in 0 .. 2 loop
+            Short_Float_Assert.Eq (Estimate.Veh_Sun_Pnt_Bdy (I), Sun (I), Epsilon => 1.0E-3);
+            Short_Float_Assert.Eq (Estimate.Omega_Bn_B (I), Truth_Rate (I), Epsilon => 1.0E-4);
+         end loop;
+      end;
+      Boolean_Assert.Eq (Css_Valid (Self), False);
+      Send_Tick (Self, Steps + 2);
+      Boolean_Assert.Eq (Css_Valid (Self), False);
+      Send_Tick (Self, Steps + 3);
+      Boolean_Assert.Eq (Css_Valid (Self), True);
+   end Test_Reset_Measurements_Applies_Pending_Parameters;
+
 end Sunline_Filter_Tests.Implementation;
