@@ -1,0 +1,7 @@
+---
+description: State of the delta-V burn, packed as an 8-bit enumeration.
+fields:
+  - name: Value
+    description: The burn state.
+    type: Dv_Maneuver_Enums.Burn_State.E
+    format: E8

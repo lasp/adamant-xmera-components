@@ -1,0 +1,12 @@
+---
+description: Enumerations for the Dv Maneuver component.
+enums:
+  - name: Burn_State
+    description: State of the delta-V burn. Values match the C DvManeuverBurnState_c enumeration.
+    literals:
+      - name: Executing
+        value: 0
+        description: The burn is executing and the body force is commanded.
+      - name: Complete
+        value: 1
+        description: The burn is complete and no force is commanded. Only a reset leaves this state.
