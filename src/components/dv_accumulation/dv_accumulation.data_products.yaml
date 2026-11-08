@@ -1,0 +1,6 @@
+---
+description: Data products for the Dv Accumulation component.
+data_products:
+  - name: Accumulated_Delta_V
+    type: Packed_F32x3.T
+    description: "[m/s] Delta-V accumulated in body frame components since the last reset, with the accelerometer bias removed."
