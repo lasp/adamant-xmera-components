@@ -1,7 +1,0 @@
----
-description: Parameters for the Convert St Platform To Body component.
-parameters:
-  - name: Sigma_Cb
-    description: "[-] MRP attitude of the star tracker case frame relative to the body frame. Must be finite."
-    type: Packed_F32x3.T
-    default: "[0.0, 0.0, 0.0]"

@@ -1,22 +1,22 @@
 --------------------------------------------------------------------------------
--- Convert_St_Platform_To_Body Tests Body
+-- St_Platform_Attitude Tests Body
 --------------------------------------------------------------------------------
 
 with Interfaces; use Interfaces;
 with Basic_Assertions; use Basic_Assertions;
 with Packed_F32x3.Assertion; use Packed_F32x3.Assertion;
 with Parameter;
-with St_Platform_Attitude;
+with St_Platform_Attitude_Solution;
 with St_Platform_Angular_Velocity;
 with St_Att;
-with Convert_St_Platform_To_Body_Parameters;
+with St_Platform_Attitude_Parameters;
 with Parameter_Enums.Assertion;
 use Parameter_Enums.Parameter_Update_Status;
 use Parameter_Enums.Assertion;
 with Sys_Time;
 with Sys_Time.Assertion; use Sys_Time.Assertion;
 
-package body Convert_St_Platform_To_Body_Tests.Implementation is
+package body St_Platform_Attitude_Tests.Implementation is
 
    -------------------------------------------------------------------------
    -- Fixtures:
@@ -49,23 +49,21 @@ package body Convert_St_Platform_To_Body_Tests.Implementation is
    -------------------------------------------------------------------------
 
    -- Run algorithm with representative vectors to ensure the Ada->C->C++
-   -- integration is sound. Input conventions (per the updated C interface):
-   --   Platform_Attitude        : unit quaternion [s, v0, v1, v2] (scalar FIRST,
-   --                              Basilisk convention consumed by epToMrp)
-   --                              representing q_CN (inertial -> case frame)
-   --   Platform_Angular_Velocity: delta quaternion [v0, v1, v2, s] (scalar LAST,
-   --                              matches algorithm source that reads dq_CN[3]
-   --                              as scalar and dq_CN[0..2] as vector part)
-   --                              encoding case-frame angular rate via
-   --                              omega_CN_C = 2 * acos(v3) / |v_vec| * [v0, v1, v2]
+   -- integration is sound. Input conventions, as the star tracker reports them:
+   --   Platform_Attitude        : unit quaternion [v0, v1, v2, s] (scalar LAST)
+   --                              representing q_PN (inertial -> platform frame)
+   --   Platform_Angular_Velocity: rate quaternion [v0, v1, v2, s] (scalar LAST),
+   --                              rateQuaternion_PN, whose principal rotation
+   --                              vector is the platform-frame angular velocity:
+   --                              omega_PN_P = 2 * atan2(|v_vec|, s) / |v_vec| * v_vec
    --   Time_Tag                 : uint64 nanoseconds
    overriding procedure Test (Self : in out Instance) is
-      T : Component.Convert_St_Platform_To_Body.Implementation.Tester.Instance_Access renames Self.Tester;
-      Params : Convert_St_Platform_To_Body_Parameters.Instance;
+      T : Component.St_Platform_Attitude.Implementation.Tester.Instance_Access renames Self.Tester;
+      Params : St_Platform_Attitude_Parameters.Instance;
 
       type Test_Vector is record
-         Sigma_Cb                  : Packed_F32x3.T;
-         Platform_Attitude         : St_Platform_Attitude.T;
+         Sigma_Pb                  : Packed_F32x3.T;
+         Platform_Attitude         : St_Platform_Attitude_Solution.T;
          Platform_Angular_Velocity : St_Platform_Angular_Velocity.T;
          Expected_Time_Tag         : Interfaces.Unsigned_64;
          Expected_Sigma_Bn         : Packed_F32x3.T;
@@ -73,31 +71,31 @@ package body Convert_St_Platform_To_Body_Tests.Implementation is
       end record;
 
       -- Case 1: Zero mounting MRP, 30-deg rotation about z, small rate about
-      -- [0.01, -0.02, 0.03] rad. With a zero mounting MRP sigma_BN = sigma_CN and
-      -- omega_BN_B = omega_CN_C.
-      --   q_CN (scalar last, as the star tracker reports it) = [0, 0, sin(pi/12), cos(pi/12)]
+      -- [0.01, -0.02, 0.03] rad. With a zero mounting MRP sigma_BN = sigma_PN and
+      -- omega_BN_B = omega_PN_P.
+      --   q_PN (scalar last, as the star tracker reports it) = [0, 0, sin(pi/12), cos(pi/12)]
       --                                                     = [0, 0, 0.25881905, 0.96592583]
-      --   sigma_CN = v/(1+s) = [0, 0, 0.25881905/1.96592583]
+      --   sigma_PN = v/(1+s) = [0, 0, 0.25881905/1.96592583]
       --                      = [0, 0, 0.13165250]
       --   |omega| = sqrt(0.0014) ~= 0.03741657
       --   axis = omega / |omega|
-      --   dq (scalar last) = [axis*sin(|omega|/2), cos(|omega|/2)]
-      --                    ~= [0.00499996, -0.00999992, 0.01499988, 0.99982493]
+      --   rateQuaternion_PN (scalar last) = [axis*sin(|omega|/2), cos(|omega|/2)]
+      --                                   ~= [0.00499996, -0.00999992, 0.01499988, 0.99982493]
       --
       -- Case 2: Zero mounting MRP, 60-deg rotation about x, zero rate
-      -- (dq = identity). Expect sigma_BN = sigma_CN, omega_BN_B = 0.
-      --   q_CN (scalar last, as the star tracker reports it) = [sin(pi/6), 0, 0, cos(pi/6)]
+      -- (rate quaternion = identity). Expect sigma_BN = sigma_PN, omega_BN_B = 0.
+      --   q_PN (scalar last, as the star tracker reports it) = [sin(pi/6), 0, 0, cos(pi/6)]
       --                                                     = [0.5, 0, 0, 0.86602540]
-      --   sigma_CN = [0.5/1.86602540, 0, 0] = [0.26794919, 0, 0]
+      --   sigma_PN = [0.5/1.86602540, 0, 0] = [0.26794919, 0, 0]
       --
       -- Case 3: 45-deg z-axis mounting attitude, the MRP [0, 0, tan(pi/16)], + 60-deg
-      -- x-axis case attitude + omega_CN_C = [-0.015, 0.008, 0.022] rad. Mirrors the
-      -- Python test_rotated_mounting in _tests/test_convertStPlatformToBody.py.
-      --   q_CN (scalar last) = [0.5, 0, 0, 0.86602540]
-      --   dq_CN (scalar last) ~= [-0.00750022, 0.00400012, 0.01100032, 0.99990336]
-      --   sigma_BN = addMRP(sigma_CN, -sigma_CB)
+      -- x-axis platform attitude + omega_PN_P = [-0.015, 0.008, 0.022] rad. Mirrors the
+      -- Python test_rotated_mounting in _tests/test_stPlatformAttitude.py.
+      --   q_PN (scalar last) = [0.5, 0, 0, 0.86602540]
+      --   rateQuaternion_PN (scalar last) ~= [-0.00750022, 0.00400012, 0.01100032, 0.99990336]
+      --   sigma_BN = addMRP(sigma_PN, -sigma_PB)
       --            ~= [0.25661850, 0.10629486, -0.18410810]
-      --   omega_BN_B = dcm_CB^T * omega_CN_C
+      --   omega_BN_B = dcm_PB^T * omega_PN_P
       --            ~= [-0.01626346, -0.00494975, 0.022]
       -- The solution of case I is stamped I seconds before the tick.
       Tick_Time : constant Sys_Time.T := (Seconds => 10, Subseconds => 0);
@@ -106,7 +104,7 @@ package body Convert_St_Platform_To_Body_Tests.Implementation is
 
       Test_Cases : constant array (1 .. 3) of Test_Vector := [
          (
-            Sigma_Cb => [0.0, 0.0, 0.0],
+            Sigma_Pb => [0.0, 0.0, 0.0],
             Platform_Attitude => (
                Time_Tag          => 1_000_000_000,
                Platform_Attitude => [0.0, 0.0, 0.25881905, 0.96592583]),
@@ -118,7 +116,7 @@ package body Convert_St_Platform_To_Body_Tests.Implementation is
             Expected_Omega_Bn_B    => [0.01, -0.02, 0.03]
          ),
          (
-            Sigma_Cb => [0.0, 0.0, 0.0],
+            Sigma_Pb => [0.0, 0.0, 0.0],
             Platform_Attitude => (
                Time_Tag          => 1_500_000_000,
                Platform_Attitude => [0.5, 0.0, 0.0, 0.86602540]),
@@ -130,7 +128,7 @@ package body Convert_St_Platform_To_Body_Tests.Implementation is
             Expected_Omega_Bn_B    => [0.0, 0.0, 0.0]
          ),
          (
-            Sigma_Cb => [0.0, 0.0, 0.19891237],
+            Sigma_Pb => [0.0, 0.0, 0.19891237],
             Platform_Attitude => (
                Time_Tag          => 2_000_000_000,
                Platform_Attitude => [0.5, 0.0, 0.0, 0.86602540]),
@@ -146,7 +144,7 @@ package body Convert_St_Platform_To_Body_Tests.Implementation is
       for I in Test_Cases'Range loop
          -- Stage and apply the mounting attitude parameter for this case:
          Parameter_Update_Status_Assert.Eq
-           (T.Stage_Parameter (Params.Sigma_Cb (Test_Cases (I).Sigma_Cb)), Success);
+           (T.Stage_Parameter (Params.Sigma_Pb (Test_Cases (I).Sigma_Pb)), Success);
          Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
 
          -- Set data dependencies, stamped with the time of the solution, which is
@@ -184,13 +182,13 @@ package body Convert_St_Platform_To_Body_Tests.Implementation is
    -- it to be finite. Validation is the only guard keeping a rejected value out of the
    -- throwing Set_Config, so exercise it directly.
    overriding procedure Test_Invalid_Parameter (Self : in out Instance) is
-      T : Component.Convert_St_Platform_To_Body.Implementation.Tester.Instance_Access renames Self.Tester;
-      Params : Convert_St_Platform_To_Body_Parameters.Instance;
+      T : Component.St_Platform_Attitude.Implementation.Tester.Instance_Access renames Self.Tester;
+      Params : St_Platform_Attitude_Parameters.Instance;
 
       Zero_Mounting : constant Packed_F32x3.T := [0.0, 0.0, 0.0];
    begin
       -- The zero mounting MRP is accepted:
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Sigma_Cb (Zero_Mounting)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Sigma_Pb (Zero_Mounting)), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
 
       -- A non-finite mounting attitude is rejected. The value is injected as raw bytes
@@ -199,7 +197,7 @@ package body Convert_St_Platform_To_Body_Tests.Implementation is
       -- Staging accepts it, and converting it for the algorithm raises, which validation
       -- reports as a rejection.
       declare
-         Par : Parameter.T := Params.Sigma_Cb (Zero_Mounting);
+         Par : Parameter.T := Params.Sigma_Pb (Zero_Mounting);
       begin
          -- Overwrite the first of the three big-endian floats with +infinity.
          Par.Buffer (Par.Buffer'First .. Par.Buffer'First + 3) := [16#7F#, 16#80#, 16#00#, 16#00#];
@@ -209,9 +207,9 @@ package body Convert_St_Platform_To_Body_Tests.Implementation is
 
       -- Restoring a finite attitude makes the set acceptable again, so the rejection above
       -- was caused by the perturbed value rather than by sticky staging state:
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Sigma_Cb (Zero_Mounting)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Sigma_Pb (Zero_Mounting)), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
    end Test_Invalid_Parameter;
 
-end Convert_St_Platform_To_Body_Tests.Implementation;
+end St_Platform_Attitude_Tests.Implementation;

@@ -1,11 +1,11 @@
 --------------------------------------------------------------------------------
--- Convert_St_Platform_To_Body Component Tester Body
+-- St_Platform_Attitude Component Tester Body
 --------------------------------------------------------------------------------
 
 -- Includes:
 with Parameter;
 
-package body Component.Convert_St_Platform_To_Body.Implementation.Tester is
+package body Component.St_Platform_Attitude.Implementation.Tester is
 
    ---------------------------------------
    -- Initialize heap variables:
@@ -73,7 +73,7 @@ package body Component.Convert_St_Platform_To_Body.Implementation.Tester is
       if Length_To_Return = 0 then
          case Arg.Id is
             -- Length for Platform_Attitude:
-            when 0 => Length_To_Return := St_Platform_Attitude.Size_In_Bytes;
+            when 0 => Length_To_Return := St_Platform_Attitude_Solution.Size_In_Bytes;
             -- Length for Platform_Angular_Velocity:
             when 1 => Length_To_Return := St_Platform_Angular_Velocity.Size_In_Bytes;
             -- If ID can not be found, then return ID out of range error.
@@ -94,8 +94,8 @@ package body Component.Convert_St_Platform_To_Body.Implementation.Tester is
          case Arg.Id is
             -- Length for Platform_Attitude:
             when 0 =>
-               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + St_Platform_Attitude.Size_In_Bytes - 1) :=
-                  St_Platform_Attitude.Serialization.To_Byte_Array (Self.Platform_Attitude);
+               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + St_Platform_Attitude_Solution.Size_In_Bytes - 1) :=
+                  St_Platform_Attitude_Solution.Serialization.To_Byte_Array (Self.Platform_Attitude);
             -- Length for Platform_Angular_Velocity:
             when 1 =>
                Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + St_Platform_Angular_Velocity.Size_In_Bytes - 1) :=
@@ -145,7 +145,7 @@ package body Component.Convert_St_Platform_To_Body.Implementation.Tester is
    -- Data product handler primitive:
    -----------------------------------------------
    -- Description:
-   --    Data products for the Convert St Platform To Body component.
+   --    Data products for the St Platform Attitude component.
    -- Star tracker attitude output in the spacecraft body frame (time tag, MRP, body-
    -- frame angular velocity).
    overriding procedure Star_Tracker_Body_Attitude (Self : in out Instance; Arg : in St_Att.T) is
@@ -217,4 +217,4 @@ package body Component.Convert_St_Platform_To_Body.Implementation.Tester is
       return Param_Update.Status;
    end Update_Parameters;
 
-end Component.Convert_St_Platform_To_Body.Implementation.Tester;
+end Component.St_Platform_Attitude.Implementation.Tester;

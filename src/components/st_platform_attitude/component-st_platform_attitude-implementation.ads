@@ -1,31 +1,31 @@
 --------------------------------------------------------------------------------
--- Convert_St_Platform_To_Body Component Implementation Spec
+-- St_Platform_Attitude Component Implementation Spec
 --------------------------------------------------------------------------------
 
 -- Includes:
 with Tick;
 with Parameter_Update;
-with Convert_St_Platform_To_Body_Algorithm_C; use Convert_St_Platform_To_Body_Algorithm_C;
+with St_Platform_Attitude_Algorithm_C; use St_Platform_Attitude_Algorithm_C;
 
--- Converts the star tracker case-frame attitude and angular velocity to the
--- spacecraft body frame using a fixed case mounting attitude.
-package Component.Convert_St_Platform_To_Body.Implementation is
+-- Converts the star tracker platform-frame attitude and angular velocity to the
+-- spacecraft body frame using a fixed platform mounting attitude.
+package Component.St_Platform_Attitude.Implementation is
 
    -- The component class instance record:
-   type Instance is new Convert_St_Platform_To_Body.Base_Instance with private;
+   type Instance is new St_Platform_Attitude.Base_Instance with private;
 
    --------------------------------------------------
    -- Subprogram for implementation init method:
    --------------------------------------------------
-   -- Initializes the convert star tracker platform to body algorithm.
+   -- Initializes the star tracker platform attitude algorithm.
    overriding procedure Init (Self : in out Instance);
    not overriding procedure Destroy (Self : in out Instance);
 
 private
 
    -- The component class instance record:
-   type Instance is new Convert_St_Platform_To_Body.Base_Instance with record
-      Alg : Convert_St_Platform_To_Body_Algorithm_Access := null;
+   type Instance is new St_Platform_Attitude.Base_Instance with record
+      Alg : St_Platform_Attitude_Algorithm_Access := null;
    end record;
 
    ---------------------------------------
@@ -58,7 +58,7 @@ private
    -- Parameter primitives:
    -----------------------------------------------
    -- Description:
-   --    Parameters for the Convert St Platform To Body component.
+   --    Parameters for the St Platform Attitude component.
 
    -- Invalid parameter handler. This procedure is called when a parameter's type is found to be invalid:
    -- Null: the staging code rejects the value and returns an error status to the Parameters
@@ -79,14 +79,14 @@ private
    -- to be implemented here.
    overriding function Validate_Parameters (
       Self : in out Instance;
-      Sigma_Cb : in Packed_F32x3.U
+      Sigma_Pb : in Packed_F32x3.U
    ) return Parameter_Validation_Status.E;
 
    -----------------------------------------------
    -- Data dependency primitives:
    -----------------------------------------------
    -- Description:
-   --    Data dependencies for the Convert St Platform To Body component.
+   --    Data dependencies for the St Platform Attitude component.
    -- Function which retrieves a data dependency.
    -- The default implementation is to simply call the Data_Product_Fetch_T_Request connector. Change the implementation if this component
    -- needs to do something different.
@@ -95,4 +95,4 @@ private
    -- Invalid data dependency handler. This procedure is called when a data dependency's id or length are found to be invalid:
    overriding procedure Invalid_Data_Dependency (Self : in out Instance; Id : in Data_Product_Types.Data_Product_Id; Ret : in Data_Product_Return.T);
 
-end Component.Convert_St_Platform_To_Body.Implementation;
+end Component.St_Platform_Attitude.Implementation;

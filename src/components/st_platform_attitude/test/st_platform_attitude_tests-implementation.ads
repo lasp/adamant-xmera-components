@@ -1,12 +1,12 @@
 --------------------------------------------------------------------------------
--- Convert_St_Platform_To_Body Tests Spec
+-- St_Platform_Attitude Tests Spec
 --------------------------------------------------------------------------------
 
--- This is a unit test suite for the Convert St Platform To Body component
-package Convert_St_Platform_To_Body_Tests.Implementation is
+-- This is a unit test suite for the St Platform Attitude component
+package St_Platform_Attitude_Tests.Implementation is
 
    -- Test data and state:
-   type Instance is new Convert_St_Platform_To_Body_Tests.Base_Instance with private;
+   type Instance is new St_Platform_Attitude_Tests.Base_Instance with private;
    type Class_Access is access all Instance'Class;
 
 private
@@ -23,7 +23,7 @@ private
    overriding procedure Test_Invalid_Parameter (Self : in out Instance);
 
    -- Test data and state:
-   type Instance is new Convert_St_Platform_To_Body_Tests.Base_Instance with record
+   type Instance is new St_Platform_Attitude_Tests.Base_Instance with record
       null;
    end record;
-end Convert_St_Platform_To_Body_Tests.Implementation;
+end St_Platform_Attitude_Tests.Implementation;

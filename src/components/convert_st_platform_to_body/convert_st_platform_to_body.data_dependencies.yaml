@@ -1,9 +1,0 @@
----
-description: Data dependencies for the Convert St Platform To Body component.
-data_dependencies:
-  - name: Platform_Attitude
-    type: St_Platform_Attitude.T
-    description: Star tracker measurement (inertial-to-case quaternion)
-  - name: Platform_Angular_Velocity
-    type: St_Platform_Angular_Velocity.T
-    description: Star tracker stellar rate measurement (case-frame delta quaternion)

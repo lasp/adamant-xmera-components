@@ -1,5 +1,5 @@
 ---
-description: This is a unit test suite for the Convert St Platform To Body component
+description: This is a unit test suite for the St Platform Attitude component
 tests:
   - name: Test
     description: Run algorithm to ensure integration is sound, and check the output is stamped with the timestamp of the attitude solution.

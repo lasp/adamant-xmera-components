@@ -1,23 +1,23 @@
 --------------------------------------------------------------------------------
--- Convert_St_Platform_To_Body Component Implementation Body
+-- St_Platform_Attitude Component Implementation Body
 --------------------------------------------------------------------------------
 
-with St_Platform_Attitude;
+with St_Platform_Attitude_Solution;
 with St_Platform_Angular_Velocity;
 with St_Platform_Measurement;
 with St_Platform_Measurement.C;
 with St_Att.C;
 with Packed_F32x3.C;
 
-package body Component.Convert_St_Platform_To_Body.Implementation is
+package body Component.St_Platform_Attitude.Implementation is
 
    --------------------------------------------------
    -- Subprogram for implementation init method:
    --------------------------------------------------
-   -- Initializes the convert star tracker platform to body algorithm.
+   -- Initializes the star tracker platform attitude algorithm.
    overriding procedure Init (Self : in out Instance) is
    begin
-      Self.Alg := Create (Sigma_Cb => (Value => Packed_F32x3.C.To_C (Self.Sigma_Cb)));
+      Self.Alg := Create (Sigma_Pb => (Value => Packed_F32x3.C.To_C (Self.Sigma_Pb)));
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -41,7 +41,7 @@ package body Component.Convert_St_Platform_To_Body.Implementation is
       -- (ID/length mismatch) indicate an assembly/configuration defect, so we
       -- assert. The attitude solution's timestamp is the time of the measurement,
       -- which the output is stamped with.
-      Platform_Attitude_Dep : St_Platform_Attitude.T;
+      Platform_Attitude_Dep : St_Platform_Attitude_Solution.T;
       Platform_Attitude_Time : Sys_Time.T;
       Platform_Attitude_Status : constant Data_Product_Enums.Data_Dependency_Status.E :=
          Self.Get_Platform_Attitude (Value => Platform_Attitude_Dep, Timestamp => Platform_Attitude_Time, Stale_Reference => Arg.Time);
@@ -51,8 +51,8 @@ package body Component.Convert_St_Platform_To_Body.Implementation is
       pragma Assert (Platform_Attitude_Status = Success or else Platform_Attitude_Status = Stale);
       pragma Assert (Platform_Angular_Velocity_Status = Success or else Platform_Angular_Velocity_Status = Stale);
 
-      Platform_Attitude_U : constant St_Platform_Attitude.U :=
-         St_Platform_Attitude.Unpack (Platform_Attitude_Dep);
+      Platform_Attitude_U : constant St_Platform_Attitude_Solution.U :=
+         St_Platform_Attitude_Solution.Unpack (Platform_Attitude_Dep);
       Platform_Angular_Velocity_U : constant St_Platform_Angular_Velocity.U :=
          St_Platform_Angular_Velocity.Unpack (Platform_Angular_Velocity_Dep);
 
@@ -64,7 +64,7 @@ package body Component.Convert_St_Platform_To_Body.Implementation is
          Platform_Angular_Velocity => Platform_Angular_Velocity_U.Platform_Angular_Velocity
       ));
    begin
-      -- Apply any pending parameter update (e.g. new Sigma_Cb):
+      -- Apply any pending parameter update (e.g. new Sigma_Pb):
       Self.Update_Parameters;
 
       -- Call the C algorithm and publish the resulting body-frame attitude, stamped
@@ -86,26 +86,26 @@ package body Component.Convert_St_Platform_To_Body.Implementation is
    -- Parameter handlers:
    -----------------------------------------------
    -- This procedure is called when the parameters of a component have been updated. In this case we
-   -- push the case mounting attitude into the C algorithm so subsequent updates use the new
+   -- push the platform mounting attitude into the C algorithm so subsequent updates use the new
    -- platform alignment.
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
    begin
       -- Rebuild the algorithm configuration from the updated mounting attitude. The value was
       -- checked by Validate_Parameters at staging, so Set_Config will not reject it.
-      Set_Config (Self.Alg, Sigma_Cb => (Value => Packed_F32x3.C.To_C (Self.Sigma_Cb)));
+      Set_Config (Self.Alg, Sigma_Pb => (Value => Packed_F32x3.C.To_C (Self.Sigma_Pb)));
    end Update_Parameters_Action;
 
-   -- Validate a staged Sigma_Cb before it is applied by asking the algorithm's own
+   -- Validate a staged Sigma_Pb before it is applied by asking the algorithm's own
    -- non-throwing Validate_Config predicate (a valid mounting attitude is finite), so
    -- the config rules live solely in the algorithm. Rejecting an invalid update here at
    -- staging keeps it from reaching the throwing Create/Set_Config across the FFI boundary.
    overriding function Validate_Parameters (
       Self : in out Instance;
-      Sigma_Cb : in Packed_F32x3.U
+      Sigma_Pb : in Packed_F32x3.U
    ) return Parameter_Validation_Status.E is
       pragma Unreferenced (Self);
    begin
-      if Validate_Config (Sigma_Cb => (Value => Packed_F32x3.C.To_C (Sigma_Cb))) then
+      if Validate_Config (Sigma_Pb => (Value => Packed_F32x3.C.To_C (Sigma_Pb))) then
          return Parameter_Validation_Status.Valid;
       else
          return Parameter_Validation_Status.Invalid;
@@ -135,4 +135,4 @@ package body Component.Convert_St_Platform_To_Body.Implementation is
       pragma Assert (False);
    end Invalid_Data_Dependency;
 
-end Component.Convert_St_Platform_To_Body.Implementation;
+end Component.St_Platform_Attitude.Implementation;

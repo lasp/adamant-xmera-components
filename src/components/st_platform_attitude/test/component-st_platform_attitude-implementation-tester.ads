@@ -1,24 +1,24 @@
 --------------------------------------------------------------------------------
--- Convert_St_Platform_To_Body Component Tester Spec
+-- St_Platform_Attitude Component Tester Spec
 --------------------------------------------------------------------------------
 
 -- Includes:
-with Component.Convert_St_Platform_To_Body_Reciprocal;
+with Component.St_Platform_Attitude_Reciprocal;
 with Printable_History;
 with Data_Product_Return.Representation;
 with Data_Product_Fetch.Representation;
 with Data_Product.Representation;
 with Sys_Time;
-with St_Platform_Attitude;
+with St_Platform_Attitude_Solution;
 with St_Platform_Angular_Velocity;
 with Data_Product;
 with St_Att.Representation;
 
--- Converts the star tracker case-frame attitude and angular velocity to the
--- spacecraft body frame using a fixed case mounting attitude.
-package Component.Convert_St_Platform_To_Body.Implementation.Tester is
+-- Converts the star tracker platform-frame attitude and angular velocity to the
+-- spacecraft body frame using a fixed platform mounting attitude.
+package Component.St_Platform_Attitude.Implementation.Tester is
 
-   use Component.Convert_St_Platform_To_Body_Reciprocal;
+   use Component.St_Platform_Attitude_Reciprocal;
    -- Invoker connector history packages:
    package Data_Product_Fetch_T_Service_History_Package is new Printable_History (Data_Product_Fetch.T, Data_Product_Fetch.Representation.Image);
    package Data_Product_Fetch_T_Service_Return_History_Package is new Printable_History (Data_Product_Return.T, Data_Product_Return.Representation.Image);
@@ -28,9 +28,9 @@ package Component.Convert_St_Platform_To_Body.Implementation.Tester is
    package Star_Tracker_Body_Attitude_History_Package is new Printable_History (St_Att.T, St_Att.Representation.Image);
 
    -- Component class instance:
-   type Instance is new Component.Convert_St_Platform_To_Body_Reciprocal.Base_Instance with record
+   type Instance is new Component.St_Platform_Attitude_Reciprocal.Base_Instance with record
       -- The component instance under test:
-      Component_Instance : aliased Component.Convert_St_Platform_To_Body.Implementation.Instance;
+      Component_Instance : aliased Component.St_Platform_Attitude.Implementation.Instance;
       -- Connector histories:
       Data_Product_Fetch_T_Service_History : Data_Product_Fetch_T_Service_History_Package.Instance;
       Data_Product_T_Recv_Sync_History : Data_Product_T_Recv_Sync_History_Package.Instance;
@@ -39,7 +39,7 @@ package Component.Convert_St_Platform_To_Body.Implementation.Tester is
       -- Data dependency return values. These can be set during unit test
       -- and will be returned to the component when a data dependency call
       -- is made.
-      Platform_Attitude : St_Platform_Attitude.T;
+      Platform_Attitude : St_Platform_Attitude_Solution.T;
       Platform_Angular_Velocity : St_Platform_Angular_Velocity.T;
       -- The return status for the data dependency fetch. This can be set
       -- during unit test to return something other than Success.
@@ -81,7 +81,7 @@ package Component.Convert_St_Platform_To_Body.Implementation.Tester is
    -- Data product handler primitives:
    -----------------------------------------------
    -- Description:
-   --    Data products for the Convert St Platform To Body component.
+   --    Data products for the St Platform Attitude component.
    -- Star tracker attitude output in the spacecraft body frame (time tag, MRP, body-
    -- frame angular velocity).
    overriding procedure Star_Tracker_Body_Attitude (Self : in out Instance; Arg : in St_Att.T);
@@ -102,4 +102,4 @@ package Component.Convert_St_Platform_To_Body.Implementation.Tester is
    -- working parameter values with the staged values.
    not overriding function Update_Parameters (Self : in out Instance) return Parameter_Update_Status.E;
 
-end Component.Convert_St_Platform_To_Body.Implementation.Tester;
+end Component.St_Platform_Attitude.Implementation.Tester;

@@ -1,10 +1,10 @@
 ---
-description: Star tracker platform case-frame delta-quaternion rate with associated timestamp.
+description: Star tracker platform-frame angular velocity quaternion with associated timestamp.
 fields:
   - name: Time_Tag
     description: "[ns] Time tag of the rate solution in nanoseconds since epoch."
     type: Interfaces.Unsigned_64
     format: U64
   - name: Platform_Angular_Velocity
-    description: "Case-frame delta quaternion [v0, v1, v2, v3] (scalar last) encoding angular rate."
+    description: "Platform-frame angular velocity quaternion [v0, v1, v2, v3] (scalar last). Its principal rotation vector is the angular velocity."
     type: Packed_F32x4.T

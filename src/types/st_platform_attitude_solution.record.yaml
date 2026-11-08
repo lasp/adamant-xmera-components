@@ -6,5 +6,5 @@ fields:
     type: Interfaces.Unsigned_64
     format: U64
   - name: Platform_Attitude
-    description: "Platform attitude quaternion [v0, v1, v2, v3] (scalar last) from inertial to case frame."
+    description: "Platform attitude quaternion [v0, v1, v2, v3] (scalar last) from inertial to platform frame."
     type: Packed_F32x4.T
