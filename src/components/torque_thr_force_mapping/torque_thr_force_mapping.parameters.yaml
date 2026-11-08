@@ -1,5 +1,5 @@
 ---
-description: Parameters for the Torque Thr Force Mapping component. The geometry parameters are the same as the force torque thruster force mapping parameters, since both components configure the same algorithm. The commanded force is a parameter here rather than a data dependency.
+description: Parameters for the Torque Thr Force Mapping component. They are the same as the force torque thruster force mapping parameters, since both components configure the same algorithm.
 parameters:
   - name: Num_Thrusters
     description: "[-] Number of configured thrusters. Must be in [1, 8]. Only the first Num_Thrusters entries of the geometry take part in the mapping."
@@ -39,7 +39,3 @@ parameters:
     description: "[-] Per-thruster availability. An unavailable thruster is left out of the mapping and always receives a zero force command. A minimum of one thruster must be available."
     type: Thruster_Availability_X8.T
     default: "[others => Force_Torque_Thr_Force_Mapping_Enums.Device_Availability.Available]"
-  - name: Cmd_Force_B
-    description: "[N] Commanded body force mapped onto the thrusters together with the commanded torque. Zero for states that change the attitude without a delta-v. Must be finite."
-    type: Packed_F32x3.T
-    default: "[0.0, 0.0, 0.0]"

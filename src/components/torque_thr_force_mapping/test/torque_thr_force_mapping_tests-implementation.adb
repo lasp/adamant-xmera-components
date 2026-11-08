@@ -260,35 +260,6 @@ package body Torque_Thr_Force_Mapping_Tests.Implementation is
       Boolean_Assert.Eq (Same, False);
    end Test_Parameter_Update;
 
-   -- A commanded force set through the parameter is mapped onto the thrusters
-   -- together with the torque. The expectations are those of the force torque
-   -- mapping's pure force case, which passes the same force explicitly. A zero force
-   -- restores the torque only mapping.
-   overriding procedure Test_Force_Parameter (Self : in out Instance) is
-      T : Component.Torque_Thr_Force_Mapping.Implementation.Tester.Instance_Access renames Self.Tester;
-      Params : Torque_Thr_Force_Mapping_Parameters.Instance;
-      Expected_Force_X : constant Packed_F32x8.U :=
-         [0.0, 0.0, 0.083333, 0.0, 0.083333, 0.0, 0.583333, 0.166667];
-      Expected_Force_Y : constant Packed_F32x8.U :=
-         [0.416667, 0.0, 0.083333, 0.083333, 0.0, 0.416667, 0.5, 0.583333];
-      Expected_Torque_X : constant Packed_F32x8.U :=
-         [0.0, 0.166667, 0.0, 0.0, 0.0, 0.166667, 0.0, 0.333333];
-   begin
-      -- A unit force along body x and then along body y, with no torque:
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cmd_Force_B ([1.0, 0.0, 0.0])), Success);
-      Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
-      Assert_Forces (Map_Torque (Self, [0.0, 0.0, 0.0], 1), Expected_Force_X);
-
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cmd_Force_B ([0.0, 1.0, 0.0])), Success);
-      Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
-      Assert_Forces (Map_Torque (Self, [0.0, 0.0, 0.0], 2), Expected_Force_Y);
-
-      -- Back to zero force, the torque only mapping returns:
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cmd_Force_B (Origin)), Success);
-      Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
-      Assert_Forces (Map_Torque (Self, [1.0, 0.0, 0.0], 3), Expected_Torque_X);
-   end Test_Force_Parameter;
-
    -- A configuration the algorithm rejects is refused at parameter staging, before
    -- it can reach the throwing Create/Set_Config across the FFI boundary. Each case
    -- perturbs one field of an otherwise valid set, so the rejection is attributable
@@ -306,7 +277,6 @@ package body Torque_Thr_Force_Mapping_Tests.Implementation is
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Desired_Control_Axes_B (All_Axes)), Success);
          Parameter_Update_Status_Assert.Eq (
             T.Stage_Parameter (Params.Thruster_Availability (All_Available)), Success);
-         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cmd_Force_B (Origin)), Success);
       end Stage_Valid_Set;
    begin
       -- The baseline set is accepted:
@@ -380,17 +350,6 @@ package body Torque_Thr_Force_Mapping_Tests.Implementation is
          Par : Parameter.T := Params.R_Thruster_B (Default_Positions);
       begin
          -- Overwrite the first big-endian float with +infinity.
-         Par.Buffer (Par.Buffer'First .. Par.Buffer'First + 3) := [16#7F#, 16#80#, 16#00#, 16#00#];
-         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Par), Success);
-      end;
-      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
-
-      -- A non-finite commanded force is rejected the same way. The force is not part of
-      -- the algorithm configuration, so this conversion is its only check.
-      Stage_Valid_Set;
-      declare
-         Par : Parameter.T := Params.Cmd_Force_B (Origin);
-      begin
          Par.Buffer (Par.Buffer'First .. Par.Buffer'First + 3) := [16#7F#, 16#80#, 16#00#, 16#00#];
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Par), Success);
       end;

@@ -23,9 +23,6 @@ private
    overriding procedure Test_Min_Shift (Self : in out Instance);
    -- Applying a new thruster geometry changes the mapping used on the next tick.
    overriding procedure Test_Parameter_Update (Self : in out Instance);
-   -- A commanded force set through the parameter is mapped onto the thrusters
-   -- together with the torque, and a zero force restores the torque only mapping.
-   overriding procedure Test_Force_Parameter (Self : in out Instance);
    -- A configuration the algorithm rejects is refused at parameter staging.
    overriding procedure Test_Invalid_Parameter (Self : in out Instance);
    -- Ensure a data dependency with the wrong identifier is treated as a wiring

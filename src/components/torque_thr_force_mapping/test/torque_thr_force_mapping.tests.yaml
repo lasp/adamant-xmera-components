@@ -9,8 +9,6 @@ tests:
     description: Every mapped thruster force is non negative and at least one is zero.
   - name: Test_Parameter_Update
     description: Applying a new thruster geometry changes the mapping used on the next tick.
-  - name: Test_Force_Parameter
-    description: A commanded force set through the parameter is mapped onto the thrusters together with the torque, and a zero force restores the torque only mapping.
   - name: Test_Invalid_Parameter
     description: A configuration the algorithm rejects is refused at parameter staging.
   - name: Test_Invalid_Data_Dependency

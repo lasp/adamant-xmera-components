@@ -10,9 +10,9 @@ with Force_Torque_Thr_Force_Mapping_Algorithm_C; use Force_Torque_Thr_Force_Mapp
 -- Torque thruster force mapping converts a commanded body torque into per-
 -- thruster force commands using the truncated-SVD pseudo-inverse of the thruster
 -- control mapping matrix. It is the force torque thruster force mapping with the
--- commanded force taken from a parameter instead of a data dependency, zero by
--- default, for states that change the attitude without a delta-v. Wraps the
--- ForceTorqueThrForceMappingAlgorithm C++ algorithm via its C shim.
+-- commanded force fixed at zero, for states that change the attitude without a
+-- delta-v. Wraps the ForceTorqueThrForceMappingAlgorithm C++ algorithm via its C
+-- shim.
 package Component.Torque_Thr_Force_Mapping.Implementation is
 
    -- The component class instance record:
@@ -91,8 +91,7 @@ private
       T_Hat_Thruster_B : in Packed_F32x24.U;
       Center_Of_Mass_B : in Packed_F32x3.U;
       Desired_Control_Axes_B : in Desired_Control_Axes.U;
-      Thruster_Availability : in Thruster_Availability_X8.U;
-      Cmd_Force_B : in Packed_F32x3.U
+      Thruster_Availability : in Thruster_Availability_X8.U
    ) return Parameter_Validation_Status.E;
 
    -----------------------------------------------
