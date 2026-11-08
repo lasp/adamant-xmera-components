@@ -11,7 +11,8 @@ with Data_Product_Fetch.Representation;
 with Data_Product.Representation;
 with Averaged_Imu_Data;
 with Data_Product;
-with Mimu_Majority_Vote_Output.Representation;
+with Packed_F32x3.Representation;
+with Mimu_Vote_Status.Representation;
 
 -- MIMU majority vote algorithm detects faulted IMUs by comparing individual
 -- angular velocity and acceleration measurements and computes a fault-excluded
@@ -25,7 +26,10 @@ package Component.Mimu_Majority_Vote.Implementation.Tester is
    package Data_Product_T_Recv_Sync_History_Package is new Printable_History (Data_Product.T, Data_Product.Representation.Image);
 
    -- Data product history packages:
-   package Majority_Vote_Result_History_Package is new Printable_History (Mimu_Majority_Vote_Output.T, Mimu_Majority_Vote_Output.Representation.Image);
+   package Gyro_Average_History_Package is new Printable_History (Packed_F32x3.T, Packed_F32x3.Representation.Image);
+   package Accel_Average_History_Package is new Printable_History (Packed_F32x3.T, Packed_F32x3.Representation.Image);
+   package Gyro_Vote_Status_History_Package is new Printable_History (Mimu_Vote_Status.T, Mimu_Vote_Status.Representation.Image);
+   package Accel_Vote_Status_History_Package is new Printable_History (Mimu_Vote_Status.T, Mimu_Vote_Status.Representation.Image);
 
    -- Component class instance:
    type Instance is new Component.Mimu_Majority_Vote_Reciprocal.Base_Instance with record
@@ -35,7 +39,10 @@ package Component.Mimu_Majority_Vote.Implementation.Tester is
       Data_Product_Fetch_T_Service_History : Data_Product_Fetch_T_Service_History_Package.Instance;
       Data_Product_T_Recv_Sync_History : Data_Product_T_Recv_Sync_History_Package.Instance;
       -- Data product histories:
-      Majority_Vote_Result_History : Majority_Vote_Result_History_Package.Instance;
+      Gyro_Average_History : Gyro_Average_History_Package.Instance;
+      Accel_Average_History : Accel_Average_History_Package.Instance;
+      Gyro_Vote_Status_History : Gyro_Vote_Status_History_Package.Instance;
+      Accel_Vote_Status_History : Accel_Vote_Status_History_Package.Instance;
       -- Data dependency return values. These can be set during unit test
       -- and will be returned to the component when a data dependency call
       -- is made.
@@ -83,10 +90,16 @@ package Component.Mimu_Majority_Vote.Implementation.Tester is
    -----------------------------------------------
    -- Description:
    --    Data products for the MIMU Majority Vote component.
-   -- Majority vote output containing independent gyro and accel votes (averaged
-   -- measurement, fault status, and per-IMU difference magnitude and validity for
-   -- each).
-   overriding procedure Majority_Vote_Result (Self : in out Instance; Arg : in Mimu_Majority_Vote_Output.T);
+   -- [rad/s] Voted angular velocity in the body frame (outlier-excluded once a
+   -- gyro fault persists).
+   overriding procedure Gyro_Average (Self : in out Instance; Arg : in Packed_F32x3.T);
+   -- [m/s^2] Voted acceleration in the body frame (outlier-excluded once an
+   -- accel fault persists).
+   overriding procedure Accel_Average (Self : in out Instance; Arg : in Packed_F32x3.T);
+   -- Gyro vote fault status and per-IMU difference magnitude and validity.
+   overriding procedure Gyro_Vote_Status (Self : in out Instance; Arg : in Mimu_Vote_Status.T);
+   -- Accel vote fault status and per-IMU difference magnitude and validity.
+   overriding procedure Accel_Vote_Status (Self : in out Instance; Arg : in Mimu_Vote_Status.T);
 
    -----------------------------------------------
    -- Special primitives for aiding in the staging,

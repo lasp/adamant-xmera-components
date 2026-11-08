@@ -101,12 +101,19 @@ package body Component.Mimu_Majority_Vote.Implementation is
             Imu_Omegas => Imu_Omegas'Access,
             Imu_Accels => Imu_Accels'Access
          );
+         Output : constant Mimu_Majority_Vote_Output.T := Mimu_Majority_Vote_Output.C.Pack (Result);
       begin
-         -- Publish result with independent gyro and accel votes:
-         Self.Data_Product_T_Send (Self.Data_Products.Majority_Vote_Result (
-            Arg.Time,
-            Mimu_Majority_Vote_Output.C.Pack (Result)
-         ));
+         -- Publish each vote as its averaged measurement and its fault metadata:
+         Self.Data_Product_T_Send (Self.Data_Products.Gyro_Average (Arg.Time, Output.Gyro.Average));
+         Self.Data_Product_T_Send (Self.Data_Products.Accel_Average (Arg.Time, Output.Accel.Average));
+         Self.Data_Product_T_Send (Self.Data_Products.Gyro_Vote_Status (Arg.Time, (
+            Fault_Detected => Output.Gyro.Fault_Detected,
+            Imu_Difference_Mag => Output.Gyro.Imu_Difference_Mag,
+            Imu_Valid => Output.Gyro.Imu_Valid)));
+         Self.Data_Product_T_Send (Self.Data_Products.Accel_Vote_Status (Arg.Time, (
+            Fault_Detected => Output.Accel.Fault_Detected,
+            Imu_Difference_Mag => Output.Accel.Imu_Difference_Mag,
+            Imu_Valid => Output.Accel.Imu_Valid)));
       end;
    end Tick_T_Recv_Sync;
 

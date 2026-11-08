@@ -1,6 +1,15 @@
 ---
 description: Data products for the MIMU Majority Vote component.
 data_products:
-  - name: Majority_Vote_Result
-    type: Mimu_Majority_Vote_Output.T
-    description: Majority vote output containing independent gyro and accel votes (averaged measurement, fault status, and per-IMU difference magnitude and validity for each).
+  - name: Gyro_Average
+    type: Packed_F32x3.T
+    description: "[rad/s] Voted angular velocity in the body frame (outlier-excluded once a gyro fault persists)."
+  - name: Accel_Average
+    type: Packed_F32x3.T
+    description: "[m/s^2] Voted acceleration in the body frame (outlier-excluded once an accel fault persists)."
+  - name: Gyro_Vote_Status
+    type: Mimu_Vote_Status.T
+    description: "Gyro vote fault status and per-IMU difference magnitude and validity."
+  - name: Accel_Vote_Status
+    type: Mimu_Vote_Status.T
+    description: "Accel vote fault status and per-IMU difference magnitude and validity."

@@ -17,7 +17,10 @@ package body Component.Mimu_Majority_Vote.Implementation.Tester is
       Self.Data_Product_Fetch_T_Service_History.Init (Depth => 100);
       Self.Data_Product_T_Recv_Sync_History.Init (Depth => 100);
       -- Data product histories:
-      Self.Majority_Vote_Result_History.Init (Depth => 100);
+      Self.Gyro_Average_History.Init (Depth => 100);
+      Self.Accel_Average_History.Init (Depth => 100);
+      Self.Gyro_Vote_Status_History.Init (Depth => 100);
+      Self.Accel_Vote_Status_History.Init (Depth => 100);
    end Init_Base;
 
    procedure Final_Base (Self : in out Instance) is
@@ -27,7 +30,10 @@ package body Component.Mimu_Majority_Vote.Implementation.Tester is
       Self.Data_Product_Fetch_T_Service_History.Destroy;
       Self.Data_Product_T_Recv_Sync_History.Destroy;
       -- Data product histories:
-      Self.Majority_Vote_Result_History.Destroy;
+      Self.Gyro_Average_History.Destroy;
+      Self.Accel_Average_History.Destroy;
+      Self.Gyro_Vote_Status_History.Destroy;
+      Self.Accel_Vote_Status_History.Destroy;
    end Final_Base;
 
    ---------------------------------------
@@ -154,14 +160,35 @@ package body Component.Mimu_Majority_Vote.Implementation.Tester is
    -----------------------------------------------
    -- Description:
    --    Data products for the MIMU Majority Vote component.
-   -- Majority vote output containing independent gyro and accel votes (averaged
-   -- measurement, fault status, and per-IMU difference magnitude and validity for
-   -- each).
-   overriding procedure Majority_Vote_Result (Self : in out Instance; Arg : in Mimu_Majority_Vote_Output.T) is
+   -- [rad/s] Voted angular velocity in the body frame (outlier-excluded once a
+   -- gyro fault persists).
+   overriding procedure Gyro_Average (Self : in out Instance; Arg : in Packed_F32x3.T) is
    begin
       -- Push the argument onto the test history for looking at later:
-      Self.Majority_Vote_Result_History.Push (Arg);
-   end Majority_Vote_Result;
+      Self.Gyro_Average_History.Push (Arg);
+   end Gyro_Average;
+
+   -- [m/s^2] Voted acceleration in the body frame (outlier-excluded once an
+   -- accel fault persists).
+   overriding procedure Accel_Average (Self : in out Instance; Arg : in Packed_F32x3.T) is
+   begin
+      -- Push the argument onto the test history for looking at later:
+      Self.Accel_Average_History.Push (Arg);
+   end Accel_Average;
+
+   -- Gyro vote fault status and per-IMU difference magnitude and validity.
+   overriding procedure Gyro_Vote_Status (Self : in out Instance; Arg : in Mimu_Vote_Status.T) is
+   begin
+      -- Push the argument onto the test history for looking at later:
+      Self.Gyro_Vote_Status_History.Push (Arg);
+   end Gyro_Vote_Status;
+
+   -- Accel vote fault status and per-IMU difference magnitude and validity.
+   overriding procedure Accel_Vote_Status (Self : in out Instance; Arg : in Mimu_Vote_Status.T) is
+   begin
+      -- Push the argument onto the test history for looking at later:
+      Self.Accel_Vote_Status_History.Push (Arg);
+   end Accel_Vote_Status;
 
    -----------------------------------------------
    -- Special primitives for aiding in the staging,
