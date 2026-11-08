@@ -1,20 +1,20 @@
 ---
-#  /*! @brief Star tracker case-frame attitude and rate solution consumed by the platform-to-body
+#  /*! @brief Star tracker platform-frame attitude and rate solution consumed by the platform-to-body
 #   *         conversion algorithm. */
 #  typedef struct {
-#      uint64_t timeTag; /*!< [ns] time tag of the measurement, passed through to the output */
-#      float q_CN[4];    /*!< [-] quaternion from inertial to case frame (scalar-first) */
-#      float dq_CN[4];   /*!< [-] case-frame delta quaternion w.r.t. inertial (scalar-last) */
+#      uint64_t timeTag;           /*!< [ns] time tag of the measurement, passed through to the output */
+#      float q_PN[4];              /*!< [-] quaternion from inertial to platform frame (scalar-last) */
+#      float rateQuaternion_PN[4]; /*!< [-] platform-frame angular velocity quaternion (scalar-last) */
 #  } StPlatformMeasurement_c;
-description: Star tracker case-frame attitude and rate solution passed to the platform-to-body conversion algorithm.
+description: Star tracker platform-frame attitude and rate solution passed to the platform-to-body conversion algorithm.
 fields:
   - name: Time_Tag
     description: "[ns] Time tag of the measurement in nanoseconds since epoch."
     type: Interfaces.Unsigned_64
     format: U64
   - name: Platform_Attitude
-    description: "Platform attitude quaternion [s, v0, v1, v2] (scalar first) from inertial to case frame."
+    description: "Platform attitude quaternion [v0, v1, v2, s] (scalar last) from inertial to platform frame."
     type: Packed_F32x4.T
   - name: Platform_Angular_Velocity
-    description: "Case-frame delta quaternion [v0, v1, v2, s] (scalar last) encoding angular rate."
+    description: "Platform-frame angular velocity quaternion [v0, v1, v2, s] (scalar last). Its principal rotation vector is the angular velocity."
     type: Packed_F32x4.T

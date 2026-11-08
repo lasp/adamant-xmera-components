@@ -1,0 +1,9 @@
+---
+description: Data dependencies for the St Platform Attitude component.
+data_dependencies:
+  - name: Platform_Attitude
+    type: St_Platform_Attitude_Solution.T
+    description: Star tracker measurement (inertial-to-platform quaternion)
+  - name: Platform_Angular_Velocity
+    type: St_Platform_Angular_Velocity.T
+    description: Star tracker stellar rate measurement (platform-frame angular velocity quaternion)

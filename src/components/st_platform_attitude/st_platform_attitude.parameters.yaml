@@ -1,0 +1,7 @@
+---
+description: Parameters for the St Platform Attitude component.
+parameters:
+  - name: Sigma_Pb
+    description: "[-] MRP attitude of the star tracker platform frame relative to the body frame. Must be finite."
+    type: Packed_F32x3.T
+    default: "[0.0, 0.0, 0.0]"
