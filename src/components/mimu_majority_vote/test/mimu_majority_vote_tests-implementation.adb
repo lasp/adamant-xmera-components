@@ -5,7 +5,8 @@
 with Basic_Assertions; use Basic_Assertions;
 with Packed_F32x3.Assertion; use Packed_F32x3.Assertion;
 with Packed_Bool_X3.Assertion; use Packed_Bool_X3.Assertion;
-with Mimu_Majority_Vote_Output;
+with Packed_F32x3;
+with Mimu_Vote_Status;
 with Mimu_Majority_Vote_Parameters;
 with Parameter;
 with Parameter_Enums.Assertion;
@@ -80,25 +81,29 @@ package body Mimu_Majority_Vote_Tests.Implementation is
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
 
       -- Verify data product was produced:
-      Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, 1);
-      Natural_Assert.Eq (T.Majority_Vote_Result_History.Get_Count, 1);
+      Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, 4);
+      Natural_Assert.Eq (T.Gyro_Average_History.Get_Count, 1);
+      Natural_Assert.Eq (T.Accel_Average_History.Get_Count, 1);
+      Natural_Assert.Eq (T.Gyro_Vote_Status_History.Get_Count, 1);
+      Natural_Assert.Eq (T.Accel_Vote_Status_History.Get_Count, 1);
 
       -- Check output: full averages, no fault on either vote:
       declare
-         Output : constant Mimu_Majority_Vote_Output.T := T.Majority_Vote_Result_History.Get (1);
+         Gyro : constant Mimu_Vote_Status.T := T.Gyro_Vote_Status_History.Get (1);
+         Accel : constant Mimu_Vote_Status.T := T.Accel_Vote_Status_History.Get (1);
       begin
          -- Gyro vote:
-         Packed_F32x3_Assert.Eq (Output.Gyro.Average, [1.0, 2.0, 3.0], Epsilon => 0.0001);
-         Boolean_Assert.Eq (Output.Gyro.Fault_Detected, False);
-         Packed_Bool_X3_Assert.Eq (Output.Gyro.Imu_Valid, [True, True, True]);
+         Packed_F32x3_Assert.Eq (T.Gyro_Average_History.Get (1), [1.0, 2.0, 3.0], Epsilon => 0.0001);
+         Boolean_Assert.Eq (Gyro.Fault_Detected, False);
+         Packed_Bool_X3_Assert.Eq (Gyro.Imu_Valid, [True, True, True]);
          Packed_F32x3_Assert.Eq
-            (Output.Gyro.Imu_Difference_Mag, [0.0, 0.173_205, 0.173_205], Epsilon => 0.0001);
+            (Gyro.Imu_Difference_Mag, [0.0, 0.173_205, 0.173_205], Epsilon => 0.0001);
          -- Accel vote:
-         Packed_F32x3_Assert.Eq (Output.Accel.Average, [0.0, 0.0, 9.8], Epsilon => 0.0001);
-         Boolean_Assert.Eq (Output.Accel.Fault_Detected, False);
-         Packed_Bool_X3_Assert.Eq (Output.Accel.Imu_Valid, [True, True, True]);
+         Packed_F32x3_Assert.Eq (T.Accel_Average_History.Get (1), [0.0, 0.0, 9.8], Epsilon => 0.0001);
+         Boolean_Assert.Eq (Accel.Fault_Detected, False);
+         Packed_Bool_X3_Assert.Eq (Accel.Imu_Valid, [True, True, True]);
          Packed_F32x3_Assert.Eq
-            (Output.Accel.Imu_Difference_Mag, [0.0, 0.173_205, 0.173_205], Epsilon => 0.0001);
+            (Accel.Imu_Difference_Mag, [0.0, 0.173_205, 0.173_205], Epsilon => 0.0001);
       end;
 
       -----------------------------------------------------------------------
@@ -125,27 +130,31 @@ package body Mimu_Majority_Vote_Tests.Implementation is
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
 
       -- Verify second data product was produced:
-      Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, 2);
-      Natural_Assert.Eq (T.Majority_Vote_Result_History.Get_Count, 2);
+      Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, 8);
+      Natural_Assert.Eq (T.Gyro_Average_History.Get_Count, 2);
+      Natural_Assert.Eq (T.Accel_Average_History.Get_Count, 2);
+      Natural_Assert.Eq (T.Gyro_Vote_Status_History.Get_Count, 2);
+      Natural_Assert.Eq (T.Accel_Vote_Status_History.Get_Count, 2);
 
       -- Check output: the gyro vote rejects its outlier, the accel vote keeps all three:
       declare
-         Output : constant Mimu_Majority_Vote_Output.T := T.Majority_Vote_Result_History.Get (2);
+         Gyro : constant Mimu_Vote_Status.T := T.Gyro_Vote_Status_History.Get (2);
+         Accel : constant Mimu_Vote_Status.T := T.Accel_Vote_Status_History.Get (2);
       begin
          -- Gyro vote: IMU 2 (index 1) excluded; average of IMU 1 and IMU 3 = base:
-         Packed_F32x3_Assert.Eq (Output.Gyro.Average, [-0.1, 0.25, 0.3], Epsilon => 0.0001);
-         Boolean_Assert.Eq (Output.Gyro.Fault_Detected, True);
-         Packed_Bool_X3_Assert.Eq (Output.Gyro.Imu_Valid, [True, False, True]);
+         Packed_F32x3_Assert.Eq (T.Gyro_Average_History.Get (2), [-0.1, 0.25, 0.3], Epsilon => 0.0001);
+         Boolean_Assert.Eq (Gyro.Fault_Detected, True);
+         Packed_Bool_X3_Assert.Eq (Gyro.Imu_Valid, [True, False, True]);
          -- Difference magnitudes stay relative to the all-three average:
          Packed_F32x3_Assert.Eq
-            (Output.Gyro.Imu_Difference_Mag, [1.154_701, 2.309_401, 1.154_701], Epsilon => 0.0001);
+            (Gyro.Imu_Difference_Mag, [1.154_701, 2.309_401, 1.154_701], Epsilon => 0.0001);
          -- Accel vote: 2.31 is under the 5.0 threshold, so all three IMUs remain valid
          -- and the average is over all three:
-         Packed_F32x3_Assert.Eq (Output.Accel.Average, [0.666_667, 0.666_667, 10.466_667], Epsilon => 0.0001);
-         Boolean_Assert.Eq (Output.Accel.Fault_Detected, False);
-         Packed_Bool_X3_Assert.Eq (Output.Accel.Imu_Valid, [True, True, True]);
+         Packed_F32x3_Assert.Eq (T.Accel_Average_History.Get (2), [0.666_667, 0.666_667, 10.466_667], Epsilon => 0.0001);
+         Boolean_Assert.Eq (Accel.Fault_Detected, False);
+         Packed_Bool_X3_Assert.Eq (Accel.Imu_Valid, [True, True, True]);
          Packed_F32x3_Assert.Eq
-            (Output.Accel.Imu_Difference_Mag, [1.154_701, 1.154_701, 2.309_401], Epsilon => 0.0001);
+            (Accel.Imu_Difference_Mag, [1.154_701, 1.154_701, 2.309_401], Epsilon => 0.0001);
       end;
 
    end Test;
@@ -269,36 +278,40 @@ package body Mimu_Majority_Vote_Tests.Implementation is
          T.Tick_T_Send ((Time => T.System_Time, Count => 0));
       end Send_Outlier_Tick;
 
-      -- The most recent published vote result.
-      function Latest return Mimu_Majority_Vote_Output.T is
-         (T.Majority_Vote_Result_History.Get (T.Majority_Vote_Result_History.Get_Count));
+      -- The most recently published vote products.
+      function Gyro return Mimu_Vote_Status.T is
+         (T.Gyro_Vote_Status_History.Get (T.Gyro_Vote_Status_History.Get_Count));
+      function Accel return Mimu_Vote_Status.T is
+         (T.Accel_Vote_Status_History.Get (T.Accel_Vote_Status_History.Get_Count));
+      function Gyro_Average return Packed_F32x3.T is
+         (T.Gyro_Average_History.Get (T.Gyro_Average_History.Get_Count));
    begin
       Stage_Config;
 
       -- Tick 1: the accel fault confirms immediately, the gyro fault does not.
       Send_Outlier_Tick;
-      Boolean_Assert.Eq (Latest.Gyro.Fault_Detected, False);
-      Packed_Bool_X3_Assert.Eq (Latest.Gyro.Imu_Valid, [True, True, True]);
-      Boolean_Assert.Eq (Latest.Accel.Fault_Detected, True);
-      Packed_Bool_X3_Assert.Eq (Latest.Accel.Imu_Valid, [True, True, False]);
+      Boolean_Assert.Eq (Gyro.Fault_Detected, False);
+      Packed_Bool_X3_Assert.Eq (Gyro.Imu_Valid, [True, True, True]);
+      Boolean_Assert.Eq (Accel.Fault_Detected, True);
+      Packed_Bool_X3_Assert.Eq (Accel.Imu_Valid, [True, True, False]);
 
       -- Tick 2: the gyro counter is at two of three, still under the limit.
       Send_Outlier_Tick;
-      Boolean_Assert.Eq (Latest.Gyro.Fault_Detected, False);
-      Packed_Bool_X3_Assert.Eq (Latest.Gyro.Imu_Valid, [True, True, True]);
+      Boolean_Assert.Eq (Gyro.Fault_Detected, False);
+      Packed_Bool_X3_Assert.Eq (Gyro.Imu_Valid, [True, True, True]);
 
       -- Tick 3: the gyro counter reaches the limit and IMU 2 is rejected.
       Send_Outlier_Tick;
-      Boolean_Assert.Eq (Latest.Gyro.Fault_Detected, True);
-      Packed_Bool_X3_Assert.Eq (Latest.Gyro.Imu_Valid, [True, False, True]);
-      Packed_F32x3_Assert.Eq (Latest.Gyro.Average, [-0.1, 0.25, 0.3], Epsilon => 0.0001);
+      Boolean_Assert.Eq (Gyro.Fault_Detected, True);
+      Packed_Bool_X3_Assert.Eq (Gyro.Imu_Valid, [True, False, True]);
+      Packed_F32x3_Assert.Eq (Gyro_Average, [-0.1, 0.25, 0.3], Epsilon => 0.0001);
 
       -- A parameter update re-applies the configuration and clears both persistence
       -- counters, so the very next outlier tick starts counting from one again.
       Stage_Config;
       Send_Outlier_Tick;
-      Boolean_Assert.Eq (Latest.Gyro.Fault_Detected, False);
-      Packed_Bool_X3_Assert.Eq (Latest.Gyro.Imu_Valid, [True, True, True]);
+      Boolean_Assert.Eq (Gyro.Fault_Detected, False);
+      Packed_Bool_X3_Assert.Eq (Gyro.Imu_Valid, [True, True, True]);
    end Test_Fault_Persistence;
 
 end Mimu_Majority_Vote_Tests.Implementation;

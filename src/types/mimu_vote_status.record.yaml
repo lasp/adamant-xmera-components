@@ -1,0 +1,13 @@
+---
+description: Fault metadata of one MIMU majority vote (gyro or accel), published beside the voted average.
+fields:
+  - name: Fault_Detected
+    type: Boolean
+    format: E8
+    description: "Whether an IMU was rejected for this quantity"
+  - name: Imu_Difference_Mag
+    type: Packed_F32x3.T
+    description: "Each IMU's difference magnitude from the 3-IMU average"
+  - name: Imu_Valid
+    type: Packed_Bool_X3.T
+    description: "Whether each IMU is valid for this quantity (one boolean per IMU)"
