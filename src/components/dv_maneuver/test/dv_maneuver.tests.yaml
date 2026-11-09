@@ -1,0 +1,15 @@
+---
+description: This is a unit test suite for the Dv Maneuver component
+tests:
+  - name: Test
+    description: Run the burn of the algorithm's Python reference test, with the delta-V accumulating at a constant rate, and check the force command and the burn state on every tick until the commanded delta-V completes the burn, to ensure the Ada to C to C++ integration is sound.
+  - name: Test_Time_Limits
+    description: Ensure the minimum burn time holds a burn whose delta-V is reached early, and the maximum burn time ends one whose delta-V is never reached.
+  - name: Test_Reset
+    description: Ensure a complete burn stays complete, through a new burn as well, until the reset starts a new one.
+  - name: Test_Invalid_Burn
+    description: Ensure staged burn times the algorithm would reject are refused at validation and leave the previous burn in place.
+  - name: Test_Invalid_Parameter
+    description: Ensure a staged body force the algorithm would reject is refused at validation.
+  - name: Test_Invalid_Data_Dependency
+    description: Ensure a data dependency with the wrong identifier fails an assertion and nothing is published.

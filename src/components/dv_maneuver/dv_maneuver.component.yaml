@@ -1,0 +1,27 @@
+---
+description: Delta-V burn executor. Commands the configured body force while a burn executes and zero once it is complete, and publishes the burn state. The burn times, the commanded delta-V and the body force are parameters. The times and the delta-V are set by the state manager when a burn is commanded, and the algorithm validates them before they are applied. The burn starts at the first tick after the component is built or reset, and completes when the accumulated delta-V reaches the commanded one after the minimum burn time, or when the maximum burn time is reached. Complete is terminal until the next reset, so the assembly fires the reset when the burn is to start and ticks the component only while the burn state is in use. Wraps the DvManeuverAlgorithm C++ algorithm via its C shim.
+execution: passive
+init:
+  description: Initializes the delta-V burn executor with the control period and the default parameter values, a stand-in burn which the first burn command replaces.
+  parameters:
+    - name: Control_Period
+      type: Basic_Types.Positive_Long_Float
+      description: "[s] Time between two algorithm updates. The burn time advances by this much per tick, so it must equal the rate at which the component is scheduled. Fixed by the assembly, so it is not a runtime parameter. The type keeps it greater than zero."
+connectors:
+  - description: Advance the burn one step and publish the force command and the burn state.
+    type: Tick.T
+    kind: recv_sync
+  - description: Restart the burn at the next tick. The assembly fires this when the burn is to start.
+    name: Reset_Tick_T_Recv_Sync
+    type: Tick.T
+    kind: recv_sync
+  - description: Fetch a data product item from the database.
+    type: Data_Product_Fetch.T
+    return_type: Data_Product_Return.T
+    kind: request
+  - description: The data product invoker connector
+    type: Data_Product.T
+    kind: send
+  - description: The parameter update connector.
+    type: Parameter_Update.T
+    kind: modify

@@ -1,0 +1,19 @@
+---
+description: Parameters for the Dv Maneuver component. The body force depends on the thrusters in use, so it is set for a mission phase rather than per burn. The burn times and the commanded delta-V define a burn, so they are set when a burn is commanded, before the burn is started with the reset. The defaults form a valid configuration and stand in until then.
+parameters:
+  - name: Cmd_Force_B
+    description: "[N] Body force commanded while the burn executes. Must be finite. Zero is permitted."
+    type: Packed_F32x3.T
+    default: "[0.0, 0.0, 0.0]"
+  - name: Min_Time
+    description: "[s] Minimum burn time before the burn can complete on the delta-V criterion. Must be finite and not negative."
+    type: Packed_F64.T
+    default: "(Value => 0.0)"
+  - name: Max_Time
+    description: "[s] Maximum burn time, at which the burn completes whatever the delta-V. Must be finite, positive, and greater than the minimum burn time after both are rounded to nanoseconds."
+    type: Packed_F64.T
+    default: "(Value => 1.0)"
+  - name: Cmd_Dv_N
+    description: "[m/s] Commanded delta-V in inertial frame components, of which only the magnitude is compared with the accumulated delta-V. Must be finite. Zero is permitted."
+    type: Packed_F32x3.T
+    default: "[0.0, 0.0, 0.0]"

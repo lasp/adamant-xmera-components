@@ -1,0 +1,14 @@
+---
+#  typedef struct {
+#      DvManeuverBurnState_c state;
+#      Vector3f_c cmdForce_B;
+#  } DvManeuverOutput_c;
+description: Delta-V burn executor output, the burn state after the update and the body force command. Maps to DvManeuverOutput_c in the dvManeuver C shim.
+fields:
+  - name: State
+    description: Burn state after this update.
+    type: Dv_Maneuver_Enums.Burn_State.E
+    format: E8
+  - name: Cmd_Force_B
+    description: "[N] Configured body force while the burn executes, else zero."
+    type: Packed_F32x3.T
