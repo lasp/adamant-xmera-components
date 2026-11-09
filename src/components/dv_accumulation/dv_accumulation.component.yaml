@@ -1,0 +1,24 @@
+---
+description: Delta-V accumulation. Integrates the majority voted body frame acceleration that gravity does not cause, one sample per tick over the control period, into the delta-V accumulated since the last reset, and publishes it for the burn executor. The first sample after a reset starts the accumulation window and is not integrated, so the accumulated delta-V is the integral over the time elapsed since then. The accelerometer bias is a data dependency, which the state manager publishes from the command that set the burn up, and is subtracted from each sample. Wraps the DvAccumulationAlgorithm C++ algorithm via its C shim.
+execution: passive
+init:
+  description: Initializes the delta-V accumulation algorithm with the control period.
+  parameters:
+    - name: Control_Period
+      type: Basic_Types.Positive_Short_Float
+      description: "[s] Time between two algorithm updates, the integration step of each sample, so it must equal the rate at which the component is scheduled. Fixed by the assembly, so it is not a runtime parameter. The type keeps it greater than zero."
+connectors:
+  - description: Integrate the acceleration of this tick and publish the accumulated delta-V.
+    type: Tick.T
+    kind: recv_sync
+  - description: Zero the accumulated delta-V and start a new accumulation window at the next tick. The assembly fires this when a burn is set up, before the burn executor is started.
+    name: Reset_Tick_T_Recv_Sync
+    type: Tick.T
+    kind: recv_sync
+  - description: Fetch a data product item from the database.
+    type: Data_Product_Fetch.T
+    return_type: Data_Product_Return.T
+    kind: request
+  - description: The data product invoker connector
+    type: Data_Product.T
+    kind: send
