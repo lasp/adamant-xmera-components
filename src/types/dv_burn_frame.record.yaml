@@ -1,0 +1,9 @@
+---
+description: The burn frame of a delta-V burn, as the delta-V guidance takes it when a burn is commanded.
+fields:
+  - name: Cmd_Dv_N
+    description: "[m/s] Commanded delta-V in inertial frame components. The third axis of the burn frame points along it. Must be finite and at least 1.0E-6 m/s long."
+    type: Packed_F32x3.T
+  - name: R_Hat_Pref_N
+    description: "[-] Preferred direction of the second axis of the burn frame in inertial frame components. Must be finite, within 1.0E-3 of unit length, and not within about 0.06 degrees of parallel or antiparallel to the commanded delta-V. Only its component perpendicular to the delta-V shapes the frame."
+    type: Packed_F32x3.T
