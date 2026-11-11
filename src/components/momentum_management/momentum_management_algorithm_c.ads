@@ -58,7 +58,7 @@ package Momentum_Management_Algorithm_C is
 
    --* @brief Report whether a configuration would be accepted by Create/Set_Config.
    --* @param Hs_Min               [Nms]    Minimum momentum difference for dumping; must be finite and >= 0.
-   --* @param K                    [1/s]    Proportional gain on the momentum difference; must be finite and >= 0.
+   --* @param Kp                   [1/s]    Proportional gain on the momentum difference; must be finite and >= 0.
    --* @param Ki                   [1/s^2]  Integral gain on the accumulated momentum difference; must be finite
    --*                                      and >= 0.
    --* @param Integral_Limit       [Nms^2]  Anti-windup clamp on each integral component; must be finite and
@@ -78,7 +78,7 @@ package Momentum_Management_Algorithm_C is
    --* throwing Create/Set_Config from an invalid configuration.
    function Validate_Config
      (Hs_Min                : Short_Float;
-      K                     : Short_Float;
+      Kp                    : Short_Float;
       Ki                    : Short_Float;
       Integral_Limit        : Short_Float;
       Control_Period        : Short_Float;
@@ -98,7 +98,7 @@ package Momentum_Management_Algorithm_C is
    --* @return The new algorithm instance, which must be released with Destroy.
    function Create
      (Hs_Min                : Short_Float;
-      K                     : Short_Float;
+      Kp                    : Short_Float;
       Ki                    : Short_Float;
       Integral_Limit        : Short_Float;
       Control_Period        : Short_Float;
@@ -126,7 +126,7 @@ package Momentum_Management_Algorithm_C is
    procedure Set_Config
      (Self                  : Momentum_Management_Algorithm_Access;
       Hs_Min                : Short_Float;
-      K                     : Short_Float;
+      Kp                    : Short_Float;
       Ki                    : Short_Float;
       Integral_Limit        : Short_Float;
       Control_Period        : Short_Float;
