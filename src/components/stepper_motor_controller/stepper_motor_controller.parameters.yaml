@@ -1,10 +1,10 @@
 ---
 description: Parameters for the Stepper Motor Controller component
 parameters:
-  - name: Step_Angle
-    description: "[rad/step] Angle traversed per motor step. The C algorithm requires a value in [2*pi/100000, 2*pi]."
-    type: Packed_F32.T
-    default: "(Value => 0.03141593)"
+  - name: Steps_Per_Revolution
+    description: "[steps] Motor steps per full revolution. The step angle is 2*pi divided by this count. The C algorithm requires a value in [1, 100000]."
+    type: Packed_U32.T
+    default: "(Value => 200)"
   - name: Motor_Min_Angle
     description: "[rad] Lower bound of the motor travel range. The C algorithm requires a value in [-2*pi, 2*pi], strictly less than Motor_Max_Angle."
     type: Packed_F32.T

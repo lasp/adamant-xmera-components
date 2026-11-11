@@ -14,19 +14,19 @@ package Stepper_Motor_Controller_Algorithm_C is
    type Stepper_Motor_Controller_Algorithm_Access is access all Stepper_Motor_Controller_Algorithm;
 
    --* @brief Report whether a configuration would be accepted by Create/Set_Config.
-   --* @param Step_Angle       [rad/step] Motor step angle, must be in [2*pi/100000, 2*pi].
-   --* @param Min_Angle        [rad] Lower bound of the motor travel range, must be in [-2*pi, 2*pi].
-   --* @param Max_Angle        [rad] Upper bound, must be in [-2*pi, 2*pi] and strictly greater than Min_Angle.
-   --* @param Settle_Count_Max [ticks] Settling duration after stepping ends (unconstrained).
-   --* @param Min_Step_Command [steps] Minimum step delta magnitude that warrants a command, must be > 0.
+   --* @param Steps_Per_Revolution [steps] Motor steps per full revolution, must be in [1, 100000].
+   --* @param Min_Angle            [rad] Lower bound of the motor travel range, must be in [-2*pi, 2*pi].
+   --* @param Max_Angle            [rad] Upper bound, must be in [-2*pi, 2*pi] and strictly greater than Min_Angle.
+   --* @param Settle_Count_Max     [ticks] Settling duration after stepping ends (unconstrained).
+   --* @param Min_Step_Command     [steps] Minimum step delta magnitude that warrants a command, must be > 0.
    --* @return True if the configuration is valid. Never throws, so it can guard the
    --* throwing Create/Set_Config from an invalid configuration.
    function Validate_Config
-     (Step_Angle       : Short_Float;
-      Min_Angle        : Short_Float;
-      Max_Angle        : Short_Float;
-      Settle_Count_Max : Unsigned_32;
-      Min_Step_Command : Unsigned_32)
+     (Steps_Per_Revolution : Unsigned_32;
+      Min_Angle            : Short_Float;
+      Max_Angle            : Short_Float;
+      Settle_Count_Max     : Unsigned_32;
+      Min_Step_Command     : Unsigned_32)
      return Interfaces.C.C_bool
      with Import       => True,
           Convention   => C,
@@ -34,18 +34,18 @@ package Stepper_Motor_Controller_Algorithm_C is
 
    --* @brief Construct a new StepperMotorControllerAlgorithm from a configuration.
    --* Validate the values with Validate_Config before calling; throws on invalid input.
-   --* @param Step_Angle       [rad/step] Motor step angle, must be in [2*pi/100000, 2*pi].
-   --* @param Min_Angle        [rad] Lower bound of the motor travel range, must be in [-2*pi, 2*pi].
-   --* @param Max_Angle        [rad] Upper bound, must be in [-2*pi, 2*pi] and strictly greater than Min_Angle.
-   --* @param Settle_Count_Max [ticks] Settling duration after stepping ends (unconstrained).
-   --* @param Min_Step_Command [steps] Minimum step delta magnitude that warrants a command, must be > 0.
+   --* @param Steps_Per_Revolution [steps] Motor steps per full revolution, must be in [1, 100000].
+   --* @param Min_Angle            [rad] Lower bound of the motor travel range, must be in [-2*pi, 2*pi].
+   --* @param Max_Angle            [rad] Upper bound, must be in [-2*pi, 2*pi] and strictly greater than Min_Angle.
+   --* @param Settle_Count_Max     [ticks] Settling duration after stepping ends (unconstrained).
+   --* @param Min_Step_Command     [steps] Minimum step delta magnitude that warrants a command, must be > 0.
    --* @return The new algorithm instance, which must be released with Destroy.
    function Create
-     (Step_Angle       : Short_Float;
-      Min_Angle        : Short_Float;
-      Max_Angle        : Short_Float;
-      Settle_Count_Max : Unsigned_32;
-      Min_Step_Command : Unsigned_32)
+     (Steps_Per_Revolution : Unsigned_32;
+      Min_Angle            : Short_Float;
+      Max_Angle            : Short_Float;
+      Settle_Count_Max     : Unsigned_32;
+      Min_Step_Command     : Unsigned_32)
      return Stepper_Motor_Controller_Algorithm_Access
      with Import       => True,
           Convention   => C,
@@ -60,19 +60,19 @@ package Stepper_Motor_Controller_Algorithm_C is
           External_Name => "StepperMotorControllerAlgorithm_destroy";
 
    --* @brief Apply a new configuration (validated; throws on invalid input).
-   --* @param Self             The algorithm instance.
-   --* @param Step_Angle       [rad/step] Motor step angle, must be in [2*pi/100000, 2*pi].
-   --* @param Min_Angle        [rad] Lower bound of the motor travel range, must be in [-2*pi, 2*pi].
-   --* @param Max_Angle        [rad] Upper bound, must be in [-2*pi, 2*pi] and strictly greater than Min_Angle.
-   --* @param Settle_Count_Max [ticks] Settling duration after stepping ends (unconstrained).
-   --* @param Min_Step_Command [steps] Minimum step delta magnitude that warrants a command, must be > 0.
+   --* @param Self                 The algorithm instance.
+   --* @param Steps_Per_Revolution [steps] Motor steps per full revolution, must be in [1, 100000].
+   --* @param Min_Angle            [rad] Lower bound of the motor travel range, must be in [-2*pi, 2*pi].
+   --* @param Max_Angle            [rad] Upper bound, must be in [-2*pi, 2*pi] and strictly greater than Min_Angle.
+   --* @param Settle_Count_Max     [ticks] Settling duration after stepping ends (unconstrained).
+   --* @param Min_Step_Command     [steps] Minimum step delta magnitude that warrants a command, must be > 0.
    procedure Set_Config
-     (Self             : Stepper_Motor_Controller_Algorithm_Access;
-      Step_Angle       : Short_Float;
-      Min_Angle        : Short_Float;
-      Max_Angle        : Short_Float;
-      Settle_Count_Max : Unsigned_32;
-      Min_Step_Command : Unsigned_32)
+     (Self                 : Stepper_Motor_Controller_Algorithm_Access;
+      Steps_Per_Revolution : Unsigned_32;
+      Min_Angle            : Short_Float;
+      Max_Angle            : Short_Float;
+      Settle_Count_Max     : Unsigned_32;
+      Min_Step_Command     : Unsigned_32)
      with Import       => True,
           Convention   => C,
           External_Name => "StepperMotorControllerAlgorithm_setConfig";
@@ -94,7 +94,7 @@ package Stepper_Motor_Controller_Algorithm_C is
           Convention   => C,
           External_Name => "StepperMotorControllerAlgorithm_update";
 
-   --* @brief Convert a reference angle to an integer step position using the configured step angle.
+   --* @brief Convert a reference angle to an integer step position using the step angle 2*pi / Steps_Per_Revolution.
    --* @param Self  The algorithm instance.
    --* @param Angle [rad] Reference angle.
    --* @return Step position rounded to the nearest integer.
