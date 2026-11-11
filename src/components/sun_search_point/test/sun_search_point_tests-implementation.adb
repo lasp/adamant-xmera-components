@@ -40,7 +40,7 @@ package body Sun_Search_Point_Tests.Implementation is
    -- aligned, so the pointing phase produces a zero attitude error and, with a zero
    -- spin rate, a zero reference rate. The search phase is then the only phase that
    -- publishes a non-zero Omega_Rn_B, which is what the tests key on.
-   Test_S_Hat_Bdy_Cmd : constant Packed_F32x3.T := [0.0, 0.0, 1.0];
+   Test_Sun_Point_Axis_B : constant Packed_F32x3.T := [0.0, 0.0, 1.0];
 
    -- Body rate reported by the filter state dependency.
    Test_Omega_Bn_B : constant Packed_F32x3.T := [0.05, 0.06, 0.07];
@@ -73,7 +73,7 @@ package body Sun_Search_Point_Tests.Implementation is
       Params : Sun_Search_Point_Parameters.Instance;
    begin
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Rotations (Test_Rotations)), Success);
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.S_Hat_Bdy_Cmd (Test_S_Hat_Bdy_Cmd)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Sun_Point_Axis_B (Test_Sun_Point_Axis_B)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Sun_Axis_Spin_Rate ((Value => 0.0))), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Omega_Rn_B_Cfg (Zero_Vector)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Observation_Threshold (Test_Observation_Threshold)), Success);
@@ -86,7 +86,7 @@ package body Sun_Search_Point_Tests.Implementation is
    procedure Tick_With (
       Self : in out Instance;
       Num_Css_Viewing_Sun : in Unsigned_32;
-      Sun_Direction : in Packed_F32x3.T := Test_S_Hat_Bdy_Cmd
+      Sun_Direction : in Packed_F32x3.T := Test_Sun_Point_Axis_B
    ) is
       T : Component.Sun_Search_Point.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
@@ -281,7 +281,7 @@ package body Sun_Search_Point_Tests.Implementation is
       procedure Stage_Valid_Set is
       begin
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Rotations (Test_Rotations)), Success);
-         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.S_Hat_Bdy_Cmd (Test_S_Hat_Bdy_Cmd)), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Sun_Point_Axis_B (Test_Sun_Point_Axis_B)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Sun_Axis_Spin_Rate ((Value => 0.0))), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Omega_Rn_B_Cfg (Zero_Vector)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Observation_Threshold (Test_Observation_Threshold)), Success);
@@ -306,11 +306,11 @@ package body Sun_Search_Point_Tests.Implementation is
 
       -- A commanded body vector that is not a unit vector is rejected:
       Stage_Valid_Set;
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.S_Hat_Bdy_Cmd (Zero_Vector)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Sun_Point_Axis_B (Zero_Vector)), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
 
       Stage_Valid_Set;
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.S_Hat_Bdy_Cmd ([2.0, 0.0, 0.0])), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Sun_Point_Axis_B ([2.0, 0.0, 0.0])), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
       -- A non-finite fallback rate is rejected. The value is injected as raw bytes because
       -- the compiler will not let a non-finite Short_Float be written as a literal, and

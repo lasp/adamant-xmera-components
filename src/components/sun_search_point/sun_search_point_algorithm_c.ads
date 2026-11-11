@@ -49,7 +49,7 @@ package Sun_Search_Point_Algorithm_C is
 
    --* @brief Report whether a configuration would be accepted by Create/Set_Config.
    --* @param Rotations             [-] Sun-search rotation sequence; each duration must be finite and > 0, each rate finite, each axis defined.
-   --* @param S_Hat_Bdy_Cmd         [-] Commanded body vector to point at the sun; norm must be within 1e-3 of 1.0.
+   --* @param Sun_Point_Axis_B      [-] Body-fixed sun pointing axis to align with the sun; norm must be within 1e-3 of 1.0.
    --* @param Sun_Axis_Spin_Rate    [rad/s] Spin rate about the sun heading vector, must be finite.
    --* @param Omega_Rn_B            [rad/s] Fallback body rate when no sun direction is available, must be finite.
    --* @param Observation_Threshold [-] CSS count at or above which to transition to pointing; must be at most Get_Max_Observation_Threshold.
@@ -59,7 +59,7 @@ package Sun_Search_Point_Algorithm_C is
    --* throwing Create/Set_Config from an invalid configuration.
    function Validate_Config
      (Rotations             : access constant Rotation_Properties_X4_Record.C.U_C;
-      S_Hat_Bdy_Cmd         : Packed_F32x3_Record.C.U_C;
+      Sun_Point_Axis_B      : Packed_F32x3_Record.C.U_C;
       Sun_Axis_Spin_Rate    : Short_Float;
       Omega_Rn_B            : Packed_F32x3_Record.C.U_C;
       Observation_Threshold : Unsigned_32;
@@ -73,7 +73,7 @@ package Sun_Search_Point_Algorithm_C is
    --* @brief Construct a new SunSearchPointAlgorithm from a configuration.
    --* Validate the values with Validate_Config before calling; throws on invalid input.
    --* @param Rotations             [-] Sun-search rotation sequence; each duration must be finite and > 0, each rate finite, each axis defined.
-   --* @param S_Hat_Bdy_Cmd         [-] Commanded body vector to point at the sun; norm must be within 1e-3 of 1.0.
+   --* @param Sun_Point_Axis_B      [-] Body-fixed sun pointing axis to align with the sun; norm must be within 1e-3 of 1.0.
    --* @param Sun_Axis_Spin_Rate    [rad/s] Spin rate about the sun heading vector, must be finite.
    --* @param Omega_Rn_B            [rad/s] Fallback body rate when no sun direction is available, must be finite.
    --* @param Observation_Threshold [-] CSS count at or above which to transition to pointing; must be at most Get_Max_Observation_Threshold.
@@ -82,7 +82,7 @@ package Sun_Search_Point_Algorithm_C is
    --* @return The new algorithm instance, which must be released with Destroy.
    function Create
      (Rotations             : access constant Rotation_Properties_X4_Record.C.U_C;
-      S_Hat_Bdy_Cmd         : Packed_F32x3_Record.C.U_C;
+      Sun_Point_Axis_B      : Packed_F32x3_Record.C.U_C;
       Sun_Axis_Spin_Rate    : Short_Float;
       Omega_Rn_B            : Packed_F32x3_Record.C.U_C;
       Observation_Threshold : Unsigned_32;
@@ -106,7 +106,7 @@ package Sun_Search_Point_Algorithm_C is
    --* caller needing the sequence restarted must follow with Re_Initialize.
    --* @param Self                  The algorithm instance.
    --* @param Rotations             [-] Sun-search rotation sequence; each duration must be finite and > 0, each rate finite, each axis defined.
-   --* @param S_Hat_Bdy_Cmd         [-] Commanded body vector to point at the sun; norm must be within 1e-3 of 1.0.
+   --* @param Sun_Point_Axis_B      [-] Body-fixed sun pointing axis to align with the sun; norm must be within 1e-3 of 1.0.
    --* @param Sun_Axis_Spin_Rate    [rad/s] Spin rate about the sun heading vector, must be finite.
    --* @param Omega_Rn_B            [rad/s] Fallback body rate when no sun direction is available, must be finite.
    --* @param Observation_Threshold [-] CSS count at or above which to transition to pointing; must be at most Get_Max_Observation_Threshold.
@@ -115,7 +115,7 @@ package Sun_Search_Point_Algorithm_C is
    procedure Set_Config
      (Self                  : Sun_Search_Point_Algorithm_Access;
       Rotations             : access constant Rotation_Properties_X4_Record.C.U_C;
-      S_Hat_Bdy_Cmd         : Packed_F32x3_Record.C.U_C;
+      Sun_Point_Axis_B      : Packed_F32x3_Record.C.U_C;
       Sun_Axis_Spin_Rate    : Short_Float;
       Omega_Rn_B            : Packed_F32x3_Record.C.U_C;
       Observation_Threshold : Unsigned_32;
