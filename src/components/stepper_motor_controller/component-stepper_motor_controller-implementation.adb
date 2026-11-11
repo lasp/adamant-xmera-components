@@ -16,11 +16,11 @@ package body Component.Stepper_Motor_Controller.Implementation is
    overriding procedure Init (Self : in out Instance) is
    begin
       Self.Alg := Create (
-         Step_Angle       => Self.Step_Angle.Value,
-         Min_Angle        => Self.Motor_Min_Angle.Value,
-         Max_Angle        => Self.Motor_Max_Angle.Value,
-         Settle_Count_Max => Self.Settle_Count_Max.Value,
-         Min_Step_Command => Self.Min_Step_Command.Value);
+         Steps_Per_Revolution => Self.Steps_Per_Revolution.Value,
+         Min_Angle            => Self.Motor_Min_Angle.Value,
+         Max_Angle            => Self.Motor_Max_Angle.Value,
+         Settle_Count_Max     => Self.Settle_Count_Max.Value,
+         Min_Step_Command     => Self.Min_Step_Command.Value);
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -141,11 +141,11 @@ package body Component.Stepper_Motor_Controller.Implementation is
    begin
       Set_Config (
          Self.Alg,
-         Step_Angle       => Self.Step_Angle.Value,
-         Min_Angle        => Self.Motor_Min_Angle.Value,
-         Max_Angle        => Self.Motor_Max_Angle.Value,
-         Settle_Count_Max => Self.Settle_Count_Max.Value,
-         Min_Step_Command => Self.Min_Step_Command.Value);
+         Steps_Per_Revolution => Self.Steps_Per_Revolution.Value,
+         Min_Angle            => Self.Motor_Min_Angle.Value,
+         Max_Angle            => Self.Motor_Max_Angle.Value,
+         Settle_Count_Max     => Self.Settle_Count_Max.Value,
+         Min_Step_Command     => Self.Min_Step_Command.Value);
    end Update_Parameters_Action;
 
    -- Validate a staged parameter set before it is applied by asking the algorithm's
@@ -154,7 +154,7 @@ package body Component.Stepper_Motor_Controller.Implementation is
    -- the throwing Create/Set_Config across the FFI boundary.
    overriding function Validate_Parameters (
       Self : in out Instance;
-      Step_Angle : in Packed_F32.U;
+      Steps_Per_Revolution : in Packed_U32.U;
       Motor_Min_Angle : in Packed_F32.U;
       Motor_Max_Angle : in Packed_F32.U;
       Settle_Count_Max : in Packed_U32.U;
@@ -163,11 +163,11 @@ package body Component.Stepper_Motor_Controller.Implementation is
       pragma Unreferenced (Self);
    begin
       if Validate_Config (
-         Step_Angle       => Step_Angle.Value,
-         Min_Angle        => Motor_Min_Angle.Value,
-         Max_Angle        => Motor_Max_Angle.Value,
-         Settle_Count_Max => Settle_Count_Max.Value,
-         Min_Step_Command => Min_Step_Command.Value)
+         Steps_Per_Revolution => Steps_Per_Revolution.Value,
+         Min_Angle            => Motor_Min_Angle.Value,
+         Max_Angle            => Motor_Max_Angle.Value,
+         Settle_Count_Max     => Settle_Count_Max.Value,
+         Min_Step_Command     => Min_Step_Command.Value)
       then
          return Parameter_Validation_Status.Valid;
       else

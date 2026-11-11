@@ -35,7 +35,7 @@ package body Stepper_Motor_Controller_Tests.Implementation is
    -- Stage the full parameter set and apply it to the algorithm:
    procedure Stage_Config
       (T : in Tester_Access;
-       Step_Angle : in Short_Float;
+       Steps_Per_Revolution : in Unsigned_32;
        Motor_Min_Angle : in Short_Float;
        Motor_Max_Angle : in Short_Float;
        Settle_Count_Max : in Unsigned_32;
@@ -44,7 +44,7 @@ package body Stepper_Motor_Controller_Tests.Implementation is
    is
       Params : Stepper_Motor_Controller_Parameters.Instance;
    begin
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Step_Angle ((Value => Step_Angle))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Steps_Per_Revolution ((Value => Steps_Per_Revolution))), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Motor_Min_Angle ((Value => Motor_Min_Angle))), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Motor_Max_Angle ((Value => Motor_Max_Angle))), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Settle_Count_Max ((Value => Settle_Count_Max))), Success);
@@ -115,10 +115,10 @@ package body Stepper_Motor_Controller_Tests.Implementation is
    overriding procedure Test_Nominal_Move (Self : in out Instance) is
       T : Tester_Access renames Self.Tester;
    begin
-      -- Case 1: forward move. Motor at step 0, reference at 10 degrees with a
-      -- 1 degree step angle commands 10 steps clockwise.
+      -- Case 1: forward move. Motor at step 0, reference at 10 degrees with
+      -- 360 steps per revolution (1 degree per step) commands 10 steps clockwise.
       Stage_Config (T,
-         Step_Angle => Deg,
+         Steps_Per_Revolution => 360,
          Motor_Min_Angle => 0.0,
          Motor_Max_Angle => Two_Pi,
          Settle_Count_Max => 10,
@@ -135,7 +135,7 @@ package body Stepper_Motor_Controller_Tests.Implementation is
       -- clockwise.
       Restart_Component (T);
       Stage_Config (T,
-         Step_Angle => Deg,
+         Steps_Per_Revolution => 360,
          Motor_Min_Angle => 0.0,
          Motor_Max_Angle => Two_Pi,
          Settle_Count_Max => 10,
@@ -152,7 +152,7 @@ package body Stepper_Motor_Controller_Tests.Implementation is
       -- 170, reference at -170 degrees wraps to 20 steps clockwise.
       Restart_Component (T);
       Stage_Config (T,
-         Step_Angle => Deg,
+         Steps_Per_Revolution => 360,
          Motor_Min_Angle => 0.0,
          Motor_Max_Angle => Two_Pi,
          Settle_Count_Max => 10,
@@ -176,7 +176,7 @@ package body Stepper_Motor_Controller_Tests.Implementation is
       -- A 3 step delta is below the minimum step command of 5, so the
       -- controller stays quiescent:
       Stage_Config (T,
-         Step_Angle => Deg,
+         Steps_Per_Revolution => 360,
          Motor_Min_Angle => 0.0,
          Motor_Max_Angle => Two_Pi,
          Settle_Count_Max => 10,
@@ -201,7 +201,7 @@ package body Stepper_Motor_Controller_Tests.Implementation is
    begin
       -- Move toward a 20 degree reference from step 0:
       Stage_Config (T,
-         Step_Angle => Deg,
+         Steps_Per_Revolution => 360,
          Motor_Min_Angle => 0.0,
          Motor_Max_Angle => Two_Pi,
          Settle_Count_Max => 2,
@@ -264,7 +264,7 @@ package body Stepper_Motor_Controller_Tests.Implementation is
       -- Partial range of [45, 90] degrees with the motor parked at 60 degrees.
       -- A reference above the range is ignored:
       Stage_Config (T,
-         Step_Angle => Deg,
+         Steps_Per_Revolution => 360,
          Motor_Min_Angle => 45.0 * Deg,
          Motor_Max_Angle => 90.0 * Deg,
          Settle_Count_Max => 10,
@@ -298,7 +298,7 @@ package body Stepper_Motor_Controller_Tests.Implementation is
       -- -100000 to the 60 degree reference is +100060 steps: the command
       -- saturates at 65535 clockwise and the raw delta is reported:
       Stage_Config (T,
-         Step_Angle => Deg,
+         Steps_Per_Revolution => 360,
          Motor_Min_Angle => 45.0 * Deg,
          Motor_Max_Angle => 90.0 * Deg,
          Settle_Count_Max => 10,
@@ -319,7 +319,7 @@ package body Stepper_Motor_Controller_Tests.Implementation is
       -- the 60 degree reference is -99940 steps:
       Restart_Component (T);
       Stage_Config (T,
-         Step_Angle => Deg,
+         Steps_Per_Revolution => 360,
          Motor_Min_Angle => 45.0 * Deg,
          Motor_Max_Angle => 90.0 * Deg,
          Settle_Count_Max => 10,
@@ -354,7 +354,7 @@ package body Stepper_Motor_Controller_Tests.Implementation is
       -- A stale motor state (timestamp far older than the tick's stale
       -- reference) is accepted and the controller still commands the move:
       Stage_Config (T,
-         Step_Angle => Deg,
+         Steps_Per_Revolution => 360,
          Motor_Min_Angle => 0.0,
          Motor_Max_Angle => Two_Pi,
          Settle_Count_Max => 10,
@@ -386,17 +386,17 @@ package body Stepper_Motor_Controller_Tests.Implementation is
       Param : Parameter.T;
    begin
       -- A parameter with a corrupted (zero) buffer length is rejected:
-      Param := Params.Step_Angle ((Value => 0.03));
+      Param := Params.Steps_Per_Revolution ((Value => 200));
       Param.Header.Buffer_Length := 0;
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Param), Length_Error);
 
       -- A parameter with an unknown ID is rejected:
-      Param := Params.Step_Angle ((Value => 0.03));
+      Param := Params.Steps_Per_Revolution ((Value => 200));
       Param.Header.Id := 1_001;
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Param), Id_Error);
 
       -- A well-formed parameter still stages successfully afterward:
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Step_Angle ((Value => 0.03))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Steps_Per_Revolution ((Value => 200))), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
    end Test_Parameter_Staging_Errors;
 
@@ -414,7 +414,7 @@ package body Stepper_Motor_Controller_Tests.Implementation is
       -- rejection can only come from the single field that was perturbed.
       procedure Stage_Valid_Set is
       begin
-         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Step_Angle ((Value => Deg))), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Steps_Per_Revolution ((Value => 360))), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Motor_Min_Angle ((Value => 0.0))), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Motor_Max_Angle ((Value => Two_Pi))), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Settle_Count_Max ((Value => 10))), Success);
@@ -425,14 +425,14 @@ package body Stepper_Motor_Controller_Tests.Implementation is
       Stage_Valid_Set;
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
 
-      -- A zero step angle is rejected (must be in [2*pi/100000, 2*pi]):
+      -- Zero steps per revolution is rejected (must be in [1, 100000]):
       Stage_Valid_Set;
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Step_Angle ((Value => 0.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Steps_Per_Revolution ((Value => 0))), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
 
-      -- A step angle beyond a full revolution is rejected:
+      -- More than 100000 steps per revolution is rejected:
       Stage_Valid_Set;
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Step_Angle ((Value => Two_Pi * 2.0))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Steps_Per_Revolution ((Value => 100_001))), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
 
       -- A minimum angle equal to the maximum is rejected (must be strictly less):
