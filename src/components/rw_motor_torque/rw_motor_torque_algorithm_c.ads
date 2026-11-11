@@ -62,7 +62,7 @@ package Rw_Motor_Torque_Algorithm_C is
    --* @param Gs_Matrix_B            [-] Reaction wheel spin axes, one per wheel slot; each must be finite
    --*                                   and within 1e-3 of unit length.
    --* @param Wheel_Availability     [-] Availability of each wheel slot, one byte per slot.
-   --* @param Omega_Gain             [-] Null space feedback gain on the wheel speed error; must be finite
+   --* @param Kp                     [-] Null space feedback gain on the wheel speed error; must be finite
    --*                                   and >= 0.
    --* @return True if the configuration is valid. Never throws, so it can guard the
    --* throwing Create/Set_Config from an invalid configuration.
@@ -70,7 +70,7 @@ package Rw_Motor_Torque_Algorithm_C is
      (Desired_Control_Axes_B : access constant Rw_Motor_Torque_Control_Axes.C.U_C;
       Gs_Matrix_B            : access constant Mrp_Feedback_Rw_Spin_Axes.C.U_C;
       Wheel_Availability     : access constant Mrp_Feedback_Rw_Availability.C.U_C;
-      Omega_Gain             : Short_Float)
+      Kp                     : Short_Float)
      return Interfaces.C.C_bool
      with Import        => True,
           Convention    => C,
@@ -84,7 +84,7 @@ package Rw_Motor_Torque_Algorithm_C is
      (Desired_Control_Axes_B : access constant Rw_Motor_Torque_Control_Axes.C.U_C;
       Gs_Matrix_B            : access constant Mrp_Feedback_Rw_Spin_Axes.C.U_C;
       Wheel_Availability     : access constant Mrp_Feedback_Rw_Availability.C.U_C;
-      Omega_Gain             : Short_Float)
+      Kp                     : Short_Float)
      return Rw_Motor_Torque_Algorithm_Access
      with Import        => True,
           Convention    => C,
@@ -106,7 +106,7 @@ package Rw_Motor_Torque_Algorithm_C is
       Desired_Control_Axes_B : access constant Rw_Motor_Torque_Control_Axes.C.U_C;
       Gs_Matrix_B            : access constant Mrp_Feedback_Rw_Spin_Axes.C.U_C;
       Wheel_Availability     : access constant Mrp_Feedback_Rw_Availability.C.U_C;
-      Omega_Gain             : Short_Float)
+      Kp                     : Short_Float)
      with Import        => True,
           Convention    => C,
           External_Name => "RwMotorTorqueAlgorithm_setConfig";

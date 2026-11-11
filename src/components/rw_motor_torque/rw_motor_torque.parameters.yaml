@@ -13,7 +13,7 @@ parameters:
     description: "[-] Which reaction wheels take part in the mapping. An unavailable wheel is commanded zero torque. Every slot is configured, so a slot without a wheel is marked unavailable."
     type: Wheel_Availability_X4.T
     default: "[others => Mrp_Feedback_Enums.Wheel_Availability.Available]"
-  - name: Omega_Gain
+  - name: Proportional_Gain_Kp
     description: "[-] Null space feedback gain on the wheel speed error. Must be finite and not negative. Zero disables the null space term."
     type: Packed_F32.T
     default: "(Value => 0.0)"

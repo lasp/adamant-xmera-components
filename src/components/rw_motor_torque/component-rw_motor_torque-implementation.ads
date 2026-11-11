@@ -93,7 +93,7 @@ private
       Control_Axes : in Rw_Motor_Torque_Control_Axes.U;
       Rw_Spin_Axes : in Packed_F32x3_X4.U;
       Wheel_Availability : in Wheel_Availability_X4.U;
-      Omega_Gain : in Packed_F32.U;
+      Proportional_Gain_Kp : in Packed_F32.U;
       Desired_Wheel_Speeds : in Rw_Speeds_Input.U
    ) return Parameter_Validation_Status.E;
 

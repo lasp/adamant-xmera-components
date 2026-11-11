@@ -62,7 +62,7 @@ package body Rw_Motor_Torque_Tests.Implementation is
       Self : in out Instance;
       X, Y, Z : in Boolean;
       Availability : in Wheel_Availability_X4.T;
-      Omega_Gain : in Packed_F32.T
+      Kp : in Packed_F32.T
    ) is
       T : Component.Rw_Motor_Torque.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Rw_Motor_Torque_Parameters.Instance;
@@ -70,7 +70,7 @@ package body Rw_Motor_Torque_Tests.Implementation is
       Stage_Control_Axes (Self, X, Y, Z);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Rw_Spin_Axes (Spin_Axes)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Wheel_Availability (Availability)), Success);
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Omega_Gain (Omega_Gain)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_Kp (Kp)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
    end Apply_Configuration;
 
@@ -124,24 +124,24 @@ package body Rw_Motor_Torque_Tests.Implementation is
    overriding procedure Test (Self : in out Instance) is
    begin
       -- All three axes on four wheels with the null space term off:
-      Apply_Configuration (Self, X => True, Y => True, Z => True, Availability => All_Available, Omega_Gain => No_Gain);
+      Apply_Configuration (Self, X => True, Y => True, Z => True, Availability => All_Available, Kp => No_Gain);
       Send_Tick_And_Check (Self, 1, (Rwa_1 => -0.8, Rwa_2 => 0.7, Rwa_3 => -0.5, Rwa_4 => -0.3464101615));
 
       -- With four available wheels the null space term steers the wheel speeds without
       -- changing the body torque:
-      Apply_Configuration (Self, X => True, Y => True, Z => True, Availability => All_Available, Omega_Gain => Gain);
+      Apply_Configuration (Self, X => True, Y => True, Z => True, Availability => All_Available, Kp => Gain);
       Send_Tick_And_Check (Self, 2, (Rwa_1 => -0.0264973081, Rwa_2 => 1.4735026919, Rwa_3 => 0.2735026919, Rwa_4 => -1.6861561237));
 
       -- Two axes on three available wheels; the unavailable wheel is commanded zero:
-      Apply_Configuration (Self, X => True, Y => True, Z => False, Availability => Wheel_3_Out, Omega_Gain => No_Gain);
+      Apply_Configuration (Self, X => True, Y => True, Z => False, Availability => Wheel_3_Out, Kp => No_Gain);
       Send_Tick_And_Check (Self, 3, (Rwa_1 => -0.9, Rwa_2 => 0.6, Rwa_3 => 0.0, Rwa_4 => -0.1732050808));
 
       -- A single axis with the null space term on:
-      Apply_Configuration (Self, X => True, Y => False, Z => False, Availability => All_Available, Omega_Gain => Gain);
+      Apply_Configuration (Self, X => True, Y => False, Z => False, Availability => All_Available, Kp => Gain);
       Send_Tick_And_Check (Self, 4, (Rwa_1 => 0.0235026919, Rwa_2 => 0.7735026919, Rwa_3 => 0.7735026919, Rwa_4 => -1.7727586640));
 
       -- With only three available wheels there is no null space, so the gain has no effect:
-      Apply_Configuration (Self, X => True, Y => True, Z => True, Availability => Wheel_3_Out, Omega_Gain => Gain);
+      Apply_Configuration (Self, X => True, Y => True, Z => True, Availability => Wheel_3_Out, Kp => Gain);
       Send_Tick_And_Check (Self, 5, (Rwa_1 => -0.3, Rwa_2 => 1.2, Rwa_3 => 0.0, Rwa_4 => -1.2124355653));
    end Test;
 
@@ -161,7 +161,7 @@ package body Rw_Motor_Torque_Tests.Implementation is
          Stage_Control_Axes (Self, X => True, Y => True, Z => True);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Rw_Spin_Axes (Spin_Axes)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Wheel_Availability (All_Available)), Success);
-         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Omega_Gain (No_Gain)), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_Kp (No_Gain)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Desired_Wheel_Speeds ((Wheel_Speeds => [others => 0.0]))), Success);
       end Stage_Valid_Configuration;
    begin
@@ -187,7 +187,7 @@ package body Rw_Motor_Torque_Tests.Implementation is
 
       -- A negative gain is rejected:
       Stage_Valid_Configuration;
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Omega_Gain ((Value => -0.5))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_Kp ((Value => -0.5))), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
 
       -- A non-finite spin axis is rejected. The value is injected as raw bytes because the
