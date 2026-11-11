@@ -55,7 +55,7 @@ package body Component.Rw_Motor_Torque.Implementation is
          Desired_Control_Axes_B => Cfg.Control_Axes'Access,
          Gs_Matrix_B            => Cfg.Rw_Spin_Axes'Access,
          Wheel_Availability     => Cfg.Wheel_Availability'Access,
-         Omega_Gain             => Self.Omega_Gain.Value);
+         Kp                     => Self.Proportional_Gain_Kp.Value);
       Self.Desired_Speeds_C := Rw_Speeds_Input.C.To_C (Self.Desired_Wheel_Speeds);
    end Init;
 
@@ -143,7 +143,7 @@ package body Component.Rw_Motor_Torque.Implementation is
          Desired_Control_Axes_B => Cfg.Control_Axes'Access,
          Gs_Matrix_B            => Cfg.Rw_Spin_Axes'Access,
          Wheel_Availability     => Cfg.Wheel_Availability'Access,
-         Omega_Gain             => Self.Omega_Gain.Value);
+         Kp                     => Self.Proportional_Gain_Kp.Value);
       Self.Desired_Speeds_C := Rw_Speeds_Input.C.To_C (Self.Desired_Wheel_Speeds);
    end Update_Parameters_Action;
 
@@ -156,7 +156,7 @@ package body Component.Rw_Motor_Torque.Implementation is
       Control_Axes : in Rw_Motor_Torque_Control_Axes.U;
       Rw_Spin_Axes : in Packed_F32x3_X4.U;
       Wheel_Availability : in Wheel_Availability_X4.U;
-      Omega_Gain : in Packed_F32.U;
+      Proportional_Gain_Kp : in Packed_F32.U;
       Desired_Wheel_Speeds : in Rw_Speeds_Input.U
    ) return Parameter_Validation_Status.E is
       Ignore : Instance renames Self;
@@ -185,7 +185,7 @@ package body Component.Rw_Motor_Torque.Implementation is
          Desired_Control_Axes_B => Cfg.Control_Axes'Access,
          Gs_Matrix_B            => Cfg.Rw_Spin_Axes'Access,
          Wheel_Availability     => Cfg.Wheel_Availability'Access,
-         Omega_Gain             => Omega_Gain.Value)
+         Kp                     => Proportional_Gain_Kp.Value)
       then
          return Parameter_Validation_Status.Valid;
       else
