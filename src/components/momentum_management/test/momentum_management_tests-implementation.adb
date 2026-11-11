@@ -31,7 +31,7 @@ package body Momentum_Management_Tests.Implementation is
    Nominal_Hs_Min : constant Packed_F32.T := (Value => 100.0 / 6000.0 * 100.0);
    High_Hs_Min : constant Packed_F32.T := (Value => 1000.0 / 6000.0 * 100.0);
    No_Hs_Min : constant Packed_F32.T := (Value => 0.0);
-   Gain_K : constant Packed_F32.T := (Value => 0.05);
+   Gain_Kp : constant Packed_F32.T := (Value => 0.05);
    Gain_Ki : constant Packed_F32.T := (Value => 0.01);
    No_Integral : constant Packed_F32.T := (Value => 0.0);
    Integral_Limit : constant Packed_F32.T := (Value => 1000.0);
@@ -95,7 +95,7 @@ package body Momentum_Management_Tests.Implementation is
       Params : Momentum_Management_Parameters.Instance;
    begin
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Hs_Min (Hs_Min)), Success);
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_K (Gain_K)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_Kp (Gain_Kp)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Integral_Gain_Ki (Ki)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Integral_Limit (Limit)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Dumpable_Projection (Projection)), Success);
@@ -255,7 +255,7 @@ package body Momentum_Management_Tests.Implementation is
       Assert_Latest_Output (Self, 2, [-0.3894764048, -0.1882264048, -0.6194764048]);
 
       -- Double the proportional gain:
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_K ((Value => 0.1))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_Kp ((Value => 0.1))), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
       Send_Tick (Self);
       Assert_Latest_Output (Self, 3, [-0.7620190528, -0.3682690528, -1.2120190528]);
@@ -282,7 +282,7 @@ package body Momentum_Management_Tests.Implementation is
       procedure Stage_Valid_Configuration is
       begin
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Hs_Min (Nominal_Hs_Min)), Success);
-         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_K (Gain_K)), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_Kp (Gain_Kp)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Integral_Gain_Ki (Gain_Ki)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Integral_Limit (Integral_Limit)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Dumpable_Projection (Identity)), Success);
@@ -303,7 +303,7 @@ package body Momentum_Management_Tests.Implementation is
 
       -- A negative proportional gain is rejected:
       Stage_Valid_Configuration;
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_K ((Value => -0.05))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_Kp ((Value => -0.05))), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
 
       -- A negative integral gain is rejected:

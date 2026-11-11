@@ -5,7 +5,7 @@ parameters:
     description: "[Nms] Magnitude of the dumpable momentum difference at or above which a dump is requested. Below it no torque is requested and the integral is cleared. Must be finite and not negative."
     type: Packed_F32.T
     default: "(Value => 0.0)"
-  - name: Proportional_Gain_K
+  - name: Proportional_Gain_Kp
     description: "[1/s] Proportional gain mapping the dumpable momentum difference onto the requested torque. Must be finite and not negative."
     type: Packed_F32.T
     default: "(Value => 0.0)"

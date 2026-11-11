@@ -66,7 +66,7 @@ package body Component.Momentum_Management.Implementation is
       -- and in unit test set up. The control period's type keeps it positive.
       Self.Alg := Create (
          Hs_Min                => Self.Hs_Min.Value,
-         K                     => Self.Proportional_Gain_K.Value,
+         Kp                    => Self.Proportional_Gain_Kp.Value,
          Ki                    => Self.Integral_Gain_Ki.Value,
          Integral_Limit        => Self.Integral_Limit.Value,
          Control_Period        => Self.Control_Period,
@@ -156,7 +156,7 @@ package body Component.Momentum_Management.Implementation is
       Set_Config (
          Self.Alg,
          Hs_Min                => Self.Hs_Min.Value,
-         K                     => Self.Proportional_Gain_K.Value,
+         Kp                    => Self.Proportional_Gain_Kp.Value,
          Ki                    => Self.Integral_Gain_Ki.Value,
          Integral_Limit        => Self.Integral_Limit.Value,
          Control_Period        => Self.Control_Period,
@@ -174,7 +174,7 @@ package body Component.Momentum_Management.Implementation is
    overriding function Validate_Parameters (
       Self : in out Instance;
       Hs_Min : in Packed_F32.U;
-      Proportional_Gain_K : in Packed_F32.U;
+      Proportional_Gain_Kp : in Packed_F32.U;
       Integral_Gain_Ki : in Packed_F32.U;
       Integral_Limit : in Packed_F32.U;
       Dumpable_Projection : in Packed_F32x9.U;
@@ -190,7 +190,7 @@ package body Component.Momentum_Management.Implementation is
       Cfg := To_Pointer_Config (Dumpable_Projection, Hs_Desired, Rw_Spin_Axes, Rw_Inertias, Wheel_Availability);
       if Validate_Config (
          Hs_Min                => Hs_Min.Value,
-         K                     => Proportional_Gain_K.Value,
+         Kp                    => Proportional_Gain_Kp.Value,
          Ki                    => Integral_Gain_Ki.Value,
          Integral_Limit        => Integral_Limit.Value,
          Control_Period        => Self.Control_Period,
