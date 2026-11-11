@@ -6,7 +6,7 @@
 with Component.Dv_Guidance_Reciprocal;
 
 -- Delta-V guidance. Produces the inertially fixed attitude reference for a
--- delta-V burn. The burn frame has its third axis along the commanded delta-V and
+-- delta-V burn. The burn frame has its third axis along the requested delta-V and
 -- its second axis as close as possible to a preferred direction. Both are
 -- parameters, set by the state manager when a burn is commanded, so the reference
 -- attitude is a constant between burn commands and the reference rate and

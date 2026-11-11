@@ -20,15 +20,15 @@ package Dv_Guidance_Algorithm_C is
    type Dv_Guidance_Algorithm_Access is access all Dv_Guidance_Algorithm;
 
    --* @brief Report whether a configuration would be accepted by Create/Set_Config.
-   --* @param Cmd_Dv_N     [m/s] Commanded delta-V, inertial frame; finite and at least 1e-6 long.
-   --* @param R_Hat_Pref_N [-]   Preferred direction of the burn frame's second axis, inertial
-   --*                           frame; finite, within 1e-3 of unit length, and not parallel to the
-   --*                           commanded delta-V.
+   --* @param Requested_Dv_N [m/s] Requested delta-V, inertial frame; finite and at least 1e-6 long.
+   --* @param R_Hat_Pref_N   [-]   Preferred direction of the burn frame's second axis, inertial
+   --*                             frame; finite, within 1e-3 of unit length, and not parallel to the
+   --*                             requested delta-V.
    --* @return True if the configuration is valid. Never throws, so it can guard the
    --* throwing Create/Set_Config from an invalid configuration.
    function Validate_Config
-     (Cmd_Dv_N     : Packed_F32x3_Record.C.U_C;
-      R_Hat_Pref_N : Packed_F32x3_Record.C.U_C)
+     (Requested_Dv_N : Packed_F32x3_Record.C.U_C;
+      R_Hat_Pref_N   : Packed_F32x3_Record.C.U_C)
      return Interfaces.C.C_bool
      with Import        => True,
           Convention    => C,
@@ -39,8 +39,8 @@ package Dv_Guidance_Algorithm_C is
    --* parameters are as for Validate_Config.
    --* @return The new algorithm instance, which must be released with Destroy.
    function Create
-     (Cmd_Dv_N     : Packed_F32x3_Record.C.U_C;
-      R_Hat_Pref_N : Packed_F32x3_Record.C.U_C)
+     (Requested_Dv_N : Packed_F32x3_Record.C.U_C;
+      R_Hat_Pref_N   : Packed_F32x3_Record.C.U_C)
      return Dv_Guidance_Algorithm_Access
      with Import        => True,
           Convention    => C,
@@ -58,9 +58,9 @@ package Dv_Guidance_Algorithm_C is
    --* parameters are as for Validate_Config.
    --* @param Self The algorithm instance.
    procedure Set_Config
-     (Self         : Dv_Guidance_Algorithm_Access;
-      Cmd_Dv_N     : Packed_F32x3_Record.C.U_C;
-      R_Hat_Pref_N : Packed_F32x3_Record.C.U_C)
+     (Self           : Dv_Guidance_Algorithm_Access;
+      Requested_Dv_N : Packed_F32x3_Record.C.U_C;
+      R_Hat_Pref_N   : Packed_F32x3_Record.C.U_C)
      with Import        => True,
           Convention    => C,
           External_Name => "DvGuidanceAlgorithm_setConfig";
