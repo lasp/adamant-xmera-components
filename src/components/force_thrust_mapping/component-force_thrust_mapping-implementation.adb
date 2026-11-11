@@ -92,7 +92,7 @@ package body Component.Force_Thrust_Mapping.Implementation is
       -- Map the force onto the thrusters with no torque and publish the result:
       Self.Data_Product_T_Send (Self.Data_Products.Thruster_Force_Cmd (
          Arg.Time,
-         Thr_Force_Cmd.C.Pack (Update (Self.Alg, Cmd_Torque_B => Zero_Torque'Access, Cmd_Force_B => Force_C'Access))
+         Thr_Force_Cmd.C.Pack (Update (Self.Alg, Requested_Torque_B => Zero_Torque'Access, Requested_Force_B => Force_C'Access))
       ));
    end Tick_T_Recv_Sync;
 
