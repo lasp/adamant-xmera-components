@@ -14,14 +14,14 @@ package Mrp_Pd_Algorithm_C is
    type Mrp_Pd_Algorithm_Access is access all Mrp_Pd_Algorithm;
 
    --* @brief Report whether a configuration would be accepted by Create/Set_Config.
-   --* @param K [Nm] Proportional gain on the MRP attitude error; must be >= 0.
-   --* @param P [Nms] Rate error feedback gain; must be >= 0.
+   --* @param Kp [Nm] Proportional gain on the MRP attitude error; must be >= 0.
+   --* @param Kd [Nms] Rate error feedback gain; must be >= 0.
    --* @param Iscpnt_B_B [kg m^2] Spacecraft inertia about point B; must be a valid inertia matrix.
    --* @return True if the configuration is valid. Never throws, so it can guard the
    --* throwing Create/Set_Config from an invalid configuration.
    function Validate_Config
-     (K          : Short_Float;
-      P          : Short_Float;
+     (Kp         : Short_Float;
+      Kd         : Short_Float;
       Iscpnt_B_B : Packed_F32x9_Record.C.U_C)
      return Interfaces.C.C_bool
      with Import        => True,
@@ -30,13 +30,13 @@ package Mrp_Pd_Algorithm_C is
 
    --* @brief Construct a new MrpPDAlgorithm from a configuration.
    --* Validate the values with Validate_Config before calling; throws on invalid input.
-   --* @param K [Nm] Proportional gain on the MRP attitude error.
-   --* @param P [Nms] Rate error feedback gain.
+   --* @param Kp [Nm] Proportional gain on the MRP attitude error.
+   --* @param Kd [Nms] Rate error feedback gain.
    --* @param Iscpnt_B_B [kg m^2] Spacecraft inertia about point B.
    --* @return The new algorithm instance, which must be released with Destroy.
    function Create
-     (K          : Short_Float;
-      P          : Short_Float;
+     (Kp         : Short_Float;
+      Kd         : Short_Float;
       Iscpnt_B_B : Packed_F32x9_Record.C.U_C)
      return Mrp_Pd_Algorithm_Access
      with Import        => True,
@@ -53,13 +53,13 @@ package Mrp_Pd_Algorithm_C is
 
    --* @brief Apply a new configuration (validated; throws on invalid input).
    --* @param Self The algorithm instance.
-   --* @param K [Nm] Proportional gain on the MRP attitude error.
-   --* @param P [Nms] Rate error feedback gain.
+   --* @param Kp [Nm] Proportional gain on the MRP attitude error.
+   --* @param Kd [Nms] Rate error feedback gain.
    --* @param Iscpnt_B_B [kg m^2] Spacecraft inertia about point B.
    procedure Set_Config
      (Self       : Mrp_Pd_Algorithm_Access;
-      K          : Short_Float;
-      P          : Short_Float;
+      Kp         : Short_Float;
+      Kd         : Short_Float;
       Iscpnt_B_B : Packed_F32x9_Record.C.U_C)
      with Import        => True,
           Convention    => C,
