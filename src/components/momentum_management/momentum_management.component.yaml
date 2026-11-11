@@ -1,0 +1,27 @@
+---
+description: Reaction wheel momentum management. Computes the net reaction wheel momentum from the wheel speeds and requests the body torque that drives it to the desired momentum. A threshold on the dumpable momentum difference gates the request, and an integral term accumulates across ticks while a dump is under way. Wraps the MomentumManagementAlgorithm C++ algorithm via its C shim.
+execution: passive
+init:
+  description: Initializes the momentum management algorithm with the control period and the default parameter values.
+  parameters:
+    - name: Control_Period
+      type: Basic_Types.Positive_Short_Float
+      description: "[s] Time between two algorithm updates. The momentum integral advances by this much per tick, so it must equal the rate at which the component is scheduled. Fixed by the assembly, so it is not a runtime parameter. The type keeps it greater than zero."
+connectors:
+  - description: Run the algorithm up to the current time.
+    type: Tick.T
+    kind: recv_sync
+  - description: Zero the integral of the momentum difference. Called on GNC state change so the integral does not carry over from the previous state.
+    name: Reset_Tick_T_Recv_Sync
+    type: Tick.T
+    kind: recv_sync
+  - description: Fetch a data product item from the database.
+    type: Data_Product_Fetch.T
+    return_type: Data_Product_Return.T
+    kind: request
+  - description: The data product invoker connector
+    type: Data_Product.T
+    kind: send
+  - description: The parameter update connector.
+    type: Parameter_Update.T
+    kind: modify
