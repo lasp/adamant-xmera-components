@@ -17,7 +17,7 @@ package body Component.Momentum_Management.Implementation.Tester is
       Self.Data_Product_Fetch_T_Service_History.Init (Depth => 100);
       Self.Data_Product_T_Recv_Sync_History.Init (Depth => 100);
       -- Data product histories:
-      Self.Commanded_Torque_History.Init (Depth => 100);
+      Self.Requested_Torque_History.Init (Depth => 100);
    end Init_Base;
 
    procedure Final_Base (Self : in out Instance) is
@@ -27,7 +27,7 @@ package body Component.Momentum_Management.Implementation.Tester is
       Self.Data_Product_Fetch_T_Service_History.Destroy;
       Self.Data_Product_T_Recv_Sync_History.Destroy;
       -- Data product histories:
-      Self.Commanded_Torque_History.Destroy;
+      Self.Requested_Torque_History.Destroy;
    end Final_Base;
 
    ---------------------------------------
@@ -142,11 +142,11 @@ package body Component.Momentum_Management.Implementation.Tester is
    -- [Nm] Requested body frame torque that drives the reaction wheel momentum toward
    -- the desired momentum. Zero while the dumpable momentum difference is below the
    -- threshold.
-   overriding procedure Commanded_Torque (Self : in out Instance; Arg : in Cmd_Torque_Body.T) is
+   overriding procedure Requested_Torque (Self : in out Instance; Arg : in Cmd_Torque_Body.T) is
    begin
       -- Push the argument onto the test history for looking at later:
-      Self.Commanded_Torque_History.Push (Arg);
-   end Commanded_Torque;
+      Self.Requested_Torque_History.Push (Arg);
+   end Requested_Torque;
 
    -----------------------------------------------
    -- Special primitives for aiding in the staging,

@@ -153,7 +153,7 @@ package body Force_Thrust_Mapping_Tests.Implementation is
       T : Component.Force_Thrust_Mapping.Implementation.Tester.Instance_Access renames Self.Tester;
       Output : Thr_Force_Cmd.T;
    begin
-      T.Commanded_Force := (Force_Request_Body => Force);
+      T.Requested_Force := (Force_Request_Body => Force);
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
       Natural_Assert.Eq (T.Thruster_Force_Cmd_History.Get_Count, Cycle);
       Output := T.Thruster_Force_Cmd_History.Get (Cycle);

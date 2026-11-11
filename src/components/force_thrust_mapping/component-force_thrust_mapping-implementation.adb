@@ -79,7 +79,7 @@ package body Component.Force_Thrust_Mapping.Implementation is
       -- integration-order alarm.
       Force_Dep : Cmd_Force_Body.T;
       Force_Status : constant Data_Product_Enums.Data_Dependency_Status.E :=
-         Self.Get_Commanded_Force (Value => Force_Dep, Stale_Reference => Arg.Time);
+         Self.Get_Requested_Force (Value => Force_Dep, Stale_Reference => Arg.Time);
       pragma Assert (Force_Status = Success);
 
       -- The command crosses by reference, so it needs an aliased object.

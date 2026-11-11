@@ -118,16 +118,16 @@ package body Momentum_Management_Tests.Implementation is
    procedure Assert_Latest_Output (
       Self : in out Instance;
       Tick_Number : in Natural;
-      Commanded_Torque : in Packed_F32x3.T
+      Requested_Torque : in Packed_F32x3.T
    ) is
       T : Component.Momentum_Management.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
       -- Every tick publishes the torque.
       Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, Tick_Number);
-      Natural_Assert.Eq (T.Commanded_Torque_History.Get_Count, Tick_Number);
+      Natural_Assert.Eq (T.Requested_Torque_History.Get_Count, Tick_Number);
       Cmd_Torque_Body_Assert.Eq
-        (T.Commanded_Torque_History.Get (Tick_Number),
-         (Torque_Request_Body => Commanded_Torque),
+        (T.Requested_Torque_History.Get (Tick_Number),
+         (Torque_Request_Body => Requested_Torque),
          Epsilon => Epsilon);
    end Assert_Latest_Output;
 
@@ -205,14 +205,14 @@ package body Momentum_Management_Tests.Implementation is
          Projection : in Packed_F32x9.T;
          Desired : in Packed_F32x3.T;
          Availability : in Wheel_Availability_X4.T;
-         Commanded_Torque : in Packed_F32x3.T
+         Requested_Torque : in Packed_F32x3.T
       ) is
       begin
          Apply_Configuration (Self, Hs_Min => Hs_Min, Ki => No_Integral, Limit => No_Integral_Limit,
             Projection => Projection, Desired => Desired, Availability => Availability);
          Send_Tick (Self);
          Tick_Number := @ + 1;
-         Assert_Latest_Output (Self, Tick_Number, Commanded_Torque);
+         Assert_Latest_Output (Self, Tick_Number, Requested_Torque);
       end Check;
    begin
       -- The whole cluster momentum is dumped:
@@ -370,7 +370,7 @@ package body Momentum_Management_Tests.Implementation is
          when Ada.Assertions.Assertion_Error =>
             null; -- Expected.
       end;
-      Natural_Assert.Eq (T.Commanded_Torque_History.Get_Count, 0);
+      Natural_Assert.Eq (T.Requested_Torque_History.Get_Count, 0);
    end Test_Invalid_Data_Dependency;
 
 end Momentum_Management_Tests.Implementation;

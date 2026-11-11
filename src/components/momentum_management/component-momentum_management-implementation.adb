@@ -112,7 +112,7 @@ package body Component.Momentum_Management.Implementation is
 
       -- Call the C algorithm and publish the requested torque. Update is qualified
       -- because Parameter_Enums also declares one.
-      Self.Data_Product_T_Send (Self.Data_Products.Commanded_Torque (
+      Self.Data_Product_T_Send (Self.Data_Products.Requested_Torque (
          Arg.Time,
          (Torque_Request_Body => Packed_F32x3.C.Pack (Momentum_Management_Algorithm_C.Update (
             Self.Alg, Wheel_Speeds => Speeds_C'Access).Value))

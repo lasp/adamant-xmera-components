@@ -102,7 +102,7 @@ package body Component.Dv_Maneuver.Implementation is
       declare
          Output : constant Dv_Maneuver_Output.C.U_C := Dv_Maneuver_Algorithm_C.Update (Self.Alg, Dv_Accumulated_B => Delta_V_C'Access);
       begin
-         Self.Data_Product_T_Send (Self.Data_Products.Commanded_Force (
+         Self.Data_Product_T_Send (Self.Data_Products.Requested_Force (
             Arg.Time,
             (Force_Request_Body => Packed_F32x3.C.Pack (Output.Requested_Force_B))
          ));
