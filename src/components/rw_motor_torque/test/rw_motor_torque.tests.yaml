@@ -2,7 +2,7 @@
 description: This is a unit test suite for the Rw Motor Torque component
 tests:
   - name: Test
-    description: Run the algorithm on the control axis, availability, and null space gain cases of the Python reference test to ensure the Ada to C to C++ integration is sound.
+    description: Run the algorithm on the control axis, availability, null space gain, and desired wheel speed cases of the Python reference test to ensure the Ada to C to C++ integration is sound.
   - name: Test_Invalid_Parameter
     description: Ensure a staged configuration the algorithm would reject is refused at validation.
   - name: Test_Invalid_Data_Dependency
