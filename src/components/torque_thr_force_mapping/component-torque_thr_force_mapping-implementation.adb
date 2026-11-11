@@ -80,7 +80,7 @@ package body Component.Torque_Thr_Force_Mapping.Implementation is
       -- integration-order alarm.
       Torque_Dep : Cmd_Torque_Body.T;
       Torque_Status : constant Data_Product_Enums.Data_Dependency_Status.E :=
-         Self.Get_Commanded_Torque (Value => Torque_Dep, Stale_Reference => Arg.Time);
+         Self.Get_Requested_Torque (Value => Torque_Dep, Stale_Reference => Arg.Time);
       pragma Assert (Torque_Status = Success);
 
       -- The command crosses by reference, so it needs an aliased object.

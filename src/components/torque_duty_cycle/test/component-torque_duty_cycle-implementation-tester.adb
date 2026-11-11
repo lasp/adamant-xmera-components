@@ -58,7 +58,7 @@ package body Component.Torque_Duty_Cycle.Implementation.Tester is
       -- Determine return data product ID:
       if Id_To_Return = 0 then
          case Arg.Id is
-            -- ID for Commanded_Torque:
+            -- ID for Requested_Torque:
             when 0 => Id_To_Return := 0;
             -- If ID can not be found, then return ID out of range error.
             when others =>
@@ -71,7 +71,7 @@ package body Component.Torque_Duty_Cycle.Implementation.Tester is
       -- Determine return data product length:
       if Length_To_Return = 0 then
          case Arg.Id is
-            -- Length for Commanded_Torque:
+            -- Length for Requested_Torque:
             when 0 => Length_To_Return := Cmd_Torque_Body.Size_In_Bytes;
             -- If ID can not be found, then return ID out of range error.
             when others =>
@@ -89,10 +89,10 @@ package body Component.Torque_Duty_Cycle.Implementation.Tester is
       -- Fill the data product buffer:
       if Return_Status = Data_Product_Enums.Fetch_Status.Success then
          case Arg.Id is
-            -- Length for Commanded_Torque:
+            -- Length for Requested_Torque:
             when 0 =>
                Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Cmd_Torque_Body.Size_In_Bytes - 1) :=
-                  Cmd_Torque_Body.Serialization.To_Byte_Array (Self.Commanded_Torque);
+                  Cmd_Torque_Body.Serialization.To_Byte_Array (Self.Requested_Torque);
             -- Do not fill. The ID is not recognized.
             when others =>
                Return_Status := Data_Product_Enums.Fetch_Status.Id_Out_Of_Range;

@@ -43,7 +43,7 @@ package body Force_Duty_Cycle_Tests.Implementation is
    procedure Tick (Self : in out Instance; Tick_Number : in Natural) is
       T : Component.Force_Duty_Cycle.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
-      T.Commanded_Force := Nominal_Force;
+      T.Requested_Force := Nominal_Force;
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
       Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, Tick_Number);
       Natural_Assert.Eq (T.Gated_Force_History.Get_Count, Tick_Number);

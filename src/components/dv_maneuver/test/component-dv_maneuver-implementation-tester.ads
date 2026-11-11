@@ -33,7 +33,7 @@ package Component.Dv_Maneuver.Implementation.Tester is
    package Data_Product_T_Recv_Sync_History_Package is new Printable_History (Data_Product.T, Data_Product.Representation.Image);
 
    -- Data product history packages:
-   package Commanded_Force_History_Package is new Printable_History (Cmd_Force_Body.T, Cmd_Force_Body.Representation.Image);
+   package Requested_Force_History_Package is new Printable_History (Cmd_Force_Body.T, Cmd_Force_Body.Representation.Image);
    package Burn_State_History_Package is new Printable_History (Packed_Burn_State.T, Packed_Burn_State.Representation.Image);
 
    -- Component class instance:
@@ -44,7 +44,7 @@ package Component.Dv_Maneuver.Implementation.Tester is
       Data_Product_Fetch_T_Service_History : Data_Product_Fetch_T_Service_History_Package.Instance;
       Data_Product_T_Recv_Sync_History : Data_Product_T_Recv_Sync_History_Package.Instance;
       -- Data product histories:
-      Commanded_Force_History : Commanded_Force_History_Package.Instance;
+      Requested_Force_History : Requested_Force_History_Package.Instance;
       Burn_State_History : Burn_State_History_Package.Instance;
       -- Data dependency return values. These can be set during unit test
       -- and will be returned to the component when a data dependency call
@@ -93,7 +93,7 @@ package Component.Dv_Maneuver.Implementation.Tester is
    --    Data products for the Dv Maneuver component.
    -- [N] The configured body force while the burn executes, zero once it is
    -- complete.
-   overriding procedure Commanded_Force (Self : in out Instance; Arg : in Cmd_Force_Body.T);
+   overriding procedure Requested_Force (Self : in out Instance; Arg : in Cmd_Force_Body.T);
    -- Whether the burn is executing or complete.
    overriding procedure Burn_State (Self : in out Instance; Arg : in Packed_Burn_State.T);
 

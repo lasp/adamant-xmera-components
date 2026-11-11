@@ -85,13 +85,13 @@ package body Dv_Maneuver_Tests.Implementation is
    begin
       T.Accumulated_Delta_V := [0.0, 0.0, Short_Float (Step)];
       T.Data_Product_T_Recv_Sync_History.Clear;
-      T.Commanded_Force_History.Clear;
+      T.Requested_Force_History.Clear;
       T.Burn_State_History.Clear;
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
       Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, 2);
-      Natural_Assert.Eq (T.Commanded_Force_History.Get_Count, 1);
+      Natural_Assert.Eq (T.Requested_Force_History.Get_Count, 1);
       Natural_Assert.Eq (T.Burn_State_History.Get_Count, 1);
-      Cmd_Force_Body_Assert.Eq (T.Commanded_Force_History.Get (1), (Force_Request_Body => (if Executing then Force else Zero_Vector)), Epsilon => Epsilon);
+      Cmd_Force_Body_Assert.Eq (T.Requested_Force_History.Get (1), (Force_Request_Body => (if Executing then Force else Zero_Vector)), Epsilon => Epsilon);
       Packed_Burn_State_Assert.Eq (T.Burn_State_History.Get (1), (Value => (if Executing then Burn_State.Executing else Burn_State.Complete)));
    end Send_Tick;
 
@@ -264,7 +264,7 @@ package body Dv_Maneuver_Tests.Implementation is
          when Ada.Assertions.Assertion_Error =>
             null; -- Expected.
       end;
-      Natural_Assert.Eq (T.Commanded_Force_History.Get_Count, 0);
+      Natural_Assert.Eq (T.Requested_Force_History.Get_Count, 0);
    end Test_Invalid_Data_Dependency;
 
 end Dv_Maneuver_Tests.Implementation;

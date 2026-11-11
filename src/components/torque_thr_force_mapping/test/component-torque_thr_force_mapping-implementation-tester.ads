@@ -41,7 +41,7 @@ package Component.Torque_Thr_Force_Mapping.Implementation.Tester is
       -- Data dependency return values. These can be set during unit test
       -- and will be returned to the component when a data dependency call
       -- is made.
-      Commanded_Torque : Cmd_Torque_Body.T;
+      Requested_Torque : Cmd_Torque_Body.T;
       -- The return status for the data dependency fetch. This can be set
       -- during unit test to return something other than Success.
       Data_Dependency_Return_Status_Override : Data_Product_Enums.Fetch_Status.E := Data_Product_Enums.Fetch_Status.Success;

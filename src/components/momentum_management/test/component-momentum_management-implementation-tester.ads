@@ -26,7 +26,7 @@ package Component.Momentum_Management.Implementation.Tester is
    package Data_Product_T_Recv_Sync_History_Package is new Printable_History (Data_Product.T, Data_Product.Representation.Image);
 
    -- Data product history packages:
-   package Commanded_Torque_History_Package is new Printable_History (Cmd_Torque_Body.T, Cmd_Torque_Body.Representation.Image);
+   package Requested_Torque_History_Package is new Printable_History (Cmd_Torque_Body.T, Cmd_Torque_Body.Representation.Image);
 
    -- Component class instance:
    type Instance is new Component.Momentum_Management_Reciprocal.Base_Instance with record
@@ -36,7 +36,7 @@ package Component.Momentum_Management.Implementation.Tester is
       Data_Product_Fetch_T_Service_History : Data_Product_Fetch_T_Service_History_Package.Instance;
       Data_Product_T_Recv_Sync_History : Data_Product_T_Recv_Sync_History_Package.Instance;
       -- Data product histories:
-      Commanded_Torque_History : Commanded_Torque_History_Package.Instance;
+      Requested_Torque_History : Requested_Torque_History_Package.Instance;
       -- Data dependency return values. These can be set during unit test
       -- and will be returned to the component when a data dependency call
       -- is made.
@@ -85,7 +85,7 @@ package Component.Momentum_Management.Implementation.Tester is
    -- [Nm] Requested body frame torque that drives the reaction wheel momentum toward
    -- the desired momentum. Zero while the dumpable momentum difference is below the
    -- threshold.
-   overriding procedure Commanded_Torque (Self : in out Instance; Arg : in Cmd_Torque_Body.T);
+   overriding procedure Requested_Torque (Self : in out Instance; Arg : in Cmd_Torque_Body.T);
 
    -----------------------------------------------
    -- Special primitives for aiding in the staging,
