@@ -56,8 +56,8 @@ package Mrp_Feedback_Algorithm_C is
    type Mrp_Feedback_Algorithm_Access is access all Mrp_Feedback_Algorithm;
 
    --* @brief Report whether a configuration would be accepted by Create/Set_Config.
-   --* @param K                    [Nm]     Proportional gain on the MRP error; must be finite and >= 0.
-   --* @param P                    [Nms]    Rate error feedback gain; must be finite and >= 0.
+   --* @param Kp                   [Nm]     Proportional gain on the MRP error; must be finite and >= 0.
+   --* @param Kd                   [Nms]    Rate error feedback gain; must be finite and >= 0.
    --* @param Ki                   [Nm]     Integral feedback gain; must be finite and >= 0 (0 disables the integral).
    --* @param Integral_Limit       [Nms]    Anti-windup clamp on the integral state; must be finite and >= 0.
    --* @param Control_Law_Type     [-]      Control law variant.
@@ -72,8 +72,8 @@ package Mrp_Feedback_Algorithm_C is
    --* @return True if the configuration is valid. Never throws, so it can guard the
    --* throwing Create/Set_Config from an invalid configuration.
    function Validate_Config
-     (K                    : Short_Float;
-      P                    : Short_Float;
+     (Kp                   : Short_Float;
+      Kd                   : Short_Float;
       Ki                   : Short_Float;
       Integral_Limit       : Short_Float;
       Control_Law_Type     : Mrp_Feedback_Enums.Control_Law_Type.C.E_C;
@@ -93,8 +93,8 @@ package Mrp_Feedback_Algorithm_C is
    --* The parameters are as for Validate_Config.
    --* @return The new algorithm instance, which must be released with Destroy.
    function Create
-     (K                    : Short_Float;
-      P                    : Short_Float;
+     (Kp                   : Short_Float;
+      Kd                   : Short_Float;
       Ki                   : Short_Float;
       Integral_Limit       : Short_Float;
       Control_Law_Type     : Mrp_Feedback_Enums.Control_Law_Type.C.E_C;
@@ -122,8 +122,8 @@ package Mrp_Feedback_Algorithm_C is
    --* @param Self The algorithm instance.
    procedure Set_Config
      (Self                 : Mrp_Feedback_Algorithm_Access;
-      K                    : Short_Float;
-      P                    : Short_Float;
+      Kp                   : Short_Float;
+      Kd                   : Short_Float;
       Ki                   : Short_Float;
       Integral_Limit       : Short_Float;
       Control_Law_Type     : Mrp_Feedback_Enums.Control_Law_Type.C.E_C;
