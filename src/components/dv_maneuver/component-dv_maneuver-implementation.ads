@@ -11,11 +11,11 @@ with Dv_Maneuver_Algorithm_C; use Dv_Maneuver_Algorithm_C;
 
 -- Delta-V burn executor. Commands the configured body force while a burn executes
 -- and zero once it is complete, and publishes the burn state. The burn times, the
--- commanded delta-V and the body force are parameters. The times and the delta-V
+-- requested delta-V and the body force are parameters. The times and the delta-V
 -- are set by the state manager when a burn is commanded, and the algorithm
 -- validates them before they are applied. The burn starts at the first tick after
 -- the component is built or reset, and completes when the accumulated delta-V
--- reaches the commanded one after the minimum burn time, or when the maximum burn
+-- reaches the requested one after the minimum burn time, or when the maximum burn
 -- time is reached. Complete is terminal until the next reset, so the assembly
 -- fires the reset when the burn is to start and ticks the component only while the
 -- burn state is in use. Wraps the DvManeuverAlgorithm C++ algorithm via its C shim.
@@ -85,7 +85,7 @@ private
    -- Description:
    --    Parameters for the Dv Maneuver component. The body force depends on the
    --    thrusters in use, so it is set for a mission phase rather than per burn. The
-   --    burn times and the commanded delta-V define a burn, so they are set when a
+   --    burn times and the requested delta-V define a burn, so they are set when a
    --    burn is commanded, before the burn is started with the reset. The defaults
    --    form a valid configuration and stand in until then.
 
@@ -111,10 +111,10 @@ private
    -- no connector invocations.
    overriding function Validate_Parameters (
       Self : in out Instance;
-      Cmd_Force_B : in Packed_F32x3.U;
+      Requested_Force_B : in Packed_F32x3.U;
       Min_Time : in Packed_F64.U;
       Max_Time : in Packed_F64.U;
-      Cmd_Dv_N : in Packed_F32x3.U
+      Requested_Dv_N : in Packed_F32x3.U
    ) return Parameter_Validation_Status.E;
 
    -----------------------------------------------

@@ -13,29 +13,29 @@ package body Component.Dv_Maneuver.Implementation is
    -- caller can pass 'Access of each field. Init, Apply_Config and
    -- Validate_Parameters all marshal the same values, so it is assembled in one place.
    type Pointer_Config is record
-      Cmd_Force_B : aliased Packed_F32x3_Record.C.U_C;
-      Cmd_Dv_N : aliased Packed_F32x3_Record.C.U_C;
+      Requested_Force_B : aliased Packed_F32x3_Record.C.U_C;
+      Requested_Dv_N : aliased Packed_F32x3_Record.C.U_C;
    end record;
 
    -- Marshal the pointer arguments of the configuration: the body force and the
-   -- commanded delta-V.
-   function To_Pointer_Config (Cmd_Force_B : in Packed_F32x3.U; Cmd_Dv_N : in Packed_F32x3.U) return Pointer_Config is
-      ((Cmd_Force_B => (Value => Packed_F32x3.C.To_C (Cmd_Force_B)),
-        Cmd_Dv_N => (Value => Packed_F32x3.C.To_C (Cmd_Dv_N))));
+   -- requested delta-V.
+   function To_Pointer_Config (Requested_Force_B : in Packed_F32x3.U; Requested_Dv_N : in Packed_F32x3.U) return Pointer_Config is
+      ((Requested_Force_B => (Value => Packed_F32x3.C.To_C (Requested_Force_B)),
+        Requested_Dv_N => (Value => Packed_F32x3.C.To_C (Requested_Dv_N))));
 
    -- Push the component's current parameters into the algorithm. They were validated
    -- by the algorithm's predicate at staging, so Set_Config will not reject them. The
    -- burn state is kept, so a complete burn stays complete.
    procedure Apply_Config (Self : in out Instance) is
-      Cfg : aliased constant Pointer_Config := To_Pointer_Config (Self.Cmd_Force_B, Self.Cmd_Dv_N);
+      Cfg : aliased constant Pointer_Config := To_Pointer_Config (Self.Requested_Force_B, Self.Requested_Dv_N);
    begin
       Set_Config (
          Self.Alg,
-         Min_Time       => Self.Min_Time.Value,
-         Max_Time       => Self.Max_Time.Value,
-         Control_Period => Self.Control_Period,
-         Cmd_Force_B    => Cfg.Cmd_Force_B'Access,
-         Cmd_Dv_N       => Cfg.Cmd_Dv_N'Access);
+         Min_Time          => Self.Min_Time.Value,
+         Max_Time          => Self.Max_Time.Value,
+         Control_Period    => Self.Control_Period,
+         Requested_Force_B => Cfg.Requested_Force_B'Access,
+         Requested_Dv_N    => Cfg.Requested_Dv_N'Access);
    end Apply_Config;
 
    --------------------------------------------------
@@ -51,18 +51,18 @@ package body Component.Dv_Maneuver.Implementation is
    -- is not a runtime parameter. The type keeps it greater than zero.
    --
    overriding procedure Init (Self : in out Instance; Control_Period : in Basic_Types.Positive_Long_Float) is
-      Cfg : aliased constant Pointer_Config := To_Pointer_Config (Self.Cmd_Force_B, Self.Cmd_Dv_N);
+      Cfg : aliased constant Pointer_Config := To_Pointer_Config (Self.Requested_Force_B, Self.Requested_Dv_N);
    begin
       Self.Control_Period := Control_Period;
       -- Create throws on an invalid configuration, so the parameter defaults must form a
       -- valid one. The generated Assert_Valid_Parameter_Defaults checks them at startup
       -- and in unit test set up. The control period's type keeps it positive.
       Self.Alg := Create (
-         Min_Time       => Self.Min_Time.Value,
-         Max_Time       => Self.Max_Time.Value,
-         Control_Period => Self.Control_Period,
-         Cmd_Force_B    => Cfg.Cmd_Force_B'Access,
-         Cmd_Dv_N       => Cfg.Cmd_Dv_N'Access);
+         Min_Time          => Self.Min_Time.Value,
+         Max_Time          => Self.Max_Time.Value,
+         Control_Period    => Self.Control_Period,
+         Requested_Force_B => Cfg.Requested_Force_B'Access,
+         Requested_Dv_N    => Cfg.Requested_Dv_N'Access);
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -104,7 +104,7 @@ package body Component.Dv_Maneuver.Implementation is
       begin
          Self.Data_Product_T_Send (Self.Data_Products.Commanded_Force (
             Arg.Time,
-            (Force_Request_Body => Packed_F32x3.C.Pack (Output.Cmd_Force_B))
+            (Force_Request_Body => Packed_F32x3.C.Pack (Output.Requested_Force_B))
          ));
          Self.Data_Product_T_Send (Self.Data_Products.Burn_State (
             Arg.Time,
@@ -138,7 +138,7 @@ package body Component.Dv_Maneuver.Implementation is
    -- Description:
    --    Parameters for the Dv Maneuver component. The body force depends on the
    --    thrusters in use, so it is set for a mission phase rather than per burn. The
-   --    burn times and the commanded delta-V define a burn, so they are set when a
+   --    burn times and the requested delta-V define a burn, so they are set when a
    --    burn is commanded, before the burn is started with the reset. The defaults
    --    form a valid configuration and stand in until then.
    -- This procedure is called when the parameters of a component have been updated. In this
@@ -157,22 +157,22 @@ package body Component.Dv_Maneuver.Implementation is
    -- the throwing Create and Set_Config across the FFI boundary.
    overriding function Validate_Parameters (
       Self : in out Instance;
-      Cmd_Force_B : in Packed_F32x3.U;
+      Requested_Force_B : in Packed_F32x3.U;
       Min_Time : in Packed_F64.U;
       Max_Time : in Packed_F64.U;
-      Cmd_Dv_N : in Packed_F32x3.U
+      Requested_Dv_N : in Packed_F32x3.U
    ) return Parameter_Validation_Status.E is
       -- Filled in below, inside the handled part of the function, so that a copy that
       -- raises is caught here.
       Cfg : aliased Pointer_Config;
    begin
-      Cfg := To_Pointer_Config (Cmd_Force_B, Cmd_Dv_N);
+      Cfg := To_Pointer_Config (Requested_Force_B, Requested_Dv_N);
       if Validate_Config (
-         Min_Time       => Min_Time.Value,
-         Max_Time       => Max_Time.Value,
-         Control_Period => Self.Control_Period,
-         Cmd_Force_B    => Cfg.Cmd_Force_B'Access,
-         Cmd_Dv_N       => Cfg.Cmd_Dv_N'Access)
+         Min_Time          => Min_Time.Value,
+         Max_Time          => Max_Time.Value,
+         Control_Period    => Self.Control_Period,
+         Requested_Force_B => Cfg.Requested_Force_B'Access,
+         Requested_Dv_N    => Cfg.Requested_Dv_N'Access)
       then
          return Parameter_Validation_Status.Valid;
       else
