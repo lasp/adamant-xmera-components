@@ -136,14 +136,14 @@ package Force_Torque_Thr_Force_Mapping_Algorithm_C is
 
    --* @brief Map the requested body torque and force onto per-thruster forces.
    --* Every entry of the result is non-negative; an unavailable thruster receives zero.
-   --* @param Self        The algorithm instance.
-   --* @param Cmd_Torque_B Requested control torque in the body frame.
-   --* @param Cmd_Force_B  Requested control force in the body frame.
+   --* @param Self               The algorithm instance.
+   --* @param Requested_Torque_B Requested control torque in the body frame.
+   --* @param Requested_Force_B  Requested control force in the body frame.
    --* @return The per-thruster force commands.
    function Update
-     (Self         : Force_Torque_Thr_Force_Mapping_Algorithm_Access;
-      Cmd_Torque_B : access constant Packed_F32x3_Record.C.U_C;
-      Cmd_Force_B  : access constant Packed_F32x3_Record.C.U_C)
+     (Self               : Force_Torque_Thr_Force_Mapping_Algorithm_Access;
+      Requested_Torque_B : access constant Packed_F32x3_Record.C.U_C;
+      Requested_Force_B  : access constant Packed_F32x3_Record.C.U_C)
      return Thr_Force_Cmd.C.U_C
      with Import       => True,
           Convention   => C,
