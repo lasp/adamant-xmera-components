@@ -5,10 +5,11 @@
 -- Includes:
 with Component.Mrp_Rotation_Reciprocal;
 
--- MRP rotation attitude guidance. Superimposes a constant rate rotation on an
--- input attitude reference frame, advancing the rotation by one control period
--- each tick, and returns the resulting reference attitude, rate, and
--- acceleration. Wraps the MrpRotationAlgorithm C++ algorithm via its C shim.
+-- MRP rotation attitude guidance. Applies a fixed body correction, a pointing
+-- offset, and a constant rate rotation to an input attitude reference frame,
+-- advancing the rotation by one control period each tick, and returns the
+-- resulting reference attitude, rate, and acceleration. Wraps the
+-- MrpRotationAlgorithm C++ algorithm via its C shim.
 package Component.Mrp_Rotation.Implementation.Tester is
 
    use Component.Mrp_Rotation_Reciprocal;

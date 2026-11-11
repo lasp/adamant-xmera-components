@@ -12,17 +12,20 @@ package body Component.Mrp_Rotation.Implementation is
    -- caller can pass 'Access of each field. Init, Update_Parameters_Action, and
    -- Validate_Parameters all marshal the same values, so it is assembled in one place.
    type Pointer_Config is record
-      Initial_Sigma_Rr0 : aliased Packed_F32x3_Record.C.U_C;
-      Omega_Rr0_R : aliased Packed_F32x3_Record.C.U_C;
+      Sigma_Rcr0 : aliased Packed_F32x3_Record.C.U_C;
+      Sigma_Rprc : aliased Packed_F32x3_Record.C.U_C;
+      Omega_Rrp_R : aliased Packed_F32x3_Record.C.U_C;
    end record;
 
    -- Marshal the pointer arguments of the configuration.
    function To_Pointer_Config (
-      Initial_Sigma_Rr0 : in Packed_F32x3.U;
-      Omega_Rr0_R : in Packed_F32x3.U
+      Sigma_Rcr0 : in Packed_F32x3.U;
+      Sigma_Rprc : in Packed_F32x3.U;
+      Omega_Rrp_R : in Packed_F32x3.U
    ) return Pointer_Config is
-      (Initial_Sigma_Rr0 => (Value => Packed_F32x3.C.To_C (Initial_Sigma_Rr0)),
-       Omega_Rr0_R => (Value => Packed_F32x3.C.To_C (Omega_Rr0_R)));
+      (Sigma_Rcr0 => (Value => Packed_F32x3.C.To_C (Sigma_Rcr0)),
+       Sigma_Rprc => (Value => Packed_F32x3.C.To_C (Sigma_Rprc)),
+       Omega_Rrp_R => (Value => Packed_F32x3.C.To_C (Omega_Rrp_R)));
 
    --------------------------------------------------
    -- Subprogram for implementation init method:
@@ -37,16 +40,17 @@ package body Component.Mrp_Rotation.Implementation is
    -- it is not a runtime parameter. The type keeps it greater than zero.
    --
    overriding procedure Init (Self : in out Instance; Control_Period : in Basic_Types.Positive_Short_Float) is
-      Cfg : aliased constant Pointer_Config := To_Pointer_Config (Self.Initial_Sigma_Rr0, Self.Omega_Rr0_R);
+      Cfg : aliased constant Pointer_Config := To_Pointer_Config (Self.Sigma_Rcr0, Self.Sigma_Rprc, Self.Omega_Rrp_R);
    begin
       Self.Control_Period := Control_Period;
       -- Create throws on an invalid configuration, so the parameter defaults must form a
       -- valid one. The generated Assert_Valid_Parameter_Defaults checks them at startup
       -- and in unit test set up. The control period's type keeps it positive.
       Self.Alg := Create (
-         Initial_Sigma_Rr0 => Cfg.Initial_Sigma_Rr0'Access,
-         Omega_Rr0_R       => Cfg.Omega_Rr0_R'Access,
-         Control_Period    => Self.Control_Period);
+         Sigma_Rcr0     => Cfg.Sigma_Rcr0'Access,
+         Sigma_Rprc     => Cfg.Sigma_Rprc'Access,
+         Omega_Rrp_R    => Cfg.Omega_Rrp_R'Access,
+         Control_Period => Self.Control_Period);
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -74,15 +78,15 @@ package body Component.Mrp_Rotation.Implementation is
       return Att_Ref.C.Pack (Mrp_Rotation_Algorithm_C.Update (Self.Alg, Att_Ref_Input => Base_Reference_C'Access));
    end Att_Ref_Tick_T_Service;
 
-   -- Restart the rotation from the configured initial attitude. Called on GNC state
-   -- change so the rotation does not carry over from the previous state.
+   -- Restart the integrated rotation at identity. Called on GNC state change so the
+   -- rotation does not carry over from the previous state.
    overriding procedure Reset_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
       Ignore : Tick.T renames Arg;
    begin
       -- Apply any pending parameter update first, so the reset starts from the
       -- configuration the component runs with next:
       Self.Update_Parameters;
-      -- Re-seeds the rotation state only; the configuration is untouched.
+      -- Restarts the rotation state only; the configuration is untouched.
       Re_Initialize (Self.Alg);
    end Reset_Tick_T_Recv_Sync;
 
@@ -99,18 +103,20 @@ package body Component.Mrp_Rotation.Implementation is
    -- Description:
    --    Parameters for the Mrp Rotation component.
    -- This procedure is called when the parameters of a component have been updated. In this case we
-   -- push the whole configuration into the C algorithm so subsequent updates use the new initial
-   -- attitude and rotation rate. The control period is fixed at initialization.
+   -- push the whole configuration into the C algorithm so subsequent updates use the new body
+   -- correction, pointing offset, and rotation rate. The integrated rotation is kept. The control
+   -- period is fixed at initialization.
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
-      Cfg : aliased constant Pointer_Config := To_Pointer_Config (Self.Initial_Sigma_Rr0, Self.Omega_Rr0_R);
+      Cfg : aliased constant Pointer_Config := To_Pointer_Config (Self.Sigma_Rcr0, Self.Sigma_Rprc, Self.Omega_Rrp_R);
    begin
       -- The values were checked by Validate_Parameters at staging, so Set_Config will not
       -- reject them.
       Set_Config (
          Self.Alg,
-         Initial_Sigma_Rr0 => Cfg.Initial_Sigma_Rr0'Access,
-         Omega_Rr0_R       => Cfg.Omega_Rr0_R'Access,
-         Control_Period    => Self.Control_Period);
+         Sigma_Rcr0     => Cfg.Sigma_Rcr0'Access,
+         Sigma_Rprc     => Cfg.Sigma_Rprc'Access,
+         Omega_Rrp_R    => Cfg.Omega_Rrp_R'Access,
+         Control_Period => Self.Control_Period);
    end Update_Parameters_Action;
 
    -- Validate a staged parameter set before it is applied by asking the algorithm's own
@@ -119,21 +125,23 @@ package body Component.Mrp_Rotation.Implementation is
    -- throwing Create/Set_Config across the FFI boundary.
    overriding function Validate_Parameters (
       Self : in out Instance;
-      Initial_Sigma_Rr0 : in Packed_F32x3.U;
-      Omega_Rr0_R : in Packed_F32x3.U
+      Sigma_Rcr0 : in Packed_F32x3.U;
+      Sigma_Rprc : in Packed_F32x3.U;
+      Omega_Rrp_R : in Packed_F32x3.U
    ) return Parameter_Validation_Status.E is
       -- Filled in below, inside the handled part of the function, so that a conversion
       -- that raises is caught here.
       Cfg : aliased Pointer_Config;
    begin
-      Cfg := To_Pointer_Config (Initial_Sigma_Rr0, Omega_Rr0_R);
+      Cfg := To_Pointer_Config (Sigma_Rcr0, Sigma_Rprc, Omega_Rrp_R);
       -- The algorithm only requires finite values, and marshalling a non-finite one
       -- raises above, so the predicate cannot fail here today. It is still the guard
       -- should the algorithm's rules grow.
       return (if Validate_Config (
-                 Initial_Sigma_Rr0 => Cfg.Initial_Sigma_Rr0'Access,
-                 Omega_Rr0_R       => Cfg.Omega_Rr0_R'Access,
-                 Control_Period    => Self.Control_Period)
+                 Sigma_Rcr0     => Cfg.Sigma_Rcr0'Access,
+                 Sigma_Rprc     => Cfg.Sigma_Rprc'Access,
+                 Omega_Rrp_R    => Cfg.Omega_Rrp_R'Access,
+                 Control_Period => Self.Control_Period)
               then Parameter_Validation_Status.Valid else Parameter_Validation_Status.Invalid);
    exception
       -- Reachable, and the parameter rejection test covers it: float staging accepts a
