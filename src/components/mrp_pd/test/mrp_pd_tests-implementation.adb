@@ -16,8 +16,8 @@ package body Mrp_Pd_Tests.Implementation is
 
    -- Gains, inertia, and guidance errors from the Python reference test
    -- (_tests/test_mrpPD.py).
-   Gain_K : constant Packed_F32.T := (Value => 0.15);
-   Gain_P : constant Packed_F32.T := (Value => 150.0);
+   Gain_Kp : constant Packed_F32.T := (Value => 0.15);
+   Gain_Kd : constant Packed_F32.T := (Value => 150.0);
    Inertia : constant Packed_F32x9.T := [1000.0, 0.0, 0.0,
                                          0.0, 800.0, 0.0,
                                          0.0, 0.0, 800.0];
@@ -54,11 +54,11 @@ package body Mrp_Pd_Tests.Implementation is
    -------------------------------------------------------------------------
 
    -- Run the algorithm to ensure the Ada -> C -> C++ integration is sound. The
-   -- control law is Lr = -K*sigma_BR - P*omega_BR_B + I*domega_RN_B, so with the
+   -- control law is Lr = -Kp*sigma_BR - Kd*omega_BR_B + I*domega_RN_B, so with the
    -- reference values:
-   --   -K*sigma_BR  = [-0.045, 0.075, -0.105]
-   --   -P*omega_BR_B = [-1.5, 3.0, -2.25]
-   --   I*domega_RN_B = [0.2, 0.24, 0.08]
+   --   -Kp*sigma_BR   = [-0.045, 0.075, -0.105]
+   --   -Kd*omega_BR_B = [-1.5, 3.0, -2.25]
+   --   I*domega_RN_B  = [0.2, 0.24, 0.08]
    -- giving [-1.345, 3.315, -2.275].
    overriding procedure Test (Self : in out Instance) is
       T : Component.Mrp_Pd.Implementation.Tester.Instance_Access renames Self.Tester;
@@ -72,8 +72,8 @@ package body Mrp_Pd_Tests.Implementation is
       );
 
       -- Stage and apply the configuration:
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_K (Gain_K)), Success);
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Derivative_Gain_P (Gain_P)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_Kp (Gain_Kp)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Derivative_Gain_Kd (Gain_Kd)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Inertia (Inertia)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
 
@@ -102,8 +102,8 @@ package body Mrp_Pd_Tests.Implementation is
       -- perturbed value rather than by leftover staging state.
       procedure Stage_Valid_Configuration is
       begin
-         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_K (Gain_K)), Success);
-         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Derivative_Gain_P (Gain_P)), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_Kp (Gain_Kp)), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Derivative_Gain_Kd (Gain_Kd)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Inertia (Inertia)), Success);
       end Stage_Valid_Configuration;
    begin
@@ -114,13 +114,13 @@ package body Mrp_Pd_Tests.Implementation is
       -- A negative proportional gain is rejected:
       Stage_Valid_Configuration;
       Parameter_Update_Status_Assert.Eq
-        (T.Stage_Parameter (Params.Proportional_Gain_K ((Value => -0.15))), Success);
+        (T.Stage_Parameter (Params.Proportional_Gain_Kp ((Value => -0.15))), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
 
       -- A negative derivative gain is rejected:
       Stage_Valid_Configuration;
       Parameter_Update_Status_Assert.Eq
-        (T.Stage_Parameter (Params.Derivative_Gain_P ((Value => -150.0))), Success);
+        (T.Stage_Parameter (Params.Derivative_Gain_Kd ((Value => -150.0))), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
 
       -- An all-zero inertia is rejected (singular):
