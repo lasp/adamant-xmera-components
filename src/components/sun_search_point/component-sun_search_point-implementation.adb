@@ -25,7 +25,7 @@ package body Component.Sun_Search_Point.Implementation is
       -- and in unit test set up.
       Self.Alg := Create (
          Rotations             => Rotations_C'Access,
-         S_Hat_Bdy_Cmd         => (Value => Packed_F32x3.C.To_C (Self.S_Hat_Bdy_Cmd)),
+         Sun_Point_Axis_B      => (Value => Packed_F32x3.C.To_C (Self.Sun_Point_Axis_B)),
          Sun_Axis_Spin_Rate    => Self.Sun_Axis_Spin_Rate.Value,
          Omega_Rn_B            => (Value => Packed_F32x3.C.To_C (Self.Omega_Rn_B_Cfg)),
          Observation_Threshold => Unsigned_32 (Self.Observation_Threshold.Value),
@@ -129,7 +129,7 @@ package body Component.Sun_Search_Point.Implementation is
       Set_Config (
          Self.Alg,
          Rotations             => Rotations_C'Access,
-         S_Hat_Bdy_Cmd         => (Value => Packed_F32x3.C.To_C (Self.S_Hat_Bdy_Cmd)),
+         Sun_Point_Axis_B      => (Value => Packed_F32x3.C.To_C (Self.Sun_Point_Axis_B)),
          Sun_Axis_Spin_Rate    => Self.Sun_Axis_Spin_Rate.Value,
          Omega_Rn_B            => (Value => Packed_F32x3.C.To_C (Self.Omega_Rn_B_Cfg)),
          Observation_Threshold => Unsigned_32 (Self.Observation_Threshold.Value),
@@ -144,7 +144,7 @@ package body Component.Sun_Search_Point.Implementation is
    overriding function Validate_Parameters (
       Self : in out Instance;
       Rotations : in Rotation_Properties_X4_Record.U;
-      S_Hat_Bdy_Cmd : in Packed_F32x3.U;
+      Sun_Point_Axis_B : in Packed_F32x3.U;
       Sun_Axis_Spin_Rate : in Packed_F32.U;
       Omega_Rn_B_Cfg : in Packed_F32x3.U;
       Observation_Threshold : in Packed_Observation_Threshold.U;
@@ -156,7 +156,7 @@ package body Component.Sun_Search_Point.Implementation is
    begin
       if Validate_Config (
             Rotations             => Rotations_C'Access,
-            S_Hat_Bdy_Cmd         => (Value => Packed_F32x3.C.To_C (S_Hat_Bdy_Cmd)),
+            Sun_Point_Axis_B      => (Value => Packed_F32x3.C.To_C (Sun_Point_Axis_B)),
             Sun_Axis_Spin_Rate    => Sun_Axis_Spin_Rate.Value,
             Omega_Rn_B            => (Value => Packed_F32x3.C.To_C (Omega_Rn_B_Cfg)),
             Observation_Threshold => Unsigned_32 (Observation_Threshold.Value),
