@@ -61,7 +61,7 @@ package Mrp_Steering_Algorithm_C is
    --* @param K3                            [rad/s]  Cubic gain in the steering saturation function; must be finite and >= 0.
    --* @param Omega_Max                     [rad/s]  Maximum rate command of the steering law; must be finite and > 0.
    --* @param Ignore_Outer_Loop_Feedforward [-]      Whether the outer loop feedforward term is left out.
-   --* @param P                             [Nms]    Rate error feedback gain; must be finite and >= 0.
+   --* @param Kd                            [Nms]    Rate error feedback gain; must be finite and >= 0.
    --* @param Ki                            [Nm]     Integral feedback gain on the rate error; must be finite and >= 0.
    --* @param Integral_Limit                [Nm]     Anti-windup clamp on the integral state; must be finite and >= 0.
    --* @param Control_Period                [s]      Time between two algorithm updates; must be finite and > 0.
@@ -79,7 +79,7 @@ package Mrp_Steering_Algorithm_C is
       K3                            : Short_Float;
       Omega_Max                     : Short_Float;
       Ignore_Outer_Loop_Feedforward : Interfaces.C.C_bool;
-      P                             : Short_Float;
+      Kd                            : Short_Float;
       Ki                            : Short_Float;
       Integral_Limit                : Short_Float;
       Control_Period                : Short_Float;
@@ -102,7 +102,7 @@ package Mrp_Steering_Algorithm_C is
       K3                            : Short_Float;
       Omega_Max                     : Short_Float;
       Ignore_Outer_Loop_Feedforward : Interfaces.C.C_bool;
-      P                             : Short_Float;
+      Kd                            : Short_Float;
       Ki                            : Short_Float;
       Integral_Limit                : Short_Float;
       Control_Period                : Short_Float;
@@ -133,7 +133,7 @@ package Mrp_Steering_Algorithm_C is
       K3                            : Short_Float;
       Omega_Max                     : Short_Float;
       Ignore_Outer_Loop_Feedforward : Interfaces.C.C_bool;
-      P                             : Short_Float;
+      Kd                            : Short_Float;
       Ki                            : Short_Float;
       Integral_Limit                : Short_Float;
       Control_Period                : Short_Float;

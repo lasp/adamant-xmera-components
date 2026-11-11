@@ -17,7 +17,7 @@ parameters:
     description: "[-] Whether the outer loop feedforward term, the rate of change of the steering rate command, is left out of the torque."
     type: Packed_Boolean.T
     default: "(Value => False)"
-  - name: Derivative_Gain_P
+  - name: Derivative_Gain_Kd
     description: "[Nms] Rate error feedback gain. Must be finite and not negative."
     type: Packed_F32.T
     default: "(Value => 0.0)"
