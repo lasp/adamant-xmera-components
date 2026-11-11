@@ -89,8 +89,8 @@ private
    -- to be implemented here.
    overriding function Validate_Parameters (
       Self : in out Instance;
-      Proportional_Gain_K : in Packed_F32.U;
-      Derivative_Gain_P : in Packed_F32.U;
+      Proportional_Gain_Kp : in Packed_F32.U;
+      Derivative_Gain_Kd : in Packed_F32.U;
       Integral_Gain_Ki : in Packed_F32.U;
       Integral_Limit : in Packed_F32.U;
       Control_Law_Type : in Packed_Control_Law_Type.U;
