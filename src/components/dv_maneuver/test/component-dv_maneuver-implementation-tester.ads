@@ -15,11 +15,11 @@ with Packed_Burn_State.Representation;
 
 -- Delta-V burn executor. Commands the configured body force while a burn executes
 -- and zero once it is complete, and publishes the burn state. The burn times, the
--- commanded delta-V and the body force are parameters. The times and the delta-V
+-- requested delta-V and the body force are parameters. The times and the delta-V
 -- are set by the state manager when a burn is commanded, and the algorithm
 -- validates them before they are applied. The burn starts at the first tick after
 -- the component is built or reset, and completes when the accumulated delta-V
--- reaches the commanded one after the minimum burn time, or when the maximum burn
+-- reaches the requested one after the minimum burn time, or when the maximum burn
 -- time is reached. Complete is terminal until the next reset, so the assembly
 -- fires the reset when the burn is to start and ticks the component only while
 -- the burn state is in use. Wraps the DvManeuverAlgorithm C++ algorithm via its C
