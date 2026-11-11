@@ -1,11 +1,11 @@
 ---
 description: Parameters for the Mrp Steering component.
 parameters:
-  - name: Proportional_Gain_K1
+  - name: Proportional_Gain_Kp1
     description: "[rad/s] Proportional gain applied to the MRP attitude error in the steering law. Must be finite and not negative."
     type: Packed_F32.T
     default: "(Value => 0.0)"
-  - name: Cubic_Gain_K3
+  - name: Cubic_Gain_Kp3
     description: "[rad/s] Cubic gain applied to the MRP attitude error in the steering saturation function. Must be finite and not negative."
     type: Packed_F32.T
     default: "(Value => 0.0)"
@@ -17,7 +17,7 @@ parameters:
     description: "[-] Whether the outer loop feedforward term, the rate of change of the steering rate command, is left out of the torque."
     type: Packed_Boolean.T
     default: "(Value => False)"
-  - name: Derivative_Gain_P
+  - name: Derivative_Gain_Kd
     description: "[Nms] Rate error feedback gain. Must be finite and not negative."
     type: Packed_F32.T
     default: "(Value => 0.0)"

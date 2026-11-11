@@ -57,11 +57,11 @@ package Mrp_Steering_Algorithm_C is
    type Mrp_Steering_Algorithm_Access is access all Mrp_Steering_Algorithm;
 
    --* @brief Report whether a configuration would be accepted by Create/Set_Config.
-   --* @param K1                            [rad/s]  Proportional gain on the MRP error; must be finite and >= 0.
-   --* @param K3                            [rad/s]  Cubic gain in the steering saturation function; must be finite and >= 0.
+   --* @param Kp1                           [rad/s]  Proportional gain on the MRP error; must be finite and >= 0.
+   --* @param Kp3                           [rad/s]  Cubic gain in the steering saturation function; must be finite and >= 0.
    --* @param Omega_Max                     [rad/s]  Maximum rate command of the steering law; must be finite and > 0.
    --* @param Ignore_Outer_Loop_Feedforward [-]      Whether the outer loop feedforward term is left out.
-   --* @param P                             [Nms]    Rate error feedback gain; must be finite and >= 0.
+   --* @param Kd                            [Nms]    Rate error feedback gain; must be finite and >= 0.
    --* @param Ki                            [Nm]     Integral feedback gain on the rate error; must be finite and >= 0.
    --* @param Integral_Limit                [Nm]     Anti-windup clamp on the integral state; must be finite and >= 0.
    --* @param Control_Period                [s]      Time between two algorithm updates; must be finite and > 0.
@@ -75,11 +75,11 @@ package Mrp_Steering_Algorithm_C is
    --* @return True if the configuration is valid. Never throws, so it can guard the
    --* throwing Create/Set_Config from an invalid configuration.
    function Validate_Config
-     (K1                            : Short_Float;
-      K3                            : Short_Float;
+     (Kp1                           : Short_Float;
+      Kp3                           : Short_Float;
       Omega_Max                     : Short_Float;
       Ignore_Outer_Loop_Feedforward : Interfaces.C.C_bool;
-      P                             : Short_Float;
+      Kd                            : Short_Float;
       Ki                            : Short_Float;
       Integral_Limit                : Short_Float;
       Control_Period                : Short_Float;
@@ -98,11 +98,11 @@ package Mrp_Steering_Algorithm_C is
    --* The parameters are as for Validate_Config.
    --* @return The new algorithm instance, which must be released with Destroy.
    function Create
-     (K1                            : Short_Float;
-      K3                            : Short_Float;
+     (Kp1                           : Short_Float;
+      Kp3                           : Short_Float;
       Omega_Max                     : Short_Float;
       Ignore_Outer_Loop_Feedforward : Interfaces.C.C_bool;
-      P                             : Short_Float;
+      Kd                            : Short_Float;
       Ki                            : Short_Float;
       Integral_Limit                : Short_Float;
       Control_Period                : Short_Float;
@@ -129,11 +129,11 @@ package Mrp_Steering_Algorithm_C is
    --* @param Self The algorithm instance.
    procedure Set_Config
      (Self                          : Mrp_Steering_Algorithm_Access;
-      K1                            : Short_Float;
-      K3                            : Short_Float;
+      Kp1                           : Short_Float;
+      Kp3                           : Short_Float;
       Omega_Max                     : Short_Float;
       Ignore_Outer_Loop_Feedforward : Interfaces.C.C_bool;
-      P                             : Short_Float;
+      Kd                            : Short_Float;
       Ki                            : Short_Float;
       Integral_Limit                : Short_Float;
       Control_Period                : Short_Float;
