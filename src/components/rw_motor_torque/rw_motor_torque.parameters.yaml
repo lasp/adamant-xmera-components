@@ -18,6 +18,6 @@ parameters:
     type: Packed_F32.T
     default: "(Value => 0.0)"
   - name: Desired_Wheel_Speeds
-    description: "[rad/s] Desired speed of each reaction wheel. The null space term steers the wheels toward these speeds when its gain is not zero. Each must be finite."
+    description: "[rad/s] Desired speed of each reaction wheel. The null space term steers the wheels toward these speeds when its gain is not zero. Each must be within +/- 6000 RPM, about 628.3 rad/s."
     type: Rw_Speeds_Input.T
     default: "(Wheel_Speeds => [others => 0.0])"

@@ -6,7 +6,6 @@
 with Tick;
 with Parameter_Update;
 with Rw_Motor_Torque_Algorithm_C; use Rw_Motor_Torque_Algorithm_C;
-with Rw_Speeds_Input.C;
 
 -- Reaction wheel motor torque mapping. Maps the commanded body control torque
 -- onto the available reaction wheels along the selected control axes, adds a null
@@ -31,9 +30,6 @@ private
    -- The component class instance record:
    type Instance is new Rw_Motor_Torque.Base_Instance with record
       Alg : Rw_Motor_Torque_Algorithm_Access := null;
-      -- The desired wheel speeds parameter in the form the algorithm takes, refreshed
-      -- when the parameters are updated so the tick passes a pointer to it.
-      Desired_Speeds_C : aliased Rw_Speeds_Input.C.U_C;
    end record;
 
    ---------------------------------------
