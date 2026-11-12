@@ -43,18 +43,22 @@ package body Component.Dv_Accumulation.Implementation is
       -- Grab data dependencies:
       --
       -- Data_Dependency_Status.E can be Success, Not_Available, Error, or Stale.
-      -- The voted acceleration and the bias of the burn are produced every tick,
-      -- earlier in the same tick, so any other status indicates that this component is not wired up
-      -- correctly in the algorithm execution order. That should never happen, so we
-      -- assert.
+      -- The voted acceleration is produced every tick, earlier in the same tick,
+      -- so any other status indicates that this component is not wired up
+      -- correctly in the algorithm execution order. That should never happen, so
+      -- we assert.
       Accel : Packed_F32x3.T;
       Accel_Status : constant Data_Dependency_Status.E :=
          Self.Get_Accel_Average (Value => Accel, Stale_Reference => Arg.Time);
       pragma Assert (Accel_Status = Success);
+      -- The bias is published once, when the burn is set up, and holds for the
+      -- whole burn, so a stale bias is used like a fresh one. Not_Available (no
+      -- bias was ever published) and Error indicate an assembly defect, so we
+      -- assert.
       Bias : Packed_F32x3.T;
       Bias_Status : constant Data_Dependency_Status.E :=
          Self.Get_Accel_Bias_B (Value => Bias, Stale_Reference => Arg.Time);
-      pragma Assert (Bias_Status = Success);
+      pragma Assert (Bias_Status = Success or else Bias_Status = Stale);
    begin
       -- Integrate the sample, less the bias, and publish the accumulated delta-V.
       Self.Data_Product_T_Send (Self.Data_Products.Accumulated_Delta_V (

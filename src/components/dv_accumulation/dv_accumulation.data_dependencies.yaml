@@ -6,4 +6,4 @@ data_dependencies:
     description: "[m/s^2] The majority voted accelerometer average in body frame components, the body frame acceleration that gravity does not cause. The majority vote publishes it every tick, ahead of this component."
   - name: Accel_Bias_B
     type: Packed_F32x3.T
-    description: "[m/s^2] The accelerometer bias in body frame components, the offset the measured acceleration contains, which is subtracted from each sample. The state manager publishes it on every tick of a burn, ahead of this component, from the command that set the burn up."
+    description: "[m/s^2] The accelerometer bias in body frame components, the offset the measured acceleration contains, which is subtracted from each sample. The state manager publishes it once, from the command that sets the burn up, and it holds for the whole burn, so a stale value is used like a fresh one."

@@ -20,6 +20,9 @@ private
    -- Ensure the accelerometer bias the state manager publishes is subtracted from
    -- each sample.
    overriding procedure Test_Bias (Self : in out Instance);
+   -- Ensure a bias that is stale, since it is published once when the burn is set
+   -- up, is subtracted from each sample like a fresh one.
+   overriding procedure Test_Stale_Bias (Self : in out Instance);
    -- Ensure the reset connector zeroes the accumulated delta-V and the next sample
    -- starts a new window without being integrated.
    overriding procedure Test_Reset (Self : in out Instance);

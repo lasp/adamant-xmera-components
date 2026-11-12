@@ -115,6 +115,30 @@ package body Dv_Accumulation_Tests.Implementation is
       end loop;
    end Test_Bias;
 
+   -- Ensure a bias that is stale, since it is published once when the burn is set
+   -- up, is subtracted from each sample like a fresh one.
+   overriding procedure Test_Stale_Bias (Self : in out Instance) is
+      T : Component.Dv_Accumulation.Implementation.Tester.Instance_Access renames Self.Tester;
+      Bias : constant Packed_F32x3.T := [0.1, 0.0, -0.1];
+   begin
+      -- Give the bias a stale limit so its fetch performs the staleness check.
+      -- The acceleration keeps none, so only the bias can come back stale:
+      T.Component_Instance.Map_Data_Dependencies (
+         Accel_Average_Id => 0, Accel_Average_Stale_Limit => Ada.Real_Time.Time_Span_Zero,
+         Accel_Bias_B_Id => 1, Accel_Bias_B_Stale_Limit => Ada.Real_Time.Seconds (1));
+
+      -- The bias was published well before the ticks of the burn, whose time is
+      -- far enough ahead of it to exceed the stale limit:
+      T.Accel_Bias_B := Bias;
+      T.Data_Dependency_Timestamp_Override := (Seconds => 1, Subseconds => 0);
+      T.System_Time := (Seconds => 100, Subseconds => 0);
+
+      -- The stale bias is subtracted from every integrated sample:
+      for Samples in 0 .. 3 loop
+         Send_Tick (Self, Expected_Delta_V (Samples, Bias));
+      end loop;
+   end Test_Stale_Bias;
+
    -- Ensure the reset connector zeroes the accumulated delta-V and the next sample
    -- starts a new window without being integrated.
    overriding procedure Test_Reset (Self : in out Instance) is
