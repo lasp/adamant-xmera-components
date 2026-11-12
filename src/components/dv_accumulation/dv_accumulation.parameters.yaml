@@ -1,0 +1,7 @@
+---
+description: Parameters for the Dv Accumulation component. The accelerometer bias is set when a burn is commanded. The default makes no correction and stands in until then.
+parameters:
+  - name: Accel_Bias_B
+    description: "[m/s^2] The accelerometer bias in body frame components, the offset the measured acceleration contains, which is subtracted from each sample. Must be finite. Zero makes no correction."
+    type: Packed_F32x3.T
+    default: "[0.0, 0.0, 0.0]"
