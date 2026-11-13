@@ -19,8 +19,8 @@ package Mrp_Rotation_Algorithm_C is
    --*                               reference R0; must be finite.
    --* @param Sigma_Rprc     [-]     Pointing offset, the frame Rp relative to Rc in body axes; must be
    --*                               finite.
-   --* @param Omega_Rrp_R    [rad/s] Constant rotation rate of R relative to Rp in output (body) axes; must
-   --*                               be finite.
+   --* @param Omega_Rrp_Rp   [rad/s] Constant rotation rate of R relative to Rp in Rp axes; must be
+   --*                               finite.
    --* @param Control_Period [s]     Forward Euler integration step used every update; must be finite
    --*                               and > 0.
    --* @return True if the configuration is valid. Never throws, so it can guard the
@@ -28,7 +28,7 @@ package Mrp_Rotation_Algorithm_C is
    function Validate_Config
      (Sigma_Rcr0     : access constant Packed_F32x3_Record.C.U_C;
       Sigma_Rprc     : access constant Packed_F32x3_Record.C.U_C;
-      Omega_Rrp_R    : access constant Packed_F32x3_Record.C.U_C;
+      Omega_Rrp_Rp   : access constant Packed_F32x3_Record.C.U_C;
       Control_Period : Short_Float)
      return Interfaces.C.C_bool
      with Import        => True,
@@ -43,7 +43,7 @@ package Mrp_Rotation_Algorithm_C is
    function Create
      (Sigma_Rcr0     : access constant Packed_F32x3_Record.C.U_C;
       Sigma_Rprc     : access constant Packed_F32x3_Record.C.U_C;
-      Omega_Rrp_R    : access constant Packed_F32x3_Record.C.U_C;
+      Omega_Rrp_Rp   : access constant Packed_F32x3_Record.C.U_C;
       Control_Period : Short_Float)
      return Mrp_Rotation_Algorithm_Access
      with Import        => True,
@@ -66,7 +66,7 @@ package Mrp_Rotation_Algorithm_C is
      (Self           : Mrp_Rotation_Algorithm_Access;
       Sigma_Rcr0     : access constant Packed_F32x3_Record.C.U_C;
       Sigma_Rprc     : access constant Packed_F32x3_Record.C.U_C;
-      Omega_Rrp_R    : access constant Packed_F32x3_Record.C.U_C;
+      Omega_Rrp_Rp   : access constant Packed_F32x3_Record.C.U_C;
       Control_Period : Short_Float)
      with Import        => True,
           Convention    => C,
