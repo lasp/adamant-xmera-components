@@ -62,6 +62,7 @@ package body Solar_Array_Reference_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Alignment_Threshold (Threshold)), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Apply_Configuration;
 
    -- Stage the mode and the angles and return the validation status. The update is
@@ -82,6 +83,7 @@ package body Solar_Array_Reference_Tests.Implementation is
    begin
       Parameter_Update_Status_Assert.Eq (Stage_Mode_And_Angles (Self, Mode, Specified, Offset), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Set_Mode_And_Angles;
 
    -- Map the attitude, the reference, and the sun direction to identifiers the tester
@@ -330,6 +332,7 @@ package body Solar_Array_Reference_Tests.Implementation is
       Stage_Valid_Configuration;
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Test_Invalid_Parameter;
 
    -- The angles are validated by the algorithm alone, so the line it draws is the

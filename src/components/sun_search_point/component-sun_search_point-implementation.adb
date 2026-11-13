@@ -68,9 +68,6 @@ package body Component.Sun_Search_Point.Implementation is
          Self.Get_Num_Css_Viewing_Sun (Value => Css_Count, Stale_Reference => Arg.Time);
       pragma Assert (Css_Count_Status = Success);
    begin
-      -- Update the parameters:
-      Self.Update_Parameters;
-
       -- Run one guidance step and publish its outputs:
       declare
          Output : constant Sun_Search_Point_Output.T := Sun_Search_Point_Output.C.Pack (Update (

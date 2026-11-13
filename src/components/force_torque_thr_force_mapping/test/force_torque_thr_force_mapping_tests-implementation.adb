@@ -279,6 +279,7 @@ package body Force_Torque_Thr_Force_Mapping_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Center_Of_Mass_B (Origin)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Desired_Control_Axes_B (All_Axes)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
 
       -- The same command now maps onto different thrusters:
       Assert_Forces (Map_Command (Self, [0.4, 0.2, 0.4], [0.9, 1.1, 1.0], 2), Expected_Mirrored);
@@ -373,6 +374,7 @@ package body Force_Torque_Thr_Force_Mapping_Tests.Implementation is
       Stage_Valid_Set;
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Test_Invalid_Parameter;
 
 end Force_Torque_Thr_Force_Mapping_Tests.Implementation;

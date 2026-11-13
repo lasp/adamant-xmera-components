@@ -64,9 +64,6 @@ package body Component.St_Platform_Attitude.Implementation is
          Platform_Angular_Velocity => Platform_Angular_Velocity_U.Platform_Angular_Velocity
       ));
    begin
-      -- Apply any pending parameter update (e.g. new Sigma_Pb):
-      Self.Update_Parameters;
-
       -- Call the C algorithm and publish the resulting body-frame attitude, stamped
       -- with the time of the solution it converts:
       Self.Data_Product_T_Send (Self.Data_Products.Star_Tracker_Body_Attitude (
@@ -74,6 +71,13 @@ package body Component.St_Platform_Attitude.Implementation is
          St_Att.C.Pack (Update (Self.Alg, Measurement => Measurement_C'Access))
       ));
    end Tick_T_Recv_Sync;
+
+   -- Apply any pending parameter update. Called on GNC state change.
+   overriding procedure Reset_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
+      Ignore : Tick.T renames Arg;
+   begin
+      Self.Update_Parameters;
+   end Reset_Tick_T_Recv_Sync;
 
    -- The parameter update connector.
    overriding procedure Parameter_Update_T_Modify (Self : in out Instance; Arg : in out Parameter_Update.T) is

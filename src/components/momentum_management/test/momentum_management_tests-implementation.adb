@@ -104,6 +104,7 @@ package body Momentum_Management_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Rw_Inertias (Wheel_Inertias)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Wheel_Availability (Availability)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Apply_Configuration;
 
    -- Send one tick with the reference wheel speeds.
@@ -257,6 +258,7 @@ package body Momentum_Management_Tests.Implementation is
       -- Double the proportional gain:
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_K ((Value => 0.1))), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
       Send_Tick (Self);
       Assert_Latest_Output (Self, 3, [-0.7620190528, -0.3682690528, -1.2120190528]);
 
@@ -264,6 +266,7 @@ package body Momentum_Management_Tests.Implementation is
       -- component is clamped to it:
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Integral_Limit (Tight_Integral_Limit)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
       Send_Tick (Self);
       Assert_Latest_Output (Self, 4, [-0.7273502692, -0.3773502692, -1.1273502692]);
    end Test_Parameter_Update;
@@ -355,6 +358,7 @@ package body Momentum_Management_Tests.Implementation is
       Stage_Valid_Configuration;
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Test_Invalid_Parameter;
 
    -- A data dependency that comes back with the wrong identifier means the assembly

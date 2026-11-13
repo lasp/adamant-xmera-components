@@ -56,9 +56,6 @@ package body Component.Css_Comm.Implementation is
          Self.Get_Css_Sensor_Input (Value => Css_Adc_Input, Timestamp => Css_Input_Time, Stale_Reference => Arg.Time);
       pragma Assert (Css_Input_Status = Success or else Css_Input_Status = Stale);
    begin
-      -- Update the parameters:
-      Self.Update_Parameters;
-
       -- Pass the raw ADC counts of every sensor slot to the C algorithm, which
       -- normalizes each reading by the Max_Sensor_Value parameter, applies the
       -- Chebyshev correction, and clamps the corrected value to [0, 1]. A
@@ -84,6 +81,13 @@ package body Component.Css_Comm.Implementation is
          end;
       end;
    end Tick_T_Recv_Sync;
+
+   -- Apply any pending parameter update. Called on GNC state change.
+   overriding procedure Reset_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
+      Ignore : Tick.T renames Arg;
+   begin
+      Self.Update_Parameters;
+   end Reset_Tick_T_Recv_Sync;
 
    -- The parameter update connector.
    overriding procedure Parameter_Update_T_Modify (Self : in out Instance; Arg : in out Parameter_Update.T) is

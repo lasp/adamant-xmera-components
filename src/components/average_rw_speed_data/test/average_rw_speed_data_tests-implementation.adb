@@ -53,6 +53,7 @@ package body Average_Rw_Speed_Data_Tests.Implementation is
    begin
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Averaging_Window ((Value => Window))), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Apply_Window;
 
    -- Send the tick for step I. The wheel speed product is refreshed with the
@@ -270,6 +271,7 @@ package body Average_Rw_Speed_Data_Tests.Implementation is
       -- rejections above were caused by the perturbed values:
       Expect_Acceptance (1.0);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Test_Invalid_Parameter;
 
    -- A data dependency that comes back with the wrong identifier means the assembly

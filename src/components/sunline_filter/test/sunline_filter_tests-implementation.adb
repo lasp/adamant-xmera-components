@@ -111,6 +111,7 @@ package body Sunline_Filter_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Gyro_Measurement_Noise_Std (Gyro_Noise_Std)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Measurement_Delay (Measurement_Delay)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Estimate_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Apply_Configuration;
 
    -- The algorithm tick the dispatching component builds for a scheduled tick.
@@ -640,6 +641,7 @@ package body Sunline_Filter_Tests.Implementation is
       Stage_Valid_Configuration;
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Estimate_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Test_Invalid_Parameter;
 
    -- A data dependency that comes back with the wrong identifier means the assembly

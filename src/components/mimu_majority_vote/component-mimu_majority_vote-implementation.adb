@@ -77,9 +77,6 @@ package body Component.Mimu_Majority_Vote.Implementation is
          Self.Get_Imu_3_Body (Value => Imu_3_T, Stale_Reference => Arg.Time);
       pragma Assert (Imu_3_Status = Success);
    begin
-      -- Update the parameters:
-      Self.Update_Parameters;
-
       declare
          -- Extract angular velocity and acceleration from each IMU and build the C
          -- input arrays. These are aliased so their addresses can be passed to the C
@@ -116,6 +113,15 @@ package body Component.Mimu_Majority_Vote.Implementation is
             Imu_Valid => Output.Accel.Imu_Valid)));
       end;
    end Tick_T_Recv_Sync;
+
+   -- Apply any pending parameter update and zero the fault persistence
+   -- counters. Called on GNC state change.
+   overriding procedure Reset_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
+      Ignore : Tick.T renames Arg;
+   begin
+      Self.Update_Parameters;
+      Re_Initialize (Self.Alg);
+   end Reset_Tick_T_Recv_Sync;
 
    -- The parameter update connector.
    overriding procedure Parameter_Update_T_Modify (Self : in out Instance; Arg : in out Parameter_Update.T) is

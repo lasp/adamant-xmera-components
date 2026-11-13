@@ -59,13 +59,17 @@ package body Component.Thr_Firing_Remainder.Implementation is
       -- intermediate array.
       Force_C : aliased constant Thr_Force_Cmd.C.U_C := Thr_Force_Cmd.C.Unpack (Force_Dep);
    begin
-      -- Update the parameters:
-      Self.Update_Parameters;
-
       -- Send the on-time command straight to the actuation interface, which
       -- publishes the on-times it actually stages.
       Self.Thr_On_Time_Cmd_T_Send (Thr_On_Time_Cmd.C.Pack (Update (Self.Alg, Force_C'Access)));
    end Tick_T_Recv_Sync;
+
+   -- Apply any pending parameter update. Called on GNC state change.
+   overriding procedure Reset_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
+      Ignore : Tick.T renames Arg;
+   begin
+      Self.Update_Parameters;
+   end Reset_Tick_T_Recv_Sync;
 
    -- The parameter update connector.
    overriding procedure Parameter_Update_T_Modify (Self : in out Instance; Arg : in out Parameter_Update.T) is

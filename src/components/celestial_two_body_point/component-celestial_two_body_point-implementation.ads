@@ -52,6 +52,8 @@ private
    -- Run the algorithm up to the current time and return the attitude reference it
    -- produces.
    overriding function Tick_T_Service (Self : in out Instance; Arg : in Tick.T) return Att_Ref.T;
+   -- Apply any pending parameter update. Called on GNC state change.
+   overriding procedure Reset_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T);
    -- The parameter update connector.
    overriding procedure Parameter_Update_T_Modify (Self : in out Instance; Arg : in out Parameter_Update.T);
 

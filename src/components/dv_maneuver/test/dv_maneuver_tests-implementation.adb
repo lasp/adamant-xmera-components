@@ -44,6 +44,7 @@ package body Dv_Maneuver_Tests.Implementation is
    begin
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cmd_Force_B (Force)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Apply_Force;
 
    -- Stage the burn times and the commanded delta-V of a burn.
@@ -75,6 +76,7 @@ package body Dv_Maneuver_Tests.Implementation is
       Stage_Burn (Self, Delta_V, Min_Time, Max_Time);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Command_Burn;
 
    -- Send the tick for step I, with the delta-V accumulated by then, and check the
@@ -249,6 +251,7 @@ package body Dv_Maneuver_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cmd_Force_B (Force)), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Test_Invalid_Parameter;
 
    -- A data dependency that comes back with the wrong identifier means the assembly

@@ -65,9 +65,6 @@ package body Component.Mrp_Rotation.Implementation is
       -- point at.
       Base_Reference_C : aliased constant Att_Ref.C.U_C := Att_Ref.C.Unpack (Arg.Reference);
    begin
-      -- Apply any pending parameter update:
-      Self.Update_Parameters;
-
       -- Call the C algorithm and hand the rotated reference back to the caller, which
       -- publishes the reference the control chain tracks. Update is qualified because
       -- Parameter_Enums also declares one.

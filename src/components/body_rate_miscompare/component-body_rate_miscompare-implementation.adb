@@ -63,9 +63,6 @@ package body Component.Body_Rate_Miscompare.Implementation is
          Self.Get_Star_Tracker_Attitude (Value => St_Body, Stale_Reference => Arg.Time);
       pragma Assert (St_Body_Status = Success or else St_Body_Status = Stale);
    begin
-      -- Update the parameters:
-      Self.Update_Parameters;
-
       -- Call algorithm with angular velocity vectors:
       declare
          Imu_Omega : constant Packed_F32x3_Record.C.U_C := (Value => Packed_F32x3.C.Unpack (Imu_Body.Gyro.Average));

@@ -93,10 +93,6 @@ package body Component.Dv_Maneuver.Implementation is
       -- The delta-V crosses by pointer, so it needs an object to point at.
       Delta_V_C : aliased constant Packed_F32x3_Record.C.U_C := (Value => Packed_F32x3.C.Unpack (Delta_V));
    begin
-      -- Apply any pending parameter update, so a new burn takes effect on the tick
-      -- after its update, the first tick after the reset that starts it:
-      Self.Update_Parameters;
-
       -- Advance the burn and publish the force command and the burn state. Update is
       -- qualified because Parameter_Enums also declares one.
       declare

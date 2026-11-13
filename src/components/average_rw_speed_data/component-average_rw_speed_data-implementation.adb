@@ -54,9 +54,6 @@ package body Component.Average_Rw_Speed_Data.Implementation is
       Sample : aliased constant Rw_Speed_Sample.C.U_C :=
          (Meas_Time => Sys_Time.Arithmetic.To_Nanoseconds (Speeds_Time), Wheel_Speeds => Rwa_Speeds.C.Unpack (Speeds));
    begin
-      -- Apply any pending parameter update (e.g. a new window):
-      Self.Update_Parameters;
-
       -- Take the sample and publish the mean of the samples in the window, stamped
       -- with the time of the measurement. Update is qualified because Parameter_Enums
       -- also declares one.
@@ -91,8 +88,7 @@ package body Component.Average_Rw_Speed_Data.Implementation is
    -- Description:
    --    Parameters for the Average Rw Speed Data component.
    -- This procedure is called when the parameters of a component have been updated. In this case we
-   -- push the whole configuration into the C algorithm. The stored samples are kept, so the new
-   -- window applies to them from the next tick on.
+   -- push the whole configuration into the C algorithm.
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
    begin
       -- The value was checked by Validate_Parameters at staging, so Set_Config will not

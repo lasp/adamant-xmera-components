@@ -143,9 +143,6 @@ package body Component.Inertial_Filter.Implementation is
          return False;
       end Is_Fresh;
    begin
-      -- Apply any pending parameter update:
-      Self.Update_Parameters;
-
       declare
          -- The product is refreshed only when the star tracker delivers, so it is
          -- consumed once, when its time tag has changed since the last time.

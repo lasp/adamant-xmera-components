@@ -115,9 +115,6 @@ package body Component.Mrp_Steering.Implementation is
       Speeds_C : aliased constant Rw_Speeds_Input.C.U_C :=
          (Wheel_Speeds => [Speeds.Rwa_1, Speeds.Rwa_2, Speeds.Rwa_3, Speeds.Rwa_4]);
    begin
-      -- Apply any pending parameter update (e.g. new gains or wheel availability):
-      Self.Update_Parameters;
-
       -- Call the C algorithm and publish the torque. Update is qualified because
       -- Parameter_Enums also declares one.
       Self.Data_Product_T_Send (Self.Data_Products.Control_Torque (
