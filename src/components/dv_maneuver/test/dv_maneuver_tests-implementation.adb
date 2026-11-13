@@ -44,6 +44,7 @@ package body Dv_Maneuver_Tests.Implementation is
    begin
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cmd_Force_B (Force)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Apply_Force;
 
    -- Stage the burn times and the commanded delta-V of a burn.
@@ -68,13 +69,17 @@ package body Dv_Maneuver_Tests.Implementation is
    end Discard_Burn;
 
    -- Stage, validate and update a burn, as the state manager does when a burn is
-   -- commanded.
-   procedure Command_Burn (Self : in out Instance; Delta_V : in Short_Float; Min_Time : in Long_Float; Max_Time : in Long_Float) is
+   -- commanded. The reset then applies the burn and starts it at the next tick. With
+   -- Start False the reset is not sent, so the burn stays pending.
+   procedure Command_Burn (Self : in out Instance; Delta_V : in Short_Float; Min_Time : in Long_Float; Max_Time : in Long_Float; Start : in Boolean := True) is
       T : Component.Dv_Maneuver.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
       Stage_Burn (Self, Delta_V, Min_Time, Max_Time);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      if Start then
+         T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
+      end if;
    end Command_Burn;
 
    -- Send the tick for step I, with the delta-V accumulated by then, and check the
@@ -148,9 +153,9 @@ package body Dv_Maneuver_Tests.Implementation is
    -- to C to C++ integration is sound.
    overriding procedure Test (Self : in out Instance) is
    begin
-      -- The first tick applies the burn and starts it. The commanded delta-V of 4.3
-      -- is reached at step 5, after the minimum burn time of zero, so the burn is
-      -- complete from there:
+      -- The first tick starts the burn. The commanded delta-V of 4.3 is reached at
+      -- step 5, after the minimum burn time of zero, so the burn is complete from
+      -- there:
       Command_Burn (Self, Delta_V => 4.3, Min_Time => 0.0, Max_Time => 3.0);
       Run_Burn (Self, First => 0, Last => 8, Completes_At => 5);
    end Test;
@@ -158,7 +163,6 @@ package body Dv_Maneuver_Tests.Implementation is
    -- Ensure the minimum burn time holds a burn whose delta-V is reached early, and
    -- the maximum burn time ends one whose delta-V is never reached.
    overriding procedure Test_Time_Limits (Self : in out Instance) is
-      T : Component.Dv_Maneuver.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
       -- The delta-V is reached at step 5, but the burn runs until the minimum burn
       -- time of four seconds has elapsed at step 8:
@@ -166,9 +170,8 @@ package body Dv_Maneuver_Tests.Implementation is
       Run_Burn (Self, First => 0, Last => 9, Completes_At => 8);
 
       -- A delta-V of ten is never reached, so the burn ends at the maximum burn time
-      -- of three seconds, at step 6. The reset restarts the burn at the next tick:
+      -- of three seconds, at step 6. Commanding it restarts the burn at the next tick:
       Command_Burn (Self, Delta_V => 10.0, Min_Time => 0.0, Max_Time => 3.0);
-      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
       Run_Burn (Self, First => 0, Last => 7, Completes_At => 6);
    end Test_Time_Limits;
 
@@ -180,8 +183,9 @@ package body Dv_Maneuver_Tests.Implementation is
       Command_Burn (Self, Delta_V => 4.3, Min_Time => 0.0, Max_Time => 3.0);
       Run_Burn (Self, First => 0, Last => 7, Completes_At => 5);
 
-      -- A new burn with a longer minimum time does not reopen the complete one:
-      Command_Burn (Self, Delta_V => 4.3, Min_Time => 2.0, Max_Time => 100.0);
+      -- A new burn with a longer minimum time is not applied by a tick, so it does
+      -- not reopen the complete one:
+      Command_Burn (Self, Delta_V => 4.3, Min_Time => 2.0, Max_Time => 100.0, Start => False);
       Send_Tick (Self, 8, Executing => False);
 
       -- The reset starts it. The delta-V is already reached, so the burn runs for the
@@ -206,8 +210,7 @@ package body Dv_Maneuver_Tests.Implementation is
          Discard_Burn (Self);
       end Expect_Rejection;
    begin
-      -- The reference burn is accepted, and the first tick applies it and starts
-      -- the burn:
+      -- The reference burn is accepted, and the first tick starts the burn:
       Command_Burn (Self, Delta_V => 4.3, Min_Time => 1.0, Max_Time => 3.0);
       Send_Tick (Self, 0, Executing => True);
 
@@ -249,6 +252,7 @@ package body Dv_Maneuver_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cmd_Force_B (Force)), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Test_Invalid_Parameter;
 
    -- A data dependency that comes back with the wrong identifier means the assembly

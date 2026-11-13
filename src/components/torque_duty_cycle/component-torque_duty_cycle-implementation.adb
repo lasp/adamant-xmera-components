@@ -51,9 +51,6 @@ package body Component.Torque_Duty_Cycle.Implementation is
       -- shared binding takes. It crosses by pointer, so it needs an object to point at.
       Torque_C : aliased constant Packed_F32x3_Record.C.U_C := (Value => Packed_F32x3.C.Unpack (Torque_Dep.Torque_Request_Body));
    begin
-      -- Apply any pending parameter update (e.g. a new cadence):
-      Self.Update_Parameters;
-
       -- Apply this control period of the duty cycle to the torque and publish it. Update
       -- is qualified because Parameter_Enums also declares one.
       Self.Data_Product_T_Send (Self.Data_Products.Gated_Torque (

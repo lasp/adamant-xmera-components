@@ -55,6 +55,7 @@ package body Dv_Guidance_Tests.Implementation is
       Stage_Frame (Self, Dv, Pref);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Set_Frame;
 
    -- Request a tick and check the reference it returns: the given attitude with zero

@@ -35,8 +35,6 @@ package body Component.Average_Mimu_Data.Implementation is
    -- the algorithm input for the next tick.
    overriding procedure Mimu_Eng_Packet_T_Recv_Sync (Self : in out Instance; Arg : in Mimu_Eng_Packet.T) is
    begin
-      Self.Update_Parameters;
-
       if Self.Packet_Count >= Max_Buffered_Packets then
          -- Buffer full, drop the incoming packet.
          Self.Event_T_Send_If_Connected (Self.Events.Packet_Buffer_Overflow (Self.Sys_Time_T_Get));
@@ -80,6 +78,13 @@ package body Component.Average_Mimu_Data.Implementation is
       end loop;
       Self.Packet_Count := 0;
    end Tick_T_Recv_Sync;
+
+   -- Apply any pending parameter update. Called on GNC state change.
+   overriding procedure Reset_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
+      Ignore : Tick.T renames Arg;
+   begin
+      Self.Update_Parameters;
+   end Reset_Tick_T_Recv_Sync;
 
    -- The parameter update connector.
    overriding procedure Parameter_Update_T_Modify (Self : in out Instance; Arg : in out Parameter_Update.T) is

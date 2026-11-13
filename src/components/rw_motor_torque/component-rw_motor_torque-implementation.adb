@@ -94,10 +94,6 @@ package body Component.Rw_Motor_Torque.Implementation is
       -- point at.
       Speeds_C : aliased constant Rw_Speeds_Input.C.U_C := To_C (Speeds);
    begin
-      -- Apply any pending parameter update (e.g. new wheel availability or desired
-      -- wheel speeds):
-      Self.Update_Parameters;
-
       -- Call the C algorithm and send the per-wheel torques straight to the wheel
       -- interface. The desired wheel speeds were converted when the parameters were
       -- applied, so a new table takes effect on this tick. Update is qualified because
@@ -116,6 +112,13 @@ package body Component.Rw_Motor_Torque.Implementation is
             Rwa_4 => Output.Motor_Torque (3)));
       end;
    end Tick_T_Recv_Sync;
+
+   -- Apply any pending parameter update. Called on GNC state change.
+   overriding procedure Reset_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
+      Ignore : Tick.T renames Arg;
+   begin
+      Self.Update_Parameters;
+   end Reset_Tick_T_Recv_Sync;
 
    -- The parameter update connector.
    overriding procedure Parameter_Update_T_Modify (Self : in out Instance; Arg : in out Parameter_Update.T) is

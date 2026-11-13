@@ -179,9 +179,6 @@ package body Component.Sunline_Filter.Implementation is
          return False;
       end Is_Fresh;
    begin
-      -- Apply any pending parameter update:
-      Self.Update_Parameters;
-
       declare
          -- A product is consumed once, when its timestamp has changed since the last
          -- time.

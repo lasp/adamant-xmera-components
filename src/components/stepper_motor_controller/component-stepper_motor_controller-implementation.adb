@@ -63,9 +63,6 @@ package body Component.Stepper_Motor_Controller.Implementation is
          Self.Get_Reference_Angle (Value => Reference_Angle, Stale_Reference => Arg.Time);
       pragma Assert (Reference_Angle_Status in Success | Stale);
    begin
-      -- Update the parameters:
-      Self.Update_Parameters;
-
       -- Call algorithm:
       declare
          use type Stepper_Enums.Motion_Status.E;
@@ -122,6 +119,13 @@ package body Component.Stepper_Motor_Controller.Implementation is
          end case;
       end;
    end Tick_T_Recv_Sync;
+
+   -- Apply any pending parameter update. Called on GNC state change.
+   overriding procedure Reset_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
+      Ignore : Tick.T renames Arg;
+   begin
+      Self.Update_Parameters;
+   end Reset_Tick_T_Recv_Sync;
 
    -- The parameter update connector.
    overriding procedure Parameter_Update_T_Modify (Self : in out Instance; Arg : in out Parameter_Update.T) is

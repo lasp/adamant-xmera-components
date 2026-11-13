@@ -50,6 +50,7 @@ package body Stepper_Motor_Controller_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Settle_Count_Max ((Value => Settle_Count_Max))), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Min_Step_Command ((Value => Min_Step_Command))), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
       -- The reference angle is a data dependency served by the tester:
       T.Reference_Angle := (Value => Reference_Angle);
    end Stage_Config;
@@ -398,6 +399,7 @@ package body Stepper_Motor_Controller_Tests.Implementation is
       -- A well-formed parameter still stages successfully afterward:
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Step_Angle ((Value => 0.03))), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Test_Parameter_Staging_Errors;
 
    -- A staged parameter set that the C++ StepperMotorControllerConfig would reject must
@@ -455,6 +457,7 @@ package body Stepper_Motor_Controller_Tests.Implementation is
       Stage_Valid_Set;
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Test_Invalid_Parameter;
 
 end Stepper_Motor_Controller_Tests.Implementation;

@@ -66,9 +66,6 @@ package body Component.Force_Torque_Thr_Force_Mapping.Implementation is
          Self.Get_Commanded_Force (Value => Force_Dep, Stale_Reference => Arg.Time);
       pragma Assert (Force_Status = Success);
    begin
-      -- Update the parameters:
-      Self.Update_Parameters;
-
       -- Call the algorithm:
       declare
          -- Both commands cross by reference, so each needs an aliased object.
@@ -83,6 +80,13 @@ package body Component.Force_Torque_Thr_Force_Mapping.Implementation is
          ));
       end;
    end Tick_T_Recv_Sync;
+
+   -- Apply any pending parameter update. Called on GNC state change.
+   overriding procedure Reset_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
+      Ignore : Tick.T renames Arg;
+   begin
+      Self.Update_Parameters;
+   end Reset_Tick_T_Recv_Sync;
 
    -- The parameter update connector.
    overriding procedure Parameter_Update_T_Modify (Self : in out Instance; Arg : in out Parameter_Update.T) is

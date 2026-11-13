@@ -48,9 +48,6 @@ package body Component.Mrp_Pd.Implementation is
 
       Guidance : constant Att_Guid.U := Att_Guid.Unpack (Attitude_Guidance_Dep);
    begin
-      -- Apply any pending parameter update (e.g. new gains or inertia):
-      Self.Update_Parameters;
-
       -- Call the C algorithm and publish the commanded body torque. The algorithm
       -- takes only the three error terms it acts on; Omega_Rn_B is not used.
       -- Update is qualified because Parameter_Enums also declares one.
@@ -68,6 +65,13 @@ package body Component.Mrp_Pd.Implementation is
          ));
       end;
    end Tick_T_Recv_Sync;
+
+   -- Apply any pending parameter update. Called on GNC state change.
+   overriding procedure Reset_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
+      Ignore : Tick.T renames Arg;
+   begin
+      Self.Update_Parameters;
+   end Reset_Tick_T_Recv_Sync;
 
    -- The parameter update connector.
    overriding procedure Parameter_Update_T_Modify (Self : in out Instance; Arg : in out Parameter_Update.T) is

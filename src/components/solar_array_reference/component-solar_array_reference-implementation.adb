@@ -68,10 +68,6 @@ package body Component.Solar_Array_Reference.Implementation is
       Sigma_Rn : Packed_F32x3.T := [0.0, 0.0, 0.0];
       Sun_Direction : Packed_F32x3.T := [0.0, 0.0, 0.0];
    begin
-      -- Apply any pending parameter update, so a new tracking mode and angles take
-      -- effect on the tick after their update:
-      Self.Update_Parameters;
-
       -- In the sun tracking mode, grab the attitude, the reference, and the sun
       -- direction. They are produced earlier in the same tick, so any status other
       -- than Success indicates that this component is not wired up correctly in the

@@ -56,9 +56,6 @@ package body Component.Celestial_Two_Body_Point.Implementation is
          Self.Get_Spacecraft_State (Value => Spacecraft, Stale_Reference => Arg.Time);
       pragma Assert (Spacecraft_Status = Success);
    begin
-      -- Apply any pending parameter update (e.g. a new alignment threshold):
-      Self.Update_Parameters;
-
       -- Call the C algorithm and return the reference. Each position and velocity is
       -- converted straight from the packed record and crosses by value. Update is
       -- qualified because Parameter_Enums also declares one.
@@ -71,6 +68,13 @@ package body Component.Celestial_Two_Body_Point.Implementation is
          R_Bn_N => (Value => Packed_F64x3.C.Unpack (Spacecraft.Position)),
          V_Bn_N => (Value => Packed_F64x3.C.Unpack (Spacecraft.Velocity))));
    end Tick_T_Service;
+
+   -- Apply any pending parameter update. Called on GNC state change.
+   overriding procedure Reset_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
+      Ignore : Tick.T renames Arg;
+   begin
+      Self.Update_Parameters;
+   end Reset_Tick_T_Recv_Sync;
 
    -- The parameter update connector.
    overriding procedure Parameter_Update_T_Modify (Self : in out Instance; Arg : in out Parameter_Update.T) is

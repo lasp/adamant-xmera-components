@@ -6,7 +6,7 @@ tests:
   - name: Test_Dumping_Variants
     description: Check the threshold, the dumpable projection, the desired momentum, and the wheel availability options against the Python reference model.
   - name: Test_Parameter_Update
-    description: Ensure a parameter update takes effect on the next tick and keeps the integral state.
+    description: Ensure a parameter update is applied by the reset, not by a tick, and that the reset zeroes the integral state.
   - name: Test_Invalid_Parameter
     description: Ensure a staged configuration the algorithm would reject is refused at validation.
   - name: Test_Invalid_Data_Dependency

@@ -62,6 +62,7 @@ package body Solar_Array_Reference_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Alignment_Threshold (Threshold)), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Apply_Configuration;
 
    -- Stage the mode and the angles and return the validation status. The update is
@@ -82,6 +83,7 @@ package body Solar_Array_Reference_Tests.Implementation is
    begin
       Parameter_Update_Status_Assert.Eq (Stage_Mode_And_Angles (Self, Mode, Specified, Offset), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Set_Mode_And_Angles;
 
    -- Map the attitude, the reference, and the sun direction to identifiers the tester
@@ -208,14 +210,15 @@ package body Solar_Array_Reference_Tests.Implementation is
 
       -- Back along the drive axis, the reference holds the tracked angle. The offset is
       -- not added a second time:
-      Set_Tick_And_Check (Self, 3, Auto_Track, 0.0, 0.3, Zero_Attitude, Zero_Attitude, Drive_Axis, 0.5144368067);
+      Send_Tick_And_Check (Self, 3, Zero_Attitude, Zero_Attitude, Drive_Axis, 0.5144368067);
 
       -- The specified angle mode ignores the attitude and sun inputs and the offset:
       Set_Tick_And_Check (Self, 4, Specified_Angle, 0.5, 0.3, Attitude_A, Reference_A, Sun_Z_From_A, 0.5);
       Set_Tick_And_Check (Self, 5, Specified_Angle, -2.0, 2.0, Attitude_A, Reference_A, Sun_Z_From_A, -2.0);
 
-      -- The specified angle is retained too, so it is what the aligned sun falls back to:
-      Set_Tick_And_Check (Self, 6, Auto_Track, 0.0, 0.0, Zero_Attitude, Zero_Attitude, Drive_Axis, -2.0);
+      -- Setting the mode resets the algorithm, which zeroes the retained angle, so the
+      -- aligned sun falls back to zero rather than to the specified angle:
+      Set_Tick_And_Check (Self, 6, Auto_Track, 0.0, 0.0, Zero_Attitude, Zero_Attitude, Drive_Axis, 0.0);
    end Test_Tracking_Mode_Variants;
 
    -- The reset connector zeroes the reference angle the algorithm retains, so an
@@ -330,6 +333,7 @@ package body Solar_Array_Reference_Tests.Implementation is
       Stage_Valid_Configuration;
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Test_Invalid_Parameter;
 
    -- The angles are validated by the algorithm alone, so the line it draws is the

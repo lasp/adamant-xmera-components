@@ -46,7 +46,8 @@ package body Average_Rw_Speed_Data_Tests.Implementation is
    function Speeds (Step : in Positive) return Rwa_Speeds.T is
       ((Rwa_1 => Short_Float (10 * Step), Rwa_2 => Short_Float (10 * Step + 1), Rwa_3 => Short_Float (10 * Step + 2), Rwa_4 => Short_Float (10 * Step + 3)));
 
-   -- Stage and apply an averaging window.
+   -- Stage and update an averaging window. It stays pending until the next reset
+   -- applies it.
    procedure Apply_Window (Self : in out Instance; Window : in Short_Float) is
       T : Component.Average_Rw_Speed_Data.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Average_Rw_Speed_Data_Parameters.Instance;
@@ -183,25 +184,37 @@ package body Average_Rw_Speed_Data_Tests.Implementation is
       Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, 0);
    end Test_Stale_Data_Dependency;
 
-   -- Ensure a new averaging window reaches the algorithm on the next tick and is
-   -- applied to the stored samples.
+   -- Ensure a new averaging window is applied by the reset connector, not by a tick,
+   -- and that the average starts over from the reset.
    overriding procedure Test_Window_Update (Self : in out Instance) is
+      T : Component.Average_Rw_Speed_Data.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
       for Step in 1 .. 8 loop
          Send_Tick (Self, Step);
       end loop;
       Expect_Mean (Self, First => 4, Last => 8);
 
-      -- A half second window holds three samples:
+      -- A tick does not apply a half second window, so the output is still the mean
+      -- of five samples:
       Apply_Window (Self, 0.5);
       Send_Tick (Self, 9);
-      Expect_Mean (Self, First => 7, Last => 9);
+      Expect_Mean (Self, First => 5, Last => 9);
 
-      -- The largest window, two seconds, reaches back over nine samples, which the
-      -- algorithm kept while the window was shorter:
+      -- The reset applies it and clears the stored samples. The average grows from
+      -- one sample to the three a half second window holds:
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
+      for Step in 10 .. 13 loop
+         Send_Tick (Self, Step);
+         Expect_Mean (Self, First => Positive'Max (10, Step - 2), Last => Step);
+      end loop;
+
+      -- The largest window, two seconds, holds nine samples:
       Apply_Window (Self, 2.0);
-      Send_Tick (Self, 10);
-      Expect_Mean (Self, First => 2, Last => 10);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
+      for Step in 14 .. 23 loop
+         Send_Tick (Self, Step);
+         Expect_Mean (Self, First => Positive'Max (14, Step - 8), Last => Step);
+      end loop;
    end Test_Window_Update;
 
    -- Ensure the reset connector clears the stored samples, so the next measurement
@@ -270,6 +283,7 @@ package body Average_Rw_Speed_Data_Tests.Implementation is
       -- rejections above were caused by the perturbed values:
       Expect_Acceptance (1.0);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Test_Invalid_Parameter;
 
    -- A data dependency that comes back with the wrong identifier means the assembly

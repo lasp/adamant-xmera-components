@@ -17,8 +17,8 @@ private
    -- Run the cadences of the Python reference test to ensure the Ada to C to C++
    -- integration is sound.
    overriding procedure Test (Self : in out Instance);
-   -- Check that the reset connector restarts the duty cycle at its on window and
-   -- that a parameter update alone does not.
+   -- Check that the reset connector applies a pending cadence and restarts the duty
+   -- cycle at its on window, and that a parameter update alone does neither.
    overriding procedure Test_Reset (Self : in out Instance);
    -- Ensure a staged configuration the algorithm would reject is refused at
    -- validation.

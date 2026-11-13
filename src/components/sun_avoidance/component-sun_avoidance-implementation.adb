@@ -68,9 +68,6 @@ package body Component.Sun_Avoidance.Implementation is
          (Value => Packed_F32x3.C.Unpack (Sun_Direction));
 
    begin
-      -- Apply any pending parameter update (e.g. a new sensitive axis or slew rate):
-      Self.Update_Parameters;
-
       -- Call the C algorithm and hand the adjusted reference back to the caller, which
       -- publishes the reference the control chain tracks. The algorithm measures the
       -- elapsed slew from the call time. Update is qualified because Parameter_Enums

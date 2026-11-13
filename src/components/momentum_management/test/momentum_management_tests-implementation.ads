@@ -20,8 +20,8 @@ private
    -- Check the threshold, the dumpable projection, the desired momentum, and the
    -- wheel availability options against the Python reference model.
    overriding procedure Test_Dumping_Variants (Self : in out Instance);
-   -- Ensure a parameter update takes effect on the next tick and keeps the integral
-   -- state.
+   -- Ensure a parameter update is applied by the reset, not by a tick, and that the
+   -- reset zeroes the integral state.
    overriding procedure Test_Parameter_Update (Self : in out Instance);
    -- Ensure a staged configuration the algorithm would reject is refused at
    -- validation.

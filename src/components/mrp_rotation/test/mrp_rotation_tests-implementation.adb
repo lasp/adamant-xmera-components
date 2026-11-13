@@ -38,7 +38,8 @@ package body Mrp_Rotation_Tests.Implementation is
    -- Helpers:
    -------------------------------------------------------------------------
 
-   -- Stage and apply the rotation configuration.
+   -- Stage and update the rotation configuration. It stays pending until the next
+   -- reset applies it.
    procedure Apply_Configuration (Self : in out Instance) is
       T : Component.Mrp_Rotation.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Mrp_Rotation_Parameters.Instance;
@@ -97,15 +98,8 @@ package body Mrp_Rotation_Tests.Implementation is
       T : Component.Mrp_Rotation.Implementation.Tester.Instance_Access renames Self.Tester;
 
       -- Expected reference frames, computed independently with the forward Euler MRP
-      -- integration and frame composition of the reference model.
-      --
-      -- A staged configuration reaches the algorithm on the next tick, and applying it
-      -- keeps the rotation state, so that tick still rotates from the default zero seed:
-      Expected_From_Default_Seed : constant Att_Ref.T :=
-         (Sigma_Rn => [0.1001919892, 0.2001396216, 0.2999258040],
-          Omega_Rn_N => [0.1003486361, 0.0016008252, -0.0006016524],
-          Domega_Rn_N => [0.0, 0.0000601652, 0.0001600825]);
-      -- After a reset the rotation starts from the configured initial attitude:
+      -- integration and frame composition of the reference model. After a reset the
+      -- rotation starts from the configured initial attitude:
       Expected : constant array (1 .. 4) of Att_Ref.T := [
          (Sigma_Rn => [0.0304858985, 0.9422136797, 0.2255949944],
           Omega_Rn_N => [0.0982615064, 0.0001319004, -0.0000801032],
@@ -121,13 +115,13 @@ package body Mrp_Rotation_Tests.Implementation is
           Domega_Rn_N => [0.0, 0.0000080103, 0.0000131900])
       ];
    begin
-      -- The first tick applies the staged configuration and rotates from the default
-      -- seed:
+      -- A tick does not apply the updated configuration. The default configuration
+      -- has no rotation, so the base reference comes back unchanged:
       Apply_Configuration (Self);
-      Send_Tick_And_Check (Self, Expected_From_Default_Seed);
+      Send_Tick_And_Check (Self, Base_Reference);
 
-      -- The reset connector restarts the rotation from the configured initial attitude,
-      -- and four ticks advance it:
+      -- The reset connector applies the configuration and starts the rotation from the
+      -- configured initial attitude, and four ticks advance it:
       T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
       for I in Expected'Range loop
          Send_Tick_And_Check (Self, Expected (I));
@@ -179,12 +173,12 @@ package body Mrp_Rotation_Tests.Implementation is
       Stage_Valid_Configuration;
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Test_Invalid_Parameter;
 
-   -- A configuration updated while the component is not being ticked is still
-   -- pending when a state change resets it. The reset applies it before re-seeding,
-   -- so the first tick rotates from the new initial attitude rather than the default
-   -- zero seed.
+   -- An updated configuration is pending until a state change resets the component.
+   -- The reset applies it before re-seeding, so the first tick rotates from the new
+   -- initial attitude rather than the default zero seed.
    overriding procedure Test_Reset_Applies_Pending_Parameters (Self : in out Instance) is
       T : Component.Mrp_Rotation.Implementation.Tester.Instance_Access renames Self.Tester;
       -- The first two frames of the sequence after a reset in Test:
