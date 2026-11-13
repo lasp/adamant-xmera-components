@@ -92,8 +92,10 @@ package body Sunline_Filter_Tests.Implementation is
       return (Data => Packed_F64x8.Pack (Cosines));
    end Truth_Cosines;
 
-   -- Stage and apply the whole configuration.
-   procedure Apply_Configuration (Self : in out Instance; Initial_State : in Packed_F64x7.T := Seed; Gyro_Noise_Std : in Packed_F64.T := Gyro_Noise; Threshold : in Packed_F64.T := Sensor_Threshold; Measurement_Delay : in Packed_F64.T := (Value => 0.0)) is
+   -- Stage and update the whole configuration. The estimate reset then applies it and
+   -- starts the filter from the configured seed. With Reset_Estimate False the reset
+   -- is not sent, so the configuration stays pending until the caller sends one.
+   procedure Apply_Configuration (Self : in out Instance; Initial_State : in Packed_F64x7.T := Seed; Gyro_Noise_Std : in Packed_F64.T := Gyro_Noise; Threshold : in Packed_F64.T := Sensor_Threshold; Measurement_Delay : in Packed_F64.T := (Value => 0.0); Reset_Estimate : in Boolean := True) is
       T : Component.Sunline_Filter.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Sunline_Filter_Parameters.Instance;
    begin
@@ -111,7 +113,9 @@ package body Sunline_Filter_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Gyro_Measurement_Noise_Std (Gyro_Noise_Std)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Measurement_Delay (Measurement_Delay)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
-      T.Reset_Estimate_Tick_T_Send ((Time => T.System_Time, Count => 0));
+      if Reset_Estimate then
+         T.Reset_Estimate_Tick_T_Send ((Time => T.System_Time, Count => 0));
+      end if;
    end Apply_Configuration;
 
    -- The algorithm tick the dispatching component builds for a scheduled tick.
@@ -281,12 +285,10 @@ package body Sunline_Filter_Tests.Implementation is
       -- measurement, so the run is kept short.
       Steps : constant := 20;
    begin
-      -- The parameters reach the filter on the next tick, and the seed takes effect
-      -- through the estimate reset. The tick after the reset only synchronizes the
-      -- filter time, so the covariance is still the seeded one:
+      -- The estimate reset applies the parameters and the seed. The tick after the
+      -- reset only synchronizes the filter time, so the covariance is still the
+      -- seeded one:
       Apply_Configuration (Self);
-      Send_Tick (Self, 1, Fresh => False);
-      T.Reset_Estimate_Tick_T_Send ((Time => T.System_Time, Count => 0));
       Send_Tick (Self, 2, Fresh => False);
       for I in 0 .. 6 loop
          Long_Float_Assert.Eq (Variance (Filter_State (Self), I), Initial_Covariance (I), Epsilon => 1.0E-5);
@@ -413,6 +415,7 @@ package body Sunline_Filter_Tests.Implementation is
    -- the first body axis, the four sensors on that side each read about 0.7 and the
    -- four on the far side read below zero.
    overriding procedure Test_Sensor_Threshold (Self : in out Instance) is
+      T : Component.Sunline_Filter.Implementation.Tester.Instance_Access renames Self.Tester;
       Steps : constant := 10;
    begin
       Apply_Configuration (Self, Threshold => (Value => 0.5));
@@ -423,9 +426,14 @@ package body Sunline_Filter_Tests.Implementation is
       Natural_Assert.Eq (Active_Css (Self), 4);
       Check_Estimate (Self, Steps, Sun_Epsilon => 2.0E-2, Rate_Epsilon => 1.0E-3);
 
-      -- A threshold above their reading leaves no sensor active:
-      Apply_Configuration (Self, Threshold => (Value => 0.8));
+      -- A threshold above their reading leaves no sensor active. The measurements
+      -- reset applies it, the tick after the reset only synchronizes the filter time,
+      -- and the one after that applies its readings:
+      Apply_Configuration (Self, Threshold => (Value => 0.8), Reset_Estimate => False);
+      T.Reset_Measurements_Tick_T_Send ((Time => T.System_Time, Count => 0));
       Send_Tick (Self, Steps + 1);
+      Send_Tick (Self, Steps + 2);
+      Boolean_Assert.Eq (Rate_Valid (Self), True);
       Natural_Assert.Eq (Active_Css (Self), 0);
    end Test_Sensor_Threshold;
 
@@ -434,7 +442,7 @@ package body Sunline_Filter_Tests.Implementation is
    overriding procedure Test_Reset (Self : in out Instance) is
       T : Component.Sunline_Filter.Implementation.Tester.Instance_Access renames Self.Tester;
       Wrong_Seed : constant Packed_F64x7.T := [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.6];
-      Steps : constant := 50;
+      Steps : constant := 100;
    begin
       Apply_Configuration (Self, Initial_State => Wrong_Seed);
       for Step in 1 .. Steps loop
@@ -470,8 +478,10 @@ package body Sunline_Filter_Tests.Implementation is
       end loop;
    end Test_Reset;
 
-   -- Ensure a parameter update reaches the filter while keeping the current estimate.
+   -- Ensure a parameter update is not applied by a tick, which keeps the estimate
+   -- tracking, and is applied by a reset.
    overriding procedure Test_Parameter_Update (Self : in out Instance) is
+      T : Component.Sunline_Filter.Implementation.Tester.Instance_Access renames Self.Tester;
       Wrong_Seed : constant Packed_F64x7.T := [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.6];
    begin
       Apply_Configuration (Self, Initial_State => Wrong_Seed);
@@ -480,11 +490,20 @@ package body Sunline_Filter_Tests.Implementation is
       end loop;
       Check_Estimate (Self, 25, Sun_Epsilon => 1.0E-2, Rate_Epsilon => 1.0E-3);
 
-      -- A new gyro noise reaches the filter on the next tick without disturbing the
-      -- estimate, which keeps tracking:
-      Apply_Configuration (Self, Initial_State => Wrong_Seed, Gyro_Noise_Std => (Value => 1.0E-4));
+      -- A tick does not apply a threshold above every reading, so the four sensors
+      -- facing the sun stay active and the estimate keeps tracking:
+      Apply_Configuration (Self, Initial_State => Wrong_Seed, Threshold => (Value => 0.9), Reset_Estimate => False);
       Send_Tick (Self, 26);
+      Natural_Assert.Eq (Active_Css (Self), 4);
       Check_Estimate (Self, 26, Sun_Epsilon => 1.0E-2, Rate_Epsilon => 1.0E-3);
+
+      -- The measurements reset applies it. The tick after the reset only synchronizes
+      -- the filter time, and the one after that finds no sensor active:
+      T.Reset_Measurements_Tick_T_Send ((Time => T.System_Time, Count => 0));
+      Send_Tick (Self, 27);
+      Send_Tick (Self, 28);
+      Boolean_Assert.Eq (Rate_Valid (Self), True);
+      Natural_Assert.Eq (Active_Css (Self), 0);
    end Test_Parameter_Update;
 
    -- A reading is held in the filter's queue until the filter time has reached its
@@ -494,6 +513,7 @@ package body Sunline_Filter_Tests.Implementation is
    -- holds five readings, two of which arrive per tick, so a longer delay would have
    -- it drop readings.
    overriding procedure Test_Measurement_Delay (Self : in out Instance) is
+      T : Component.Sunline_Filter.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
       Apply_Configuration (Self, Measurement_Delay => (Value => 0.5));
 
@@ -513,13 +533,16 @@ package body Sunline_Filter_Tests.Implementation is
       Boolean_Assert.Eq (Css_Valid (Self), True);
       Boolean_Assert.Eq (Rate_Valid (Self), True);
 
-      -- With the delay removed new readings are applied at once, so a tick with no new
-      -- readings applies none:
-      Apply_Configuration (Self, Measurement_Delay => (Value => 0.0));
+      -- The measurements reset removes the delay, and the tick after the reset only
+      -- synchronizes the filter time. From there new readings are applied at once, so
+      -- a tick with no new readings applies none:
+      Apply_Configuration (Self, Measurement_Delay => (Value => 0.0), Reset_Estimate => False);
+      T.Reset_Measurements_Tick_T_Send ((Time => T.System_Time, Count => 0));
       Send_Tick (Self, 12);
+      Send_Tick (Self, 13);
       Boolean_Assert.Eq (Css_Valid (Self), True);
       Boolean_Assert.Eq (Rate_Valid (Self), True);
-      Send_Tick (Self, 13, Fresh => False);
+      Send_Tick (Self, 14, Fresh => False);
       Boolean_Assert.Eq (Css_Valid (Self), False);
       Boolean_Assert.Eq (Rate_Valid (Self), False);
    end Test_Measurement_Delay;
@@ -669,10 +692,10 @@ package body Sunline_Filter_Tests.Implementation is
          Send_Tick (Self, Step);
       end loop;
 
-      -- A new seed loaded while the filter is not ticked is still pending when the
-      -- estimate reset arrives. The reset applies it first, so the filter restarts
-      -- from the new seed at once rather than at the reset after:
-      Apply_Configuration (Self, Initial_State => Wrong_Seed);
+      -- An updated seed is pending until a reset. The estimate reset applies it first,
+      -- so the filter restarts from the new seed at once rather than at the reset
+      -- after:
+      Apply_Configuration (Self, Initial_State => Wrong_Seed, Reset_Estimate => False);
       T.Reset_Estimate_Tick_T_Send ((Time => T.System_Time, Count => 0));
       Send_Tick (Self, 26, Fresh => False);
       for I in 0 .. 2 loop
@@ -689,11 +712,11 @@ package body Sunline_Filter_Tests.Implementation is
          Send_Tick (Self, Step);
       end loop;
 
-      -- A delay loaded while the filter is not ticked is still pending when the
-      -- measurements reset arrives. The reset applies it and keeps the estimate, so
-      -- the tick after it only synchronizes the filter time again and holds the
-      -- converged estimate, and the first readings after that wait a tick:
-      Apply_Configuration (Self, Measurement_Delay => (Value => 0.5));
+      -- An updated delay is pending until a reset. The measurements reset applies it
+      -- and keeps the estimate, so the tick after it only synchronizes the filter
+      -- time again and holds the converged estimate, and the first readings
+      -- after that wait a tick:
+      Apply_Configuration (Self, Measurement_Delay => (Value => 0.5), Reset_Estimate => False);
       T.Reset_Measurements_Tick_T_Send ((Time => T.System_Time, Count => 0));
       Send_Tick (Self, Steps + 1, Fresh => False);
       declare

@@ -180,6 +180,9 @@ package body Css_Comm_Tests.Implementation is
            (T.Stage_Parameter (Params.Cheby_Polynomials (Valid_Polys)), Success);
       end Stage_Valid_Set;
    begin
+      -- Create the algorithm, so the reset at the end has one to configure:
+      T.Component_Instance.Init;
+
       -- The baseline set is accepted:
       Stage_Valid_Set;
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);

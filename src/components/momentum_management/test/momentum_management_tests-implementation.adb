@@ -240,10 +240,12 @@ package body Momentum_Management_Tests.Implementation is
       Check (Nominal_Hs_Min, Identity, Zero_Momentum, None_Available, Zero_Torque);
    end Test_Dumping_Variants;
 
-   -- A parameter update is applied by the next tick and the integral state carries
-   -- across it. Two ticks accumulate the integral, the proportional gain is doubled,
-   -- and the third tick uses the new gain on the integral it inherited. A tight
-   -- integral limit then clamps every component of the integral on the fourth tick.
+   -- A parameter update is applied by the reset connector, not by a tick, and the
+   -- reset also zeroes the integral. Two ticks accumulate the integral, the
+   -- proportional gain is doubled, and the third tick still uses the old gain. After
+   -- a reset the next tick uses the new gain on an integral that starts over. A
+   -- tight integral limit applied the same way then clamps every component of the
+   -- integral once it has grown past the limit.
    overriding procedure Test_Parameter_Update (Self : in out Instance) is
       T : Component.Momentum_Management.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Momentum_Management_Parameters.Instance;
@@ -255,20 +257,29 @@ package body Momentum_Management_Tests.Implementation is
       Send_Tick (Self);
       Assert_Latest_Output (Self, 2, [-0.3894764048, -0.1882264048, -0.6194764048]);
 
-      -- Double the proportional gain:
+      -- Double the proportional gain. A tick does not apply the update, so the third
+      -- tick continues the sequence of the old gain:
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_K ((Value => 0.1))), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      Send_Tick (Self);
+      Assert_Latest_Output (Self, 3, [-0.4233439182, -0.2045939182, -0.6733439182]);
+
+      -- The reset applies the new gain and zeroes the integral, so the next tick is a
+      -- first tick with the doubled gain:
       T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
       Send_Tick (Self);
-      Assert_Latest_Output (Self, 3, [-0.7620190528, -0.3682690528, -1.2120190528]);
+      Assert_Latest_Output (Self, 4, [-0.6942840259, -0.3355340259, -1.1042840259]);
 
-      -- Tighten the integral limit to 5 Nms^2, well below the integral so far, so every
-      -- component is clamped to it:
+      -- Tighten the integral limit to 5 Nms^2 and reset to apply it. The integral
+      -- starts over, and by the fourth tick every component has grown past the limit
+      -- and is clamped to it:
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Integral_Limit (Tight_Integral_Limit)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
       T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
-      Send_Tick (Self);
-      Assert_Latest_Output (Self, 4, [-0.7273502692, -0.3773502692, -1.1273502692]);
+      for I in 1 .. 4 loop
+         Send_Tick (Self);
+      end loop;
+      Assert_Latest_Output (Self, 8, [-0.7273502692, -0.3773502692, -1.1273502692]);
    end Test_Parameter_Update;
 
    -- The algorithm requires a non-negative threshold and gains, an integral limit

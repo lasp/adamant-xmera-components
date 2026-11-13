@@ -6,4 +6,4 @@ tests:
   - name: Test_Invalid_Parameter
     description: Ensure a staged configuration the algorithm would reject is refused at validation.
   - name: Test_Reset_Applies_Pending_Parameters
-    description: Ensure a reset applies a configuration that was updated but not yet ticked, so the rotation restarts from the new initial attitude.
+    description: Ensure a reset applies a pending configuration update, so the rotation restarts from the new initial attitude.

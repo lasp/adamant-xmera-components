@@ -37,15 +37,14 @@ private
    -- Ensure the estimate reset re-seeds the state and covariance while the
    -- measurements reset keeps them.
    overriding procedure Test_Reset (Self : in out Instance);
-   -- Ensure a parameter update reaches the filter while keeping the current
-   -- estimate.
+   -- Ensure a parameter update is not applied by a tick, which keeps the estimate
+   -- tracking, and is applied by a reset.
    overriding procedure Test_Parameter_Update (Self : in out Instance);
-   -- Ensure an estimate reset applies a configuration that was updated but not yet
-   -- ticked, so the filter restarts from the new seed.
+   -- Ensure an estimate reset applies a pending configuration update, so the filter
+   -- restarts from the new seed.
    overriding procedure Test_Reset_Applies_Pending_Parameters (Self : in out Instance);
-   -- Ensure a measurements reset applies a configuration that was updated but not
-   -- yet ticked while keeping the estimate, so a new delay holds the readings that
-   -- follow.
+   -- Ensure a measurements reset applies a pending configuration update while
+   -- keeping the estimate, so a new delay holds the readings that follow.
    overriding procedure Test_Reset_Measurements_Applies_Pending_Parameters (Self : in out Instance);
    -- Ensure a configured measurement delay holds a reading until the filter time has
    -- reached its time tag plus the delay, then applies it.

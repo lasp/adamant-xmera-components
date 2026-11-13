@@ -6,7 +6,7 @@ tests:
   - name: Test_Stale_Data_Dependency
     description: Ensure a tick on which the wheel speed product is stale is treated as a wiring defect and fails the tick's assertion, since the speeds are measured on every tick.
   - name: Test_Window_Update
-    description: Ensure a new averaging window reaches the algorithm on the next tick and is applied to the stored samples.
+    description: Ensure a new averaging window is applied by the reset, not by a tick, and that the reset clears the stored samples.
   - name: Test_Reset
     description: Ensure the reset connector clears the stored samples, so the next measurement is averaged alone.
   - name: Test_Invalid_Parameter
