@@ -62,8 +62,8 @@ package body Component.Mrp_Feedback.Implementation is
       -- valid one. The generated Assert_Valid_Parameter_Defaults checks them at startup
       -- and in unit test set up. The control period's type keeps it positive.
       Self.Alg := Create (
-         K                    => Self.Proportional_Gain_K.Value,
-         P                    => Self.Derivative_Gain_P.Value,
+         Kp                   => Self.Proportional_Gain_Kp.Value,
+         Kd                   => Self.Derivative_Gain_Kd.Value,
          Ki                   => Self.Integral_Gain_Ki.Value,
          Integral_Limit       => Self.Integral_Limit.Value,
          Control_Law_Type     => Mrp_Feedback_Enums.Control_Law_Type.C.To_C (Self.Control_Law_Type.Value),
@@ -172,8 +172,8 @@ package body Component.Mrp_Feedback.Implementation is
       -- reject them.
       Set_Config (
          Self.Alg,
-         K                    => Self.Proportional_Gain_K.Value,
-         P                    => Self.Derivative_Gain_P.Value,
+         Kp                   => Self.Proportional_Gain_Kp.Value,
+         Kd                   => Self.Derivative_Gain_Kd.Value,
          Ki                   => Self.Integral_Gain_Ki.Value,
          Integral_Limit       => Self.Integral_Limit.Value,
          Control_Law_Type     => Mrp_Feedback_Enums.Control_Law_Type.C.To_C (Self.Control_Law_Type.Value),
@@ -191,8 +191,8 @@ package body Component.Mrp_Feedback.Implementation is
    -- throwing Create/Set_Config across the FFI boundary.
    overriding function Validate_Parameters (
       Self : in out Instance;
-      Proportional_Gain_K : in Packed_F32.U;
-      Derivative_Gain_P : in Packed_F32.U;
+      Proportional_Gain_Kp : in Packed_F32.U;
+      Derivative_Gain_Kd : in Packed_F32.U;
       Integral_Gain_Ki : in Packed_F32.U;
       Integral_Limit : in Packed_F32.U;
       Control_Law_Type : in Packed_Control_Law_Type.U;
@@ -208,8 +208,8 @@ package body Component.Mrp_Feedback.Implementation is
    begin
       Cfg := To_Pointer_Config (Known_Torque_Pnt_B_B, Inertia, Rw_Spin_Axes, Rw_Inertias, Wheel_Availability);
       if Validate_Config (
-         K                    => Proportional_Gain_K.Value,
-         P                    => Derivative_Gain_P.Value,
+         Kp                   => Proportional_Gain_Kp.Value,
+         Kd                   => Derivative_Gain_Kd.Value,
          Ki                   => Integral_Gain_Ki.Value,
          Integral_Limit       => Integral_Limit.Value,
          Control_Law_Type     => Mrp_Feedback_Enums.Control_Law_Type.C.To_C (Control_Law_Type.Value),

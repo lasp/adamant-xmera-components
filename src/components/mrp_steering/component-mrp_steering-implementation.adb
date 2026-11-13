@@ -65,7 +65,7 @@ package body Component.Mrp_Steering.Implementation is
          K3                            => Self.Cubic_Gain_K3.Value,
          Omega_Max                     => Self.Omega_Max.Value,
          Ignore_Outer_Loop_Feedforward => Interfaces.C.C_bool (Self.Ignore_Outer_Loop_Feedforward.Value),
-         P                             => Self.Derivative_Gain_P.Value,
+         Kd                            => Self.Derivative_Gain_Kd.Value,
          Ki                            => Self.Integral_Gain_Ki.Value,
          Integral_Limit                => Self.Integral_Limit.Value,
          Control_Period                => Self.Control_Period,
@@ -169,7 +169,7 @@ package body Component.Mrp_Steering.Implementation is
          K3                            => Self.Cubic_Gain_K3.Value,
          Omega_Max                     => Self.Omega_Max.Value,
          Ignore_Outer_Loop_Feedforward => Interfaces.C.C_bool (Self.Ignore_Outer_Loop_Feedforward.Value),
-         P                             => Self.Derivative_Gain_P.Value,
+         Kd                            => Self.Derivative_Gain_Kd.Value,
          Ki                            => Self.Integral_Gain_Ki.Value,
          Integral_Limit                => Self.Integral_Limit.Value,
          Control_Period                => Self.Control_Period,
@@ -190,7 +190,7 @@ package body Component.Mrp_Steering.Implementation is
       Cubic_Gain_K3 : in Packed_F32.U;
       Omega_Max : in Packed_F32.U;
       Ignore_Outer_Loop_Feedforward : in Packed_Boolean.U;
-      Derivative_Gain_P : in Packed_F32.U;
+      Derivative_Gain_Kd : in Packed_F32.U;
       Integral_Gain_Ki : in Packed_F32.U;
       Integral_Limit : in Packed_F32.U;
       Known_Torque_Pnt_B_B : in Packed_F32x3.U;
@@ -209,7 +209,7 @@ package body Component.Mrp_Steering.Implementation is
          K3                            => Cubic_Gain_K3.Value,
          Omega_Max                     => Omega_Max.Value,
          Ignore_Outer_Loop_Feedforward => Interfaces.C.C_bool (Ignore_Outer_Loop_Feedforward.Value),
-         P                             => Derivative_Gain_P.Value,
+         Kd                            => Derivative_Gain_Kd.Value,
          Ki                            => Integral_Gain_Ki.Value,
          Integral_Limit                => Integral_Limit.Value,
          Control_Period                => Self.Control_Period,

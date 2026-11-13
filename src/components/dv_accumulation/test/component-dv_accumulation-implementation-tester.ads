@@ -17,10 +17,9 @@ with Packed_F32x3.Representation;
 -- the delta-V accumulated since the last reset, and publishes it for the burn
 -- executor. The first sample after a reset starts the accumulation window and is
 -- not integrated, so the accumulated delta-V is the integral over the time
--- elapsed since then. The accelerometer bias is a data dependency, which the
--- state manager publishes from the command that set the burn up, and is
--- subtracted from each sample. Wraps the DvAccumulationAlgorithm C++ algorithm
--- via its C shim.
+-- elapsed since then. The accelerometer bias is a parameter, which the state
+-- manager sets when a burn is commanded, and is subtracted from each sample.
+-- Wraps the DvAccumulationAlgorithm C++ algorithm via its C shim.
 package Component.Dv_Accumulation.Implementation.Tester is
 
    use Component.Dv_Accumulation_Reciprocal;
@@ -45,7 +44,6 @@ package Component.Dv_Accumulation.Implementation.Tester is
       -- and will be returned to the component when a data dependency call
       -- is made.
       Accel_Average : Packed_F32x3.T;
-      Accel_Bias_B : Packed_F32x3.T;
       -- The return status for the data dependency fetch. This can be set
       -- during unit test to return something other than Success.
       Data_Dependency_Return_Status_Override : Data_Product_Enums.Fetch_Status.E := Data_Product_Enums.Fetch_Status.Success;
@@ -90,5 +88,24 @@ package Component.Dv_Accumulation.Implementation.Tester is
    -- [m/s] Delta-V accumulated in body frame components since the last reset, with
    -- the accelerometer bias removed.
    overriding procedure Accumulated_Delta_V (Self : in out Instance; Arg : in Packed_F32x3.T);
+
+   -----------------------------------------------
+   -- Special primitives for aiding in the staging,
+   -- fetching, and updating of parameters
+   -----------------------------------------------
+   -- Stage a parameter value within the component
+   not overriding function Stage_Parameter (Self : in out Instance; Par : in Parameter.T) return Parameter_Update_Status.E;
+   -- Fetch the value of a parameter with the component
+   not overriding function Fetch_Parameter (Self : in out Instance; Id : in Parameter_Types.Parameter_Id; Par : out Parameter.T) return Parameter_Update_Status.E;
+   -- Ask the component to validate all parameters. This will call the
+   -- Validate_Parameters subprogram within the component implementation,
+   -- which allows custom checking of the parameter set prior to updating.
+   not overriding function Validate_Parameters (Self : in out Instance) return Parameter_Update_Status.E;
+   -- Tell the component it is OK to atomically update all of its
+   -- working parameter values with the staged values.
+   not overriding function Update_Parameters (Self : in out Instance) return Parameter_Update_Status.E;
+   -- Tell the component to forget any staged parameter values that
+   -- have not yet been marked for update.
+   not overriding function Discard_Parameters (Self : in out Instance) return Parameter_Update_Status.E;
 
 end Component.Dv_Accumulation.Implementation.Tester;

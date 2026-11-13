@@ -15,7 +15,7 @@ private
 
    -- Run the burn of the algorithm's Python reference test, with the delta-V
    -- accumulating at a constant rate, and check the force command and the burn state
-   -- on every tick until the commanded delta-V completes the burn, to ensure the Ada
+   -- on every tick until the requested delta-V completes the burn, to ensure the Ada
    -- to C to C++ integration is sound.
    overriding procedure Test (Self : in out Instance);
    -- Ensure the minimum burn time holds a burn whose delta-V is reached early, and

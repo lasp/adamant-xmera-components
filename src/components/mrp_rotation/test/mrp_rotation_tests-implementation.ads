@@ -14,15 +14,20 @@ private
    overriding procedure Set_Up_Test (Self : in out Instance);
    overriding procedure Tear_Down_Test (Self : in out Instance);
 
-   -- Run the algorithm through the rotation and reset sequence of the Python
-   -- reference test to ensure the Ada to C to C++ integration is sound.
+   -- Run the algorithm through a rotation, pointing offset change, and reset
+   -- sequence built from the cases of the Python reference test, with expected
+   -- values from its reference model, to ensure the Ada to C to C++ integration is
+   -- sound.
    overriding procedure Test (Self : in out Instance);
    -- Ensure a staged configuration the algorithm would reject is refused at
    -- validation.
    overriding procedure Test_Invalid_Parameter (Self : in out Instance);
    -- Ensure a reset applies a configuration that was updated but not yet ticked, so
-   -- the rotation restarts from the new initial attitude.
+   -- the rotation restarts at identity with the new pointing offset.
    overriding procedure Test_Reset_Applies_Pending_Parameters (Self : in out Instance);
+   -- Ensure the spin is the signed rate about the spin axis by checking that a
+   -- reversed axis with a negated rate gives the reference rotation.
+   overriding procedure Test_Spin_Axis_And_Rate (Self : in out Instance);
 
    -- Test data and state:
    type Instance is new Mrp_Rotation_Tests.Base_Instance with record

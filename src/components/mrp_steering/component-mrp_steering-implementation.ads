@@ -105,7 +105,7 @@ private
       Cubic_Gain_K3 : in Packed_F32.U;
       Omega_Max : in Packed_F32.U;
       Ignore_Outer_Loop_Feedforward : in Packed_Boolean.U;
-      Derivative_Gain_P : in Packed_F32.U;
+      Derivative_Gain_Kd : in Packed_F32.U;
       Integral_Gain_Ki : in Packed_F32.U;
       Integral_Limit : in Packed_F32.U;
       Known_Torque_Pnt_B_B : in Packed_F32x3.U;

@@ -1,11 +1,19 @@
 ---
 description: Parameters for the Mrp Rotation component.
 parameters:
-  - name: Initial_Sigma_Rr0
-    description: "[-] MRP attitude of the rotating frame R relative to R0 that the rotation starts from at initialization and on reset. Must be finite."
+  - name: Sigma_Rcr0
+    description: "[-] Fixed body correction, the MRP of the corrected frame Rc relative to the input reference R0. It sets which body axes align with the input reference axes. Must be finite."
     type: Packed_F32x3.T
     default: "[0.0, 0.0, 0.0]"
-  - name: Omega_Rr0_R
-    description: "[rad/s] Constant angular velocity of R relative to R0 in R frame components. Must be finite."
+  - name: Sigma_Rprc
+    description: "[-] Pointing offset, the MRP of the frame Rp relative to Rc in body axes. It tilts the corrected frame, for example off the target. Must be finite."
     type: Packed_F32x3.T
     default: "[0.0, 0.0, 0.0]"
+  - name: Spin_Axis_Rp
+    description: "[-] Spin axis of the output frame R relative to Rp in Rp frame components. Must be finite and within 1.0E-3 of unit length. It is normalized when applied."
+    type: Packed_F32x3.T
+    default: "[1.0, 0.0, 0.0]"
+  - name: Spin_Rate
+    description: "[rad/s] Signed constant spin rate of the output frame R relative to Rp about the spin axis. The rotation is integrated from identity. Must be finite. Zero gives no rotation."
+    type: Packed_F32.T
+    default: "(Value => 0.0)"

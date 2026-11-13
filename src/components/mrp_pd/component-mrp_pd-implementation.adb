@@ -18,8 +18,8 @@ package body Component.Mrp_Pd.Implementation is
    overriding procedure Init (Self : in out Instance) is
    begin
       Self.Alg := Create (
-         K          => Self.Proportional_Gain_K.Value,
-         P          => Self.Derivative_Gain_P.Value,
+         Kp         => Self.Proportional_Gain_Kp.Value,
+         Kd         => Self.Derivative_Gain_Kd.Value,
          Iscpnt_B_B => (Value => Packed_F32x9.C.To_C (Self.Inertia))
       );
    end Init;
@@ -88,8 +88,8 @@ package body Component.Mrp_Pd.Implementation is
       -- reject them.
       Set_Config (
          Self.Alg,
-         K          => Self.Proportional_Gain_K.Value,
-         P          => Self.Derivative_Gain_P.Value,
+         Kp         => Self.Proportional_Gain_Kp.Value,
+         Kd         => Self.Derivative_Gain_Kd.Value,
          Iscpnt_B_B => (Value => Packed_F32x9.C.To_C (Self.Inertia))
       );
    end Update_Parameters_Action;
@@ -101,15 +101,15 @@ package body Component.Mrp_Pd.Implementation is
    -- across the FFI boundary.
    overriding function Validate_Parameters (
       Self : in out Instance;
-      Proportional_Gain_K : in Packed_F32.U;
-      Derivative_Gain_P : in Packed_F32.U;
+      Proportional_Gain_Kp : in Packed_F32.U;
+      Derivative_Gain_Kd : in Packed_F32.U;
       Inertia : in Packed_F32x9.U
    ) return Parameter_Validation_Status.E is
       pragma Unreferenced (Self);
    begin
       if Validate_Config (
-         K          => Proportional_Gain_K.Value,
-         P          => Derivative_Gain_P.Value,
+         Kp         => Proportional_Gain_Kp.Value,
+         Kd         => Derivative_Gain_Kd.Value,
          Iscpnt_B_B => (Value => Packed_F32x9.C.To_C (Inertia)))
       then
          return Parameter_Validation_Status.Valid;

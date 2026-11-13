@@ -80,7 +80,7 @@ package body Component.Torque_Thr_Force_Mapping.Implementation is
       -- integration-order alarm.
       Torque_Dep : Cmd_Torque_Body.T;
       Torque_Status : constant Data_Product_Enums.Data_Dependency_Status.E :=
-         Self.Get_Commanded_Torque (Value => Torque_Dep, Stale_Reference => Arg.Time);
+         Self.Get_Requested_Torque (Value => Torque_Dep, Stale_Reference => Arg.Time);
       pragma Assert (Torque_Status = Success);
 
       -- The command crosses by reference, so it needs an aliased object.
@@ -93,7 +93,7 @@ package body Component.Torque_Thr_Force_Mapping.Implementation is
       -- Map the torque onto the thrusters with no force and publish the result:
       Self.Data_Product_T_Send (Self.Data_Products.Thruster_Force_Cmd (
          Arg.Time,
-         Thr_Force_Cmd.C.Pack (Update (Self.Alg, Cmd_Torque_B => Torque_C'Access, Cmd_Force_B => Zero_Force'Access))
+         Thr_Force_Cmd.C.Pack (Update (Self.Alg, Requested_Torque_B => Torque_C'Access, Requested_Force_B => Zero_Force'Access))
       ));
    end Tick_T_Recv_Sync;
 

@@ -1,8 +1,8 @@
 ---
-description: Delta-V accumulation. Integrates the majority voted body frame acceleration that gravity does not cause, one sample per tick over the control period, into the delta-V accumulated since the last reset, and publishes it for the burn executor. The first sample after a reset starts the accumulation window and is not integrated, so the accumulated delta-V is the integral over the time elapsed since then. The accelerometer bias is a data dependency, which the state manager publishes from the command that set the burn up, and is subtracted from each sample. Wraps the DvAccumulationAlgorithm C++ algorithm via its C shim.
+description: Delta-V accumulation. Integrates the majority voted body frame acceleration that gravity does not cause, one sample per tick over the control period, into the delta-V accumulated since the last reset, and publishes it for the burn executor. The first sample after a reset starts the accumulation window and is not integrated, so the accumulated delta-V is the integral over the time elapsed since then. The accelerometer bias is a parameter, which the state manager sets when a burn is commanded, and is subtracted from each sample. Wraps the DvAccumulationAlgorithm C++ algorithm via its C shim.
 execution: passive
 init:
-  description: Initializes the delta-V accumulation algorithm with the control period.
+  description: Initializes the delta-V accumulation algorithm with the control period and the default parameter values.
   parameters:
     - name: Control_Period
       type: Basic_Types.Positive_Short_Float
@@ -22,3 +22,6 @@ connectors:
   - description: The data product invoker connector
     type: Data_Product.T
     kind: send
+  - description: The parameter update connector.
+    type: Parameter_Update.T
+    kind: modify

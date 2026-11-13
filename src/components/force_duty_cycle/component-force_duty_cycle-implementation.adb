@@ -44,7 +44,7 @@ package body Component.Force_Duty_Cycle.Implementation is
       -- assert.
       Force_Dep : Cmd_Force_Body.T;
       Force_Status : constant Data_Dependency_Status.E :=
-         Self.Get_Commanded_Force (Value => Force_Dep, Stale_Reference => Arg.Time);
+         Self.Get_Requested_Force (Value => Force_Dep, Stale_Reference => Arg.Time);
       pragma Assert (Force_Status = Success);
 
       -- The force vector crosses the FFI boundary as the three float record the

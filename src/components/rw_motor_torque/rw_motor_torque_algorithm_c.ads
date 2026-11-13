@@ -62,15 +62,18 @@ package Rw_Motor_Torque_Algorithm_C is
    --* @param Gs_Matrix_B            [-] Reaction wheel spin axes, one per wheel slot; each must be finite
    --*                                   and within 1e-3 of unit length.
    --* @param Wheel_Availability     [-] Availability of each wheel slot, one byte per slot.
-   --* @param Omega_Gain             [-] Null space feedback gain on the wheel speed error; must be finite
+   --* @param Kp                     [-] Null space feedback gain on the wheel speed error; must be finite
    --*                                   and >= 0.
+   --* @param Rw_Desired_Speeds      [rad/s] Desired reaction wheel speeds for the null space term
+   --*                                   (RwSpeeds_c); each must be finite.
    --* @return True if the configuration is valid. Never throws, so it can guard the
    --* throwing Create/Set_Config from an invalid configuration.
    function Validate_Config
      (Desired_Control_Axes_B : access constant Rw_Motor_Torque_Control_Axes.C.U_C;
       Gs_Matrix_B            : access constant Mrp_Feedback_Rw_Spin_Axes.C.U_C;
       Wheel_Availability     : access constant Mrp_Feedback_Rw_Availability.C.U_C;
-      Omega_Gain             : Short_Float)
+      Kp                     : Short_Float;
+      Rw_Desired_Speeds      : access constant Rw_Speeds_Input.C.U_C)
      return Interfaces.C.C_bool
      with Import        => True,
           Convention    => C,
@@ -84,7 +87,8 @@ package Rw_Motor_Torque_Algorithm_C is
      (Desired_Control_Axes_B : access constant Rw_Motor_Torque_Control_Axes.C.U_C;
       Gs_Matrix_B            : access constant Mrp_Feedback_Rw_Spin_Axes.C.U_C;
       Wheel_Availability     : access constant Mrp_Feedback_Rw_Availability.C.U_C;
-      Omega_Gain             : Short_Float)
+      Kp                     : Short_Float;
+      Rw_Desired_Speeds      : access constant Rw_Speeds_Input.C.U_C)
      return Rw_Motor_Torque_Algorithm_Access
      with Import        => True,
           Convention    => C,
@@ -106,22 +110,21 @@ package Rw_Motor_Torque_Algorithm_C is
       Desired_Control_Axes_B : access constant Rw_Motor_Torque_Control_Axes.C.U_C;
       Gs_Matrix_B            : access constant Mrp_Feedback_Rw_Spin_Axes.C.U_C;
       Wheel_Availability     : access constant Mrp_Feedback_Rw_Availability.C.U_C;
-      Omega_Gain             : Short_Float)
+      Kp                     : Short_Float;
+      Rw_Desired_Speeds      : access constant Rw_Speeds_Input.C.U_C)
      with Import        => True,
           Convention    => C,
           External_Name => "RwMotorTorqueAlgorithm_setConfig";
 
    --* @brief Compute the per-wheel motor torques for a commanded body torque.
-   --* @param Self              The algorithm instance.
-   --* @param Lr_B              [Nm]    Commanded control torque on the spacecraft in body frame components.
-   --* @param Rw_Speeds         [rad/s] Current reaction wheel speeds (RwSpeeds_c).
-   --* @param Rw_Desired_Speeds [rad/s] Desired reaction wheel speeds (RwSpeeds_c).
+   --* @param Self      The algorithm instance.
+   --* @param Lr_B      [Nm]    Commanded control torque on the spacecraft in body frame components.
+   --* @param Rw_Speeds [rad/s] Current reaction wheel speeds for the null space term (RwSpeeds_c).
    --* @return [Nm] Commanded motor torque of each wheel.
    function Update
-     (Self              : Rw_Motor_Torque_Algorithm_Access;
-      Lr_B              : Packed_F32x3_Record.C.U_C;
-      Rw_Speeds         : access constant Rw_Speeds_Input.C.U_C;
-      Rw_Desired_Speeds : access constant Rw_Speeds_Input.C.U_C)
+     (Self      : Rw_Motor_Torque_Algorithm_Access;
+      Lr_B      : Packed_F32x3_Record.C.U_C;
+      Rw_Speeds : access constant Rw_Speeds_Input.C.U_C)
      return Rw_Motor_Torque_Output.C.U_C
      with Import        => True,
           Convention    => C,

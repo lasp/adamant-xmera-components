@@ -31,7 +31,7 @@ package body Momentum_Management_Tests.Implementation is
    Nominal_Hs_Min : constant Packed_F32.T := (Value => 100.0 / 6000.0 * 100.0);
    High_Hs_Min : constant Packed_F32.T := (Value => 1000.0 / 6000.0 * 100.0);
    No_Hs_Min : constant Packed_F32.T := (Value => 0.0);
-   Gain_K : constant Packed_F32.T := (Value => 0.05);
+   Gain_Kp : constant Packed_F32.T := (Value => 0.05);
    Gain_Ki : constant Packed_F32.T := (Value => 0.01);
    No_Integral : constant Packed_F32.T := (Value => 0.0);
    Integral_Limit : constant Packed_F32.T := (Value => 1000.0);
@@ -95,7 +95,7 @@ package body Momentum_Management_Tests.Implementation is
       Params : Momentum_Management_Parameters.Instance;
    begin
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Hs_Min (Hs_Min)), Success);
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_K (Gain_K)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_Kp (Gain_Kp)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Integral_Gain_Ki (Ki)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Integral_Limit (Limit)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Dumpable_Projection (Projection)), Success);
@@ -118,16 +118,16 @@ package body Momentum_Management_Tests.Implementation is
    procedure Assert_Latest_Output (
       Self : in out Instance;
       Tick_Number : in Natural;
-      Commanded_Torque : in Packed_F32x3.T
+      Requested_Torque : in Packed_F32x3.T
    ) is
       T : Component.Momentum_Management.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
       -- Every tick publishes the torque.
       Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, Tick_Number);
-      Natural_Assert.Eq (T.Commanded_Torque_History.Get_Count, Tick_Number);
+      Natural_Assert.Eq (T.Requested_Torque_History.Get_Count, Tick_Number);
       Cmd_Torque_Body_Assert.Eq
-        (T.Commanded_Torque_History.Get (Tick_Number),
-         (Torque_Request_Body => Commanded_Torque),
+        (T.Requested_Torque_History.Get (Tick_Number),
+         (Torque_Request_Body => Requested_Torque),
          Epsilon => Epsilon);
    end Assert_Latest_Output;
 
@@ -205,14 +205,14 @@ package body Momentum_Management_Tests.Implementation is
          Projection : in Packed_F32x9.T;
          Desired : in Packed_F32x3.T;
          Availability : in Wheel_Availability_X4.T;
-         Commanded_Torque : in Packed_F32x3.T
+         Requested_Torque : in Packed_F32x3.T
       ) is
       begin
          Apply_Configuration (Self, Hs_Min => Hs_Min, Ki => No_Integral, Limit => No_Integral_Limit,
             Projection => Projection, Desired => Desired, Availability => Availability);
          Send_Tick (Self);
          Tick_Number := @ + 1;
-         Assert_Latest_Output (Self, Tick_Number, Commanded_Torque);
+         Assert_Latest_Output (Self, Tick_Number, Requested_Torque);
       end Check;
    begin
       -- The whole cluster momentum is dumped:
@@ -255,7 +255,7 @@ package body Momentum_Management_Tests.Implementation is
       Assert_Latest_Output (Self, 2, [-0.3894764048, -0.1882264048, -0.6194764048]);
 
       -- Double the proportional gain:
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_K ((Value => 0.1))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_Kp ((Value => 0.1))), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
       Send_Tick (Self);
       Assert_Latest_Output (Self, 3, [-0.7620190528, -0.3682690528, -1.2120190528]);
@@ -282,7 +282,7 @@ package body Momentum_Management_Tests.Implementation is
       procedure Stage_Valid_Configuration is
       begin
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Hs_Min (Nominal_Hs_Min)), Success);
-         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_K (Gain_K)), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_Kp (Gain_Kp)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Integral_Gain_Ki (Gain_Ki)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Integral_Limit (Integral_Limit)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Dumpable_Projection (Identity)), Success);
@@ -303,7 +303,7 @@ package body Momentum_Management_Tests.Implementation is
 
       -- A negative proportional gain is rejected:
       Stage_Valid_Configuration;
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_K ((Value => -0.05))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_Kp ((Value => -0.05))), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
 
       -- A negative integral gain is rejected:
@@ -370,7 +370,7 @@ package body Momentum_Management_Tests.Implementation is
          when Ada.Assertions.Assertion_Error =>
             null; -- Expected.
       end;
-      Natural_Assert.Eq (T.Commanded_Torque_History.Get_Count, 0);
+      Natural_Assert.Eq (T.Requested_Torque_History.Get_Count, 0);
    end Test_Invalid_Data_Dependency;
 
 end Momentum_Management_Tests.Implementation;

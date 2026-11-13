@@ -11,12 +11,12 @@ package body Component.Dv_Guidance.Implementation is
    -- The burn frame as the shim takes it. Init, the parameter update and the
    -- validation all marshal the same two parameters, so it is assembled in one place.
    type Frame_Config is record
-      Cmd_Dv_N : Packed_F32x3_Record.C.U_C;
+      Requested_Dv_N : Packed_F32x3_Record.C.U_C;
       R_Hat_Pref_N : Packed_F32x3_Record.C.U_C;
    end record;
 
-   function To_Frame_Config (Cmd_Dv_N : in Packed_F32x3.U; R_Hat_Pref_N : in Packed_F32x3.U) return Frame_Config is
-      ((Cmd_Dv_N => (Value => Packed_F32x3.C.To_C (Cmd_Dv_N)),
+   function To_Frame_Config (Requested_Dv_N : in Packed_F32x3.U; R_Hat_Pref_N : in Packed_F32x3.U) return Frame_Config is
+      ((Requested_Dv_N => (Value => Packed_F32x3.C.To_C (Requested_Dv_N)),
         R_Hat_Pref_N => (Value => Packed_F32x3.C.To_C (R_Hat_Pref_N))));
 
    --------------------------------------------------
@@ -25,12 +25,12 @@ package body Component.Dv_Guidance.Implementation is
    -- Initializes the delta-V guidance algorithm with the default parameter values, a
    -- stand-in burn frame which the first burn command replaces.
    overriding procedure Init (Self : in out Instance) is
-      Cfg : constant Frame_Config := To_Frame_Config (Self.Cmd_Dv_N, Self.R_Hat_Pref_N);
+      Cfg : constant Frame_Config := To_Frame_Config (Self.Requested_Dv_N, Self.R_Hat_Pref_N);
    begin
       -- Create throws on an invalid configuration, so the parameter defaults must form a
       -- valid frame. The generated Assert_Valid_Parameter_Defaults checks them at startup
       -- and in unit test set up.
-      Self.Alg := Create (Cmd_Dv_N => Cfg.Cmd_Dv_N, R_Hat_Pref_N => Cfg.R_Hat_Pref_N);
+      Self.Alg := Create (Requested_Dv_N => Cfg.Requested_Dv_N, R_Hat_Pref_N => Cfg.R_Hat_Pref_N);
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -74,11 +74,11 @@ package body Component.Dv_Guidance.Implementation is
    -- This procedure is called when the parameters of a component have been updated. In this
    -- case we push the burn frame into the C algorithm so subsequent updates return it.
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
-      Cfg : constant Frame_Config := To_Frame_Config (Self.Cmd_Dv_N, Self.R_Hat_Pref_N);
+      Cfg : constant Frame_Config := To_Frame_Config (Self.Requested_Dv_N, Self.R_Hat_Pref_N);
    begin
       -- The values were checked by Validate_Parameters at staging, so Set_Config will
       -- not reject them.
-      Set_Config (Self.Alg, Cmd_Dv_N => Cfg.Cmd_Dv_N, R_Hat_Pref_N => Cfg.R_Hat_Pref_N);
+      Set_Config (Self.Alg, Requested_Dv_N => Cfg.Requested_Dv_N, R_Hat_Pref_N => Cfg.R_Hat_Pref_N);
    end Update_Parameters_Action;
 
    -- Validate a staged burn frame before it is applied by asking the algorithm's own
@@ -87,7 +87,7 @@ package body Component.Dv_Guidance.Implementation is
    -- throwing Set_Config across the FFI boundary.
    overriding function Validate_Parameters (
       Self : in out Instance;
-      Cmd_Dv_N : in Packed_F32x3.U;
+      Requested_Dv_N : in Packed_F32x3.U;
       R_Hat_Pref_N : in Packed_F32x3.U
    ) return Parameter_Validation_Status.E is
       Ignore : Instance renames Self;
@@ -95,8 +95,8 @@ package body Component.Dv_Guidance.Implementation is
       -- that raises is caught here.
       Cfg : Frame_Config;
    begin
-      Cfg := To_Frame_Config (Cmd_Dv_N, R_Hat_Pref_N);
-      if Validate_Config (Cmd_Dv_N => Cfg.Cmd_Dv_N, R_Hat_Pref_N => Cfg.R_Hat_Pref_N) then
+      Cfg := To_Frame_Config (Requested_Dv_N, R_Hat_Pref_N);
+      if Validate_Config (Requested_Dv_N => Cfg.Requested_Dv_N, R_Hat_Pref_N => Cfg.R_Hat_Pref_N) then
          return Parameter_Validation_Status.Valid;
       else
          return Parameter_Validation_Status.Invalid;

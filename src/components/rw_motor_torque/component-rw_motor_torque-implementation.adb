@@ -9,6 +9,7 @@ with Packed_F32x3.C;
 with Packed_F32x3_X4.C;
 with Rw_Motor_Torque_Control_Axes.C;
 with Rw_Motor_Torque_Output.C;
+with Rw_Speeds_Input.C;
 with Rwa_Speeds;
 with Wheel_Availability_X4.C;
 
@@ -21,6 +22,7 @@ package body Component.Rw_Motor_Torque.Implementation is
       Control_Axes : aliased Rw_Motor_Torque_Control_Axes.C.U_C;
       Rw_Spin_Axes : aliased Mrp_Feedback_Rw_Spin_Axes.C.U_C;
       Wheel_Availability : aliased Mrp_Feedback_Rw_Availability.C.U_C;
+      Desired_Wheel_Speeds : aliased Rw_Speeds_Input.C.U_C;
    end record;
 
    -- Marshal the pointer arguments of the configuration. Every wheel slot is
@@ -29,11 +31,13 @@ package body Component.Rw_Motor_Torque.Implementation is
    function To_Pointer_Config (
       Control_Axes : in Rw_Motor_Torque_Control_Axes.U;
       Rw_Spin_Axes : in Packed_F32x3_X4.U;
-      Wheel_Availability : in Wheel_Availability_X4.U
+      Wheel_Availability : in Wheel_Availability_X4.U;
+      Desired_Wheel_Speeds : in Rw_Speeds_Input.U
    ) return Pointer_Config is
       (Control_Axes => Rw_Motor_Torque_Control_Axes.C.To_C (Control_Axes),
        Rw_Spin_Axes => (Value => Packed_F32x3_X4.C.To_C (Rw_Spin_Axes)),
-       Wheel_Availability => (Value => Wheel_Availability_X4.C.To_C (Wheel_Availability)));
+       Wheel_Availability => (Value => Wheel_Availability_X4.C.To_C (Wheel_Availability)),
+       Desired_Wheel_Speeds => Rw_Speeds_Input.C.To_C (Desired_Wheel_Speeds));
 
    -- Gather the wheel speeds of the data dependency into the per-wheel array the
    -- shim expects.
@@ -46,7 +50,7 @@ package body Component.Rw_Motor_Torque.Implementation is
    -- Initializes the reaction wheel motor torque algorithm with the default parameter
    -- values.
    overriding procedure Init (Self : in out Instance) is
-      Cfg : aliased constant Pointer_Config := To_Pointer_Config (Self.Control_Axes, Self.Rw_Spin_Axes, Self.Wheel_Availability);
+      Cfg : aliased constant Pointer_Config := To_Pointer_Config (Self.Control_Axes, Self.Rw_Spin_Axes, Self.Wheel_Availability, Self.Desired_Wheel_Speeds);
    begin
       -- Create throws on an invalid configuration, so the parameter defaults must form a
       -- valid one. The generated Assert_Valid_Parameter_Defaults checks them at startup
@@ -55,8 +59,8 @@ package body Component.Rw_Motor_Torque.Implementation is
          Desired_Control_Axes_B => Cfg.Control_Axes'Access,
          Gs_Matrix_B            => Cfg.Rw_Spin_Axes'Access,
          Wheel_Availability     => Cfg.Wheel_Availability'Access,
-         Omega_Gain             => Self.Omega_Gain.Value);
-      Self.Desired_Speeds_C := Rw_Speeds_Input.C.To_C (Self.Desired_Wheel_Speeds);
+         Kp                     => Self.Proportional_Gain_Kp.Value,
+         Rw_Desired_Speeds      => Cfg.Desired_Wheel_Speeds'Access);
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -99,15 +103,14 @@ package body Component.Rw_Motor_Torque.Implementation is
       Self.Update_Parameters;
 
       -- Call the C algorithm and send the per-wheel torques straight to the wheel
-      -- interface. The desired wheel speeds were converted when the parameters were
-      -- applied, so a new table takes effect on this tick. Update is qualified because
+      -- interface. The desired wheel speeds are part of the algorithm configuration, so
+      -- a new table takes effect on this tick. Update is qualified because
       -- Parameter_Enums also declares one.
       declare
          Output : constant Rw_Motor_Torque_Output.C.U_C := Rw_Motor_Torque_Algorithm_C.Update (
             Self.Alg,
-            Lr_B              => (Value => Packed_F32x3.C.Unpack (Torque.Torque_Request_Body)),
-            Rw_Speeds         => Speeds_C'Access,
-            Rw_Desired_Speeds => Self.Desired_Speeds_C'Access);
+            Lr_B      => (Value => Packed_F32x3.C.Unpack (Torque.Torque_Request_Body)),
+            Rw_Speeds => Speeds_C'Access);
       begin
          Self.Rwa_Torques_T_Send_If_Connected ((
             Rwa_1 => Output.Motor_Torque (0),
@@ -131,10 +134,9 @@ package body Component.Rw_Motor_Torque.Implementation is
    --    Parameters for the Rw Motor Torque component.
    -- This procedure is called when the parameters of a component have been updated. In this case we
    -- push the whole configuration into the C algorithm, which recomputes the mapping for the new
-   -- control axes, wheel geometry, availability, and gain, and convert the desired wheel speeds
-   -- once for the ticks that follow.
+   -- control axes, wheel geometry, availability, and gain, and takes the new desired wheel speeds.
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
-      Cfg : aliased constant Pointer_Config := To_Pointer_Config (Self.Control_Axes, Self.Rw_Spin_Axes, Self.Wheel_Availability);
+      Cfg : aliased constant Pointer_Config := To_Pointer_Config (Self.Control_Axes, Self.Rw_Spin_Axes, Self.Wheel_Availability, Self.Desired_Wheel_Speeds);
    begin
       -- The values were checked by Validate_Parameters at staging, so Set_Config will not
       -- reject them.
@@ -143,8 +145,8 @@ package body Component.Rw_Motor_Torque.Implementation is
          Desired_Control_Axes_B => Cfg.Control_Axes'Access,
          Gs_Matrix_B            => Cfg.Rw_Spin_Axes'Access,
          Wheel_Availability     => Cfg.Wheel_Availability'Access,
-         Omega_Gain             => Self.Omega_Gain.Value);
-      Self.Desired_Speeds_C := Rw_Speeds_Input.C.To_C (Self.Desired_Wheel_Speeds);
+         Kp                     => Self.Proportional_Gain_Kp.Value,
+         Rw_Desired_Speeds      => Cfg.Desired_Wheel_Speeds'Access);
    end Update_Parameters_Action;
 
    -- Validate a staged parameter set before it is applied by asking the algorithm's own
@@ -156,7 +158,7 @@ package body Component.Rw_Motor_Torque.Implementation is
       Control_Axes : in Rw_Motor_Torque_Control_Axes.U;
       Rw_Spin_Axes : in Packed_F32x3_X4.U;
       Wheel_Availability : in Wheel_Availability_X4.U;
-      Omega_Gain : in Packed_F32.U;
+      Proportional_Gain_Kp : in Packed_F32.U;
       Desired_Wheel_Speeds : in Rw_Speeds_Input.U
    ) return Parameter_Validation_Status.E is
       Ignore : Instance renames Self;
@@ -164,28 +166,13 @@ package body Component.Rw_Motor_Torque.Implementation is
       -- that raises is caught here.
       Cfg : aliased Pointer_Config;
    begin
-      -- The desired wheel speeds are not part of the algorithm configuration, they go
-      -- in with every update, so the algorithm does not check them. Each must be
-      -- finite.
-      --
-      -- TODO: The generated validation of the staged bytes should reject a non-finite
-      -- speed, but GNAT Pro 25.2 evaluates 'Valid on an element of a packed float
-      -- array with a non native Scalar_Storage_Order on the unswapped bytes, so at
-      -- staging a NaN or infinity passes and about one valid value in 512 is rejected.
-      -- FSF GCC fixed this in 60f5887173a4. Until the compiler fix arrives, check the
-      -- speeds here. The unpacked array is in native order, so 'Valid is correct on
-      -- it. The spurious rejection at staging cannot be undone from here.
-      for Speed of Desired_Wheel_Speeds.Wheel_Speeds loop
-         if not Speed'Valid then
-            return Parameter_Validation_Status.Invalid;
-         end if;
-      end loop;
-      Cfg := To_Pointer_Config (Control_Axes, Rw_Spin_Axes, Wheel_Availability);
+      Cfg := To_Pointer_Config (Control_Axes, Rw_Spin_Axes, Wheel_Availability, Desired_Wheel_Speeds);
       if Validate_Config (
          Desired_Control_Axes_B => Cfg.Control_Axes'Access,
          Gs_Matrix_B            => Cfg.Rw_Spin_Axes'Access,
          Wheel_Availability     => Cfg.Wheel_Availability'Access,
-         Omega_Gain             => Omega_Gain.Value)
+         Kp                     => Proportional_Gain_Kp.Value,
+         Rw_Desired_Speeds      => Cfg.Desired_Wheel_Speeds'Access)
       then
          return Parameter_Validation_Status.Valid;
       else
@@ -195,6 +182,12 @@ package body Component.Rw_Motor_Torque.Implementation is
       -- Reachable, and the parameter rejection test covers it: float staging accepts a
       -- non-finite value, and marshalling it above raises. Rejecting the set here keeps
       -- that from unwinding into the Parameters component.
+      -- TODO: The generated validation of the staged bytes should reject a non-finite
+      -- value, but GNAT Pro 25.2 evaluates 'Valid on an element of a packed float array
+      -- with a non native Scalar_Storage_Order on the unswapped bytes, so at staging a
+      -- NaN or infinity passes and about one valid value in 512 is rejected. FSF GCC
+      -- fixed this in 60f5887173a4. Once the compiler fix arrives this handler is
+      -- unreachable and can go, along with the injection in the parameter rejection test.
       when Constraint_Error =>
          return Parameter_Validation_Status.Invalid;
    end Validate_Parameters;

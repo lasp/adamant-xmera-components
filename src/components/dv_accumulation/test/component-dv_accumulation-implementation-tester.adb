@@ -2,6 +2,9 @@
 -- Dv_Accumulation Component Tester Body
 --------------------------------------------------------------------------------
 
+-- Includes:
+with Parameter;
+
 package body Component.Dv_Accumulation.Implementation.Tester is
 
    ---------------------------------------
@@ -36,6 +39,7 @@ package body Component.Dv_Accumulation.Implementation.Tester is
       Self.Component_Instance.Attach_Data_Product_T_Send (To_Component => Self'Unchecked_Access, Hook => Self.Data_Product_T_Recv_Sync_Access);
       Self.Attach_Tick_T_Send (To_Component => Self.Component_Instance'Unchecked_Access, Hook => Self.Component_Instance.Tick_T_Recv_Sync_Access);
       Self.Attach_Reset_Tick_T_Send (To_Component => Self.Component_Instance'Unchecked_Access, Hook => Self.Component_Instance.Reset_Tick_T_Recv_Sync_Access);
+      Self.Attach_Parameter_Update_T_Provide (To_Component => Self.Component_Instance'Unchecked_Access, Hook => Self.Component_Instance.Parameter_Update_T_Modify_Access);
    end Connect;
 
    -- Helper function for returning data dependencies:
@@ -56,8 +60,6 @@ package body Component.Dv_Accumulation.Implementation.Tester is
          case Arg.Id is
             -- ID for Accel_Average:
             when 0 => Id_To_Return := 0;
-            -- ID for Accel_Bias_B:
-            when 1 => Id_To_Return := 1;
             -- If ID can not be found, then return ID out of range error.
             when others =>
                if Return_Status = Data_Product_Enums.Fetch_Status.Success then
@@ -71,8 +73,6 @@ package body Component.Dv_Accumulation.Implementation.Tester is
          case Arg.Id is
             -- Length for Accel_Average:
             when 0 => Length_To_Return := Packed_F32x3.Size_In_Bytes;
-            -- Length for Accel_Bias_B:
-            when 1 => Length_To_Return := Packed_F32x3.Size_In_Bytes;
             -- If ID can not be found, then return ID out of range error.
             when others =>
                if Return_Status = Data_Product_Enums.Fetch_Status.Success then
@@ -93,10 +93,6 @@ package body Component.Dv_Accumulation.Implementation.Tester is
             when 0 =>
                Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Packed_F32x3.Size_In_Bytes - 1) :=
                   Packed_F32x3.Serialization.To_Byte_Array (Self.Accel_Average);
-            -- Length for Accel_Bias_B:
-            when 1 =>
-               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Packed_F32x3.Size_In_Bytes - 1) :=
-                  Packed_F32x3.Serialization.To_Byte_Array (Self.Accel_Bias_B);
             -- Do not fill. The ID is not recognized.
             when others =>
                Return_Status := Data_Product_Enums.Fetch_Status.Id_Out_Of_Range;
@@ -150,5 +146,82 @@ package body Component.Dv_Accumulation.Implementation.Tester is
       -- Push the argument onto the test history for looking at later:
       Self.Accumulated_Delta_V_History.Push (Arg);
    end Accumulated_Delta_V;
+
+   -----------------------------------------------
+   -- Special primitives for aiding in the staging,
+   -- fetching, and updating of parameters
+   -----------------------------------------------
+   not overriding function Stage_Parameter (Self : in out Instance; Par : in Parameter.T) return Parameter_Update_Status.E is
+      use Parameter_Enums.Parameter_Update_Status;
+      use Parameter_Enums.Parameter_Operation_Type;
+      Param_Update : Parameter_Update.T := (
+         Table_Id => 1,
+         Operation => Stage,
+         Status => Success,
+         Param => Par
+      );
+   begin
+      Self.Parameter_Update_T_Provide (Param_Update);
+      return Param_Update.Status;
+   end Stage_Parameter;
+
+   not overriding function Fetch_Parameter (Self : in out Instance; Id : in Parameter_Types.Parameter_Id; Par : out Parameter.T) return Parameter_Update_Status.E is
+      use Parameter_Enums.Parameter_Update_Status;
+      use Parameter_Enums.Parameter_Operation_Type;
+      Param_Update : Parameter_Update.T := (
+         Table_Id => 1,
+         Operation => Fetch,
+         Status => Success,
+         Param => (Header => (Id => Id, Buffer_Length => 0), Buffer => [others => 0])
+      );
+   begin
+      -- Set the ID to fetch:
+      Param_Update.Param.Header.Id := Id;
+      Self.Parameter_Update_T_Provide (Param_Update);
+      Par := Param_Update.Param;
+      return Param_Update.Status;
+   end Fetch_Parameter;
+
+   not overriding function Validate_Parameters (Self : in out Instance) return Parameter_Update_Status.E is
+      use Parameter_Enums.Parameter_Update_Status;
+      use Parameter_Enums.Parameter_Operation_Type;
+      Param_Update : Parameter_Update.T := (
+         Table_Id => 1,
+         Operation => Validate,
+         Status => Success,
+         Param => ((0, 0), [others => 0])
+      );
+   begin
+      Self.Parameter_Update_T_Provide (Param_Update);
+      return Param_Update.Status;
+   end Validate_Parameters;
+
+   not overriding function Update_Parameters (Self : in out Instance) return Parameter_Update_Status.E is
+      use Parameter_Enums.Parameter_Update_Status;
+      use Parameter_Enums.Parameter_Operation_Type;
+      Param_Update : Parameter_Update.T := (
+         Table_Id => 1,
+         Operation => Update,
+         Status => Success,
+         Param => ((0, 0), [others => 0])
+      );
+   begin
+      Self.Parameter_Update_T_Provide (Param_Update);
+      return Param_Update.Status;
+   end Update_Parameters;
+
+   not overriding function Discard_Parameters (Self : in out Instance) return Parameter_Update_Status.E is
+      use Parameter_Enums.Parameter_Update_Status;
+      use Parameter_Enums.Parameter_Operation_Type;
+      Param_Update : Parameter_Update.T := (
+         Table_Id => 1,
+         Operation => Discard,
+         Status => Success,
+         Param => ((0, 0), [others => 0])
+      );
+   begin
+      Self.Parameter_Update_T_Provide (Param_Update);
+      return Param_Update.Status;
+   end Discard_Parameters;
 
 end Component.Dv_Accumulation.Implementation.Tester;

@@ -145,8 +145,8 @@ package body Force_Torque_Thr_Force_Mapping_Tests.Implementation is
       T : Component.Force_Torque_Thr_Force_Mapping.Implementation.Tester.Instance_Access renames Self.Tester;
       Output : Thr_Force_Cmd.T;
    begin
-      T.Commanded_Torque := (Torque_Request_Body => Torque);
-      T.Commanded_Force := (Force_Request_Body => Force);
+      T.Requested_Torque := (Torque_Request_Body => Torque);
+      T.Requested_Force := (Force_Request_Body => Force);
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
       Natural_Assert.Eq (T.Thruster_Force_Cmd_History.Get_Count, Cycle);
       Output := T.Thruster_Force_Cmd_History.Get (Cycle);

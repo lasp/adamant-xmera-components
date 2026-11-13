@@ -42,7 +42,7 @@ package body Torque_Duty_Cycle_Tests.Implementation is
    procedure Tick (Self : in out Instance; Tick_Number : in Natural) is
       T : Component.Torque_Duty_Cycle.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
-      T.Commanded_Torque := Nominal_Torque;
+      T.Requested_Torque := Nominal_Torque;
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
       Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, Tick_Number);
       Natural_Assert.Eq (T.Gated_Torque_History.Get_Count, Tick_Number);

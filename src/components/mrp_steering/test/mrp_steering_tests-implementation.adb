@@ -37,7 +37,7 @@ package body Mrp_Steering_Tests.Implementation is
    Small_Omega_Max : constant Packed_F32.T := (Value => 0.001);
    With_Feedforward : constant Packed_Boolean.T := (Value => False);
    Without_Feedforward : constant Packed_Boolean.T := (Value => True);
-   Gain_P : constant Packed_F32.T := (Value => 150.0);
+   Gain_Kd : constant Packed_F32.T := (Value => 150.0);
    Gain_Ki : constant Packed_F32.T := (Value => 0.01);
    Integral_Limit : constant Packed_F32.T := (Value => 20.0);
    -- The control period is fixed at initialization, half a second as in the reference test.
@@ -63,7 +63,7 @@ package body Mrp_Steering_Tests.Implementation is
    -- Helpers:
    -------------------------------------------------------------------------
 
-   -- Stage and apply a configuration. The gains P and Ki, the integral limit, the known
+   -- Stage and apply a configuration. The gains Kd and Ki, the integral limit, the known
    -- torque, the inertia, and the wheel configuration are the same in every case.
    procedure Apply_Configuration (
       Self : in out Instance;
@@ -79,7 +79,7 @@ package body Mrp_Steering_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cubic_Gain_K3 (K3)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Omega_Max (Max_Rate)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Ignore_Outer_Loop_Feedforward (Ignore_Feedforward)), Success);
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Derivative_Gain_P (Gain_P)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Derivative_Gain_Kd (Gain_Kd)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Integral_Gain_Ki (Gain_Ki)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Integral_Limit (Integral_Limit)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Known_Torque_Pnt_B_B (Known_Torque)), Success);
@@ -220,7 +220,7 @@ package body Mrp_Steering_Tests.Implementation is
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cubic_Gain_K3 (Gain_K3)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Omega_Max (Omega_Max)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Ignore_Outer_Loop_Feedforward (With_Feedforward)), Success);
-         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Derivative_Gain_P (Gain_P)), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Derivative_Gain_Kd (Gain_Kd)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Integral_Gain_Ki (Gain_Ki)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Integral_Limit (Integral_Limit)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Known_Torque_Pnt_B_B (Known_Torque)), Success);

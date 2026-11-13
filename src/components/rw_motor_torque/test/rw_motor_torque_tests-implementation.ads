@@ -14,9 +14,9 @@ private
    overriding procedure Set_Up_Test (Self : in out Instance);
    overriding procedure Tear_Down_Test (Self : in out Instance);
 
-   -- Run the algorithm on the control axis, availability, and null space gain cases
-   -- of the Python reference test to ensure the Ada to C to C++ integration is
-   -- sound.
+   -- Run the algorithm on the control axis, availability, null space gain, and
+   -- desired wheel speed cases of the Python reference test to ensure the Ada to C
+   -- to C++ integration is sound.
    overriding procedure Test (Self : in out Instance);
    -- Ensure a staged configuration the algorithm would reject is refused at
    -- validation.
