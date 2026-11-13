@@ -24,7 +24,8 @@ package body Mrp_Rotation_Tests.Implementation is
    -- The pointing offset the reference test reconfigures to:
    New_Pointing_Offset : constant Packed_F32x3.T := [0.04, -0.02, 0.0];
    -- 0.1 degrees per second about the first Rp axis.
-   Rotation_Rate : constant Packed_F32x3.T := [0.00174532925, 0.0, 0.0];
+   Spin_Axis : constant Packed_F32x3.T := [1.0, 0.0, 0.0];
+   Spin_Rate : constant Short_Float := 0.00174532925;
    -- The control period is fixed at initialization, half a second as in the reference test.
    Control_Period : constant Short_Float := 0.5;
    Base_Reference : constant Att_Ref.T := (
@@ -62,16 +63,22 @@ package body Mrp_Rotation_Tests.Implementation is
    -- Helpers:
    -------------------------------------------------------------------------
 
-   -- Stage and apply the rotation configuration. The body correction and the rotation
-   -- rate are the same in every case, and the pointing offset is the reference one
-   -- unless a case sets another.
-   procedure Apply_Configuration (Self : in out Instance; Sigma_Rprc : in Packed_F32x3.T := Pointing_Offset) is
+   -- Stage and apply the rotation configuration. The body correction is the same in
+   -- every case, and the pointing offset, spin axis, and spin rate are the reference
+   -- ones unless a case sets others.
+   procedure Apply_Configuration (
+      Self : in out Instance;
+      Sigma_Rprc : in Packed_F32x3.T := Pointing_Offset;
+      Spin_Axis_Rp : in Packed_F32x3.T := Spin_Axis;
+      Spin_Rate_Rp : in Short_Float := Spin_Rate
+   ) is
       T : Component.Mrp_Rotation.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Mrp_Rotation_Parameters.Instance;
    begin
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Sigma_Rcr0 (Body_Correction)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Sigma_Rprc (Sigma_Rprc)), Success);
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Omega_Rrp_Rp (Rotation_Rate)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Spin_Axis_Rp (Spin_Axis_Rp)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Spin_Rate ((Value => Spin_Rate_Rp))), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
    end Apply_Configuration;
 
@@ -167,9 +174,9 @@ package body Mrp_Rotation_Tests.Implementation is
       end loop;
    end Test;
 
-   -- The algorithm requires a finite body correction, pointing offset, and rotation
-   -- rate. Validation is the only guard keeping a rejected value out of the throwing
-   -- Set_Config, so exercise it directly.
+   -- The algorithm requires a finite body correction, pointing offset, and spin rate,
+   -- and a finite spin axis of unit length. Validation is the only guard keeping a
+   -- rejected value out of the throwing Set_Config, so exercise it directly.
    overriding procedure Test_Invalid_Parameter (Self : in out Instance) is
       T : Component.Mrp_Rotation.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Mrp_Rotation_Parameters.Instance;
@@ -180,21 +187,41 @@ package body Mrp_Rotation_Tests.Implementation is
       begin
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Sigma_Rcr0 (Body_Correction)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Sigma_Rprc (Pointing_Offset)), Success);
-         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Omega_Rrp_Rp (Rotation_Rate)), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Spin_Axis_Rp (Spin_Axis)), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Spin_Rate ((Value => Spin_Rate))), Success);
       end Stage_Valid_Configuration;
+
+      -- Stage a spin axis the algorithm rejects into a known-good set, and check
+      -- validation refuses it.
+      procedure Expect_Spin_Axis_Rejection (Axis : in Packed_F32x3.T) is
+      begin
+         Stage_Valid_Configuration;
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Spin_Axis_Rp (Axis)), Success);
+         Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+      end Expect_Spin_Axis_Rejection;
    begin
       -- The reference configuration is accepted:
       Stage_Valid_Configuration;
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
 
-      -- A non-finite rotation rate is rejected. The value is injected as raw bytes because
+      -- A spin axis that is zero, or not within 1e-3 of unit length, is rejected:
+      Expect_Spin_Axis_Rejection ([0.0, 0.0, 0.0]);
+      Expect_Spin_Axis_Rejection ([0.998, 0.0, 0.0]);
+      Expect_Spin_Axis_Rejection ([0.0, 1.002, 0.0]);
+
+      -- A spin axis within the tolerance is accepted; the algorithm normalizes it:
+      Stage_Valid_Configuration;
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Spin_Axis_Rp ([1.0005, 0.0, 0.0])), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
+
+      -- A non-finite spin axis is rejected. The value is injected as raw bytes because
       -- the compiler will not let a non-finite Short_Float be written as a literal, and
       -- because that is how one would arrive: as bytes from the ground. Staging accepts
       -- it, and converting it for the algorithm raises, which validation reports as a
       -- rejection.
       Stage_Valid_Configuration;
       declare
-         Par : Parameter.T := Params.Omega_Rrp_Rp (Rotation_Rate);
+         Par : Parameter.T := Params.Spin_Axis_Rp (Spin_Axis);
       begin
          -- Overwrite the first of the three big-endian floats with +infinity.
          Par.Buffer (Par.Buffer'First .. Par.Buffer'First + 3) := [16#7F#, 16#80#, 16#00#, 16#00#];
@@ -212,6 +239,17 @@ package body Mrp_Rotation_Tests.Implementation is
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Par), Success);
       end;
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- A non-finite spin rate is rejected before the algorithm is asked, by the type
+      -- validation at staging:
+      Stage_Valid_Configuration;
+      declare
+         Par : Parameter.T := Params.Spin_Rate ((Value => Spin_Rate));
+      begin
+         -- Overwrite the big-endian float with +infinity.
+         Par.Buffer (Par.Buffer'First .. Par.Buffer'First + 3) := [16#7F#, 16#80#, 16#00#, 16#00#];
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Par), Validation_Error);
+      end;
 
       -- Restoring the reference configuration makes the set acceptable again, so the
       -- rejections above were caused by the perturbed values:
@@ -249,5 +287,16 @@ package body Mrp_Rotation_Tests.Implementation is
          Send_Tick_And_Check (Self, Expected_After_Reset (I));
       end loop;
    end Test_Reset_Applies_Pending_Parameters;
+
+   -- The spin is the signed rate about the axis, so a reversed axis with a negated
+   -- rate gives the reference rotation. A spin axis or rate that is lost or garbled
+   -- crossing to the algorithm would not.
+   overriding procedure Test_Spin_Axis_And_Rate (Self : in out Instance) is
+   begin
+      Apply_Configuration (Self, Spin_Axis_Rp => [-1.0, 0.0, 0.0], Spin_Rate_Rp => -Spin_Rate);
+      for I in Expected'Range loop
+         Send_Tick_And_Check (Self, Expected (I));
+      end loop;
+   end Test_Spin_Axis_And_Rate;
 
 end Mrp_Rotation_Tests.Implementation;

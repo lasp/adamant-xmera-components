@@ -104,7 +104,8 @@ private
       Self : in out Instance;
       Sigma_Rcr0 : in Packed_F32x3.U;
       Sigma_Rprc : in Packed_F32x3.U;
-      Omega_Rrp_Rp : in Packed_F32x3.U
+      Spin_Axis_Rp : in Packed_F32x3.U;
+      Spin_Rate : in Packed_F32.U
    ) return Parameter_Validation_Status.E;
 
 end Component.Mrp_Rotation.Implementation;

@@ -14,18 +14,18 @@ package body Component.Mrp_Rotation.Implementation is
    type Pointer_Config is record
       Sigma_Rcr0 : aliased Packed_F32x3_Record.C.U_C;
       Sigma_Rprc : aliased Packed_F32x3_Record.C.U_C;
-      Omega_Rrp_Rp : aliased Packed_F32x3_Record.C.U_C;
+      Spin_Axis_Rp : aliased Packed_F32x3_Record.C.U_C;
    end record;
 
    -- Marshal the pointer arguments of the configuration.
    function To_Pointer_Config (
       Sigma_Rcr0 : in Packed_F32x3.U;
       Sigma_Rprc : in Packed_F32x3.U;
-      Omega_Rrp_Rp : in Packed_F32x3.U
+      Spin_Axis_Rp : in Packed_F32x3.U
    ) return Pointer_Config is
       (Sigma_Rcr0 => (Value => Packed_F32x3.C.To_C (Sigma_Rcr0)),
        Sigma_Rprc => (Value => Packed_F32x3.C.To_C (Sigma_Rprc)),
-       Omega_Rrp_Rp => (Value => Packed_F32x3.C.To_C (Omega_Rrp_Rp)));
+       Spin_Axis_Rp => (Value => Packed_F32x3.C.To_C (Spin_Axis_Rp)));
 
    --------------------------------------------------
    -- Subprogram for implementation init method:
@@ -40,7 +40,7 @@ package body Component.Mrp_Rotation.Implementation is
    -- it is not a runtime parameter. The type keeps it greater than zero.
    --
    overriding procedure Init (Self : in out Instance; Control_Period : in Basic_Types.Positive_Short_Float) is
-      Cfg : aliased constant Pointer_Config := To_Pointer_Config (Self.Sigma_Rcr0, Self.Sigma_Rprc, Self.Omega_Rrp_Rp);
+      Cfg : aliased constant Pointer_Config := To_Pointer_Config (Self.Sigma_Rcr0, Self.Sigma_Rprc, Self.Spin_Axis_Rp);
    begin
       Self.Control_Period := Control_Period;
       -- Create throws on an invalid configuration, so the parameter defaults must form a
@@ -49,7 +49,8 @@ package body Component.Mrp_Rotation.Implementation is
       Self.Alg := Create (
          Sigma_Rcr0     => Cfg.Sigma_Rcr0'Access,
          Sigma_Rprc     => Cfg.Sigma_Rprc'Access,
-         Omega_Rrp_Rp   => Cfg.Omega_Rrp_Rp'Access,
+         Spin_Axis_Rp   => Cfg.Spin_Axis_Rp'Access,
+         Spin_Rate      => Self.Spin_Rate.Value,
          Control_Period => Self.Control_Period);
    end Init;
 
@@ -104,10 +105,10 @@ package body Component.Mrp_Rotation.Implementation is
    --    Parameters for the Mrp Rotation component.
    -- This procedure is called when the parameters of a component have been updated. In this case we
    -- push the whole configuration into the C algorithm so subsequent updates use the new body
-   -- correction, pointing offset, and rotation rate. The integrated rotation is kept. The control
-   -- period is fixed at initialization.
+   -- correction, pointing offset, spin axis, and spin rate. The integrated rotation is kept. The
+   -- control period is fixed at initialization.
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
-      Cfg : aliased constant Pointer_Config := To_Pointer_Config (Self.Sigma_Rcr0, Self.Sigma_Rprc, Self.Omega_Rrp_Rp);
+      Cfg : aliased constant Pointer_Config := To_Pointer_Config (Self.Sigma_Rcr0, Self.Sigma_Rprc, Self.Spin_Axis_Rp);
    begin
       -- The values were checked by Validate_Parameters at staging, so Set_Config will not
       -- reject them.
@@ -115,7 +116,8 @@ package body Component.Mrp_Rotation.Implementation is
          Self.Alg,
          Sigma_Rcr0     => Cfg.Sigma_Rcr0'Access,
          Sigma_Rprc     => Cfg.Sigma_Rprc'Access,
-         Omega_Rrp_Rp   => Cfg.Omega_Rrp_Rp'Access,
+         Spin_Axis_Rp   => Cfg.Spin_Axis_Rp'Access,
+         Spin_Rate      => Self.Spin_Rate.Value,
          Control_Period => Self.Control_Period);
    end Update_Parameters_Action;
 
@@ -127,20 +129,19 @@ package body Component.Mrp_Rotation.Implementation is
       Self : in out Instance;
       Sigma_Rcr0 : in Packed_F32x3.U;
       Sigma_Rprc : in Packed_F32x3.U;
-      Omega_Rrp_Rp : in Packed_F32x3.U
+      Spin_Axis_Rp : in Packed_F32x3.U;
+      Spin_Rate : in Packed_F32.U
    ) return Parameter_Validation_Status.E is
       -- Filled in below, inside the handled part of the function, so that a conversion
       -- that raises is caught here.
       Cfg : aliased Pointer_Config;
    begin
-      Cfg := To_Pointer_Config (Sigma_Rcr0, Sigma_Rprc, Omega_Rrp_Rp);
-      -- The algorithm only requires finite values, and marshalling a non-finite one
-      -- raises above, so the predicate cannot fail here today. It is still the guard
-      -- should the algorithm's rules grow.
+      Cfg := To_Pointer_Config (Sigma_Rcr0, Sigma_Rprc, Spin_Axis_Rp);
       return (if Validate_Config (
                  Sigma_Rcr0     => Cfg.Sigma_Rcr0'Access,
                  Sigma_Rprc     => Cfg.Sigma_Rprc'Access,
-                 Omega_Rrp_Rp   => Cfg.Omega_Rrp_Rp'Access,
+                 Spin_Axis_Rp   => Cfg.Spin_Axis_Rp'Access,
+                 Spin_Rate      => Spin_Rate.Value,
                  Control_Period => Self.Control_Period)
               then Parameter_Validation_Status.Valid else Parameter_Validation_Status.Invalid);
    exception
