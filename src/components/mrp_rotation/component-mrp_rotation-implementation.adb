@@ -14,18 +14,18 @@ package body Component.Mrp_Rotation.Implementation is
    type Pointer_Config is record
       Sigma_Rcr0 : aliased Packed_F32x3_Record.C.U_C;
       Sigma_Rprc : aliased Packed_F32x3_Record.C.U_C;
-      Omega_Rrp_R : aliased Packed_F32x3_Record.C.U_C;
+      Omega_Rrp_Rp : aliased Packed_F32x3_Record.C.U_C;
    end record;
 
    -- Marshal the pointer arguments of the configuration.
    function To_Pointer_Config (
       Sigma_Rcr0 : in Packed_F32x3.U;
       Sigma_Rprc : in Packed_F32x3.U;
-      Omega_Rrp_R : in Packed_F32x3.U
+      Omega_Rrp_Rp : in Packed_F32x3.U
    ) return Pointer_Config is
       (Sigma_Rcr0 => (Value => Packed_F32x3.C.To_C (Sigma_Rcr0)),
        Sigma_Rprc => (Value => Packed_F32x3.C.To_C (Sigma_Rprc)),
-       Omega_Rrp_R => (Value => Packed_F32x3.C.To_C (Omega_Rrp_R)));
+       Omega_Rrp_Rp => (Value => Packed_F32x3.C.To_C (Omega_Rrp_Rp)));
 
    --------------------------------------------------
    -- Subprogram for implementation init method:
@@ -40,7 +40,7 @@ package body Component.Mrp_Rotation.Implementation is
    -- it is not a runtime parameter. The type keeps it greater than zero.
    --
    overriding procedure Init (Self : in out Instance; Control_Period : in Basic_Types.Positive_Short_Float) is
-      Cfg : aliased constant Pointer_Config := To_Pointer_Config (Self.Sigma_Rcr0, Self.Sigma_Rprc, Self.Omega_Rrp_R);
+      Cfg : aliased constant Pointer_Config := To_Pointer_Config (Self.Sigma_Rcr0, Self.Sigma_Rprc, Self.Omega_Rrp_Rp);
    begin
       Self.Control_Period := Control_Period;
       -- Create throws on an invalid configuration, so the parameter defaults must form a
@@ -49,7 +49,7 @@ package body Component.Mrp_Rotation.Implementation is
       Self.Alg := Create (
          Sigma_Rcr0     => Cfg.Sigma_Rcr0'Access,
          Sigma_Rprc     => Cfg.Sigma_Rprc'Access,
-         Omega_Rrp_R    => Cfg.Omega_Rrp_R'Access,
+         Omega_Rrp_Rp   => Cfg.Omega_Rrp_Rp'Access,
          Control_Period => Self.Control_Period);
    end Init;
 
@@ -107,7 +107,7 @@ package body Component.Mrp_Rotation.Implementation is
    -- correction, pointing offset, and rotation rate. The integrated rotation is kept. The control
    -- period is fixed at initialization.
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
-      Cfg : aliased constant Pointer_Config := To_Pointer_Config (Self.Sigma_Rcr0, Self.Sigma_Rprc, Self.Omega_Rrp_R);
+      Cfg : aliased constant Pointer_Config := To_Pointer_Config (Self.Sigma_Rcr0, Self.Sigma_Rprc, Self.Omega_Rrp_Rp);
    begin
       -- The values were checked by Validate_Parameters at staging, so Set_Config will not
       -- reject them.
@@ -115,7 +115,7 @@ package body Component.Mrp_Rotation.Implementation is
          Self.Alg,
          Sigma_Rcr0     => Cfg.Sigma_Rcr0'Access,
          Sigma_Rprc     => Cfg.Sigma_Rprc'Access,
-         Omega_Rrp_R    => Cfg.Omega_Rrp_R'Access,
+         Omega_Rrp_Rp   => Cfg.Omega_Rrp_Rp'Access,
          Control_Period => Self.Control_Period);
    end Update_Parameters_Action;
 
@@ -127,20 +127,20 @@ package body Component.Mrp_Rotation.Implementation is
       Self : in out Instance;
       Sigma_Rcr0 : in Packed_F32x3.U;
       Sigma_Rprc : in Packed_F32x3.U;
-      Omega_Rrp_R : in Packed_F32x3.U
+      Omega_Rrp_Rp : in Packed_F32x3.U
    ) return Parameter_Validation_Status.E is
       -- Filled in below, inside the handled part of the function, so that a conversion
       -- that raises is caught here.
       Cfg : aliased Pointer_Config;
    begin
-      Cfg := To_Pointer_Config (Sigma_Rcr0, Sigma_Rprc, Omega_Rrp_R);
+      Cfg := To_Pointer_Config (Sigma_Rcr0, Sigma_Rprc, Omega_Rrp_Rp);
       -- The algorithm only requires finite values, and marshalling a non-finite one
       -- raises above, so the predicate cannot fail here today. It is still the guard
       -- should the algorithm's rules grow.
       return (if Validate_Config (
                  Sigma_Rcr0     => Cfg.Sigma_Rcr0'Access,
                  Sigma_Rprc     => Cfg.Sigma_Rprc'Access,
-                 Omega_Rrp_R    => Cfg.Omega_Rrp_R'Access,
+                 Omega_Rrp_Rp   => Cfg.Omega_Rrp_Rp'Access,
                  Control_Period => Self.Control_Period)
               then Parameter_Validation_Status.Valid else Parameter_Validation_Status.Invalid);
    exception

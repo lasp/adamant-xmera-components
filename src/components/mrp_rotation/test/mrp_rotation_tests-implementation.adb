@@ -23,7 +23,7 @@ package body Mrp_Rotation_Tests.Implementation is
    Pointing_Offset : constant Packed_F32x3.T := [0.0, 0.0, 0.05];
    -- The pointing offset the reference test reconfigures to:
    New_Pointing_Offset : constant Packed_F32x3.T := [0.04, -0.02, 0.0];
-   -- 0.1 degrees per second about the first body axis.
+   -- 0.1 degrees per second about the first Rp axis.
    Rotation_Rate : constant Packed_F32x3.T := [0.00174532925, 0.0, 0.0];
    -- The control period is fixed at initialization, half a second as in the reference test.
    Control_Period : constant Short_Float := 0.5;
@@ -71,7 +71,7 @@ package body Mrp_Rotation_Tests.Implementation is
    begin
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Sigma_Rcr0 (Body_Correction)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Sigma_Rprc (Sigma_Rprc)), Success);
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Omega_Rrp_R (Rotation_Rate)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Omega_Rrp_Rp (Rotation_Rate)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
    end Apply_Configuration;
 
@@ -180,7 +180,7 @@ package body Mrp_Rotation_Tests.Implementation is
       begin
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Sigma_Rcr0 (Body_Correction)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Sigma_Rprc (Pointing_Offset)), Success);
-         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Omega_Rrp_R (Rotation_Rate)), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Omega_Rrp_Rp (Rotation_Rate)), Success);
       end Stage_Valid_Configuration;
    begin
       -- The reference configuration is accepted:
@@ -194,7 +194,7 @@ package body Mrp_Rotation_Tests.Implementation is
       -- rejection.
       Stage_Valid_Configuration;
       declare
-         Par : Parameter.T := Params.Omega_Rrp_R (Rotation_Rate);
+         Par : Parameter.T := Params.Omega_Rrp_Rp (Rotation_Rate);
       begin
          -- Overwrite the first of the three big-endian floats with +infinity.
          Par.Buffer (Par.Buffer'First .. Par.Buffer'First + 3) := [16#7F#, 16#80#, 16#00#, 16#00#];
