@@ -1,0 +1,6 @@
+---
+description: Data dependencies for the Force Thr Force Mapping component.
+data_dependencies:
+  - name: Commanded_Force
+    type: Cmd_Force_Body.T
+    description: "[N] Commanded control force in body frame components."
