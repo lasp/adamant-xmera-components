@@ -482,9 +482,8 @@ package body Sunline_Filter_Tests.Implementation is
    -- tracking, and is applied by a reset.
    overriding procedure Test_Parameter_Update (Self : in out Instance) is
       T : Component.Sunline_Filter.Implementation.Tester.Instance_Access renames Self.Tester;
-      Wrong_Seed : constant Packed_F64x7.T := [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.6];
    begin
-      Apply_Configuration (Self, Initial_State => Wrong_Seed);
+      Apply_Configuration (Self);
       for Step in 1 .. 25 loop
          Send_Tick (Self, Step);
       end loop;
@@ -492,7 +491,7 @@ package body Sunline_Filter_Tests.Implementation is
 
       -- A tick does not apply a threshold above every reading, so the four sensors
       -- facing the sun stay active and the estimate keeps tracking:
-      Apply_Configuration (Self, Initial_State => Wrong_Seed, Threshold => (Value => 0.9), Reset_Estimate => False);
+      Apply_Configuration (Self, Threshold => (Value => 0.9), Reset_Estimate => False);
       Send_Tick (Self, 26);
       Natural_Assert.Eq (Active_Css (Self), 4);
       Check_Estimate (Self, 26, Sun_Epsilon => 1.0E-2, Rate_Epsilon => 1.0E-3);
