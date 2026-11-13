@@ -9,7 +9,11 @@ parameters:
     description: "[-] Pointing offset, the MRP of the frame Rp relative to Rc in body axes. It tilts the corrected frame, for example off the target. Must be finite."
     type: Packed_F32x3.T
     default: "[0.0, 0.0, 0.0]"
-  - name: Omega_Rrp_Rp
-    description: "[rad/s] Constant rotation rate of the output frame R relative to Rp in Rp frame components. The rotation is integrated from identity. Must be finite."
+  - name: Spin_Axis_Rp
+    description: "[-] Spin axis of the output frame R relative to Rp in Rp frame components. Must be finite and within 1.0E-3 of unit length. It is normalized when applied."
     type: Packed_F32x3.T
-    default: "[0.0, 0.0, 0.0]"
+    default: "[1.0, 0.0, 0.0]"
+  - name: Spin_Rate
+    description: "[rad/s] Signed constant spin rate of the output frame R relative to Rp about the spin axis. The rotation is integrated from identity. Must be finite. Zero gives no rotation."
+    type: Packed_F32.T
+    default: "(Value => 0.0)"

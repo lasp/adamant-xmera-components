@@ -7,3 +7,5 @@ tests:
     description: Ensure a staged configuration the algorithm would reject is refused at validation.
   - name: Test_Reset_Applies_Pending_Parameters
     description: Ensure a reset applies a configuration that was updated but not yet ticked, so the rotation restarts at identity with the new pointing offset.
+  - name: Test_Spin_Axis_And_Rate
+    description: Ensure the spin is the signed rate about the spin axis by checking that a reversed axis with a negated rate gives the reference rotation.
