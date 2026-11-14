@@ -140,7 +140,7 @@ package body Component.Force_Duty_Cycle.Implementation.Tester is
    -- Description:
    --    Data products for the Force Duty Cycle component.
    -- [N] The commanded force during an on period, zero during an off period. The
-   -- thruster force mapping takes this as its commanded force.
+   -- thrust mapping takes this as its commanded force.
    overriding procedure Gated_Force (Self : in out Instance; Arg : in Cmd_Force_Body.T) is
    begin
       -- Push the argument onto the test history for looking at later:

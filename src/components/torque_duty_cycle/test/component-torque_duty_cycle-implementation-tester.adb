@@ -140,7 +140,7 @@ package body Component.Torque_Duty_Cycle.Implementation.Tester is
    -- Description:
    --    Data products for the Torque Duty Cycle component.
    -- [Nm] The commanded torque during an on period, zero during an off period. The
-   -- thruster force mapping takes this as its commanded torque.
+   -- thrust mapping takes this as its commanded torque.
    overriding procedure Gated_Torque (Self : in out Instance; Arg : in Cmd_Torque_Body.T) is
    begin
       -- Push the argument onto the test history for looking at later:

@@ -9,7 +9,7 @@ with Vector_Duty_Cycle_Algorithm_C; use Vector_Duty_Cycle_Algorithm_C;
 
 -- Duty cycle for a commanded body torque. Passes the torque through for the first on
 -- periods of every cycle and outputs zero for the remaining off periods. In the
--- desaturation state it sits between momentum management and the thruster force
+-- desaturation state it sits between momentum management and the thrust
 -- mapping, so the thrusters fire in pulses with quiet windows in which the reaction
 -- wheels re-stabilize the attitude. The cadence is free-running and advances every
 -- tick. Wraps the VectorDutyCycleAlgorithm C++ algorithm via its C shim, which it

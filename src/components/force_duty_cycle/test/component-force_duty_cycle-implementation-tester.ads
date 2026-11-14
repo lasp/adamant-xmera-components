@@ -14,7 +14,7 @@ with Cmd_Force_Body.Representation;
 
 -- Duty cycle for a body vector. Passes the input vector through for the first on
 -- periods of every cycle and outputs zero for the remaining off periods. In the
--- desaturation state it sits between momentum management and the thruster force
+-- desaturation state it sits between momentum management and the thrust
 -- mapping, so the thrusters fire in pulses with quiet windows in which the
 -- reaction wheels re-stabilize the attitude. The cadence is free-running and
 -- advances every tick. Wraps the VectorDutyCycleAlgorithm C++ algorithm via its C
@@ -85,7 +85,7 @@ package Component.Force_Duty_Cycle.Implementation.Tester is
    -- Description:
    --    Data products for the Force Duty Cycle component.
    -- [N] The commanded force during an on period, zero during an off period. The
-   -- thruster force mapping takes this as its commanded force.
+   -- thrust mapping takes this as its commanded force.
    overriding procedure Gated_Force (Self : in out Instance; Arg : in Cmd_Force_Body.T);
 
    -----------------------------------------------

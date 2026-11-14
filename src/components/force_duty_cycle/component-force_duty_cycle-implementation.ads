@@ -9,7 +9,7 @@ with Vector_Duty_Cycle_Algorithm_C; use Vector_Duty_Cycle_Algorithm_C;
 
 -- Duty cycle for a commanded body force. Passes the force through for the first on
 -- periods of every cycle and outputs zero for the remaining off periods. In a delta-V
--- burn it sits between the burn executor and the thruster force mapping of a thruster
+-- burn it sits between the burn executor and the thrust mapping of a thruster
 -- group, so the thrusters fire in pulses with quiet windows in which the attitude
 -- control settles. The cadence is free-running and advances every tick. Wraps the
 -- VectorDutyCycleAlgorithm C++ algorithm via its C shim, which it shares with the
