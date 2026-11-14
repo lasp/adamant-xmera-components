@@ -1,0 +1,4 @@
+---
+description: Array of 9 Packed_F32x9 elements, a 9 by 9 table of floats in row major order.
+type: Packed_F32x9.T
+length: 9
