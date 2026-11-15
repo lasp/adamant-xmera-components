@@ -7,11 +7,6 @@ with Packed_F32x3_Record.C;
 
 package body Component.Dv_Accumulation.Implementation is
 
-   -- The accelerometer bias as the shim takes it. Init, the parameter update and the
-   -- validation all marshal the same parameter, so it is converted in one place.
-   function To_C (Accel_Bias_B : in Packed_F32x3.U) return Packed_F32x3_Record.C.U_C is
-      ((Value => Packed_F32x3.C.To_C (Accel_Bias_B)));
-
    --------------------------------------------------
    -- Subprogram for implementation init method:
    --------------------------------------------------
@@ -30,7 +25,7 @@ package body Component.Dv_Accumulation.Implementation is
       -- Create throws on an invalid configuration, so the parameter defaults must form a
       -- valid one. The generated Assert_Valid_Parameter_Defaults checks them at startup
       -- and in unit test set up. The control period's type keeps it positive.
-      Self.Alg := Create (Control_Period => Self.Control_Period, Accel_Bias_B => To_C (Self.Accel_Bias_B));
+      Self.Alg := Create (Control_Period => Self.Control_Period, Accel_Bias_B => (Value => Packed_F32x3.C.To_C (Self.Accel_Bias_B)));
    end Init;
 
    not overriding procedure Destroy (Self : in out Instance) is
@@ -109,7 +104,7 @@ package body Component.Dv_Accumulation.Implementation is
    begin
       -- The value was checked by Validate_Parameters at staging, so Set_Config will not
       -- reject it.
-      Set_Config (Self.Alg, Control_Period => Self.Control_Period, Accel_Bias_B => To_C (Self.Accel_Bias_B));
+      Set_Config (Self.Alg, Control_Period => Self.Control_Period, Accel_Bias_B => (Value => Packed_F32x3.C.To_C (Self.Accel_Bias_B)));
    end Update_Parameters_Action;
 
    -- Validate a staged bias before it is applied by asking the algorithm's own
@@ -124,7 +119,7 @@ package body Component.Dv_Accumulation.Implementation is
       -- that raises is caught here.
       Bias : Packed_F32x3_Record.C.U_C;
    begin
-      Bias := To_C (Accel_Bias_B);
+      Bias := (Value => Packed_F32x3.C.To_C (Accel_Bias_B));
       -- The algorithm only requires a finite bias, and marshalling a non-finite one
       -- raises above, so the predicate cannot fail here today. It is still the guard
       -- should the algorithm's rules grow.
