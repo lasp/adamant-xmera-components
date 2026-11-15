@@ -77,7 +77,7 @@ private
    -- is rejected at staging rather than reaching the throwing Set_Config.
    overriding function Validate_Parameters (
       Self : in out Instance;
-      Step_Angle : in Packed_F32.U;
+      Steps_Per_Revolution : in Packed_U32.U;
       Motor_Min_Angle : in Packed_F32.U;
       Motor_Max_Angle : in Packed_F32.U;
       Settle_Count_Max : in Packed_U32.U;

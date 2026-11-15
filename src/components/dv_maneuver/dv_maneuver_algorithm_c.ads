@@ -21,20 +21,20 @@ package Dv_Maneuver_Algorithm_C is
    type Dv_Maneuver_Algorithm_Access is access all Dv_Maneuver_Algorithm;
 
    --* @brief Report whether a configuration would be accepted by Create/Set_Config.
-   --* @param Min_Time       [s]   Minimum burn time before completion; finite and not negative.
-   --* @param Max_Time       [s]   Maximum burn time; finite, positive, and greater than Min_Time
-   --*                             once both are rounded to nanoseconds.
-   --* @param Control_Period [s]   Update period; finite and at least 1 ns.
-   --* @param Cmd_Force_B    [N]   Body force commanded while the burn executes; finite.
-   --* @param Cmd_Dv_N       [m/s] Commanded delta-V in inertial frame components; finite.
+   --* @param Min_Time          [s]   Minimum burn time before completion; finite and not negative.
+   --* @param Max_Time          [s]   Maximum burn time; finite, positive, and greater than Min_Time
+   --*                               once both are rounded to nanoseconds.
+   --* @param Control_Period    [s]   Update period; finite and at least 1 ns.
+   --* @param Requested_Force_B [N]   Body force requested while the burn executes; finite.
+   --* @param Requested_Dv_N    [m/s] Requested delta-V in inertial frame components; finite.
    --* @return True if the configuration is valid. Never throws, so it can guard the
    --* throwing Create/Set_Config from an invalid configuration.
    function Validate_Config
-     (Min_Time       : Long_Float;
-      Max_Time       : Long_Float;
-      Control_Period : Long_Float;
-      Cmd_Force_B    : access constant Packed_F32x3_Record.C.U_C;
-      Cmd_Dv_N       : access constant Packed_F32x3_Record.C.U_C)
+     (Min_Time          : Long_Float;
+      Max_Time          : Long_Float;
+      Control_Period    : Long_Float;
+      Requested_Force_B : access constant Packed_F32x3_Record.C.U_C;
+      Requested_Dv_N    : access constant Packed_F32x3_Record.C.U_C)
      return Interfaces.C.C_bool
      with Import        => True,
           Convention    => C,
@@ -45,11 +45,11 @@ package Dv_Maneuver_Algorithm_C is
    --* parameters are as for Validate_Config.
    --* @return The new algorithm instance, which must be released with Destroy.
    function Create
-     (Min_Time       : Long_Float;
-      Max_Time       : Long_Float;
-      Control_Period : Long_Float;
-      Cmd_Force_B    : access constant Packed_F32x3_Record.C.U_C;
-      Cmd_Dv_N       : access constant Packed_F32x3_Record.C.U_C)
+     (Min_Time          : Long_Float;
+      Max_Time          : Long_Float;
+      Control_Period    : Long_Float;
+      Requested_Force_B : access constant Packed_F32x3_Record.C.U_C;
+      Requested_Dv_N    : access constant Packed_F32x3_Record.C.U_C)
      return Dv_Maneuver_Algorithm_Access
      with Import        => True,
           Convention    => C,
@@ -68,12 +68,12 @@ package Dv_Maneuver_Algorithm_C is
    --* Validate_Config.
    --* @param Self The algorithm instance.
    procedure Set_Config
-     (Self           : Dv_Maneuver_Algorithm_Access;
-      Min_Time       : Long_Float;
-      Max_Time       : Long_Float;
-      Control_Period : Long_Float;
-      Cmd_Force_B    : access constant Packed_F32x3_Record.C.U_C;
-      Cmd_Dv_N       : access constant Packed_F32x3_Record.C.U_C)
+     (Self              : Dv_Maneuver_Algorithm_Access;
+      Min_Time          : Long_Float;
+      Max_Time          : Long_Float;
+      Control_Period    : Long_Float;
+      Requested_Force_B : access constant Packed_F32x3_Record.C.U_C;
+      Requested_Dv_N    : access constant Packed_F32x3_Record.C.U_C)
      with Import        => True,
           Convention    => C,
           External_Name => "DvManeuverAlgorithm_setConfig";

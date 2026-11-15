@@ -1,5 +1,5 @@
 ---
-description: MRP rotation attitude guidance. Superimposes a constant rate rotation on an input attitude reference frame, advancing the rotation by one control period each tick, and returns the resulting reference attitude, rate, and acceleration. Wraps the MrpRotationAlgorithm C++ algorithm via its C shim.
+description: MRP rotation attitude guidance. Applies a fixed body correction, a pointing offset, and a constant rate rotation to an input attitude reference frame, advancing the rotation by one control period each tick, and returns the resulting reference attitude, rate, and acceleration. Wraps the MrpRotationAlgorithm C++ algorithm via its C shim.
 execution: passive
 init:
   description: Initializes the MRP rotation algorithm with the control period and the default parameter values.
@@ -12,7 +12,7 @@ connectors:
     type: Att_Ref_Tick.T
     return_type: Att_Ref.T
     kind: service
-  - description: Restart the rotation from the configured initial attitude. Called on GNC state change so the rotation does not carry over from the previous state.
+  - description: Restart the integrated rotation at identity. Called on GNC state change so the rotation does not carry over from the previous state.
     name: Reset_Tick_T_Recv_Sync
     type: Tick.T
     kind: recv_sync

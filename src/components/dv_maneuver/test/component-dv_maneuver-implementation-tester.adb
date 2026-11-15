@@ -17,7 +17,7 @@ package body Component.Dv_Maneuver.Implementation.Tester is
       Self.Data_Product_Fetch_T_Service_History.Init (Depth => 100);
       Self.Data_Product_T_Recv_Sync_History.Init (Depth => 100);
       -- Data product histories:
-      Self.Commanded_Force_History.Init (Depth => 100);
+      Self.Requested_Force_History.Init (Depth => 100);
       Self.Burn_State_History.Init (Depth => 100);
    end Init_Base;
 
@@ -28,7 +28,7 @@ package body Component.Dv_Maneuver.Implementation.Tester is
       Self.Data_Product_Fetch_T_Service_History.Destroy;
       Self.Data_Product_T_Recv_Sync_History.Destroy;
       -- Data product histories:
-      Self.Commanded_Force_History.Destroy;
+      Self.Requested_Force_History.Destroy;
       Self.Burn_State_History.Destroy;
    end Final_Base;
 
@@ -143,11 +143,11 @@ package body Component.Dv_Maneuver.Implementation.Tester is
    --    Data products for the Dv Maneuver component.
    -- [N] The configured body force while the burn executes, zero once it is
    -- complete.
-   overriding procedure Commanded_Force (Self : in out Instance; Arg : in Cmd_Force_Body.T) is
+   overriding procedure Requested_Force (Self : in out Instance; Arg : in Cmd_Force_Body.T) is
    begin
       -- Push the argument onto the test history for looking at later:
-      Self.Commanded_Force_History.Push (Arg);
-   end Commanded_Force;
+      Self.Requested_Force_History.Push (Arg);
+   end Requested_Force;
 
    -- Whether the burn is executing or complete.
    overriding procedure Burn_State (Self : in out Instance; Arg : in Packed_Burn_State.T) is

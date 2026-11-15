@@ -14,7 +14,7 @@ with Cmd_Torque_Body.Representation;
 
 -- Duty cycle for a body vector. Passes the input vector through for the first on
 -- periods of every cycle and outputs zero for the remaining off periods. In the
--- desaturation state it sits between momentum management and the thruster force
+-- desaturation state it sits between momentum management and the thrust
 -- mapping, so the thrusters fire in pulses with quiet windows in which the
 -- reaction wheels re-stabilize the attitude. The cadence is free-running and
 -- advances every tick. Wraps the VectorDutyCycleAlgorithm C++ algorithm via its C
@@ -42,7 +42,7 @@ package Component.Torque_Duty_Cycle.Implementation.Tester is
       -- Data dependency return values. These can be set during unit test
       -- and will be returned to the component when a data dependency call
       -- is made.
-      Commanded_Torque : Cmd_Torque_Body.T;
+      Requested_Torque : Cmd_Torque_Body.T;
       -- The return status for the data dependency fetch. This can be set
       -- during unit test to return something other than Success.
       Data_Dependency_Return_Status_Override : Data_Product_Enums.Fetch_Status.E := Data_Product_Enums.Fetch_Status.Success;
@@ -85,7 +85,7 @@ package Component.Torque_Duty_Cycle.Implementation.Tester is
    -- Description:
    --    Data products for the Torque Duty Cycle component.
    -- [Nm] The commanded torque during an on period, zero during an off period. The
-   -- thruster force mapping takes this as its commanded torque.
+   -- thrust mapping takes this as its commanded torque.
    overriding procedure Gated_Torque (Self : in out Instance; Arg : in Cmd_Torque_Body.T);
 
    -----------------------------------------------

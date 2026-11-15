@@ -6,8 +6,13 @@ with Ada.Assertions;
 with Ada.Real_Time;
 with AUnit.Assertions;
 with Basic_Assertions; use Basic_Assertions;
+with Dv_Accumulation_Parameters;
 with Packed_F32x3;
 with Packed_F32x3.Assertion; use Packed_F32x3.Assertion;
+with Parameter;
+with Parameter_Enums.Assertion;
+use Parameter_Enums.Parameter_Update_Status;
+use Parameter_Enums.Assertion;
 
 package body Dv_Accumulation_Tests.Implementation is
 
@@ -21,6 +26,8 @@ package body Dv_Accumulation_Tests.Implementation is
    Acceleration : constant Packed_F32x3.T := [0.1, -0.2, 0.3];
    Control_Period : constant Short_Float := 0.5;
    Zero_Vector : constant Packed_F32x3.T := [0.0, 0.0, 0.0];
+   -- An accelerometer bias of the size the burns are set up with.
+   Bias : constant Packed_F32x3.T := [0.1, 0.0, -0.1];
    Epsilon : constant := 1.0E-6;
 
    -------------------------------------------------------------------------
@@ -31,6 +38,21 @@ package body Dv_Accumulation_Tests.Implementation is
    -- accumulate.
    function Expected_Delta_V (Samples : in Natural; Bias : in Packed_F32x3.T := Zero_Vector) return Packed_F32x3.T is
       ([for I in Acceleration'Range => Short_Float (Samples) * Control_Period * (Acceleration (I) - Bias (I))]);
+
+   -- The sum of two delta-V vectors.
+   function "+" (Left : in Packed_F32x3.T; Right : in Packed_F32x3.T) return Packed_F32x3.T is
+      ([for I in Left'Range => Left (I) + Right (I)]);
+
+   -- Stage, validate and update the accelerometer bias, as the state manager does when
+   -- a burn is commanded. It applies at the next tick.
+   procedure Set_Bias (Self : in out Instance; Accel_Bias_B : in Packed_F32x3.T) is
+      T : Component.Dv_Accumulation.Implementation.Tester.Instance_Access renames Self.Tester;
+      Params : Dv_Accumulation_Parameters.Instance;
+   begin
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Accel_Bias_B (Accel_Bias_B)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
+      Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+   end Set_Bias;
 
    -- Send one tick with the acceleration and check the delta-V it publishes. The
    -- history only holds the output of this tick.
@@ -58,11 +80,8 @@ package body Dv_Accumulation_Tests.Implementation is
       -- Make necessary connections between tester and component:
       Self.Tester.Connect;
 
-      -- Both products are produced every tick, so they get no stale limit:
-      Self.Tester.Component_Instance.Map_Data_Dependencies (Accel_Average_Id => 0, Accel_Average_Stale_Limit => Ada.Real_Time.Time_Span_Zero, Accel_Bias_B_Id => 1, Accel_Bias_B_Stale_Limit => Ada.Real_Time.Time_Span_Zero);
-
-      -- No burn has been set up, so there is no bias to subtract:
-      Self.Tester.Accel_Bias_B := Zero_Vector;
+      -- The acceleration is produced every tick, so it gets no stale limit:
+      Self.Tester.Component_Instance.Map_Data_Dependencies (Accel_Average_Id => 0, Accel_Average_Stale_Limit => Ada.Real_Time.Time_Span_Zero);
 
       -- Call component init here.
       Self.Tester.Component_Instance.Init (Control_Period => Control_Period);
@@ -93,27 +112,57 @@ package body Dv_Accumulation_Tests.Implementation is
       end loop;
    end Test;
 
-   -- Ensure the accelerometer bias the state manager publishes is subtracted from
-   -- each sample.
+   -- Ensure a newly set accelerometer bias is subtracted from each sample from the
+   -- tick after its update, and the accumulated delta-V is kept.
    overriding procedure Test_Bias (Self : in out Instance) is
-      T : Component.Dv_Accumulation.Implementation.Tester.Instance_Access renames Self.Tester;
-      Bias : constant Packed_F32x3.T := [0.1, 0.0, -0.1];
    begin
+      -- The default bias makes no correction:
       Send_Tick (Self, Expected_Delta_V (0));
       Send_Tick (Self, Expected_Delta_V (1));
 
-      -- The bias applies to the samples from the tick it is published on, so the
-      -- delta-V is one unbiased sample plus the biased ones:
-      T.Accel_Bias_B := Bias;
+      -- The bias applies to the samples from the tick after its update, and the
+      -- accumulator is kept, so the delta-V is one unbiased sample plus the biased
+      -- ones:
+      Set_Bias (Self, Bias);
       for Samples in 1 .. 3 loop
-         declare
-            Unbiased : constant Packed_F32x3.T := Expected_Delta_V (1);
-            Biased : constant Packed_F32x3.T := Expected_Delta_V (Samples, Bias);
-         begin
-            Send_Tick (Self, [for I in Unbiased'Range => Unbiased (I) + Biased (I)]);
-         end;
+         Send_Tick (Self, Expected_Delta_V (1) + Expected_Delta_V (Samples, Bias));
       end loop;
    end Test_Bias;
+
+   -- The algorithm requires a finite bias. Validation is the only guard keeping a
+   -- rejected bias out of the throwing Set_Config, so exercise it directly.
+   overriding procedure Test_Invalid_Parameter (Self : in out Instance) is
+      T : Component.Dv_Accumulation.Implementation.Tester.Instance_Access renames Self.Tester;
+      Params : Dv_Accumulation_Parameters.Instance;
+   begin
+      -- The bias is accepted and subtracted from every sample:
+      Set_Bias (Self, Bias);
+      for Samples in 0 .. 2 loop
+         Send_Tick (Self, Expected_Delta_V (Samples, Bias));
+      end loop;
+
+      -- A non-finite bias is rejected. The value is injected as raw bytes because the
+      -- compiler will not let a non-finite Short_Float be written as a literal, and
+      -- because that is how one would arrive: as bytes from the ground. Staging accepts
+      -- it, and converting it for the algorithm raises, which validation reports as a
+      -- rejection.
+      declare
+         Par : Parameter.T := Params.Accel_Bias_B (Bias);
+      begin
+         -- Overwrite the first of the three big-endian floats with +infinity.
+         Par.Buffer (Par.Buffer'First .. Par.Buffer'First + 3) := [16#7F#, 16#80#, 16#00#, 16#00#];
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Par), Success);
+      end;
+      Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
+
+      -- The bias in effect is unchanged:
+      Send_Tick (Self, Expected_Delta_V (3, Bias));
+
+      -- Another valid bias is still accepted after the rejection. Zero makes no
+      -- correction, so the next sample adds without one:
+      Set_Bias (Self, Zero_Vector);
+      Send_Tick (Self, Expected_Delta_V (3, Bias) + Expected_Delta_V (1));
+   end Test_Invalid_Parameter;
 
    -- Ensure the reset connector zeroes the accumulated delta-V and the next sample
    -- starts a new window without being integrated.

@@ -9,10 +9,11 @@ with Att_Ref_Tick;
 with Parameter_Update;
 with Mrp_Rotation_Algorithm_C; use Mrp_Rotation_Algorithm_C;
 
--- MRP rotation attitude guidance. Superimposes a constant rate rotation on an
--- input attitude reference frame, advancing the rotation by one control period
--- each tick, and returns the resulting reference attitude, rate, and
--- acceleration. Wraps the MrpRotationAlgorithm C++ algorithm via its C shim.
+-- MRP rotation attitude guidance. Applies a fixed body correction, a pointing
+-- offset, and a constant rate rotation to an input attitude reference frame,
+-- advancing the rotation by one control period each tick, and returns the
+-- resulting reference attitude, rate, and acceleration. Wraps the
+-- MrpRotationAlgorithm C++ algorithm via its C shim.
 package Component.Mrp_Rotation.Implementation is
 
    -- The component class instance record:
@@ -62,8 +63,8 @@ private
    -- Rotate the attitude reference in the argument by the configured rotation,
    -- advanced to the tick in the argument, and return the result.
    overriding function Att_Ref_Tick_T_Service (Self : in out Instance; Arg : in Att_Ref_Tick.T) return Att_Ref.T;
-   -- Restart the rotation from the configured initial attitude. Called on GNC state
-   -- change so the rotation does not carry over from the previous state.
+   -- Restart the integrated rotation at identity. Called on GNC state change so the
+   -- rotation does not carry over from the previous state.
    overriding procedure Reset_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T);
    -- The parameter update connector.
    overriding procedure Parameter_Update_T_Modify (Self : in out Instance; Arg : in out Parameter_Update.T);
@@ -101,8 +102,10 @@ private
    -- no connector invocations.
    overriding function Validate_Parameters (
       Self : in out Instance;
-      Initial_Sigma_Rr0 : in Packed_F32x3.U;
-      Omega_Rr0_R : in Packed_F32x3.U
+      Sigma_Rcr0 : in Packed_F32x3.U;
+      Sigma_Rprc : in Packed_F32x3.U;
+      Spin_Axis_Rp : in Packed_F32x3.U;
+      Spin_Rate : in Packed_F32.U
    ) return Parameter_Validation_Status.E;
 
 end Component.Mrp_Rotation.Implementation;

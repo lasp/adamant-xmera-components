@@ -7,7 +7,7 @@
 #      bool forceY;
 #      bool forceZ;
 #  } ForceTorqueControlAxes_c;
-description: Per-axis controllability assertions for the thruster force mapping, torque xyz then force xyz, all in body frame B. A true entry asserts that axis must lie in the column space of the control mapping matrix DG.
+description: Per-axis controllability assertions for the thrust mapping, torque xyz then force xyz, all in body frame B. A true entry asserts that axis must lie in the column space of the control mapping matrix DG.
 fields:
   - name: Torque_X
     type: Boolean

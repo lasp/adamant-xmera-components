@@ -17,9 +17,12 @@ private
    -- acceleration times the control period on each tick after the first, which
    -- starts the window, to ensure the Ada to C to C++ integration is sound.
    overriding procedure Test (Self : in out Instance);
-   -- Ensure the accelerometer bias the state manager publishes is subtracted from
-   -- each sample.
+   -- Ensure a newly set accelerometer bias is subtracted from each sample from the
+   -- tick after its update, and the accumulated delta-V is kept.
    overriding procedure Test_Bias (Self : in out Instance);
+   -- Ensure a staged accelerometer bias the algorithm would reject is refused at
+   -- validation and leaves the bias in effect unchanged.
+   overriding procedure Test_Invalid_Parameter (Self : in out Instance);
    -- Ensure the reset connector zeroes the accumulated delta-V and the next sample
    -- starts a new window without being integrated.
    overriding procedure Test_Reset (Self : in out Instance);

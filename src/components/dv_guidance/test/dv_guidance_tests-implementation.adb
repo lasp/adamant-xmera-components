@@ -38,12 +38,12 @@ package body Dv_Guidance_Tests.Implementation is
    -- Helpers:
    -------------------------------------------------------------------------
 
-   -- Stage the burn frame, the commanded delta-V and the preferred direction.
+   -- Stage the burn frame, the requested delta-V and the preferred direction.
    procedure Stage_Frame (Self : in out Instance; Dv : in Packed_F32x3.T; Pref : in Packed_F32x3.T) is
       T : Component.Dv_Guidance.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Dv_Guidance_Parameters.Instance;
    begin
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cmd_Dv_N (Dv)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Requested_Dv_N (Dv)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.R_Hat_Pref_N (Pref)), Success);
    end Stage_Frame;
 
@@ -158,7 +158,7 @@ package body Dv_Guidance_Tests.Implementation is
       -- it, and converting it for the algorithm raises, which validation reports as a
       -- rejection.
       declare
-         Par : Parameter.T := Params.Cmd_Dv_N (Reference_Dv);
+         Par : Parameter.T := Params.Requested_Dv_N (Reference_Dv);
       begin
          -- Overwrite the first of the three big-endian floats with +infinity.
          Par.Buffer (Par.Buffer'First .. Par.Buffer'First + 3) := [16#7F#, 16#80#, 16#00#, 16#00#];

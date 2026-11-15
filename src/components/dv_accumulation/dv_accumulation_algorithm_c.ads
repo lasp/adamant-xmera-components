@@ -15,21 +15,27 @@ package Dv_Accumulation_Algorithm_C is
 
    --* @brief Report whether a configuration would be accepted by Create/Set_Config.
    --* @param Control_Period [s] Control period, the integration step; finite and > 0.
+   --* @param Accel_Bias_B   [m/s^2] Offset the measured acceleration contains, subtracted
+   --*                       from each sample; finite. Zero makes no correction.
    --* @return True if the configuration is valid. Never throws, so it can guard the
    --* throwing Create/Set_Config from an invalid configuration.
    function Validate_Config
-     (Control_Period : Short_Float)
+     (Control_Period : Short_Float;
+      Accel_Bias_B   : Packed_F32x3_Record.C.U_C)
      return Interfaces.C.C_bool
      with Import        => True,
           Convention    => C,
           External_Name => "DvAccumulationAlgorithm_validateConfig";
 
    --* @brief Construct a new DvAccumulationAlgorithm from a configuration. Validate the
-   --* value with Validate_Config before calling; throws on invalid input.
+   --* values with Validate_Config before calling; throws on invalid input.
    --* @param Control_Period [s] Control period, the integration step; finite and > 0.
+   --* @param Accel_Bias_B   [m/s^2] Offset the measured acceleration contains, subtracted
+   --*                       from each sample; finite. Zero makes no correction.
    --* @return The new algorithm instance, which must be released with Destroy.
    function Create
-     (Control_Period : Short_Float)
+     (Control_Period : Short_Float;
+      Accel_Bias_B   : Packed_F32x3_Record.C.U_C)
      return Dv_Accumulation_Algorithm_Access
      with Import        => True,
           Convention    => C,
@@ -39,9 +45,12 @@ package Dv_Accumulation_Algorithm_C is
    --* accumulator is kept; Re_Initialize starts it over.
    --* @param Self           The algorithm instance.
    --* @param Control_Period [s] Control period, the integration step; finite and > 0.
+   --* @param Accel_Bias_B   [m/s^2] Offset the measured acceleration contains, subtracted
+   --*                       from each sample; finite. Zero makes no correction.
    procedure Set_Config
      (Self           : Dv_Accumulation_Algorithm_Access;
-      Control_Period : Short_Float)
+      Control_Period : Short_Float;
+      Accel_Bias_B   : Packed_F32x3_Record.C.U_C)
      with Import        => True,
           Convention    => C,
           External_Name => "DvAccumulationAlgorithm_setConfig";
@@ -63,20 +72,16 @@ package Dv_Accumulation_Algorithm_C is
           Convention    => C,
           External_Name => "DvAccumulationAlgorithm_reInitialize";
 
-   --* @brief Subtract the bias from one sample of the body frame acceleration that
-   --* gravity does not cause, integrate the remainder over the control period, and add
-   --* it to the accumulator. The first call after construction or Re_Initialize only
+   --* @brief Subtract the configured bias from one sample of the body frame acceleration
+   --* that gravity does not cause, integrate the remainder over the control period, and
+   --* add it to the accumulator. The first call after construction or Re_Initialize only
    --* starts the window.
    --* @param Self                   The algorithm instance.
    --* @param R_Ddot_No_Gravity_Bn_B [m/s^2] Body frame acceleration that gravity does not cause.
-   --* @param Accel_Bias_B           [m/s^2] Offset the measured acceleration contains, subtracted
-   --*                               from the sample. Not validated: a non-finite bias gives a
-   --*                               non-finite delta-V.
    --* @return [m/s] The accumulated body frame delta-V.
    function Update
      (Self                   : Dv_Accumulation_Algorithm_Access;
-      R_Ddot_No_Gravity_Bn_B : Packed_F32x3_Record.C.U_C;
-      Accel_Bias_B           : Packed_F32x3_Record.C.U_C)
+      R_Ddot_No_Gravity_Bn_B : Packed_F32x3_Record.C.U_C)
      return Packed_F32x3_Record.C.U_C
      with Import        => True,
           Convention    => C,

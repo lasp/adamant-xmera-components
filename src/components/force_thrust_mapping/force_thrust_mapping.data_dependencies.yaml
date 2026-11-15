@@ -1,0 +1,6 @@
+---
+description: Data dependencies for the Force Thrust Mapping component.
+data_dependencies:
+  - name: Requested_Force
+    type: Cmd_Force_Body.T
+    description: "[N] Commanded control force in body frame components."

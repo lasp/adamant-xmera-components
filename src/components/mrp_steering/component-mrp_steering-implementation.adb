@@ -61,11 +61,11 @@ package body Component.Mrp_Steering.Implementation is
       -- valid one. The generated Assert_Valid_Parameter_Defaults checks them at startup
       -- and in unit test set up. The control period's type keeps it positive.
       Self.Alg := Create (
-         K1                            => Self.Proportional_Gain_K1.Value,
-         K3                            => Self.Cubic_Gain_K3.Value,
+         Kp1                           => Self.Proportional_Gain_Kp1.Value,
+         Kp3                           => Self.Cubic_Gain_Kp3.Value,
          Omega_Max                     => Self.Omega_Max.Value,
          Ignore_Outer_Loop_Feedforward => Interfaces.C.C_bool (Self.Ignore_Outer_Loop_Feedforward.Value),
-         P                             => Self.Derivative_Gain_P.Value,
+         Kd                            => Self.Derivative_Gain_Kd.Value,
          Ki                            => Self.Integral_Gain_Ki.Value,
          Integral_Limit                => Self.Integral_Limit.Value,
          Control_Period                => Self.Control_Period,
@@ -165,11 +165,11 @@ package body Component.Mrp_Steering.Implementation is
       -- reject them.
       Set_Config (
          Self.Alg,
-         K1                            => Self.Proportional_Gain_K1.Value,
-         K3                            => Self.Cubic_Gain_K3.Value,
+         Kp1                           => Self.Proportional_Gain_Kp1.Value,
+         Kp3                           => Self.Cubic_Gain_Kp3.Value,
          Omega_Max                     => Self.Omega_Max.Value,
          Ignore_Outer_Loop_Feedforward => Interfaces.C.C_bool (Self.Ignore_Outer_Loop_Feedforward.Value),
-         P                             => Self.Derivative_Gain_P.Value,
+         Kd                            => Self.Derivative_Gain_Kd.Value,
          Ki                            => Self.Integral_Gain_Ki.Value,
          Integral_Limit                => Self.Integral_Limit.Value,
          Control_Period                => Self.Control_Period,
@@ -186,11 +186,11 @@ package body Component.Mrp_Steering.Implementation is
    -- throwing Create/Set_Config across the FFI boundary.
    overriding function Validate_Parameters (
       Self : in out Instance;
-      Proportional_Gain_K1 : in Packed_F32.U;
-      Cubic_Gain_K3 : in Packed_F32.U;
+      Proportional_Gain_Kp1 : in Packed_F32.U;
+      Cubic_Gain_Kp3 : in Packed_F32.U;
       Omega_Max : in Packed_F32.U;
       Ignore_Outer_Loop_Feedforward : in Packed_Boolean.U;
-      Derivative_Gain_P : in Packed_F32.U;
+      Derivative_Gain_Kd : in Packed_F32.U;
       Integral_Gain_Ki : in Packed_F32.U;
       Integral_Limit : in Packed_F32.U;
       Known_Torque_Pnt_B_B : in Packed_F32x3.U;
@@ -205,11 +205,11 @@ package body Component.Mrp_Steering.Implementation is
    begin
       Cfg := To_Pointer_Config (Known_Torque_Pnt_B_B, Inertia, Rw_Spin_Axes, Rw_Inertias, Wheel_Availability);
       if Validate_Config (
-         K1                            => Proportional_Gain_K1.Value,
-         K3                            => Cubic_Gain_K3.Value,
+         Kp1                           => Proportional_Gain_Kp1.Value,
+         Kp3                           => Cubic_Gain_Kp3.Value,
          Omega_Max                     => Omega_Max.Value,
          Ignore_Outer_Loop_Feedforward => Interfaces.C.C_bool (Ignore_Outer_Loop_Feedforward.Value),
-         P                             => Derivative_Gain_P.Value,
+         Kd                            => Derivative_Gain_Kd.Value,
          Ki                            => Integral_Gain_Ki.Value,
          Integral_Limit                => Integral_Limit.Value,
          Control_Period                => Self.Control_Period,

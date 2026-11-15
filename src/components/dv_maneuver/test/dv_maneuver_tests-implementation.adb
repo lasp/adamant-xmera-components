@@ -42,18 +42,18 @@ package body Dv_Maneuver_Tests.Implementation is
       T : Component.Dv_Maneuver.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Dv_Maneuver_Parameters.Instance;
    begin
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cmd_Force_B (Force)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Requested_Force_B (Force)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
    end Apply_Force;
 
-   -- Stage the burn times and the commanded delta-V of a burn.
+   -- Stage the burn times and the requested delta-V of a burn.
    procedure Stage_Burn (Self : in out Instance; Delta_V : in Short_Float; Min_Time : in Long_Float; Max_Time : in Long_Float) is
       T : Component.Dv_Maneuver.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Dv_Maneuver_Parameters.Instance;
    begin
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Min_Time ((Value => Min_Time))), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Time ((Value => Max_Time))), Success);
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cmd_Dv_N ([0.0, 0.0, Delta_V])), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Requested_Dv_N ([0.0, 0.0, Delta_V])), Success);
    end Stage_Burn;
 
    -- Discard the staged parameters, as the state manager does when a component
@@ -85,13 +85,13 @@ package body Dv_Maneuver_Tests.Implementation is
    begin
       T.Accumulated_Delta_V := [0.0, 0.0, Short_Float (Step)];
       T.Data_Product_T_Recv_Sync_History.Clear;
-      T.Commanded_Force_History.Clear;
+      T.Requested_Force_History.Clear;
       T.Burn_State_History.Clear;
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
       Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, 2);
-      Natural_Assert.Eq (T.Commanded_Force_History.Get_Count, 1);
+      Natural_Assert.Eq (T.Requested_Force_History.Get_Count, 1);
       Natural_Assert.Eq (T.Burn_State_History.Get_Count, 1);
-      Cmd_Force_Body_Assert.Eq (T.Commanded_Force_History.Get (1), (Force_Request_Body => (if Executing then Force else Zero_Vector)), Epsilon => Epsilon);
+      Cmd_Force_Body_Assert.Eq (T.Requested_Force_History.Get (1), (Force_Request_Body => (if Executing then Force else Zero_Vector)), Epsilon => Epsilon);
       Packed_Burn_State_Assert.Eq (T.Burn_State_History.Get (1), (Value => (if Executing then Burn_State.Executing else Burn_State.Complete)));
    end Send_Tick;
 
@@ -144,11 +144,11 @@ package body Dv_Maneuver_Tests.Implementation is
 
    -- Run the burn of the algorithm's Python reference test, with the delta-V
    -- accumulating at a constant rate, and check the force command and the burn state
-   -- on every tick until the commanded delta-V completes the burn, to ensure the Ada
+   -- on every tick until the requested delta-V completes the burn, to ensure the Ada
    -- to C to C++ integration is sound.
    overriding procedure Test (Self : in out Instance) is
    begin
-      -- The first tick applies the burn and starts it. The commanded delta-V of 4.3
+      -- The first tick applies the burn and starts it. The requested delta-V of 4.3
       -- is reached at step 5, after the minimum burn time of zero, so the burn is
       -- complete from there:
       Command_Burn (Self, Delta_V => 4.3, Min_Time => 0.0, Max_Time => 3.0);
@@ -229,10 +229,10 @@ package body Dv_Maneuver_Tests.Implementation is
    overriding procedure Test_Invalid_Parameter (Self : in out Instance) is
       T : Component.Dv_Maneuver.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Dv_Maneuver_Parameters.Instance;
-      Par : Parameter.T := Params.Cmd_Force_B (Force);
+      Par : Parameter.T := Params.Requested_Force_B (Force);
    begin
       -- The reference force is accepted:
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cmd_Force_B (Force)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Requested_Force_B (Force)), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
 
       -- A non-finite force is rejected. The value is injected as raw bytes because the
@@ -246,7 +246,7 @@ package body Dv_Maneuver_Tests.Implementation is
 
       -- Restoring the reference force makes the set acceptable again, so the rejection
       -- above was caused by the perturbed value:
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cmd_Force_B (Force)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Requested_Force_B (Force)), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
    end Test_Invalid_Parameter;
@@ -264,7 +264,7 @@ package body Dv_Maneuver_Tests.Implementation is
          when Ada.Assertions.Assertion_Error =>
             null; -- Expected.
       end;
-      Natural_Assert.Eq (T.Commanded_Force_History.Get_Count, 0);
+      Natural_Assert.Eq (T.Requested_Force_History.Get_Count, 0);
    end Test_Invalid_Data_Dependency;
 
 end Dv_Maneuver_Tests.Implementation;

@@ -28,16 +28,16 @@ package body Mrp_Steering_Tests.Implementation is
 
    -- Gains, inertia, wheel configuration, guidance errors, and wheel speeds from the
    -- Python reference test (_tests/test_mrpSteering.py).
-   Gain_K1 : constant Packed_F32.T := (Value => 0.15);
-   No_K1 : constant Packed_F32.T := (Value => 0.0);
-   Gain_K3 : constant Packed_F32.T := (Value => 1.0);
-   No_K3 : constant Packed_F32.T := (Value => 0.0);
+   Gain_Kp1 : constant Packed_F32.T := (Value => 0.15);
+   No_Kp1 : constant Packed_F32.T := (Value => 0.0);
+   Gain_Kp3 : constant Packed_F32.T := (Value => 1.0);
+   No_Kp3 : constant Packed_F32.T := (Value => 0.0);
    -- 1.5 degrees per second.
    Omega_Max : constant Packed_F32.T := (Value => 0.02617993878);
    Small_Omega_Max : constant Packed_F32.T := (Value => 0.001);
    With_Feedforward : constant Packed_Boolean.T := (Value => False);
    Without_Feedforward : constant Packed_Boolean.T := (Value => True);
-   Gain_P : constant Packed_F32.T := (Value => 150.0);
+   Gain_Kd : constant Packed_F32.T := (Value => 150.0);
    Gain_Ki : constant Packed_F32.T := (Value => 0.01);
    Integral_Limit : constant Packed_F32.T := (Value => 20.0);
    -- The control period is fixed at initialization, half a second as in the reference test.
@@ -63,23 +63,23 @@ package body Mrp_Steering_Tests.Implementation is
    -- Helpers:
    -------------------------------------------------------------------------
 
-   -- Stage and apply a configuration. The gains P and Ki, the integral limit, the known
+   -- Stage and apply a configuration. The gains Kd and Ki, the integral limit, the known
    -- torque, the inertia, and the wheel configuration are the same in every case.
    procedure Apply_Configuration (
       Self : in out Instance;
-      K1 : in Packed_F32.T;
-      K3 : in Packed_F32.T;
+      Kp1 : in Packed_F32.T;
+      Kp3 : in Packed_F32.T;
       Max_Rate : in Packed_F32.T;
       Ignore_Feedforward : in Packed_Boolean.T
    ) is
       T : Component.Mrp_Steering.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Mrp_Steering_Parameters.Instance;
    begin
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_K1 (K1)), Success);
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cubic_Gain_K3 (K3)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_Kp1 (Kp1)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cubic_Gain_Kp3 (Kp3)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Omega_Max (Max_Rate)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Ignore_Outer_Loop_Feedforward (Ignore_Feedforward)), Success);
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Derivative_Gain_P (Gain_P)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Derivative_Gain_Kd (Gain_Kd)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Integral_Gain_Ki (Gain_Ki)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Integral_Limit (Integral_Limit)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Known_Torque_Pnt_B_B (Known_Torque)), Success);
@@ -164,7 +164,7 @@ package body Mrp_Steering_Tests.Implementation is
          [-4.4483239663, 8.4098328127, -4.8615872797]
       ];
    begin
-      Apply_Configuration (Self, K1 => Gain_K1, K3 => Gain_K3, Max_Rate => Omega_Max, Ignore_Feedforward => With_Feedforward);
+      Apply_Configuration (Self, Kp1 => Gain_Kp1, Kp3 => Gain_Kp3, Max_Rate => Omega_Max, Ignore_Feedforward => With_Feedforward);
 
       -- Three ticks accumulate the integral:
       for I in Expected'Range loop
@@ -186,20 +186,20 @@ package body Mrp_Steering_Tests.Implementation is
       T : Component.Mrp_Steering.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
       -- Leaving out the outer loop feedforward changes the inertia term only:
-      Apply_Configuration (Self, K1 => Gain_K1, K3 => Gain_K3, Max_Rate => Omega_Max, Ignore_Feedforward => Without_Feedforward);
+      Apply_Configuration (Self, Kp1 => Gain_Kp1, Kp3 => Gain_Kp3, Max_Rate => Omega_Max, Ignore_Feedforward => Without_Feedforward);
       Send_Tick (Self);
       Assert_Latest_Output (Self, 1, [-4.6357667290, 8.4406835569, -4.8896912369]);
 
       -- Zero steering gains command a zero rate, so the law reduces to rate damping
       -- with the momentum and reference motion terms:
       T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
-      Apply_Configuration (Self, K1 => No_K1, K3 => No_K3, Max_Rate => Small_Omega_Max, Ignore_Feedforward => With_Feedforward);
+      Apply_Configuration (Self, Kp1 => No_Kp1, Kp3 => No_Kp3, Max_Rate => Small_Omega_Max, Ignore_Feedforward => With_Feedforward);
       Send_Tick (Self);
       Assert_Latest_Output (Self, 2, [-1.5391475404, 4.0394559006, -1.4877533603]);
 
       -- A small maximum rate saturates the proportional steering command:
       T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
-      Apply_Configuration (Self, K1 => Gain_K1, K3 => No_K3, Max_Rate => Small_Omega_Max, Ignore_Feedforward => Without_Feedforward);
+      Apply_Configuration (Self, Kp1 => Gain_Kp1, Kp3 => No_Kp3, Max_Rate => Small_Omega_Max, Ignore_Feedforward => Without_Feedforward);
       Send_Tick (Self);
       Assert_Latest_Output (Self, 3, [-1.6768409312, 4.2183997367, -1.6183801474]);
    end Test_Steering_Law_Variants;
@@ -216,11 +216,11 @@ package body Mrp_Steering_Tests.Implementation is
       -- perturbed value rather than by leftover staging state.
       procedure Stage_Valid_Configuration is
       begin
-         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_K1 (Gain_K1)), Success);
-         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cubic_Gain_K3 (Gain_K3)), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_Kp1 (Gain_Kp1)), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cubic_Gain_Kp3 (Gain_Kp3)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Omega_Max (Omega_Max)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Ignore_Outer_Loop_Feedforward (With_Feedforward)), Success);
-         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Derivative_Gain_P (Gain_P)), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Derivative_Gain_Kd (Gain_Kd)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Integral_Gain_Ki (Gain_Ki)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Integral_Limit (Integral_Limit)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Known_Torque_Pnt_B_B (Known_Torque)), Success);
@@ -236,7 +236,7 @@ package body Mrp_Steering_Tests.Implementation is
 
       -- A negative proportional gain is rejected:
       Stage_Valid_Configuration;
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_K1 ((Value => -0.15))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_Kp1 ((Value => -0.15))), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
 
       -- A zero maximum rate is rejected:

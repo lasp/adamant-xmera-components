@@ -8,8 +8,8 @@ with Mrp_Feedback_Rw_Spin_Axes.C;
 with Packed_F32x3.C;
 with Packed_F32x3_Record.C;
 with Packed_F32x3_X4.C;
-with Packed_F32x4;
-with Packed_F32x9;
+with Packed_F32x4.C;
+with Packed_F32x9.C;
 with Packed_F32x9_Record.C;
 with Rw_Speeds_Input.C;
 with Rwa_Speeds;
@@ -38,10 +38,10 @@ package body Component.Momentum_Management.Implementation is
       Rw_Inertias : in Packed_F32x4.U;
       Wheel_Availability : in Wheel_Availability_X4.U
    ) return Pointer_Config is
-      (Dumpable_Projection => (Value => [for I in Dumpable_Projection'Range => Dumpable_Projection (I)]),
-       Hs_Desired => (Value => [for I in Hs_Desired'Range => Hs_Desired (I)]),
+      (Dumpable_Projection => (Value => Packed_F32x9.C.To_C (Dumpable_Projection)),
+       Hs_Desired => (Value => Packed_F32x3.C.To_C (Hs_Desired)),
        Rw_Spin_Axes => (Value => Packed_F32x3_X4.C.To_C (Rw_Spin_Axes)),
-       Rw_Inertias => (Value => [for I in Rw_Inertias'Range => Rw_Inertias (I)]),
+       Rw_Inertias => (Value => Packed_F32x4.C.To_C (Rw_Inertias)),
        Wheel_Availability => (Value => Wheel_Availability_X4.C.To_C (Wheel_Availability)));
 
    --------------------------------------------------
@@ -66,7 +66,7 @@ package body Component.Momentum_Management.Implementation is
       -- and in unit test set up. The control period's type keeps it positive.
       Self.Alg := Create (
          Hs_Min                => Self.Hs_Min.Value,
-         K                     => Self.Proportional_Gain_K.Value,
+         Kp                    => Self.Proportional_Gain_Kp.Value,
          Ki                    => Self.Integral_Gain_Ki.Value,
          Integral_Limit        => Self.Integral_Limit.Value,
          Control_Period        => Self.Control_Period,
@@ -112,7 +112,7 @@ package body Component.Momentum_Management.Implementation is
 
       -- Call the C algorithm and publish the requested torque. Update is qualified
       -- because Parameter_Enums also declares one.
-      Self.Data_Product_T_Send (Self.Data_Products.Commanded_Torque (
+      Self.Data_Product_T_Send (Self.Data_Products.Requested_Torque (
          Arg.Time,
          (Torque_Request_Body => Packed_F32x3.C.Pack (Momentum_Management_Algorithm_C.Update (
             Self.Alg, Wheel_Speeds => Speeds_C'Access).Value))
@@ -156,7 +156,7 @@ package body Component.Momentum_Management.Implementation is
       Set_Config (
          Self.Alg,
          Hs_Min                => Self.Hs_Min.Value,
-         K                     => Self.Proportional_Gain_K.Value,
+         Kp                    => Self.Proportional_Gain_Kp.Value,
          Ki                    => Self.Integral_Gain_Ki.Value,
          Integral_Limit        => Self.Integral_Limit.Value,
          Control_Period        => Self.Control_Period,
@@ -174,7 +174,7 @@ package body Component.Momentum_Management.Implementation is
    overriding function Validate_Parameters (
       Self : in out Instance;
       Hs_Min : in Packed_F32.U;
-      Proportional_Gain_K : in Packed_F32.U;
+      Proportional_Gain_Kp : in Packed_F32.U;
       Integral_Gain_Ki : in Packed_F32.U;
       Integral_Limit : in Packed_F32.U;
       Dumpable_Projection : in Packed_F32x9.U;
@@ -190,7 +190,7 @@ package body Component.Momentum_Management.Implementation is
       Cfg := To_Pointer_Config (Dumpable_Projection, Hs_Desired, Rw_Spin_Axes, Rw_Inertias, Wheel_Availability);
       if Validate_Config (
          Hs_Min                => Hs_Min.Value,
-         K                     => Proportional_Gain_K.Value,
+         Kp                    => Proportional_Gain_Kp.Value,
          Ki                    => Integral_Gain_Ki.Value,
          Integral_Limit        => Integral_Limit.Value,
          Control_Period        => Self.Control_Period,

@@ -6,8 +6,7 @@ with Css_Sensor_Values;
 with Packed_F32x24;
 with Packed_F32x3.C;
 with Packed_F64x3.C;
-with Packed_F64x7;
-with Packed_F64x8;
+with Packed_F64x7.C;
 with Packed_F64x8.C;
 with Packed_F64x49.C;
 with Sunline_Filter_Css_Data.C;
@@ -64,10 +63,10 @@ package body Component.Sunline_Filter.Implementation is
    begin
       return
          (Process_Noise => (Value => Diagonal_Matrix (Process_Noise_Diagonal)),
-          Initial_State => (Value => [for I in Initial_State'Range => Initial_State (I)]),
+          Initial_State => (Value => Packed_F64x7.C.To_C (Initial_State)),
           Initial_Covariance => (Value => Diagonal_Matrix (Initial_Covariance_Diagonal)),
           Css_N_Hat => (Value => [for I in Css_N_Hat_B'Range => Long_Float (Css_N_Hat_B (I))]),
-          Css_Scale_Factor => (Value => [for I in Css_Scale_Factor'Range => Css_Scale_Factor (I)]));
+          Css_Scale_Factor => (Value => Packed_F64x8.C.To_C (Css_Scale_Factor)));
    end To_Pointer_Config;
 
    --------------------------------------------------

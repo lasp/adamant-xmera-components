@@ -101,7 +101,7 @@ private
    overriding function Validate_Parameters (
       Self : in out Instance;
       Hs_Min : in Packed_F32.U;
-      Proportional_Gain_K : in Packed_F32.U;
+      Proportional_Gain_Kp : in Packed_F32.U;
       Integral_Gain_Ki : in Packed_F32.U;
       Integral_Limit : in Packed_F32.U;
       Dumpable_Projection : in Packed_F32x9.U;

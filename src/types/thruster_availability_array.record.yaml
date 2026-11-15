@@ -2,7 +2,7 @@
 #  typedef struct {
 #      uint8_t availability[MAX_EFF_CNT];
 #  } ThrusterAvailabilityArray_c;
-description: Record wrapping the per-thruster availability. Maps to ThrusterAvailabilityArray_c in the force torque thruster force mapping C shim.
+description: Record wrapping the per-thruster availability. Maps to ThrusterAvailabilityArray_c in the thrust mapping C shim.
 fields:
   - name: Value
     description: Availability of each thruster slot.

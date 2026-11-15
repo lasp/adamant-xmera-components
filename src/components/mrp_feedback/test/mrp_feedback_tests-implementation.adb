@@ -28,8 +28,8 @@ package body Mrp_Feedback_Tests.Implementation is
 
    -- Gains, inertia, wheel configuration, guidance errors, and wheel speeds from the
    -- Python reference test (_tests/test_mrpFeedback.py).
-   Gain_K : constant Packed_F32.T := (Value => 0.15);
-   Gain_P : constant Packed_F32.T := (Value => 150.0);
+   Gain_Kp : constant Packed_F32.T := (Value => 0.15);
+   Gain_Kd : constant Packed_F32.T := (Value => 150.0);
    Gain_Ki : constant Packed_F32.T := (Value => 0.01);
    No_Integral : constant Packed_F32.T := (Value => 0.0);
    Integral_Limit : constant Packed_F32.T := (Value => 20.0);
@@ -66,7 +66,7 @@ package body Mrp_Feedback_Tests.Implementation is
    -- Helpers:
    -------------------------------------------------------------------------
 
-   -- Stage and apply a configuration. The gains K and P, the known torque, the
+   -- Stage and apply a configuration. The gains Kp and Kd, the known torque, the
    -- inertia, and the wheel geometry are the same in every case.
    procedure Apply_Configuration (
       Self : in out Instance;
@@ -78,8 +78,8 @@ package body Mrp_Feedback_Tests.Implementation is
       T : Component.Mrp_Feedback.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Mrp_Feedback_Parameters.Instance;
    begin
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_K (Gain_K)), Success);
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Derivative_Gain_P (Gain_P)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_Kp (Gain_Kp)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Derivative_Gain_Kd (Gain_Kd)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Integral_Gain_Ki (Ki)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Integral_Limit (Limit)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Law_Type (Law)), Success);
@@ -161,7 +161,7 @@ package body Mrp_Feedback_Tests.Implementation is
 
    -- Run the algorithm through the integral accumulation and reset sequence of the
    -- Python reference test to ensure the Ada to C to C++ integration is sound. With
-   -- the integral gain on, the attitude error integral grows by K * dt * sigma_BR each
+   -- the integral gain on, the attitude error integral grows by Kp * dt * sigma_BR each
    -- tick, so the torques change from tick to tick. The reference test zeroes the
    -- integral after three ticks, which here is the reset connector, so ticks four and
    -- five repeat ticks one and two.
@@ -240,8 +240,8 @@ package body Mrp_Feedback_Tests.Implementation is
       -- perturbed value rather than by leftover staging state.
       procedure Stage_Valid_Configuration is
       begin
-         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_K (Gain_K)), Success);
-         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Derivative_Gain_P (Gain_P)), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_Kp (Gain_Kp)), Success);
+         Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Derivative_Gain_Kd (Gain_Kd)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Integral_Gain_Ki (Gain_Ki)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Integral_Limit (Integral_Limit)), Success);
          Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Control_Law_Type (Normal_Law)), Success);
@@ -258,7 +258,7 @@ package body Mrp_Feedback_Tests.Implementation is
 
       -- A negative proportional gain is rejected:
       Stage_Valid_Configuration;
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_K ((Value => -0.15))), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_Kp ((Value => -0.15))), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
 
       -- A negative integral gain is rejected:
