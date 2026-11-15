@@ -11,7 +11,7 @@ with Inertial_Filter_State_Matrix.C;
 with Inertial_Filter_State_Vector.C;
 with Packed_F32x3.C;
 with Packed_F64x3.C;
-with Packed_F64x6;
+with Packed_F64x6.C;
 with Packed_F64x36.C;
 with St_Att;
 
@@ -47,7 +47,7 @@ package body Component.Inertial_Filter.Implementation is
    begin
       return
          (Process_Noise => (Value => Diagonal_Matrix (Process_Noise_Diagonal)),
-          Initial_State => (Value => [for I in Initial_State'Range => Initial_State (I)]),
+          Initial_State => (Value => Packed_F64x6.C.To_C (Initial_State)),
           Initial_Covariance => (Value => Diagonal_Matrix (Initial_Covariance_Diagonal)));
    end To_Pointer_Config;
 

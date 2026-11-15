@@ -8,8 +8,8 @@ with Mrp_Feedback_Rw_Spin_Axes.C;
 with Packed_F32x3.C;
 with Packed_F32x3_Record.C;
 with Packed_F32x3_X4.C;
-with Packed_F32x4;
-with Packed_F32x9;
+with Packed_F32x4.C;
+with Packed_F32x9.C;
 with Packed_F32x9_Record.C;
 with Rw_Speeds_Input.C;
 with Rwa_Speeds;
@@ -38,10 +38,10 @@ package body Component.Momentum_Management.Implementation is
       Rw_Inertias : in Packed_F32x4.U;
       Wheel_Availability : in Wheel_Availability_X4.U
    ) return Pointer_Config is
-      (Dumpable_Projection => (Value => [for I in Dumpable_Projection'Range => Dumpable_Projection (I)]),
-       Hs_Desired => (Value => [for I in Hs_Desired'Range => Hs_Desired (I)]),
+      (Dumpable_Projection => (Value => Packed_F32x9.C.To_C (Dumpable_Projection)),
+       Hs_Desired => (Value => Packed_F32x3.C.To_C (Hs_Desired)),
        Rw_Spin_Axes => (Value => Packed_F32x3_X4.C.To_C (Rw_Spin_Axes)),
-       Rw_Inertias => (Value => [for I in Rw_Inertias'Range => Rw_Inertias (I)]),
+       Rw_Inertias => (Value => Packed_F32x4.C.To_C (Rw_Inertias)),
        Wheel_Availability => (Value => Wheel_Availability_X4.C.To_C (Wheel_Availability)));
 
    --------------------------------------------------
