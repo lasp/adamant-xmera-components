@@ -51,8 +51,10 @@ package body Inertial_Filter_Tests.Implementation is
    -- Helpers:
    -------------------------------------------------------------------------
 
-   -- Stage and apply the whole configuration.
-   procedure Apply_Configuration (Self : in out Instance; Initial_State : in Packed_F64x6.T := Zero_State; Measurement_Delay : in Packed_F64.T := (Value => 0.0)) is
+   -- Stage and update the whole configuration. The reset then applies it and
+   -- starts the filter from the configured seed. With Reset False the reset
+   -- is not sent, so the configuration stays pending until the caller sends one.
+   procedure Apply_Configuration (Self : in out Instance; Initial_State : in Packed_F64x6.T := Zero_State; Measurement_Delay : in Packed_F64.T := (Value => 0.0); Reset : in Boolean := True) is
       T : Component.Inertial_Filter.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Inertial_Filter_Parameters.Instance;
    begin
@@ -65,6 +67,9 @@ package body Inertial_Filter_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Rate_Measurement_Noise_Std (Rate_Noise)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Measurement_Delay (Measurement_Delay)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      if Reset then
+         T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
+      end if;
    end Apply_Configuration;
 
    -- The algorithm tick the dispatching component builds for a scheduled tick.
@@ -255,18 +260,15 @@ package body Inertial_Filter_Tests.Implementation is
    -- Ensure a star tracker product whose time tag has not advanced is not fed to the
    -- filter, so the estimate holds and the covariance carries the process noise.
    overriding procedure Test_Propagation (Self : in out Instance) is
-      T : Component.Inertial_Filter.Implementation.Tester.Instance_Access renames Self.Tester;
       Seed : constant Packed_F64x6.T := [0.1, 0.2, -0.1, 0.0, 0.0, 0.0];
       Seed_Attitude : constant Packed_F32x3.T := [for I in 0 .. 2 => Short_Float (Seed (I))];
       Steps : constant := 50;
    begin
       Apply_Configuration (Self, Initial_State => Seed);
 
-      -- The configuration reaches the filter on the first tick, and the estimate reset
-      -- then seeds the state from it. The tick after the reset only synchronizes the
-      -- filter time, so the covariance is still the seeded one:
-      Send_Tick (Self, 0, Zero_Vector, Zero_Vector, Fresh => False);
-      T.Reset_Estimate_Tick_T_Send ((Time => T.System_Time, Count => 0));
+      -- The reset applied the configuration and seeded the state from it. The
+      -- tick after the reset only synchronizes the filter time, so the covariance is
+      -- still the seeded one:
       Send_Tick (Self, 1, Zero_Vector, Zero_Vector, Fresh => False);
       declare
          Initial : constant Inertial_Filter_State.U := Filter_State (Self);
@@ -309,8 +311,7 @@ package body Inertial_Filter_Tests.Implementation is
       Unsigned_64_Assert.Eq (Filter_State (Self).Last_Measurement_Time, Sys_Time.Arithmetic.To_Nanoseconds (Tick_Time (1)));
    end Test_Propagation;
 
-   -- Ensure the estimate reset re-seeds the state and covariance while the
-   -- measurements reset keeps them.
+   -- Ensure the reset re-seeds the state and covariance.
    overriding procedure Test_Reset (Self : in out Instance) is
       T : Component.Inertial_Filter.Implementation.Tester.Instance_Access renames Self.Tester;
       Attitude : constant Packed_F32x3.T := [0.3, 0.4, 0.5];
@@ -321,20 +322,9 @@ package body Inertial_Filter_Tests.Implementation is
          Send_Tick (Self, Step, Attitude, Zero_Vector);
       end loop;
 
-      -- The measurements reset keeps the estimate and the covariance. The next tick
-      -- only synchronizes the filter time again, so the filter holds, and the estimate
-      -- stays converged:
-      T.Reset_Measurements_Tick_T_Send ((Time => T.System_Time, Count => 0));
+      -- The reset starts over from the configured seed and covariance:
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
       Send_Tick (Self, Steps + 1, Attitude, Zero_Vector, Fresh => False);
-      for I in 0 .. 2 loop
-         Short_Float_Assert.Eq (Last_Estimate (Self).Sigma_Bn (I), Attitude (I), Epsilon => 1.0E-4);
-         Long_Float_Assert.Lt (Variance (Filter_State (Self), I), Initial_Covariance (I) / 10.0);
-      end loop;
-      Boolean_Assert.Eq (St_Att_Valid (Self), False);
-
-      -- The estimate reset starts over from the configured seed and covariance:
-      T.Reset_Estimate_Tick_T_Send ((Time => T.System_Time, Count => 0));
-      Send_Tick (Self, Steps + 2, Attitude, Zero_Vector, Fresh => False);
       for I in 0 .. 2 loop
          Short_Float_Assert.Eq (Last_Estimate (Self).Sigma_Bn (I), 0.0, Epsilon => 1.0E-6);
          Long_Float_Assert.Eq (Variance (Filter_State (Self), I), Initial_Covariance (I), Epsilon => 1.0E-3);
@@ -357,7 +347,7 @@ package body Inertial_Filter_Tests.Implementation is
 
       -- The product still carries the reading of step 30 at the tick after the reset,
       -- which synchronizes the filter time, so the filter finds nothing new and holds:
-      T.Reset_Measurements_Tick_T_Send ((Time => T.System_Time, Count => 0));
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
       Send_Tick (Self, 31, Attitude, Zero_Vector, Fresh => False);
       Boolean_Assert.Eq (St_Att_Valid (Self), False);
       Boolean_Assert.Eq (Rate_Valid (Self), False);
@@ -418,7 +408,8 @@ package body Inertial_Filter_Tests.Implementation is
       Boolean_Assert.Eq (St_Att_Valid (Self), True);
    end Test_Time_Anomalies;
 
-   -- Ensure a parameter update reaches the filter while keeping the current estimate.
+   -- Ensure a parameter update is not applied by a tick, which keeps the estimate
+   -- tracking, and is applied by the reset.
    overriding procedure Test_Parameter_Update (Self : in out Instance) is
       T : Component.Inertial_Filter.Implementation.Tester.Instance_Access renames Self.Tester;
       Attitude : constant Packed_F32x3.T := [0.3, 0.4, 0.5];
@@ -430,19 +421,25 @@ package body Inertial_Filter_Tests.Implementation is
       end loop;
       Short_Float_Assert.Eq (Last_Estimate (Self).Sigma_Bn (0), Attitude (0), Epsilon => 1.0E-3);
 
-      -- A new seed reaches the filter on the next tick without disturbing the
-      -- estimate, which keeps tracking:
-      Apply_Configuration (Self, Initial_State => Seed);
+      -- A tick does not apply a new seed and delay, so the reading is applied at once
+      -- and the estimate keeps tracking:
+      Apply_Configuration (Self, Initial_State => Seed, Measurement_Delay => (Value => 0.75), Reset => False);
       Send_Tick (Self, 26, Attitude, Zero_Vector);
+      Boolean_Assert.Eq (St_Att_Valid (Self), True);
       Short_Float_Assert.Eq (Last_Estimate (Self).Sigma_Bn (0), Attitude (0), Epsilon => 1.0E-3);
 
-      -- The new seed shows at the next estimate reset, so the update did reach the
-      -- filter:
-      T.Reset_Estimate_Tick_T_Send ((Time => T.System_Time, Count => 0));
+      -- The reset applies them, so the filter starts over from the new seed:
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
       Send_Tick (Self, 27, Attitude, Zero_Vector, Fresh => False);
       for I in 0 .. 2 loop
          Short_Float_Assert.Eq (Last_Estimate (Self).Sigma_Bn (I), Short_Float (Seed (I)), Epsilon => 1.0E-6);
       end loop;
+
+      -- The delay is in effect as well, so the first reading waits a tick:
+      Send_Tick (Self, 28, Attitude, Zero_Vector);
+      Boolean_Assert.Eq (St_Att_Valid (Self), False);
+      Send_Tick (Self, 29, Attitude, Zero_Vector);
+      Boolean_Assert.Eq (St_Att_Valid (Self), True);
    end Test_Parameter_Update;
 
    -- A reading is held in the filter's queue until the filter time has reached its
@@ -475,13 +472,15 @@ package body Inertial_Filter_Tests.Implementation is
       Boolean_Assert.Eq (St_Att_Valid (Self), True);
       Boolean_Assert.Eq (Rate_Valid (Self), True);
 
-      -- With the delay removed a new reading is applied at once, so a tick with no new
-      -- reading applies none:
+      -- The reset removes the delay, and the tick after the reset only
+      -- synchronizes the filter time. From there a new reading is applied at once, so
+      -- a tick with no new reading applies none:
       Apply_Configuration (Self, Measurement_Delay => (Value => 0.0));
       Send_Tick (Self, 12, Attitude, Zero_Vector);
+      Send_Tick (Self, 13, Attitude, Zero_Vector);
       Boolean_Assert.Eq (St_Att_Valid (Self), True);
       Boolean_Assert.Eq (Rate_Valid (Self), True);
-      Send_Tick (Self, 13, Attitude, Zero_Vector, Fresh => False);
+      Send_Tick (Self, 14, Attitude, Zero_Vector, Fresh => False);
       Boolean_Assert.Eq (St_Att_Valid (Self), False);
       Boolean_Assert.Eq (Rate_Valid (Self), False);
    end Test_Measurement_Delay;
@@ -555,6 +554,7 @@ package body Inertial_Filter_Tests.Implementation is
       Stage_Valid_Configuration;
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Test_Invalid_Parameter;
 
    -- A data dependency that comes back with the wrong identifier means the assembly
@@ -583,42 +583,15 @@ package body Inertial_Filter_Tests.Implementation is
          Send_Tick (Self, Step, Attitude, Zero_Vector);
       end loop;
 
-      -- A new seed loaded while the filter is not ticked is still pending when the
-      -- estimate reset arrives. The reset applies it first, so the filter restarts
-      -- from the new seed at once rather than at the reset after:
-      Apply_Configuration (Self, Initial_State => Seed);
-      T.Reset_Estimate_Tick_T_Send ((Time => T.System_Time, Count => 0));
+      -- An updated seed is pending until a reset. The reset applies it first,
+      -- so the filter restarts from the new seed at once rather than at the reset
+      -- after:
+      Apply_Configuration (Self, Initial_State => Seed, Reset => False);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
       Send_Tick (Self, 26, Attitude, Zero_Vector, Fresh => False);
       for I in 0 .. 2 loop
          Short_Float_Assert.Eq (Last_Estimate (Self).Sigma_Bn (I), Short_Float (Seed (I)), Epsilon => 1.0E-6);
       end loop;
    end Test_Reset_Applies_Pending_Parameters;
-
-   overriding procedure Test_Reset_Measurements_Applies_Pending_Parameters (Self : in out Instance) is
-      T : Component.Inertial_Filter.Implementation.Tester.Instance_Access renames Self.Tester;
-      Attitude : constant Packed_F32x3.T := [0.3, 0.4, 0.5];
-      Steps : constant := 25;
-   begin
-      Apply_Configuration (Self);
-      for Step in 1 .. Steps loop
-         Send_Tick (Self, Step, Attitude, Zero_Vector);
-      end loop;
-
-      -- A delay loaded while the filter is not ticked is still pending when the
-      -- measurements reset arrives. The reset applies it and keeps the estimate, so
-      -- the tick after it only synchronizes the filter time again and holds the
-      -- converged estimate, and the first reading after that waits a tick:
-      Apply_Configuration (Self, Measurement_Delay => (Value => 0.75));
-      T.Reset_Measurements_Tick_T_Send ((Time => T.System_Time, Count => 0));
-      Send_Tick (Self, Steps + 1, Attitude, Zero_Vector, Fresh => False);
-      for I in 0 .. 2 loop
-         Short_Float_Assert.Eq (Last_Estimate (Self).Sigma_Bn (I), Attitude (I), Epsilon => 1.0E-4);
-      end loop;
-      Boolean_Assert.Eq (St_Att_Valid (Self), False);
-      Send_Tick (Self, Steps + 2, Attitude, Zero_Vector);
-      Boolean_Assert.Eq (St_Att_Valid (Self), False);
-      Send_Tick (Self, Steps + 3, Attitude, Zero_Vector);
-      Boolean_Assert.Eq (St_Att_Valid (Self), True);
-   end Test_Reset_Measurements_Applies_Pending_Parameters;
 
 end Inertial_Filter_Tests.Implementation;

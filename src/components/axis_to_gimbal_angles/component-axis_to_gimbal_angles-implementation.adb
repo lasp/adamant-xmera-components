@@ -54,9 +54,6 @@ package body Component.Axis_To_Gimbal_Angles.Implementation is
       -- The direction crosses by pointer, so it needs an object to point at.
       Direction_C : aliased constant Packed_F32x3_Record.C.U_C := (Value => Packed_F32x3.C.Unpack (Direction));
    begin
-      -- Apply any pending parameter update (e.g. a new mount attitude or travel):
-      Self.Update_Parameters;
-
       -- Solve for the gimbal angles and publish them with the direction they achieve.
       -- Update is qualified because Parameter_Enums also declares one.
       Self.Data_Product_T_Send (Self.Data_Products.Gimbal_Command (
@@ -65,6 +62,13 @@ package body Component.Axis_To_Gimbal_Angles.Implementation is
             Axis_To_Gimbal_Angles_Algorithm_C.Update (Self.Alg, Thrust_Hat_B => Direction_C'Access))
       ));
    end Tick_T_Recv_Sync;
+
+   -- Apply any pending parameter update. Called on GNC state change.
+   overriding procedure Reset_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
+      Ignore : Tick.T renames Arg;
+   begin
+      Self.Update_Parameters;
+   end Reset_Tick_T_Recv_Sync;
 
    -- The parameter update connector.
    overriding procedure Parameter_Update_T_Modify (Self : in out Instance; Arg : in out Parameter_Update.T) is

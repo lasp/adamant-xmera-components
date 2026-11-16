@@ -74,9 +74,6 @@ package body Component.Triad.Implementation is
       Sun_Direction_C : aliased constant Packed_F32x3_Record.C.U_C := (Value => Packed_F32x3.C.Unpack (Sun_Direction));
       Thrust_Direction_C : aliased constant Packed_F32x3_Record.C.U_C := (Value => Packed_F32x3.C.Unpack (Thrust_Direction));
    begin
-      -- Apply any pending parameter update:
-      Self.Update_Parameters;
-
       -- Call the C algorithm and publish the reference. The algorithm produces an
       -- attitude only, so the reference rate and acceleration are zero. Update is
       -- qualified because Parameter_Enums also declares one.
@@ -90,6 +87,13 @@ package body Component.Triad.Implementation is
           Domega_Rn_N => [others => 0.0])
       ));
    end Tick_T_Recv_Sync;
+
+   -- Apply any pending parameter update. Called on GNC state change.
+   overriding procedure Reset_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
+      Ignore : Tick.T renames Arg;
+   begin
+      Self.Update_Parameters;
+   end Reset_Tick_T_Recv_Sync;
 
    -- The parameter update connector.
    overriding procedure Parameter_Update_T_Modify (Self : in out Instance; Arg : in out Parameter_Update.T) is

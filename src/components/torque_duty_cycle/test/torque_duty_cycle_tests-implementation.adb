@@ -28,7 +28,7 @@ package body Torque_Duty_Cycle_Tests.Implementation is
    -- Helpers:
    -------------------------------------------------------------------------
 
-   -- Stage and apply a cadence.
+   -- Stage and update a cadence. It stays pending until the next reset applies it.
    procedure Apply_Cadence (Self : in out Instance; On_Periods : in Unsigned_32; Off_Periods : in Unsigned_32) is
       T : Component.Torque_Duty_Cycle.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Torque_Duty_Cycle_Parameters.Instance;
@@ -90,10 +90,8 @@ package body Torque_Duty_Cycle_Tests.Implementation is
 
    -- Run the cadences of the Python reference test to ensure the Ada to C to C++
    -- integration is sound. Each cadence runs for nine ticks, three whole cycles of
-   -- the one-in-three and two-in-three cadences. A cadence reaches the algorithm on
-   -- the tick after it is applied and keeps the position in the cycle, so each run
-   -- ticks once and then resets to start at the on window, as the reference test
-   -- starts each cadence fresh.
+   -- the one-in-three and two-in-three cadences. The reset applies the cadence and
+   -- starts it at the on window, as the reference test starts each cadence fresh.
    overriding procedure Test (Self : in out Instance) is
       T : Component.Torque_Duty_Cycle.Implementation.Tester.Instance_Access renames Self.Tester;
       Tick_Number : Natural := 0;
@@ -102,8 +100,6 @@ package body Torque_Duty_Cycle_Tests.Implementation is
          Cycle_Length : constant Unsigned_32 := On_Periods + Off_Periods;
       begin
          Apply_Cadence (Self, On_Periods, Off_Periods);
-         Tick_Number := @ + 1;
-         Tick (Self, Tick_Number);
          T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
          for Update in 0 .. 8 loop
             Tick_Number := @ + 1;
@@ -124,31 +120,29 @@ package body Torque_Duty_Cycle_Tests.Implementation is
       Run_Cadence (On_Periods => 0, Off_Periods => 3);
    end Test;
 
-   -- Check that the reset connector restarts the duty cycle at its on window, and
-   -- that a parameter update alone does not.
+   -- Check that the reset connector applies a pending cadence and restarts the duty
+   -- cycle at its on window, and that a parameter update alone does neither.
    overriding procedure Test_Reset (Self : in out Instance) is
       T : Component.Torque_Duty_Cycle.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
-      -- Init built the default cadence, on every period, and its first update was the
-      -- on window. One on period then two off periods reaches the algorithm on the
-      -- next tick and keeps that position, so the cycle continues into its two off
-      -- periods before the on window comes round:
+      -- Init built the default cadence, on every period. An update to one on period
+      -- then two off periods is not applied by a tick, so the output stays on:
       Apply_Cadence (Self, On_Periods => 1, Off_Periods => 2);
-      Tick_And_Expect (Self, 1, On => False);
-      Tick_And_Expect (Self, 2, On => False);
+      Tick_And_Expect (Self, 1, On => True);
+      Tick_And_Expect (Self, 2, On => True);
+
+      -- The reset applies the cadence and starts it at the on window:
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
       Tick_And_Expect (Self, 3, On => True);
       Tick_And_Expect (Self, 4, On => False);
+      Tick_And_Expect (Self, 5, On => False);
+      Tick_And_Expect (Self, 6, On => True);
+      Tick_And_Expect (Self, 7, On => False);
 
       -- A reset mid-cycle restarts the on window:
       T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
-      Tick_And_Expect (Self, 5, On => True);
-      Tick_And_Expect (Self, 6, On => False);
-
-      -- Reapplying the cadence keeps the position where it was, so the next tick is
-      -- still the last off period rather than a new on window:
-      Apply_Cadence (Self, On_Periods => 1, Off_Periods => 2);
-      Tick_And_Expect (Self, 7, On => False);
       Tick_And_Expect (Self, 8, On => True);
+      Tick_And_Expect (Self, 9, On => False);
    end Test_Reset;
 
    -- The algorithm requires a cycle length of at least one period that fits in
@@ -200,6 +194,7 @@ package body Torque_Duty_Cycle_Tests.Implementation is
       Stage_Valid_Configuration;
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Test_Invalid_Parameter;
 
    -- A data dependency that comes back with the wrong identifier means the assembly

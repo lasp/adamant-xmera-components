@@ -54,10 +54,6 @@ package body Component.Dv_Accumulation.Implementation is
          Self.Get_Accel_Average (Value => Accel, Stale_Reference => Arg.Time);
       pragma Assert (Accel_Status = Success);
    begin
-      -- Apply any pending parameter update, so a new bias is subtracted from the sample
-      -- of this tick:
-      Self.Update_Parameters;
-
       -- Integrate the sample, less the configured bias, and publish the accumulated
       -- delta-V. Update is qualified because Parameter_Enums also declares one.
       Self.Data_Product_T_Send (Self.Data_Products.Accumulated_Delta_V (

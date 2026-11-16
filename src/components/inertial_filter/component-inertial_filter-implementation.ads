@@ -60,15 +60,11 @@ private
    -- Run the filter up to the tick's call time, folding in a fresh star tracker
    -- reading when there is one.
    overriding procedure Algorithm_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Algorithm_Tick.T);
-   -- Re-seed the filter state and covariance from the configured initial values and
-   -- clear the pending measurements and residuals. The filter synchronizes its time
-   -- again at the next tick. The assembly fires this on every entry to the navigation
-   -- state, where the filter is first put into use.
-   overriding procedure Reset_Estimate_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T);
-   -- Clear the pending measurements and residuals, keeping the filter state and
-   -- covariance. The filter synchronizes its time again at the next tick. The assembly
-   -- fires this on every transition between pointing states.
-   overriding procedure Reset_Measurements_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T);
+   -- Apply any pending parameter update, then re-seed the filter state and
+   -- covariance from the configured initial values and clear the pending
+   -- measurements and residuals. The filter synchronizes its time again at the next
+   -- tick. Called on GNC state change.
+   overriding procedure Reset_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T);
    -- The parameter update connector.
    overriding procedure Parameter_Update_T_Modify (Self : in out Instance; Arg : in out Parameter_Update.T);
 

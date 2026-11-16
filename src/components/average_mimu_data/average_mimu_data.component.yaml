@@ -10,6 +10,10 @@ connectors:
   - description: Tick that triggers the averaging algorithm over buffered samples and publishes the result.
     type: Tick.T
     kind: recv_sync
+  - description: Apply any pending parameter update. Called on GNC state change.
+    name: Reset_Tick_T_Recv_Sync
+    type: Tick.T
+    kind: recv_sync
   - description: The system time is retrieved via this connector.
     return_type: Sys_Time.T
     kind: get

@@ -79,6 +79,7 @@ package body Sun_Search_Point_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Observation_Threshold (Test_Observation_Threshold)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Deadband_Angle ((Value => 0.0))), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Apply_Test_Parameters;
 
    -- Report the given observation count and sun direction, aligned with the commanded
@@ -252,6 +253,7 @@ package body Sun_Search_Point_Tests.Implementation is
       Apply_Test_Parameters (Self);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Deadband_Angle ((Value => 0.1))), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
 
       -- The first rotation runs to completion before the sun can be acquired, and the
       -- search commands no attitude error whatever the sun direction:
@@ -335,6 +337,7 @@ package body Sun_Search_Point_Tests.Implementation is
       Stage_Valid_Set;
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Test_Invalid_Parameter;
 
    -- Verify an observation threshold above the coarse sun sensor count is refused. The

@@ -178,9 +178,6 @@ package body Component.Sunline_Filter.Implementation is
          return False;
       end Is_Fresh;
    begin
-      -- Apply any pending parameter update:
-      Self.Update_Parameters;
-
       declare
          -- A product is consumed once, when its timestamp has changed since the last
          -- time.
@@ -232,32 +229,18 @@ package body Component.Sunline_Filter.Implementation is
       end;
    end Algorithm_Tick_T_Recv_Sync;
 
-   -- Re-seed the filter state and covariance from the configured initial values and
-   -- clear the pending measurements and residuals. The filter synchronizes its time
-   -- again at the next tick. The assembly fires this on every entry to the navigation
-   -- state, where the filter is first put into use.
-   overriding procedure Reset_Estimate_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
+   -- Apply any pending parameter update, then re-seed the filter state and
+   -- covariance from the configured initial values and clear the pending
+   -- measurements and residuals. The filter synchronizes its time again at the next
+   -- tick. Called on GNC state change.
+   overriding procedure Reset_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
       Ignore : Tick.T renames Arg;
    begin
       -- Apply any pending parameter update first, so the reset starts from the
       -- configuration the component runs with next:
       Self.Update_Parameters;
       Re_Initialize (Self.Alg);
-   end Reset_Estimate_Tick_T_Recv_Sync;
-
-   -- Clear the pending measurements and residuals, keeping the filter state and
-   -- covariance. The filter synchronizes its time again at the next tick. The assembly
-   -- fires this on every transition between pointing states.
-   overriding procedure Reset_Measurements_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
-      Ignore : Tick.T renames Arg;
-   begin
-      -- Apply any pending parameter update first, so the reset starts from the
-      -- configuration the component runs with next:
-      Self.Update_Parameters;
-      -- Clearing the pending measurements also drops the filter's time anchor, so it
-      -- synchronizes again at the next tick.
-      Re_Initialize_Except_Persistent_States (Self.Alg);
-   end Reset_Measurements_Tick_T_Recv_Sync;
+   end Reset_Tick_T_Recv_Sync;
 
    -- The parameter update connector.
    overriding procedure Parameter_Update_T_Modify (Self : in out Instance; Arg : in out Parameter_Update.T) is

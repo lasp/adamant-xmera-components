@@ -39,12 +39,8 @@ package body Dv_Accumulation_Tests.Implementation is
    function Expected_Delta_V (Samples : in Natural; Bias : in Packed_F32x3.T := Zero_Vector) return Packed_F32x3.T is
       ([for I in Acceleration'Range => Short_Float (Samples) * Control_Period * (Acceleration (I) - Bias (I))]);
 
-   -- The sum of two delta-V vectors.
-   function "+" (Left : in Packed_F32x3.T; Right : in Packed_F32x3.T) return Packed_F32x3.T is
-      ([for I in Left'Range => Left (I) + Right (I)]);
-
    -- Stage, validate and update the accelerometer bias, as the state manager does when
-   -- a burn is commanded. It applies at the next tick.
+   -- a burn is commanded. It stays pending until the next reset applies it.
    procedure Set_Bias (Self : in out Instance; Accel_Bias_B : in Packed_F32x3.T) is
       T : Component.Dv_Accumulation.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Dv_Accumulation_Parameters.Instance;
@@ -112,20 +108,23 @@ package body Dv_Accumulation_Tests.Implementation is
       end loop;
    end Test;
 
-   -- Ensure a newly set accelerometer bias is subtracted from each sample from the
-   -- tick after its update, and the accumulated delta-V is kept.
+   -- Ensure a newly set accelerometer bias is left pending by a tick, and is
+   -- subtracted from each sample after the reset that applies it.
    overriding procedure Test_Bias (Self : in out Instance) is
+      T : Component.Dv_Accumulation.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
       -- The default bias makes no correction:
       Send_Tick (Self, Expected_Delta_V (0));
       Send_Tick (Self, Expected_Delta_V (1));
 
-      -- The bias applies to the samples from the tick after its update, and the
-      -- accumulator is kept, so the delta-V is one unbiased sample plus the biased
-      -- ones:
+      -- A tick does not apply the new bias, so the next sample adds without it:
       Set_Bias (Self, Bias);
-      for Samples in 1 .. 3 loop
-         Send_Tick (Self, Expected_Delta_V (1) + Expected_Delta_V (Samples, Bias));
+      Send_Tick (Self, Expected_Delta_V (2));
+
+      -- The reset applies the bias and starts the accumulation over:
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
+      for Samples in 0 .. 3 loop
+         Send_Tick (Self, Expected_Delta_V (Samples, Bias));
       end loop;
    end Test_Bias;
 
@@ -135,8 +134,10 @@ package body Dv_Accumulation_Tests.Implementation is
       T : Component.Dv_Accumulation.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Dv_Accumulation_Parameters.Instance;
    begin
-      -- The bias is accepted and subtracted from every sample:
+      -- The bias is accepted and subtracted from every sample after the reset that
+      -- applies it:
       Set_Bias (Self, Bias);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
       for Samples in 0 .. 2 loop
          Send_Tick (Self, Expected_Delta_V (Samples, Bias));
       end loop;
@@ -159,9 +160,12 @@ package body Dv_Accumulation_Tests.Implementation is
       Send_Tick (Self, Expected_Delta_V (3, Bias));
 
       -- Another valid bias is still accepted after the rejection. Zero makes no
-      -- correction, so the next sample adds without one:
+      -- correction, so the samples after the reset add without one:
       Set_Bias (Self, Zero_Vector);
-      Send_Tick (Self, Expected_Delta_V (3, Bias) + Expected_Delta_V (1));
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
+      for Samples in 0 .. 1 loop
+         Send_Tick (Self, Expected_Delta_V (Samples));
+      end loop;
    end Test_Invalid_Parameter;
 
    -- Ensure the reset connector zeroes the accumulated delta-V and the next sample

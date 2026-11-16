@@ -75,6 +75,7 @@ package body Css_Comm_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cheby_Count (Cheby_Count_Val)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cheby_Polynomials (Cheby_Poly_Val)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
 
       -- Set data dependency
       T.Css_Sensor_Input := Input_Data;
@@ -133,6 +134,7 @@ package body Css_Comm_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cheby_Count (Cheby_Count_Val)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cheby_Polynomials (Cheby_Poly_Val)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
 
       -- Provide the non-zero reading stamped well in the past.
       T.Css_Sensor_Input := Input_Data;
@@ -178,6 +180,9 @@ package body Css_Comm_Tests.Implementation is
            (T.Stage_Parameter (Params.Cheby_Polynomials (Valid_Polys)), Success);
       end Stage_Valid_Set;
    begin
+      -- Create the algorithm, so the reset at the end has one to configure:
+      T.Component_Instance.Init;
+
       -- The baseline set is accepted:
       Stage_Valid_Set;
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
@@ -199,6 +204,7 @@ package body Css_Comm_Tests.Implementation is
       Stage_Valid_Set;
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Test_Invalid_Parameter;
 
    -- The corrected value of every sensor slot is a cosine, so the algorithm clamps
@@ -241,6 +247,7 @@ package body Css_Comm_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cheby_Count (Cheby_Count_Val)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cheby_Polynomials (Cheby_Poly_Val)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
 
       T.Css_Sensor_Input := Input_Data;
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));

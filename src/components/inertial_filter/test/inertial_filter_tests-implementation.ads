@@ -26,8 +26,7 @@ private
    -- Ensure a star tracker product whose time tag has not advanced is not fed to the
    -- filter, so the estimate holds and the covariance carries the process noise.
    overriding procedure Test_Propagation (Self : in out Instance);
-   -- Ensure the estimate reset re-seeds the state and covariance while the
-   -- measurements reset keeps them.
+   -- Ensure the reset re-seeds the state and covariance.
    overriding procedure Test_Reset (Self : in out Instance);
    -- Ensure a star tracker reading not refreshed since before a reset is not
    -- consumed again, one stamped before the tick the filter synchronized its time to
@@ -37,16 +36,12 @@ private
    -- the readings that follow for good, and a product stale between star tracker
    -- solutions is still read.
    overriding procedure Test_Time_Anomalies (Self : in out Instance);
-   -- Ensure a parameter update reaches the filter while keeping the current
-   -- estimate, with the new seed showing only at the next estimate reset.
+   -- Ensure a parameter update is not applied by a tick, which keeps the estimate
+   -- tracking, and is applied by the reset.
    overriding procedure Test_Parameter_Update (Self : in out Instance);
-   -- Ensure an estimate reset applies a configuration that was updated but not yet
-   -- ticked, so the filter restarts from the new seed.
+   -- Ensure a reset applies a pending configuration update, so the filter restarts
+   -- from the new seed.
    overriding procedure Test_Reset_Applies_Pending_Parameters (Self : in out Instance);
-   -- Ensure a measurements reset applies a configuration that was updated but not
-   -- yet ticked while keeping the estimate, so a new delay holds the readings that
-   -- follow.
-   overriding procedure Test_Reset_Measurements_Applies_Pending_Parameters (Self : in out Instance);
    -- Ensure a configured measurement delay holds a reading until the filter time has
    -- reached its time tag plus the delay, then applies it.
    overriding procedure Test_Measurement_Delay (Self : in out Instance);

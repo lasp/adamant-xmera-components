@@ -23,8 +23,8 @@ private
    -- defect and fails the tick's assertion, since the speeds are measured on every
    -- tick.
    overriding procedure Test_Stale_Data_Dependency (Self : in out Instance);
-   -- Ensure a new averaging window reaches the algorithm on the next tick and is
-   -- applied to the stored samples.
+   -- Ensure a new averaging window is applied by the reset, not by a tick, and that
+   -- the reset clears the stored samples.
    overriding procedure Test_Window_Update (Self : in out Instance);
    -- Ensure the reset connector clears the stored samples, so the next measurement is
    -- averaged alone.

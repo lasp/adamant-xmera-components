@@ -113,6 +113,7 @@ package body Celestial_Two_Body_Point_Tests.Implementation is
       -- Apply the alignment threshold of the reference test:
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Alignment_Threshold (Alignment_Threshold)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
 
       for I in Test_Cases'Range loop
          -- Set the data dependencies for this case:
@@ -152,6 +153,7 @@ package body Celestial_Two_Body_Point_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Alignment_Threshold (Alignment_Threshold)), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Test_Invalid_Parameter;
 
    -- A data dependency that comes back with the wrong identifier means the assembly

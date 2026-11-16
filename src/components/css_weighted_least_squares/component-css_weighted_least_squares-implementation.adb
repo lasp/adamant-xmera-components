@@ -83,9 +83,6 @@ package body Component.Css_Weighted_Least_Squares.Implementation is
       Readings_C : aliased constant Css_Reading_Array.C.U_C :=
          (Cos_Values => [for I in Packed_F32x8.C.U_C'Range => Short_Float (Readings.Data (I))]);
    begin
-      -- Apply any pending parameter update (e.g. a changed threshold or availability):
-      Self.Update_Parameters;
-
       -- Call the C algorithm and publish each part of the estimate as its own
       -- product, so the guidance downstream can depend on the heading and the
       -- sensor count separately. Update is qualified because Parameter_Enums also
