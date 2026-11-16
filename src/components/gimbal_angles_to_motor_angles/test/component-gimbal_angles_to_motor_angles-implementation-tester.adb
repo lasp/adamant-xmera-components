@@ -74,7 +74,7 @@ package body Component.Gimbal_Angles_To_Motor_Angles.Implementation.Tester is
       if Length_To_Return = 0 then
          case Arg.Id is
             -- Length for Gimbal_Command:
-            when 0 => Length_To_Return := Axis_To_Gimbal_Angles_Output.Size_In_Bytes;
+            when 0 => Length_To_Return := Gimbal_Angles.Size_In_Bytes;
             -- If ID can not be found, then return ID out of range error.
             when others =>
                if Return_Status = Data_Product_Enums.Fetch_Status.Success then
@@ -93,8 +93,8 @@ package body Component.Gimbal_Angles_To_Motor_Angles.Implementation.Tester is
          case Arg.Id is
             -- Length for Gimbal_Command:
             when 0 =>
-               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Axis_To_Gimbal_Angles_Output.Size_In_Bytes - 1) :=
-                  Axis_To_Gimbal_Angles_Output.Serialization.To_Byte_Array (Self.Gimbal_Command);
+               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Gimbal_Angles.Size_In_Bytes - 1) :=
+                  Gimbal_Angles.Serialization.To_Byte_Array (Self.Gimbal_Command);
             -- Do not fill. The ID is not recognized.
             when others =>
                Return_Status := Data_Product_Enums.Fetch_Status.Id_Out_Of_Range;

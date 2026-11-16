@@ -124,8 +124,7 @@ package body Gimbal_Angles_To_Motor_Angles_Tests.Implementation is
    ) is
       T : Component.Gimbal_Angles_To_Motor_Angles.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
-      -- The component does not read the thrust direction.
-      T.Gimbal_Command := (Gimbal_Angle_1 => Tip, Gimbal_Angle_2 => Tilt, Thrust_Hat_B => [0.0, 0.0, 1.0]);
+      T.Gimbal_Command := (Gimbal_Angle_1 => Tip, Gimbal_Angle_2 => Tilt);
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
       Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, 2 * Tick_Number);
       Natural_Assert.Eq (T.Motor_1_Angle_History.Get_Count, Tick_Number);

@@ -2,5 +2,8 @@
 description: Data products for the Axis To Gimbal Angles component.
 data_products:
   - name: Gimbal_Command
-    type: Axis_To_Gimbal_Angles_Output.T
-    description: The two gimbal angles that align the gimbal thrust axis with the commanded direction, and the unit thrust direction those angles achieve in body frame components.
+    type: Gimbal_Angles.T
+    description: "[rad] The two gimbal angles that align the gimbal thrust axis with the commanded direction."
+  - name: Achieved_Thrust_Direction
+    type: Packed_F32x3.T
+    description: "[-] The unit thrust direction the gimbal angles achieve in body frame components."

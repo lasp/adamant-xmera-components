@@ -2,7 +2,7 @@
 -- Gimbal_Angles_To_Motor_Angles Component Implementation Body
 --------------------------------------------------------------------------------
 
-with Axis_To_Gimbal_Angles_Output;
+with Gimbal_Angles;
 with Gimbal_Angles_To_Motor_Angles_Output.C;
 with Packed_F32x9x9;
 with Spline_Coefficients.C;
@@ -76,7 +76,7 @@ package body Component.Gimbal_Angles_To_Motor_Angles.Implementation is
       -- in the same tick, so any other status indicates that this component is not
       -- wired up correctly in the algorithm execution order. That should never happen,
       -- so we assert.
-      Gimbal : Axis_To_Gimbal_Angles_Output.T;
+      Gimbal : Gimbal_Angles.T;
       Gimbal_Status : constant Data_Dependency_Status.E :=
          Self.Get_Gimbal_Command (Value => Gimbal, Stale_Reference => Arg.Time);
       pragma Assert (Gimbal_Status = Success);

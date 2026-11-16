@@ -8,7 +8,7 @@ with Printable_History;
 with Data_Product_Return.Representation;
 with Data_Product_Fetch.Representation;
 with Data_Product.Representation;
-with Axis_To_Gimbal_Angles_Output;
+with Gimbal_Angles;
 with Data_Product;
 with Packed_F32.Representation;
 
@@ -43,7 +43,7 @@ package Component.Gimbal_Angles_To_Motor_Angles.Implementation.Tester is
       -- Data dependency return values. These can be set during unit test
       -- and will be returned to the component when a data dependency call
       -- is made.
-      Gimbal_Command : Axis_To_Gimbal_Angles_Output.T;
+      Gimbal_Command : Gimbal_Angles.T;
       -- The return status for the data dependency fetch. This can be set
       -- during unit test to return something other than Success.
       Data_Dependency_Return_Status_Override : Data_Product_Enums.Fetch_Status.E := Data_Product_Enums.Fetch_Status.Success;

@@ -53,14 +53,16 @@ package body Component.Axis_To_Gimbal_Angles.Implementation is
 
       -- The direction crosses by pointer, so it needs an object to point at.
       Direction_C : aliased constant Packed_F32x3_Record.C.U_C := (Value => Packed_F32x3.C.Unpack (Direction));
+
+      -- Solve for the gimbal angles and the direction they achieve. Update is
+      -- qualified because Parameter_Enums also declares one.
+      Gimbal : constant Axis_To_Gimbal_Angles_Output.T := Axis_To_Gimbal_Angles_Output.C.Pack (
+         Axis_To_Gimbal_Angles_Algorithm_C.Update (Self.Alg, Thrust_Hat_B => Direction_C'Access));
    begin
-      -- Solve for the gimbal angles and publish them with the direction they achieve.
-      -- Update is qualified because Parameter_Enums also declares one.
-      Self.Data_Product_T_Send (Self.Data_Products.Gimbal_Command (
-         Arg.Time,
-         Axis_To_Gimbal_Angles_Output.C.Pack (
-            Axis_To_Gimbal_Angles_Algorithm_C.Update (Self.Alg, Thrust_Hat_B => Direction_C'Access))
-      ));
+      -- Publish the gimbal angles and the direction they achieve:
+      Self.Data_Product_T_Send (Self.Data_Products.Gimbal_Command (Arg.Time, (
+         Gimbal_Angle_1 => Gimbal.Gimbal_Angle_1, Gimbal_Angle_2 => Gimbal.Gimbal_Angle_2)));
+      Self.Data_Product_T_Send (Self.Data_Products.Achieved_Thrust_Direction (Arg.Time, Gimbal.Thrust_Hat_B));
    end Tick_T_Recv_Sync;
 
    -- Apply any pending parameter update. Called on GNC state change.

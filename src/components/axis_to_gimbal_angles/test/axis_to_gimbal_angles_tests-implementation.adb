@@ -7,10 +7,11 @@ with AUnit.Assertions;
 with Parameter;
 with Basic_Assertions; use Basic_Assertions;
 with Axis_To_Gimbal_Angles_Output;
-with Axis_To_Gimbal_Angles_Output.Assertion; use Axis_To_Gimbal_Angles_Output.Assertion;
+with Gimbal_Angles.Assertion; use Gimbal_Angles.Assertion;
 with Axis_To_Gimbal_Angles_Parameters;
 with Packed_F32;
 with Packed_F32x3;
+with Packed_F32x3.Assertion; use Packed_F32x3.Assertion;
 with Parameter_Enums.Assertion;
 use Parameter_Enums.Parameter_Update_Status;
 use Parameter_Enums.Assertion;
@@ -48,7 +49,8 @@ package body Axis_To_Gimbal_Angles_Tests.Implementation is
       T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Apply_Configuration;
 
-   -- Tick once with the given request and check the published gimbal command.
+   -- Tick once with the given request and check the published gimbal angles and
+   -- the direction they achieve.
    procedure Tick_And_Expect (
       Self : in out Instance;
       Tick_Number : in Natural;
@@ -59,9 +61,12 @@ package body Axis_To_Gimbal_Angles_Tests.Implementation is
    begin
       T.Thrust_Direction := Request;
       T.Tick_T_Send ((Time => T.System_Time, Count => 0));
-      Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, Tick_Number);
+      Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, 2 * Tick_Number);
       Natural_Assert.Eq (T.Gimbal_Command_History.Get_Count, Tick_Number);
-      Axis_To_Gimbal_Angles_Output_Assert.Eq (T.Gimbal_Command_History.Get (Tick_Number), Expected, Epsilon => Epsilon);
+      Gimbal_Angles_Assert.Eq (T.Gimbal_Command_History.Get (Tick_Number), (
+         Gimbal_Angle_1 => Expected.Gimbal_Angle_1, Gimbal_Angle_2 => Expected.Gimbal_Angle_2), Epsilon => Epsilon);
+      Natural_Assert.Eq (T.Achieved_Thrust_Direction_History.Get_Count, Tick_Number);
+      Packed_F32x3_Assert.Eq (T.Achieved_Thrust_Direction_History.Get (Tick_Number), Expected.Thrust_Hat_B, Epsilon => Epsilon);
    end Tick_And_Expect;
 
    -------------------------------------------------------------------------
@@ -215,6 +220,7 @@ package body Axis_To_Gimbal_Angles_Tests.Implementation is
             null; -- Expected.
       end;
       Natural_Assert.Eq (T.Gimbal_Command_History.Get_Count, 0);
+      Natural_Assert.Eq (T.Achieved_Thrust_Direction_History.Get_Count, 0);
    end Test_Invalid_Data_Dependency;
 
 end Axis_To_Gimbal_Angles_Tests.Implementation;

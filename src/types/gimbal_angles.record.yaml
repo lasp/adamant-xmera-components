@@ -1,0 +1,11 @@
+---
+description: The two angles of a gimbal.
+fields:
+  - name: Gimbal_Angle_1
+    type: Short_Float
+    format: F32
+    description: "[rad] Inclination of the thrust axis projected into the mount y-z plane."
+  - name: Gimbal_Angle_2
+    type: Short_Float
+    format: F32
+    description: "[rad] Inclination of the thrust axis projected into the mount x-z plane."

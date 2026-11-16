@@ -2,5 +2,5 @@
 description: Data dependencies for the Gimbal Angles To Motor Angles component.
 data_dependencies:
   - name: Gimbal_Command
-    type: Axis_To_Gimbal_Angles_Output.T
-    description: "[rad] Requested gimbal angles. Gimbal_Angle_1 is the tip angle and Gimbal_Angle_2 is the tilt angle. The thrust direction is not used."
+    type: Gimbal_Angles.T
+    description: "[rad] Requested gimbal angles. Gimbal_Angle_1 is the tip angle and Gimbal_Angle_2 is the tilt angle."
