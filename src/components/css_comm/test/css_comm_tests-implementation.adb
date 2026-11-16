@@ -8,7 +8,6 @@ with AUnit.Assertions;
 with Basic_Assertions; use Basic_Assertions;
 with Packed_F64x8.Assertion; use Packed_F64x8.Assertion;
 with Packed_F64x11;
-with Packed_F64;
 with Css_Array_Adc_8;
 with Css_Sensor_Values;
 with Css_Comm_Parameters;
@@ -41,27 +40,27 @@ package body Css_Comm_Tests.Implementation is
    -------------------------------------------------------------------------
 
    -- Adapted from C++ test ZeroChebyIsIdentity:
-   -- With all zero Chebyshev coefficients, the output equals
-   -- ADC_count/Max_Sensor_Value clamped to [0, 1]. The Ada wrapper passes
-   -- raw counts; the C algorithm performs the divide and the output clamp.
+   -- With all zero Chebyshev coefficients, the output of each sensor equals
+   -- its ADC count divided by its own Max_Sensor_Values entry, clamped to
+   -- [0, 1]. The Ada wrapper passes raw counts; the C algorithm performs the
+   -- divide and the output clamp.
    overriding procedure Test_Zero_Cheby_Is_Identity (Self : in out Instance) is
       T : Component.Css_Comm.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Css_Comm_Parameters.Instance;
 
-      -- Configuration
-      Max_Sensor_Val : constant Packed_F64.T := (Value => 100.0);
+      -- Configuration. Every sensor has a different maximum value, so each
+      -- expected output is only right if that sensor is scaled by its own.
+      Max_Sensor_Vals : constant Packed_F64x8.T := [100.0, 200.0, 400.0, 50.0, 110.0, 1000.0, 10.0, 100.0];
       Cheby_Poly_Val : constant Packed_F64x11.T := [others => 0.0];
 
-      -- Input ADC counts: [50, 0, 100, 0, 110, 0, 0, 0]
-      -- (ADC is unsigned, so the legacy negative-input case is not
-      -- representable here; replaced with 0.)
-      -- Expected output: [0.5, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0]
-      -- Rationale: cheby = 0, so the C output is clamp(adc/100, [0, 1]).
+      -- cheby = 0, so the C output is clamp(adc / max, [0, 1]). Slot 4 reads
+      -- twice its maximum and clamps to 1.0. (ADC is unsigned, so the legacy
+      -- negative-input case is not representable here.)
       Input_Data : constant Css_Array_Adc_8.T := (
-         Adc_Value => [50, 0, 100, 0, 110, 0, 0, 0]
+         Adc_Value => [50, 50, 50, 50, 220, 500, 5, 0]
       );
       Expected_Output : constant Packed_F64x8.T :=
-         [0.5, 0.0, 1.0, 0.0, 1.0, others => 0.0];
+         [0.5, 0.25, 0.125, 1.0, 1.0, 0.5, 0.5, 0.0];
 
       Output : Css_Sensor_Values.T;
    begin
@@ -69,7 +68,7 @@ package body Css_Comm_Tests.Implementation is
       T.Component_Instance.Init;
 
       -- Stage and update parameters
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Sensor_Value (Max_Sensor_Val)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Sensor_Values (Max_Sensor_Vals)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cheby_Polynomials (Cheby_Poly_Val)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
       T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
@@ -98,8 +97,8 @@ package body Css_Comm_Tests.Implementation is
       T : Component.Css_Comm.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Css_Comm_Parameters.Instance;
 
-      -- Configuration (same as the identity test).
-      Max_Sensor_Val : constant Packed_F64.T := (Value => 100.0);
+      -- Configuration: every sensor has a maximum value of 100 and cheby = 0.
+      Max_Sensor_Vals : constant Packed_F64x8.T := [others => 100.0];
       Cheby_Poly_Val : constant Packed_F64x11.T := [others => 0.0];
 
       -- A non-zero reading stamped well in the past. Even though the fetch
@@ -126,7 +125,7 @@ package body Css_Comm_Tests.Implementation is
       );
 
       -- Stage and update parameters
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Sensor_Value (Max_Sensor_Val)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Sensor_Values (Max_Sensor_Vals)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cheby_Polynomials (Cheby_Poly_Val)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
       T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
@@ -166,7 +165,7 @@ package body Css_Comm_Tests.Implementation is
       procedure Stage_Valid_Set is
       begin
          Parameter_Update_Status_Assert.Eq
-           (T.Stage_Parameter (Params.Max_Sensor_Value ((Value => 5.0))), Success);
+           (T.Stage_Parameter (Params.Max_Sensor_Values ([others => 5.0])), Success);
          Parameter_Update_Status_Assert.Eq
            (T.Stage_Parameter (Params.Cheby_Polynomials (Valid_Polys)), Success);
       end Stage_Valid_Set;
@@ -178,16 +177,17 @@ package body Css_Comm_Tests.Implementation is
       Stage_Valid_Set;
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
 
-      -- A zero maximum sensor value is rejected (must be finite and > 0):
+      -- A zero maximum value for one sensor other than the first is rejected
+      -- (each must be finite and > 0):
       Stage_Valid_Set;
       Parameter_Update_Status_Assert.Eq
-        (T.Stage_Parameter (Params.Max_Sensor_Value ((Value => 0.0))), Success);
+        (T.Stage_Parameter (Params.Max_Sensor_Values ([5 => 0.0, others => 5.0])), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
 
-      -- A negative maximum sensor value is rejected:
+      -- A negative maximum value for the last sensor is rejected:
       Stage_Valid_Set;
       Parameter_Update_Status_Assert.Eq
-        (T.Stage_Parameter (Params.Max_Sensor_Value ((Value => -1.0))), Success);
+        (T.Stage_Parameter (Params.Max_Sensor_Values ([7 => -1.0, others => 5.0])), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Validation_Error);
 
       -- Restoring validity makes the set acceptable again, so the rejections above
@@ -209,7 +209,7 @@ package body Css_Comm_Tests.Implementation is
       T : Component.Css_Comm.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Css_Comm_Parameters.Instance;
 
-      Max_Sensor_Val : constant Packed_F64.T := (Value => 100.0);
+      Max_Sensor_Vals : constant Packed_F64x8.T := [others => 100.0];
       -- Only T0 and T10 have non zero coefficients, and T0 is always 1, so the
       -- correction is 1.0e308 * (1 + T10) of the normalized reading. The
       -- evaluation clamps the reading to [-1, 1], where every Chebyshev term
@@ -233,7 +233,7 @@ package body Css_Comm_Tests.Implementation is
    begin
       T.Component_Instance.Init;
 
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Sensor_Value (Max_Sensor_Val)), Success);
+      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Sensor_Values (Max_Sensor_Vals)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cheby_Polynomials (Cheby_Poly_Val)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
       T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));

@@ -72,7 +72,7 @@ private
    -- Asks the algorithm's Validate_Config whether it would accept the staged set.
    overriding function Validate_Parameters (
       Self : in out Instance;
-      Max_Sensor_Value : in Packed_F64.U;
+      Max_Sensor_Values : in Packed_F64x8.U;
       Cheby_Polynomials : in Packed_F64x11.U
    ) return Parameter_Validation_Status.E;
 

@@ -21,11 +21,11 @@ package body Component.Css_Comm.Implementation is
    overriding procedure Init (Self : in out Instance) is
       -- The array arguments cross by reference, so they need aliased objects to
       -- point at and cannot be marshalled inline.
-      Max_Sensor_Values : aliased Packed_F64x8.C.U_C := [others => Self.Max_Sensor_Value.Value];
+      Max_Sensor_Values_C : aliased Packed_F64x8.C.U_C := Packed_F64x8.C.To_C (Self.Max_Sensor_Values);
       Cheby_Poly_C : aliased Cheby_Polynomials_C_Type := (Data => Packed_F64x11.C.To_C (Self.Cheby_Polynomials));
    begin
       Self.Alg := Create (
-         Max_Sensor_Values => Max_Sensor_Values'Access,
+         Max_Sensor_Values => Max_Sensor_Values_C'Access,
          Polynomials       => Cheby_Poly_C'Access);
    end Init;
 
@@ -57,9 +57,10 @@ package body Component.Css_Comm.Implementation is
       pragma Assert (Css_Input_Status = Success or else Css_Input_Status = Stale);
    begin
       -- Pass the raw ADC counts of every sensor slot to the C algorithm, which
-      -- normalizes each reading by the Max_Sensor_Value parameter, applies the
-      -- Chebyshev correction, and clamps the corrected value to [0, 1]. A
-      -- corrected value that is not finite is reported as zero, no signal.
+      -- normalizes each reading by that sensor's Max_Sensor_Values entry,
+      -- applies the Chebyshev correction, and clamps the corrected value to
+      -- [0, 1]. A corrected value that is not finite is reported as zero, no
+      -- signal.
       declare
          Css_Input_C : aliased Css_Sensor_Values.C.U_C := (Data => [others => 0.0]);
       begin
@@ -104,14 +105,14 @@ package body Component.Css_Comm.Implementation is
       -- Rebuild the algorithm configuration from the updated parameters. The values
       -- were checked by Validate_Parameters at staging, so Set_Config will not reject
       -- them.
-      Max_Sensor_Values : aliased Packed_F64x8.C.U_C := [others => Self.Max_Sensor_Value.Value];
+      Max_Sensor_Values_C : aliased Packed_F64x8.C.U_C := Packed_F64x8.C.To_C (Self.Max_Sensor_Values);
       Cheby_Poly_C : aliased Cheby_Polynomials_C_Type := (
          Data => Packed_F64x11.C.To_C (Self.Cheby_Polynomials)
       );
    begin
       Set_Config (
          Self.Alg,
-         Max_Sensor_Values => Max_Sensor_Values'Access,
+         Max_Sensor_Values => Max_Sensor_Values_C'Access,
          Polynomials       => Cheby_Poly_C'Access);
    end Update_Parameters_Action;
 
@@ -121,15 +122,15 @@ package body Component.Css_Comm.Implementation is
    -- the throwing Create/Set_Config across the FFI boundary.
    overriding function Validate_Parameters (
       Self : in out Instance;
-      Max_Sensor_Value : in Packed_F64.U;
+      Max_Sensor_Values : in Packed_F64x8.U;
       Cheby_Polynomials : in Packed_F64x11.U
    ) return Parameter_Validation_Status.E is
       pragma Unreferenced (Self);
-      Max_Sensor_Values : aliased Packed_F64x8.C.U_C := [others => Max_Sensor_Value.Value];
+      Max_Sensor_Values_C : aliased Packed_F64x8.C.U_C := Packed_F64x8.C.To_C (Max_Sensor_Values);
       Cheby_Poly_C : aliased Cheby_Polynomials_C_Type := (Data => Packed_F64x11.C.To_C (Cheby_Polynomials));
    begin
       if Validate_Config (
-            Max_Sensor_Values => Max_Sensor_Values'Access,
+            Max_Sensor_Values => Max_Sensor_Values_C'Access,
             Polynomials       => Cheby_Poly_C'Access)
       then
          return Parameter_Validation_Status.Valid;
