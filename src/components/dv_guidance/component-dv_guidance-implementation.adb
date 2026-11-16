@@ -47,14 +47,17 @@ package body Component.Dv_Guidance.Implementation is
    overriding function Tick_T_Service (Self : in out Instance; Arg : in Tick.T) return Att_Ref.T is
       Ignore : Tick.T renames Arg;
    begin
-      -- Apply any pending parameter update, so a new burn frame takes effect on the
-      -- tick after its update:
-      Self.Update_Parameters;
-
       -- The burn frame is inertially fixed, so the algorithm takes no per-tick input
       -- and returns the reference with its rate and acceleration zero.
       return Att_Ref.C.Pack (Update (Self.Alg));
    end Tick_T_Service;
+
+   -- Apply any pending parameter update. Called on GNC state change.
+   overriding procedure Reset_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
+      Ignore : Tick.T renames Arg;
+   begin
+      Self.Update_Parameters;
+   end Reset_Tick_T_Recv_Sync;
 
    -- The parameter update connector.
    overriding procedure Parameter_Update_T_Modify (Self : in out Instance; Arg : in out Parameter_Update.T) is
