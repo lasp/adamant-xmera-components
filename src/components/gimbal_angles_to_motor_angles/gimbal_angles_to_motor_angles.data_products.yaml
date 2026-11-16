@@ -1,0 +1,9 @@
+---
+description: Data products for the Gimbal Angles To Motor Angles component.
+data_products:
+  - name: Motor_1_Angle
+    type: Packed_F32.T
+    description: "[rad] Motor 1 angle for the requested gimbal angles."
+  - name: Motor_2_Angle
+    type: Packed_F32.T
+    description: "[rad] Motor 2 angle for the requested gimbal angles."

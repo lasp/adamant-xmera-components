@@ -1,0 +1,127 @@
+---
+description: Parameters for the Gimbal Angles To Motor Angles component. The default rhombus and spline coefficients are a fit of an example gimbal-to-motor-steps lookup table.
+parameters:
+  - name: Steps_Per_Revolution
+    description: "[steps] Number of motor steps per 2*pi rad. Must be in [1, 100000]. The default is the value the algorithm's unit tests use, not that of a motor, so the default motor angles span many revolutions."
+    type: Packed_U32.T
+    default: "(Value => 628)"
+  - name: Half_Diagonal_Tip
+    description: "[rad] Half of the rhombus diagonal along the gimbal tip axis. This is the largest gimbal tip angle. Must be in (0, pi/2]."
+    type: Packed_F32.T
+    default: "(Value => 2.839591702E-01)"
+  - name: Half_Diagonal_Tilt
+    description: "[rad] Half of the rhombus diagonal along the gimbal tilt axis. This is the largest gimbal tilt angle. Must be in (0, pi/2]."
+    type: Packed_F32.T
+    default: "(Value => 4.324655447E-01)"
+  - name: Theta_Max
+    description: "[rad] Largest requested thrust cone angle. Must be greater than zero and not greater than the radius of the largest circle in the rhombus."
+    type: Packed_F32.T
+    default: "(Value => 2.356194490E-01)"
+  - name: Motor_1_Coefficients_Row_0
+    description: "[steps] Motor 1 spline control coefficients c[0][0] to c[0][8], where the first index is along u and the second is along v. Each value must be in [-100000, 100000]."
+    type: Packed_F32x9.T
+    default: "[-5.672903342E+03, -5.617597482E+03, -5.794297507E+03,
+               -6.101087525E+03, -6.311641393E+03, -6.528599082E+03,
+               -6.890632656E+03, -6.830959809E+03, -7.129428647E+03]"
+  - name: Motor_1_Coefficients_Row_1
+    description: "[steps] Motor 1 spline control coefficients c[1][0] to c[1][8], where the first index is along u and the second is along v. Each value must be in [-100000, 100000]."
+    type: Packed_F32x9.T
+    default: "[-9.092249871E+03, -9.233343669E+03, -9.322136389E+03,
+               -9.390717073E+03, -9.506331126E+03, -9.606786547E+03,
+               -9.700537839E+03, -9.821534243E+03, -9.735924025E+03]"
+  - name: Motor_1_Coefficients_Row_2
+    description: "[steps] Motor 1 spline control coefficients c[2][0] to c[2][8], where the first index is along u and the second is along v. Each value must be in [-100000, 100000]."
+    type: Packed_F32x9.T
+    default: "[-1.152085989E+04, -1.155340019E+04, -1.157861858E+04,
+               -1.161424618E+04, -1.164898285E+04, -1.168030512E+04,
+               -1.171721600E+04, -1.168151628E+04, -1.188476634E+04]"
+  - name: Motor_1_Coefficients_Row_3
+    description: "[steps] Motor 1 spline control coefficients c[3][0] to c[3][8], where the first index is along u and the second is along v. Each value must be in [-100000, 100000]."
+    type: Packed_F32x9.T
+    default: "[-1.359027310E+04, -1.341707025E+04, -1.343630661E+04,
+               -1.343191765E+04, -1.341905076E+04, -1.341443860E+04,
+               -1.339059750E+04, -1.335446154E+04, -1.344170427E+04]"
+  - name: Motor_1_Coefficients_Row_4
+    description: "[steps] Motor 1 spline control coefficients c[4][0] to c[4][8], where the first index is along u and the second is along v. Each value must be in [-100000, 100000]."
+    type: Packed_F32x9.T
+    default: "[-1.530927398E+04, -1.515997473E+04, -1.513503986E+04,
+               -1.509085361E+04, -1.505483523E+04, -1.500839627E+04,
+               -1.495718809E+04, -1.491171043E+04, -1.489383606E+04]"
+  - name: Motor_1_Coefficients_Row_5
+    description: "[steps] Motor 1 spline control coefficients c[5][0] to c[5][8], where the first index is along u and the second is along v. Each value must be in [-100000, 100000]."
+    type: Packed_F32x9.T
+    default: "[-1.697559820E+04, -1.682034525E+04, -1.677456109E+04,
+               -1.671545510E+04, -1.664897192E+04, -1.658956170E+04,
+               -1.649941271E+04, -1.646316144E+04, -1.633556968E+04]"
+  - name: Motor_1_Coefficients_Row_6
+    description: "[steps] Motor 1 spline control coefficients c[6][0] to c[6][8], where the first index is along u and the second is along v. Each value must be in [-100000, 100000]."
+    type: Packed_F32x9.T
+    default: "[-1.864177376E+04, -1.854956365E+04, -1.845713873E+04,
+               -1.836828957E+04, -1.828875298E+04, -1.820357441E+04,
+               -1.813183278E+04, -1.800737956E+04, -1.809128975E+04]"
+  - name: Motor_1_Coefficients_Row_7
+    description: "[steps] Motor 1 spline control coefficients c[7][0] to c[7][8], where the first index is along u and the second is along v. Each value must be in [-100000, 100000]."
+    type: Packed_F32x9.T
+    default: "[-2.051267769E+04, -2.037274759E+04, -2.027605821E+04,
+               -2.018249333E+04, -2.009180318E+04, -1.998824879E+04,
+               -1.989333712E+04, -1.978995548E+04, -1.958756043E+04]"
+  - name: Motor_1_Coefficients_Row_8
+    description: "[steps] Motor 1 spline control coefficients c[8][0] to c[8][8], where the first index is along u and the second is along v. Each value must be in [-100000, 100000]."
+    type: Packed_F32x9.T
+    default: "[-2.256586180E+04, -2.270104326E+04, -2.249179994E+04,
+               -2.235657090E+04, -2.222206016E+04, -2.215768905E+04,
+               -2.202175437E+04, -2.205817390E+04, -2.174717692E+04]"
+  - name: Motor_2_Coefficients_Row_0
+    description: "[steps] Motor 2 spline control coefficients c[0][0] to c[0][8], where the first index is along u and the second is along v. Each value must be in [-100000, 100000]."
+    type: Packed_F32x9.T
+    default: "[5.346787776E+03, 9.155541380E+03, 1.151315537E+04,
+               1.339971733E+04, 1.517908203E+04, 1.689295147E+04,
+               1.852138540E+04, 2.047045968E+04, 2.246550067E+04]"
+  - name: Motor_2_Coefficients_Row_1
+    description: "[steps] Motor 2 spline control coefficients c[1][0] to c[1][8], where the first index is along u and the second is along v. Each value must be in [-100000, 100000]."
+    type: Packed_F32x9.T
+    default: "[5.642845883E+03, 9.164516406E+03, 1.150184899E+04,
+               1.342030525E+04, 1.513306581E+04, 1.679344419E+04,
+               1.848169977E+04, 2.030906703E+04, 2.252882050E+04]"
+  - name: Motor_2_Coefficients_Row_2
+    description: "[steps] Motor 2 spline control coefficients c[2][0] to c[2][8], where the first index is along u and the second is along v. Each value must be in [-100000, 100000]."
+    type: Packed_F32x9.T
+    default: "[5.941329470E+03, 9.294174810E+03, 1.155536491E+04,
+               1.341315534E+04, 1.510156799E+04, 1.674341366E+04,
+               1.840713270E+04, 2.025921323E+04, 2.233660349E+04]"
+  - name: Motor_2_Coefficients_Row_3
+    description: "[steps] Motor 2 spline control coefficients c[3][0] to c[3][8], where the first index is along u and the second is along v. Each value must be in [-100000, 100000]."
+    type: Packed_F32x9.T
+    default: "[6.076357372E+03, 9.465610380E+03, 1.161782845E+04,
+               1.341646863E+04, 1.508262690E+04, 1.669064420E+04,
+               1.835104961E+04, 2.017849482E+04, 2.230028032E+04]"
+  - name: Motor_2_Coefficients_Row_4
+    description: "[steps] Motor 2 spline control coefficients c[4][0] to c[4][8], where the first index is along u and the second is along v. Each value must be in [-100000, 100000]."
+    type: Packed_F32x9.T
+    default: "[6.335277628E+03, 9.582948437E+03, 1.166572987E+04,
+               1.343044591E+04, 1.505294311E+04, 1.664924271E+04,
+               1.829684014E+04, 2.009596948E+04, 2.226560056E+04]"
+  - name: Motor_2_Coefficients_Row_5
+    description: "[steps] Motor 2 spline control coefficients c[5][0] to c[5][8], where the first index is along u and the second is along v. Each value must be in [-100000, 100000]."
+    type: Packed_F32x9.T
+    default: "[6.607979131E+03, 9.732073984E+03, 1.171591766E+04,
+               1.343343328E+04, 1.503086437E+04, 1.659904149E+04,
+               1.824369182E+04, 2.000027541E+04, 2.228321692E+04]"
+  - name: Motor_2_Coefficients_Row_6
+    description: "[steps] Motor 2 spline control coefficients c[6][0] to c[6][8], where the first index is along u and the second is along v. Each value must be in [-100000, 100000]."
+    type: Packed_F32x9.T
+    default: "[6.989776158E+03, 9.777103304E+03, 1.176309388E+04,
+               1.344242829E+04, 1.500438544E+04, 1.655564354E+04,
+               1.815109745E+04, 1.996406059E+04, 2.204003107E+04]"
+  - name: Motor_2_Coefficients_Row_7
+    description: "[steps] Motor 2 spline control coefficients c[7][0] to c[7][8], where the first index is along u and the second is along v. Each value must be in [-100000, 100000]."
+    type: Packed_F32x9.T
+    default: "[7.194442843E+03, 9.935008839E+03, 1.179797055E+04,
+               1.344466526E+04, 1.497314791E+04, 1.651651497E+04,
+               1.809202944E+04, 1.985815881E+04, 2.213654583E+04]"
+  - name: Motor_2_Coefficients_Row_8
+    description: "[steps] Motor 2 spline control coefficients c[8][0] to c[8][8], where the first index is along u and the second is along v. Each value must be in [-100000, 100000]."
+    type: Packed_F32x9.T
+    default: "[7.926786668E+03, 9.917104331E+03, 1.191763559E+04,
+               1.343168441E+04, 1.498951002E+04, 1.641463371E+04,
+               1.809887029E+04, 1.964650923E+04, 2.222208997E+04]"

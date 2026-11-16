@@ -1,0 +1,13 @@
+---
+description: This is a unit test suite for the Gimbal Angles To Motor Angles component
+tests:
+  - name: Test
+    description: Compute the motor angles for known gimbal angles with the linear configuration of the algorithm's own unit tests, whose surfaces have known values, to ensure the Ada to C to C++ integration is sound.
+  - name: Test_Outside_Rhombus
+    description: Check that a request outside the addressable rhombus keeps the last computed motor angles, and that before a first valid request and after a reset it gives the motor angles at zero gimbal angles.
+  - name: Test_Parameter_Update
+    description: Check that a reset, not a tick, applies a parameter update.
+  - name: Test_Invalid_Parameter
+    description: Ensure a staged configuration the algorithm would reject is refused at validation.
+  - name: Test_Invalid_Data_Dependency
+    description: Ensure a data dependency with the wrong identifier is treated as a wiring defect and fails the tick's assertion.

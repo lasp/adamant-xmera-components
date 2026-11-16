@@ -1,0 +1,15 @@
+---
+#  typedef struct {
+#      float motorAngle1; /*!< [rad] Motor 1 angle */
+#      float motorAngle2; /*!< [rad] Motor 2 angle */
+#  } GimbalAnglesToMotorAnglesOutput_c;
+description: Output of the GimbalAnglesToMotorAnglesAlgorithm C shim. Maps to GimbalAnglesToMotorAnglesOutput_c. The two stepper motor angles for the requested gimbal angles.
+fields:
+  - name: Motor_Angle_1
+    type: Short_Float
+    format: F32
+    description: "[rad] Motor 1 angle."
+  - name: Motor_Angle_2
+    type: Short_Float
+    format: F32
+    description: "[rad] Motor 2 angle."

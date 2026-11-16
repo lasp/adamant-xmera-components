@@ -1,0 +1,9 @@
+---
+#  typedef struct SplineCoefficients_c {
+#      float data[NUM_SPLINE_COEFFS]; /*!< [steps] Coefficient c[i][j] at index i * NUM_SPLINE_COEFFS_PER_AXIS + j */
+#  } SplineCoefficients_c;
+description: Record wrapping the control coefficients of one bicubic B-spline surface. Maps to SplineCoefficients_c in the gimbal angles to motor angles C shim, which passes it by pointer.
+fields:
+  - name: Value
+    description: "[steps] Control coefficients, one row for each index i along u. Row i holds c[i][0] to c[i][8], with j along v."
+    type: Packed_F32x9x9.T
