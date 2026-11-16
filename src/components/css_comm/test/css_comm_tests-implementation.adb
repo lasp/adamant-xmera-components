@@ -8,7 +8,6 @@ with AUnit.Assertions;
 with Basic_Assertions; use Basic_Assertions;
 with Packed_F64x8.Assertion; use Packed_F64x8.Assertion;
 with Packed_F64x11;
-with Packed_U32;
 with Packed_F64;
 with Css_Array_Adc_8;
 with Css_Sensor_Values;
@@ -51,7 +50,6 @@ package body Css_Comm_Tests.Implementation is
 
       -- Configuration
       Max_Sensor_Val : constant Packed_F64.T := (Value => 100.0);
-      Cheby_Count_Val : constant Packed_U32.T := (Value => 3);
       Cheby_Poly_Val : constant Packed_F64x11.T := [others => 0.0];
 
       -- Input ADC counts: [50, 0, 100, 0, 110, 0, 0, 0]
@@ -72,7 +70,6 @@ package body Css_Comm_Tests.Implementation is
 
       -- Stage and update parameters
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Sensor_Value (Max_Sensor_Val)), Success);
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cheby_Count (Cheby_Count_Val)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cheby_Polynomials (Cheby_Poly_Val)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
       T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
@@ -103,7 +100,6 @@ package body Css_Comm_Tests.Implementation is
 
       -- Configuration (same as the identity test).
       Max_Sensor_Val : constant Packed_F64.T := (Value => 100.0);
-      Cheby_Count_Val : constant Packed_U32.T := (Value => 3);
       Cheby_Poly_Val : constant Packed_F64x11.T := [others => 0.0];
 
       -- A non-zero reading stamped well in the past. Even though the fetch
@@ -131,7 +127,6 @@ package body Css_Comm_Tests.Implementation is
 
       -- Stage and update parameters
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Sensor_Value (Max_Sensor_Val)), Success);
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cheby_Count (Cheby_Count_Val)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cheby_Polynomials (Cheby_Poly_Val)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
       T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
@@ -159,9 +154,7 @@ package body Css_Comm_Tests.Implementation is
 
    end Test_Stale_Input_Is_Processed;
 
-   -- Each active sensor's maximum value must be finite and strictly positive.
-   -- Cheby_Count does not take part in validation, so only Max_Sensor_Value and the
-   -- polynomial coefficients can be rejected here.
+   -- Each sensor's maximum value must be finite and strictly positive.
    overriding procedure Test_Invalid_Parameter (Self : in out Instance) is
       T : Component.Css_Comm.Implementation.Tester.Instance_Access renames Self.Tester;
       Params : Css_Comm_Parameters.Instance;
@@ -174,8 +167,6 @@ package body Css_Comm_Tests.Implementation is
       begin
          Parameter_Update_Status_Assert.Eq
            (T.Stage_Parameter (Params.Max_Sensor_Value ((Value => 5.0))), Success);
-         Parameter_Update_Status_Assert.Eq
-           (T.Stage_Parameter (Params.Cheby_Count ((Value => 1))), Success);
          Parameter_Update_Status_Assert.Eq
            (T.Stage_Parameter (Params.Cheby_Polynomials (Valid_Polys)), Success);
       end Stage_Valid_Set;
@@ -219,7 +210,6 @@ package body Css_Comm_Tests.Implementation is
       Params : Css_Comm_Parameters.Instance;
 
       Max_Sensor_Val : constant Packed_F64.T := (Value => 100.0);
-      Cheby_Count_Val : constant Packed_U32.T := (Value => 11);
       -- Only T0 and T10 have non zero coefficients, and T0 is always 1, so the
       -- correction is 1.0e308 * (1 + T10) of the normalized reading. The
       -- evaluation clamps the reading to [-1, 1], where every Chebyshev term
@@ -244,7 +234,6 @@ package body Css_Comm_Tests.Implementation is
       T.Component_Instance.Init;
 
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Max_Sensor_Value (Max_Sensor_Val)), Success);
-      Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cheby_Count (Cheby_Count_Val)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Cheby_Polynomials (Cheby_Poly_Val)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
       T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));

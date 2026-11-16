@@ -103,8 +103,7 @@ package body Component.Css_Comm.Implementation is
    overriding procedure Update_Parameters_Action (Self : in out Instance) is
       -- Rebuild the algorithm configuration from the updated parameters. The values
       -- were checked by Validate_Parameters at staging, so Set_Config will not reject
-      -- them. Cheby_Count has no counterpart in the flattened config (the algorithm
-      -- uses all MAX_NUM_CHEBY_POLYS coefficients) and is intentionally not applied.
+      -- them.
       Max_Sensor_Values : aliased Packed_F64x8.C.U_C := [others => Self.Max_Sensor_Value.Value];
       Cheby_Poly_C : aliased Cheby_Polynomials_C_Type := (
          Data => Packed_F64x11.C.To_C (Self.Cheby_Polynomials)
@@ -119,15 +118,13 @@ package body Component.Css_Comm.Implementation is
    -- Validate a staged parameter set before it is applied by asking the algorithm's
    -- own non-throwing Validate_Config predicate, so the config rules live solely in
    -- the algorithm. Rejecting an invalid update here at staging keeps it from reaching
-   -- the throwing Create/Set_Config across the FFI boundary. Cheby_Count does not
-   -- participate in the flattened config and is not validated here.
+   -- the throwing Create/Set_Config across the FFI boundary.
    overriding function Validate_Parameters (
       Self : in out Instance;
       Max_Sensor_Value : in Packed_F64.U;
-      Cheby_Count : in Packed_U32.U;
       Cheby_Polynomials : in Packed_F64x11.U
    ) return Parameter_Validation_Status.E is
-      pragma Unreferenced (Self, Cheby_Count);
+      pragma Unreferenced (Self);
       Max_Sensor_Values : aliased Packed_F64x8.C.U_C := [others => Max_Sensor_Value.Value];
       Cheby_Poly_C : aliased Cheby_Polynomials_C_Type := (Data => Packed_F64x11.C.To_C (Cheby_Polynomials));
    begin
