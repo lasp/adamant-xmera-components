@@ -15,9 +15,6 @@ package body Component.Triad.Implementation.Tester is
       -- Initialize tester heap:
       -- Connector histories:
       Self.Data_Product_Fetch_T_Service_History.Init (Depth => 100);
-      Self.Data_Product_T_Recv_Sync_History.Init (Depth => 100);
-      -- Data product histories:
-      Self.Attitude_Reference_History.Init (Depth => 100);
    end Init_Base;
 
    procedure Final_Base (Self : in out Instance) is
@@ -25,9 +22,6 @@ package body Component.Triad.Implementation.Tester is
       -- Destroy tester heap:
       -- Connector histories:
       Self.Data_Product_Fetch_T_Service_History.Destroy;
-      Self.Data_Product_T_Recv_Sync_History.Destroy;
-      -- Data product histories:
-      Self.Attitude_Reference_History.Destroy;
    end Final_Base;
 
    ---------------------------------------
@@ -36,8 +30,7 @@ package body Component.Triad.Implementation.Tester is
    procedure Connect (Self : in out Instance) is
    begin
       Self.Component_Instance.Attach_Data_Product_Fetch_T_Request (To_Component => Self'Unchecked_Access, Hook => Self.Data_Product_Fetch_T_Service_Access);
-      Self.Component_Instance.Attach_Data_Product_T_Send (To_Component => Self'Unchecked_Access, Hook => Self.Data_Product_T_Recv_Sync_Access);
-      Self.Attach_Tick_T_Send (To_Component => Self.Component_Instance'Unchecked_Access, Hook => Self.Component_Instance.Tick_T_Recv_Sync_Access);
+      Self.Attach_Tick_T_Request (To_Component => Self.Component_Instance'Unchecked_Access, Hook => Self.Component_Instance.Tick_T_Service_Access);
       Self.Attach_Reset_Tick_T_Send (To_Component => Self.Component_Instance'Unchecked_Access, Hook => Self.Component_Instance.Reset_Tick_T_Recv_Sync_Access);
       Self.Attach_Parameter_Update_T_Provide (To_Component => Self.Component_Instance'Unchecked_Access, Hook => Self.Component_Instance.Parameter_Update_T_Modify_Access);
    end Connect;
@@ -132,29 +125,6 @@ package body Component.Triad.Implementation.Tester is
       Self.Data_Product_Fetch_T_Service_History.Push (Arg);
       return To_Return;
    end Data_Product_Fetch_T_Service;
-
-   -- The data product invoker connector
-   overriding procedure Data_Product_T_Recv_Sync (Self : in out Instance; Arg : in Data_Product.T) is
-   begin
-      -- Push the argument onto the test history for looking at later:
-      Self.Data_Product_T_Recv_Sync_History.Push (Arg);
-      -- Dispatch the data product to the correct handler:
-      Self.Dispatch_Data_Product (Arg);
-   end Data_Product_T_Recv_Sync;
-
-   -----------------------------------------------
-   -- Data product handler primitive:
-   -----------------------------------------------
-   -- Description:
-   --    Data products for the Triad component.
-   -- Reference attitude that aligns the thrust direction with the requested inertial
-   -- direction. The algorithm produces an attitude only, so the reference rate and
-   -- acceleration are zero. The attitude is zero when the triad cannot be formed.
-   overriding procedure Attitude_Reference (Self : in out Instance; Arg : in Att_Ref.T) is
-   begin
-      -- Push the argument onto the test history for looking at later:
-      Self.Attitude_Reference_History.Push (Arg);
-   end Attitude_Reference;
 
    -----------------------------------------------
    -- Special primitives for aiding in the staging,

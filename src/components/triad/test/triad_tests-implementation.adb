@@ -5,7 +5,6 @@
 with Ada.Assertions;
 with AUnit.Assertions;
 with Parameter;
-with Basic_Assertions; use Basic_Assertions;
 with Att_Ref.Assertion; use Att_Ref.Assertion;
 with Packed_F32x3;
 with Packed_N3_Axis;
@@ -56,11 +55,10 @@ package body Triad_Tests.Implementation is
       T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Apply_Configuration;
 
-   -- Send one tick with the given directions and check the published reference attitude.
+   -- Send one tick with the given directions and check the returned reference attitude.
    -- The rate and acceleration are always zero.
    procedure Send_Tick_And_Check (
       Self : in out Instance;
-      Tick_Number : in Natural;
       Sun_N : in Packed_F32x3.T;
       Thrust_B : in Packed_F32x3.T;
       Expected_Sigma_Rn : in Packed_F32x3.T
@@ -69,11 +67,8 @@ package body Triad_Tests.Implementation is
    begin
       T.Sun_Direction_Inertial := Sun_N;
       T.Thrust_Direction_Body := Thrust_B;
-      T.Tick_T_Send ((Time => T.System_Time, Count => 0));
-      Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, Tick_Number);
-      Natural_Assert.Eq (T.Attitude_Reference_History.Get_Count, Tick_Number);
       Att_Ref_Assert.Eq
-        (T.Attitude_Reference_History.Get (Tick_Number),
+        (T.Tick_T_Request ((Time => T.System_Time, Count => 0)),
          (Sigma_Rn => Expected_Sigma_Rn, Omega_Rn_N => [0.0, 0.0, 0.0], Domega_Rn_N => [0.0, 0.0, 0.0]),
          Epsilon => Epsilon);
    end Send_Tick_And_Check;
@@ -118,11 +113,11 @@ package body Triad_Tests.Implementation is
    begin
       -- Sun to probe angle below 90 degrees:
       Apply_Configuration (Self, Thrust_Req_N => Earth_A, Fallback_Axis => Plus_Z);
-      Send_Tick_And_Check (Self, 1, Sun_A, Thrust_Body, [0.1340293018, 0.2445811641, -0.2012511038]);
+      Send_Tick_And_Check (Self, Sun_A, Thrust_Body, [0.1340293018, 0.2445811641, -0.2012511038]);
 
       -- Sun to probe angle above 90 degrees:
       Apply_Configuration (Self, Thrust_Req_N => Earth_B, Fallback_Axis => Plus_Z);
-      Send_Tick_And_Check (Self, 2, Sun_B, Thrust_Body, [0.2289772991, 0.4373198849, -0.0591493951]);
+      Send_Tick_And_Check (Self, Sun_B, Thrust_Body, [0.2289772991, 0.4373198849, -0.0591493951]);
    end Test;
 
    -- Check the fallback constraint axis when the sun is parallel to the requested thrust
@@ -132,13 +127,13 @@ package body Triad_Tests.Implementation is
       -- With the sun along the requested thrust direction the triad is completed with
       -- the configured inertial z axis instead:
       Apply_Configuration (Self, Thrust_Req_N => Earth_A, Fallback_Axis => Plus_Z);
-      Send_Tick_And_Check (Self, 1, Earth_A, Thrust_Body, [-0.1750657677, -0.3975377473, -0.1998057895]);
+      Send_Tick_And_Check (Self, Earth_A, Thrust_Body, [-0.1750657677, -0.3975377473, -0.1998057895]);
       Apply_Configuration (Self, Thrust_Req_N => Earth_A, Fallback_Axis => Minus_Z);
-      Send_Tick_And_Check (Self, 2, Earth_A, Thrust_Body, [0.1974675631, 0.3811830676, -0.1730170613]);
+      Send_Tick_And_Check (Self, Earth_A, Thrust_Body, [0.1974675631, 0.3811830676, -0.1730170613]);
 
       -- A thrust direction along the drive axis leaves no triad to form, so the
       -- reference attitude is zero:
-      Send_Tick_And_Check (Self, 3, Sun_A, Sada_Axis, [0.0, 0.0, 0.0]);
+      Send_Tick_And_Check (Self, Sun_A, Sada_Axis, [0.0, 0.0, 0.0]);
    end Test_Degenerate_Geometry;
 
    -- The algorithm requires unit drive and requested thrust axes. Validation is the only
@@ -205,19 +200,20 @@ package body Triad_Tests.Implementation is
    end Test_Invalid_Parameter;
 
    -- A data dependency that comes back with the wrong identifier means the assembly
-   -- is wired incorrectly. The component asserts rather than publishing anything.
+   -- is wired incorrectly. The component asserts rather than returning a reference.
    overriding procedure Test_Invalid_Data_Dependency (Self : in out Instance) is
       T : Component.Triad.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
       T.Data_Dependency_Return_Id_Override := 999;
+      declare
+         Ignore : Att_Ref.T;
       begin
-         T.Tick_T_Send ((Time => T.System_Time, Count => 0));
+         Ignore := T.Tick_T_Request ((Time => T.System_Time, Count => 0));
          AUnit.Assertions.Assert (False, "A dependency with the wrong identifier should have failed an assertion.");
       exception
          when Ada.Assertions.Assertion_Error =>
             null; -- Expected.
       end;
-      Natural_Assert.Eq (T.Attitude_Reference_History.Get_Count, 0);
    end Test_Invalid_Data_Dependency;
 
 end Triad_Tests.Implementation;

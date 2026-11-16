@@ -7,9 +7,6 @@ with Component.Triad_Reciprocal;
 with Printable_History;
 with Data_Product_Return.Representation;
 with Data_Product_Fetch.Representation;
-with Data_Product.Representation;
-with Data_Product;
-with Att_Ref.Representation;
 with Packed_F32x3;
 
 -- Triad attitude guidance. Computes the reference attitude that aligns the body
@@ -22,10 +19,6 @@ package Component.Triad.Implementation.Tester is
    -- Invoker connector history packages:
    package Data_Product_Fetch_T_Service_History_Package is new Printable_History (Data_Product_Fetch.T, Data_Product_Fetch.Representation.Image);
    package Data_Product_Fetch_T_Service_Return_History_Package is new Printable_History (Data_Product_Return.T, Data_Product_Return.Representation.Image);
-   package Data_Product_T_Recv_Sync_History_Package is new Printable_History (Data_Product.T, Data_Product.Representation.Image);
-
-   -- Data product history packages:
-   package Attitude_Reference_History_Package is new Printable_History (Att_Ref.T, Att_Ref.Representation.Image);
 
    -- Component class instance:
    type Instance is new Component.Triad_Reciprocal.Base_Instance with record
@@ -33,9 +26,6 @@ package Component.Triad.Implementation.Tester is
       Component_Instance : aliased Component.Triad.Implementation.Instance;
       -- Connector histories:
       Data_Product_Fetch_T_Service_History : Data_Product_Fetch_T_Service_History_Package.Instance;
-      Data_Product_T_Recv_Sync_History : Data_Product_T_Recv_Sync_History_Package.Instance;
-      -- Data product histories:
-      Attitude_Reference_History : Attitude_Reference_History_Package.Instance;
       -- Data dependency return values. These can be set during unit test
       -- and will be returned to the component when a data dependency call
       -- is made.
@@ -74,18 +64,6 @@ package Component.Triad.Implementation.Tester is
    ---------------------------------------
    -- Fetch a data product item from the database.
    overriding function Data_Product_Fetch_T_Service (Self : in out Instance; Arg : in Data_Product_Fetch.T) return Data_Product_Return.T;
-   -- The data product invoker connector
-   overriding procedure Data_Product_T_Recv_Sync (Self : in out Instance; Arg : in Data_Product.T);
-
-   -----------------------------------------------
-   -- Data product handler primitives:
-   -----------------------------------------------
-   -- Description:
-   --    Data products for the Triad component.
-   -- Reference attitude that aligns the thrust direction with the requested inertial
-   -- direction. The algorithm produces an attitude only, so the reference rate and
-   -- acceleration are zero. The attitude is zero when the triad cannot be formed.
-   overriding procedure Attitude_Reference (Self : in out Instance; Arg : in Att_Ref.T);
 
    -----------------------------------------------
    -- Special primitives for aiding in the staging,
