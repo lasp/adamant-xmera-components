@@ -2,11 +2,11 @@
 description: Unit tests for the Css Comm component
 tests:
   - name: Test_Zero_Cheby_Is_Identity
-    description: With zero Chebyshev coefficients, output equals input/maxSensorValue clamped to [0, 1].
+    description: With zero Chebyshev coefficients, each sensor's output equals its input divided by its own maximum value, clamped to [0, 1].
   - name: Test_Stale_Input_Is_Processed
     description: When the CSS sensor data dependency is stale, the reading is processed like a fresh one and the output is published with the reading's original timestamp.
   - name: Test_Invalid_Parameter
-    description: Ensure a staged max sensor value the algorithm would reject is refused at validation.
+    description: Ensure a staged maximum value for any one sensor that the algorithm would reject is refused at validation.
   - name: Test_Non_Finite_Correction_Is_No_Signal
     description: A reading whose Chebyshev correction overflows is published as zero, no signal, instead of being clamped to one.
   - name: Test_Invalid_Data_Dependency

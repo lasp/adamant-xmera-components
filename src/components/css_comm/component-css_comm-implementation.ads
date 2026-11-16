@@ -69,14 +69,10 @@ private
    -- This procedure is called when the parameters of a component have been updated.
    overriding procedure Update_Parameters_Action (Self : in out Instance);
    -- This function is called when the parameter operation type is "Validate".
-   -- No custom validation: float garbage (NaN/Inf) in the Chebyshev
-   -- coefficients is rejected by type validation during staging, and an
-   -- out-of-range Cheby_Count is the C algorithm setter's contract to
-   -- reject.
+   -- Asks the algorithm's Validate_Config whether it would accept the staged set.
    overriding function Validate_Parameters (
       Self : in out Instance;
-      Max_Sensor_Value : in Packed_F64.U;
-      Cheby_Count : in Packed_U32.U;
+      Max_Sensor_Values : in Packed_F64x8.U;
       Cheby_Polynomials : in Packed_F64x11.U
    ) return Parameter_Validation_Status.E;
 
