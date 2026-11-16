@@ -76,6 +76,7 @@ package body Rw_Motor_Torque_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Proportional_Gain_Kp (Kp)), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Desired_Wheel_Speeds ((Wheel_Speeds => Desired_Speeds))), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Apply_Configuration;
 
    -- Send one tick with the reference torque and wheel speeds and check the torques sent
@@ -253,6 +254,7 @@ package body Rw_Motor_Torque_Tests.Implementation is
       Stage_Valid_Configuration;
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Test_Invalid_Parameter;
 
    -- A data dependency that comes back with the wrong identifier means the assembly

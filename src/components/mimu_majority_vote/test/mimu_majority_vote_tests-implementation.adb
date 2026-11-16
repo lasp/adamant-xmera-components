@@ -71,6 +71,7 @@ package body Mimu_Majority_Vote_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Gyro_Fault_Persistence_Limit ((Value => 1))), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Accel_Fault_Persistence_Limit ((Value => 2))), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
 
       -- Set IMU data dependencies (symmetric perturbations -> exact averages):
       T.Imu_1_Body := (Ang_Vel_Body => [1.0, 2.0, 3.0], Accel_Body => [0.0, 0.0, 9.8]);
@@ -119,6 +120,7 @@ package body Mimu_Majority_Vote_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Omega_Threshold ((Value => 0.05))), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Accel_Threshold ((Value => 5.0))), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
 
       -- IMU 2 (index 1) angular velocity is base + 2.0; IMU 3 (index 2)
       -- acceleration is base + 2.0. All other quantities agree on base.
@@ -244,6 +246,7 @@ package body Mimu_Majority_Vote_Tests.Implementation is
       Stage_Valid_Set;
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Test_Validate_Parameters;
 
    -- Drive a steady outlier on each quantity and confirm the gyro and accel votes
@@ -267,6 +270,7 @@ package body Mimu_Majority_Vote_Tests.Implementation is
          Parameter_Update_Status_Assert.Eq
             (T.Stage_Parameter (Params.Accel_Fault_Persistence_Limit ((Value => 1))), Success);
          Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+         T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
       end Stage_Config;
 
       -- IMU 2 is a steady gyro outlier; IMU 3 is a steady accel outlier.

@@ -146,6 +146,7 @@ package body St_Platform_Attitude_Tests.Implementation is
          Parameter_Update_Status_Assert.Eq
            (T.Stage_Parameter (Params.Sigma_Pb (Test_Cases (I).Sigma_Pb)), Success);
          Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+         T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
 
          -- Set data dependencies, stamped with the time of the solution, which is
          -- before the tick:
@@ -210,6 +211,7 @@ package body St_Platform_Attitude_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Sigma_Pb (Zero_Mounting)), Success);
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Test_Invalid_Parameter;
 
 end St_Platform_Attitude_Tests.Implementation;

@@ -111,6 +111,7 @@ package body Average_Mimu_Data_Tests.Implementation is
          Params.Accel_Time_Delta ((Value => Accel_Window))), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Sigma_Cb ([0.0, 0.0, 0.0])), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Apply_Standard_Params;
 
    -------------------------------------------------------------------------
@@ -181,6 +182,7 @@ package body Average_Mimu_Data_Tests.Implementation is
          Params.Accel_Time_Delta ((Value => 1.0))), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Sigma_Cb ([0.0, 0.0, 0.41421356])), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
 
       T.Mimu_Eng_Packet_T_Send (Uniform_Packet (1, 0));
       T.Tick_T_Send (((0, 0), 0));
@@ -441,6 +443,7 @@ package body Average_Mimu_Data_Tests.Implementation is
       Stage_Valid_Set;
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Test_Invalid_Config_Parameter;
 
 end Average_Mimu_Data_Tests.Implementation;

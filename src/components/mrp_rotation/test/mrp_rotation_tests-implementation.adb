@@ -63,9 +63,10 @@ package body Mrp_Rotation_Tests.Implementation is
    -- Helpers:
    -------------------------------------------------------------------------
 
-   -- Stage and apply the rotation configuration. The body correction is the same in
-   -- every case, and the pointing offset, spin axis, and spin rate are the reference
-   -- ones unless a case sets others.
+   -- Stage and update the rotation configuration. It stays pending until the next
+   -- reset applies it. The body correction is the same in every case, and the
+   -- pointing offset, spin axis, and spin rate are the reference ones unless a case
+   -- sets others.
    procedure Apply_Configuration (
       Self : in out Instance;
       Sigma_Rprc : in Packed_F32x3.T := Pointing_Offset;
@@ -121,56 +122,24 @@ package body Mrp_Rotation_Tests.Implementation is
    -- Tests:
    -------------------------------------------------------------------------
 
-   -- Run the algorithm through a rotation, pointing offset change, and reset
-   -- sequence built from the cases of the Python reference test, with expected
-   -- values from its reference model, to ensure the Ada to C to C++ integration is
-   -- sound. Each tick advances the rotation by one control period
+   -- Run the algorithm through the rotation of the Python reference test, with
+   -- expected values from its reference model, to ensure the Ada to C to C++
+   -- integration is sound. Each tick advances the rotation by one control period
    -- before applying it to the base reference, so the attitude changes from tick to
-   -- tick while the rates stay constant. A new pointing offset applies at the next
-   -- tick and keeps the integrated rotation. A reset restarts the rotation at
-   -- identity.
+   -- tick while the rates stay constant.
    overriding procedure Test (Self : in out Instance) is
       T : Component.Mrp_Rotation.Implementation.Tester.Instance_Access renames Self.Tester;
-
-      -- The two ticks after the pointing offset change, which continue the rotation
-      -- from the fourth tick:
-      Expected_After_Offset_Change : constant array (1 .. 2) of Att_Ref.T := [
-         (Sigma_Rn => [0.0405112672, 0.9232220497, 0.1416304095],
-          Omega_Rn_N => [0.0982769650, 0.0001841562, -0.0002083537],
-          Domega_Rn_N => [0.0, 0.0000208354, 0.0000184156]),
-         (Sigma_Rn => [0.0405394605, 0.9233000859, 0.1412300618],
-          Omega_Rn_N => [0.0982769650, 0.0001841562, -0.0002083537],
-          Domega_Rn_N => [0.0, 0.0000208354, 0.0000184156])
-      ];
-      -- The two ticks after the reset, which restart the rotation at identity with
-      -- the new pointing offset:
-      Expected_After_Reset : constant array (1 .. 2) of Att_Ref.T := [
-         (Sigma_Rn => [0.0403984316, 0.9229082859, 0.1432314057],
-          Omega_Rn_N => [0.0982769650, 0.0001841562, -0.0002083537],
-          Domega_Rn_N => [0.0, 0.0000208354, 0.0000184156]),
-         (Sigma_Rn => [0.0404266498, 0.9229869697, 0.1428312159],
-          Omega_Rn_N => [0.0982769650, 0.0001841562, -0.0002083537],
-          Domega_Rn_N => [0.0, 0.0000208354, 0.0000184156])
-      ];
    begin
-      -- The configuration applies at the first tick, and the rotation starts at
-      -- identity, so four ticks follow the reference sequence from its start:
+      -- A tick does not apply the updated configuration. The default configuration
+      -- has no rotation, so the base reference comes back unchanged:
       Apply_Configuration (Self);
+      Send_Tick_And_Check (Self, Base_Reference);
+
+      -- The reset connector applies the configuration and starts the rotation at
+      -- identity, so four ticks follow the reference sequence from its start:
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
       for I in Expected'Range loop
          Send_Tick_And_Check (Self, Expected (I));
-      end loop;
-
-      -- A new pointing offset applies at the next tick, and the rotation continues
-      -- from where it is:
-      Apply_Configuration (Self, Sigma_Rprc => New_Pointing_Offset);
-      for I in Expected_After_Offset_Change'Range loop
-         Send_Tick_And_Check (Self, Expected_After_Offset_Change (I));
-      end loop;
-
-      -- The reset connector restarts the rotation at identity:
-      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
-      for I in Expected_After_Reset'Range loop
-         Send_Tick_And_Check (Self, Expected_After_Reset (I));
       end loop;
    end Test;
 
@@ -256,12 +225,13 @@ package body Mrp_Rotation_Tests.Implementation is
       Stage_Valid_Configuration;
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Test_Invalid_Parameter;
 
-   -- A configuration updated while the component is not being ticked is still
-   -- pending when a state change resets it. The reset applies it before restarting
-   -- the rotation, so the first tick starts at identity with the new pointing offset
-   -- rather than continuing the rotation with the old one.
+   -- An updated configuration is pending until a state change resets the component.
+   -- The reset applies it before restarting the rotation, so the first tick starts
+   -- at identity with the new pointing offset rather than continuing the rotation
+   -- with the old one.
    overriding procedure Test_Reset_Applies_Pending_Parameters (Self : in out Instance) is
       T : Component.Mrp_Rotation.Implementation.Tester.Instance_Access renames Self.Tester;
       -- The rotation restarted at identity with the new pointing offset:
@@ -276,12 +246,17 @@ package body Mrp_Rotation_Tests.Implementation is
    begin
       -- Advance the rotation by two ticks:
       Apply_Configuration (Self);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
       for I in 1 .. 2 loop
          Send_Tick_And_Check (Self, Expected (I));
       end loop;
 
-      -- Update the pointing offset without ticking, so it is still pending at the reset:
+      -- Update the pointing offset. It is pending, so the next tick continues the
+      -- rotation with the old one:
       Apply_Configuration (Self, Sigma_Rprc => New_Pointing_Offset);
+      Send_Tick_And_Check (Self, Expected (3));
+
+      -- The reset applies the new pointing offset and restarts the rotation:
       T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
       for I in Expected_After_Reset'Range loop
          Send_Tick_And_Check (Self, Expected_After_Reset (I));
@@ -292,8 +267,10 @@ package body Mrp_Rotation_Tests.Implementation is
    -- rate gives the reference rotation. A spin axis or rate that is lost or garbled
    -- crossing to the algorithm would not.
    overriding procedure Test_Spin_Axis_And_Rate (Self : in out Instance) is
+      T : Component.Mrp_Rotation.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
       Apply_Configuration (Self, Spin_Axis_Rp => [-1.0, 0.0, 0.0], Spin_Rate_Rp => -Spin_Rate);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
       for I in Expected'Range loop
          Send_Tick_And_Check (Self, Expected (I));
       end loop;

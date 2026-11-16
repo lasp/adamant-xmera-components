@@ -97,6 +97,7 @@ package body Body_Rate_Miscompare_Tests.Implementation is
       -- Stage and apply the threshold parameter:
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Body_Rate_Threshold (Threshold)), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
 
       for I in Test_Cases'Range loop
          -- Set IMU angular velocity data dependency
@@ -233,6 +234,7 @@ package body Body_Rate_Miscompare_Tests.Implementation is
       -- Require three consecutive disagreements before the fault latches:
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Fault_Persistence_Limit ((Value => 3))), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
 
       -- The component defaults to forcing IMU rates, so turn the override off to
       -- exercise the miscompare persistence logic:
@@ -278,6 +280,7 @@ package body Body_Rate_Miscompare_Tests.Implementation is
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Body_Rate_Threshold ((Value => 1.0))), Success);
       Parameter_Update_Status_Assert.Eq (T.Stage_Parameter (Params.Fault_Persistence_Limit ((Value => 1))), Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
 
       -- The component defaults to forcing IMU rates, so turn the override off to
       -- start from the miscompare logic:
@@ -411,6 +414,7 @@ package body Body_Rate_Miscompare_Tests.Implementation is
       Stage_Valid_Set;
       Parameter_Update_Status_Assert.Eq (T.Validate_Parameters, Success);
       Parameter_Update_Status_Assert.Eq (T.Update_Parameters, Success);
+      T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
    end Test_Invalid_Parameter;
 
 end Body_Rate_Miscompare_Tests.Implementation;
