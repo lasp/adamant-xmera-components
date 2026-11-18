@@ -50,8 +50,9 @@ package body Component.Triad.Implementation is
    ---------------------------------------
    -- Invokee connector primitives:
    ---------------------------------------
-   -- Run the algorithm up to the current time.
-   overriding procedure Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
+   -- Run the algorithm up to the current time and return the attitude reference it
+   -- produces.
+   overriding function Tick_T_Service (Self : in out Instance; Arg : in Tick.T) return Att_Ref.T is
       use Data_Product_Enums;
       use Data_Product_Enums.Data_Dependency_Status;
 
@@ -74,19 +75,18 @@ package body Component.Triad.Implementation is
       Sun_Direction_C : aliased constant Packed_F32x3_Record.C.U_C := (Value => Packed_F32x3.C.Unpack (Sun_Direction));
       Thrust_Direction_C : aliased constant Packed_F32x3_Record.C.U_C := (Value => Packed_F32x3.C.Unpack (Thrust_Direction));
    begin
-      -- Call the C algorithm and publish the reference. The algorithm produces an
-      -- attitude only, so the reference rate and acceleration are zero. Update is
-      -- qualified because Parameter_Enums also declares one.
-      Self.Data_Product_T_Send (Self.Data_Products.Attitude_Reference (
-         Arg.Time,
+      -- Call the C algorithm and return the reference to the caller, which publishes
+      -- it. The algorithm produces an attitude only, so the reference rate and
+      -- acceleration are zero. The attitude is zero when the triad cannot be formed.
+      -- Update is qualified because Parameter_Enums also declares one.
+      return
          (Sigma_Rn => Packed_F32x3.C.Pack (Triad_Algorithm_C.Update (
              Self.Alg,
              R_Hat_Sb_N   => Sun_Direction_C'Access,
              Thrust_Hat_B => Thrust_Direction_C'Access).Value),
           Omega_Rn_N => [others => 0.0],
-          Domega_Rn_N => [others => 0.0])
-      ));
-   end Tick_T_Recv_Sync;
+          Domega_Rn_N => [others => 0.0]);
+   end Tick_T_Service;
 
    -- Apply any pending parameter update. Called on GNC state change.
    overriding procedure Reset_Tick_T_Recv_Sync (Self : in out Instance; Arg : in Tick.T) is
