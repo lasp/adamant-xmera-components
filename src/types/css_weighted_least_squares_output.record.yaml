@@ -1,13 +1,13 @@
 ---
 #  typedef struct {
-#      Vector3f_c sunHeading_B;                     /*!< [-]   estimated unit sun heading, body frame; zero when no fit */
+#      Vector3f_c rHat_SB_B;                        /*!< [-]   estimated unit sun heading, body frame; zero when no fit */
 #      Vector3f_c omega_BN_B;                       /*!< [r/s] inertial angular velocity, body frame; zero when no rate */
 #      float postFitResiduals[MAX_NUM_CSS_SENSORS]; /*!< [-]   post-fit residuals, packed by observation */
 #      uint32_t numCssViewingSun;                   /*!< [-]   sensors that contributed to the fit this cycle */
 #  } CssWeightedLeastSquaresOutput_c;
 description: One cycle of the coarse sun sensor weighted least squares estimate. Maps to CssWeightedLeastSquaresOutput_c in the cssWeightedLeastSquares C shim, which returns it by value.
 fields:
-  - name: Sun_Heading_B
+  - name: R_Hat_Sb_B
     description: "[-] Estimated unit sun heading in body frame components. Zero when no fit was possible."
     type: Packed_F32x3.T
   - name: Omega_Bn_B
