@@ -168,14 +168,14 @@ package body Component.Inertial_Filter.Implementation is
          -- precision they consume, and stamped in system seconds.
          Self.Data_Product_T_Send (Self.Data_Products.Attitude_Estimate (
             Arg.Current_Tick.Time,
-            (Time_Tag        => Seconds (Arg.Call_Time),
-             Sigma_Bn        => [for I in 0 .. 2 => Short_Float (Output.State (I))],
-             Omega_Bn_B      => [for I in 0 .. 2 => Short_Float (Output.State (I + 3))],
+            (Time_Tag   => Seconds (Arg.Call_Time),
+             Sigma_Bn   => [for I in 0 .. 2 => Short_Float (Output.State (I))],
+             Omega_Bn_B => [for I in 0 .. 2 => Short_Float (Output.State (I + 3))],
              -- The estimate shares the navigation attitude output type with the
              -- sunline filter, but this filter estimates only the attitude and the
              -- body rate. It has no sun direction state, so the sun direction field
              -- is always zero and consumers must not read it from this product.
-             Veh_Sun_Pnt_Bdy => [0.0, 0.0, 0.0])
+             R_Hat_Sb_B => [0.0, 0.0, 0.0])
          ));
 
          -- Publish the rest of the snapshot for the ground. The covariance is reduced to

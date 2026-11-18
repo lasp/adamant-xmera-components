@@ -219,7 +219,7 @@ package body Inertial_Filter_Tests.Implementation is
          for I in 0 .. 2 loop
             Short_Float_Assert.Eq (Estimate.Sigma_Bn (I), Attitude (I), Epsilon => 1.0E-4);
             Short_Float_Assert.Eq (Estimate.Omega_Bn_B (I), 0.0, Epsilon => 1.0E-4);
-            Short_Float_Assert.Eq (Estimate.Veh_Sun_Pnt_Bdy (I), 0.0);
+            Short_Float_Assert.Eq (Estimate.R_Hat_Sb_B (I), 0.0);
          end loop;
          -- The estimate is stamped with the time the filter advanced to:
          Long_Float_Assert.Eq (Estimate.Time_Tag, Long_Float (Steps) * 0.5);

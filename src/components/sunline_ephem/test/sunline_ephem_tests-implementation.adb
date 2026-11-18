@@ -91,7 +91,7 @@ package body Sunline_Ephem_Tests.Implementation is
             Time_Tag => 0.0,
             Sigma_Bn => [0.1, 0.2, -0.3],
             Omega_Bn_B => [0.0, 0.0, 0.0],
-            Veh_Sun_Pnt_Bdy => [0.0, 0.0, 0.0]
+            R_Hat_Sb_B => [0.0, 0.0, 0.0]
          );
 
          -- Call algorithm:
