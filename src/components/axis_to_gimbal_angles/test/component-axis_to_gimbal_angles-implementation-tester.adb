@@ -18,6 +18,7 @@ package body Component.Axis_To_Gimbal_Angles.Implementation.Tester is
       Self.Data_Product_T_Recv_Sync_History.Init (Depth => 100);
       -- Data product histories:
       Self.Gimbal_Command_History.Init (Depth => 100);
+      Self.Achieved_Thrust_Direction_History.Init (Depth => 100);
    end Init_Base;
 
    procedure Final_Base (Self : in out Instance) is
@@ -28,6 +29,7 @@ package body Component.Axis_To_Gimbal_Angles.Implementation.Tester is
       Self.Data_Product_T_Recv_Sync_History.Destroy;
       -- Data product histories:
       Self.Gimbal_Command_History.Destroy;
+      Self.Achieved_Thrust_Direction_History.Destroy;
    end Final_Base;
 
    ---------------------------------------
@@ -139,14 +141,21 @@ package body Component.Axis_To_Gimbal_Angles.Implementation.Tester is
    -----------------------------------------------
    -- Description:
    --    Data products for the Axis To Gimbal Angles component.
-   -- The two gimbal angles that align the gimbal thrust axis with the commanded
-   -- direction, and the unit thrust direction those angles achieve in body frame
-   -- components.
-   overriding procedure Gimbal_Command (Self : in out Instance; Arg : in Axis_To_Gimbal_Angles_Output.T) is
+   -- [rad] The two gimbal angles that align the gimbal thrust axis with the
+   -- commanded direction.
+   overriding procedure Gimbal_Command (Self : in out Instance; Arg : in Gimbal_Angles.T) is
    begin
       -- Push the argument onto the test history for looking at later:
       Self.Gimbal_Command_History.Push (Arg);
    end Gimbal_Command;
+
+   -- [-] The unit thrust direction the gimbal angles achieve in body frame
+   -- components.
+   overriding procedure Achieved_Thrust_Direction (Self : in out Instance; Arg : in Packed_F32x3.T) is
+   begin
+      -- Push the argument onto the test history for looking at later:
+      Self.Achieved_Thrust_Direction_History.Push (Arg);
+   end Achieved_Thrust_Direction;
 
    -----------------------------------------------
    -- Special primitives for aiding in the staging,
