@@ -91,16 +91,14 @@ package Solar_Array_Reference_Algorithm_C is
    --* @brief Compute the reference array angle. The algorithm retains the result, and
    --* returns it again when the sun direction is within the alignment threshold of the
    --* drive axis and no rotation angle is preferred.
-   --* @param Self          The algorithm instance.
-   --* @param Sigma_Bn      [-]   Body attitude MRP relative to inertial.
-   --* @param Sigma_Rn      [-]   Reference attitude MRP relative to inertial.
-   --* @param R_Hat_In_Sb_B [-]   Sun direction in body frame components.
+   --* @param Self       The algorithm instance.
+   --* @param Sigma_Rn   [-] Reference attitude MRP relative to inertial.
+   --* @param R_Hat_Sb_N [-] Sun direction in inertial frame components.
    --* @return [rad] Reference array angle wrapped to [-pi, pi].
    function Update
-     (Self          : Solar_Array_Reference_Algorithm_Access;
-      Sigma_Bn      : Packed_F32x3_Record.C.U_C;
-      Sigma_Rn      : Packed_F32x3_Record.C.U_C;
-      R_Hat_In_Sb_B : Packed_F32x3_Record.C.U_C)
+     (Self       : Solar_Array_Reference_Algorithm_Access;
+      Sigma_Rn   : Packed_F32x3_Record.C.U_C;
+      R_Hat_Sb_N : Packed_F32x3_Record.C.U_C)
      return Short_Float
      with Import        => True,
           Convention    => C,

@@ -1,12 +1,9 @@
 ---
 description: Data dependencies for the Solar Array Reference component.
 data_dependencies:
-  - name: Navigation_Attitude
-    type: Nav_Att_Output.T
-    description: This is the current navigation attitude estimate. Only the body attitude is used. It is fetched only in the sun tracking mode.
   - name: Attitude_Reference
     type: Att_Ref.T
     description: This is the reference attitude the body is slewing to. Only the reference attitude is used. It is fetched only in the sun tracking mode.
-  - name: Sun_Direction_Body
+  - name: Sun_Direction_Inertial
     type: Packed_F32x3.T
-    description: "[-] This is the unit vector from the spacecraft to the sun in body frame components. It is fetched only in the sun tracking mode."
+    description: "[-] This is the unit vector from the spacecraft to the sun in inertial frame components. It is fetched only in the sun tracking mode."

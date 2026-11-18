@@ -58,12 +58,10 @@ package body Component.Solar_Array_Reference.Implementation.Tester is
       -- Determine return data product ID:
       if Id_To_Return = 0 then
          case Arg.Id is
-            -- ID for Navigation_Attitude:
-            when 0 => Id_To_Return := 0;
             -- ID for Attitude_Reference:
+            when 0 => Id_To_Return := 0;
+            -- ID for Sun_Direction_Inertial:
             when 1 => Id_To_Return := 1;
-            -- ID for Sun_Direction_Body:
-            when 2 => Id_To_Return := 2;
             -- If ID can not be found, then return ID out of range error.
             when others =>
                if Return_Status = Data_Product_Enums.Fetch_Status.Success then
@@ -75,12 +73,10 @@ package body Component.Solar_Array_Reference.Implementation.Tester is
       -- Determine return data product length:
       if Length_To_Return = 0 then
          case Arg.Id is
-            -- Length for Navigation_Attitude:
-            when 0 => Length_To_Return := Nav_Att_Output.Size_In_Bytes;
             -- Length for Attitude_Reference:
-            when 1 => Length_To_Return := Att_Ref.Size_In_Bytes;
-            -- Length for Sun_Direction_Body:
-            when 2 => Length_To_Return := Packed_F32x3.Size_In_Bytes;
+            when 0 => Length_To_Return := Att_Ref.Size_In_Bytes;
+            -- Length for Sun_Direction_Inertial:
+            when 1 => Length_To_Return := Packed_F32x3.Size_In_Bytes;
             -- If ID can not be found, then return ID out of range error.
             when others =>
                if Return_Status = Data_Product_Enums.Fetch_Status.Success then
@@ -97,18 +93,14 @@ package body Component.Solar_Array_Reference.Implementation.Tester is
       -- Fill the data product buffer:
       if Return_Status = Data_Product_Enums.Fetch_Status.Success then
          case Arg.Id is
-            -- Length for Navigation_Attitude:
-            when 0 =>
-               Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Nav_Att_Output.Size_In_Bytes - 1) :=
-                  Nav_Att_Output.Serialization.To_Byte_Array (Self.Navigation_Attitude);
             -- Length for Attitude_Reference:
-            when 1 =>
+            when 0 =>
                Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Att_Ref.Size_In_Bytes - 1) :=
                   Att_Ref.Serialization.To_Byte_Array (Self.Attitude_Reference);
-            -- Length for Sun_Direction_Body:
-            when 2 =>
+            -- Length for Sun_Direction_Inertial:
+            when 1 =>
                Buffer_To_Return (Buffer_To_Return'First .. Buffer_To_Return'First + Packed_F32x3.Size_In_Bytes - 1) :=
-                  Packed_F32x3.Serialization.To_Byte_Array (Self.Sun_Direction_Body);
+                  Packed_F32x3.Serialization.To_Byte_Array (Self.Sun_Direction_Inertial);
             -- Do not fill. The ID is not recognized.
             when others =>
                Return_Status := Data_Product_Enums.Fetch_Status.Id_Out_Of_Range;

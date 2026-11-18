@@ -8,7 +8,6 @@ with Printable_History;
 with Data_Product_Return.Representation;
 with Data_Product_Fetch.Representation;
 with Data_Product.Representation;
-with Nav_Att_Output;
 with Att_Ref;
 with Packed_F32x3;
 with Data_Product;
@@ -43,9 +42,8 @@ package Component.Solar_Array_Reference.Implementation.Tester is
       -- Data dependency return values. These can be set during unit test
       -- and will be returned to the component when a data dependency call
       -- is made.
-      Navigation_Attitude : Nav_Att_Output.T;
       Attitude_Reference : Att_Ref.T;
-      Sun_Direction_Body : Packed_F32x3.T;
+      Sun_Direction_Inertial : Packed_F32x3.T;
       -- The return status for the data dependency fetch. This can be set
       -- during unit test to return something other than Success.
       Data_Dependency_Return_Status_Override : Data_Product_Enums.Fetch_Status.E := Data_Product_Enums.Fetch_Status.Success;
