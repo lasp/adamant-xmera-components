@@ -6,6 +6,7 @@ pragma Warnings (Off, "-gnatwu");
 with Interfaces; use Interfaces;
 with Packed_F32x3_Record.C;
 with Packed_F64x3_Record.C;
+with Sunline_Ephem_Output.C;
 
 package Sunline_Ephem_Algorithm_C is
 
@@ -27,18 +28,19 @@ package Sunline_Ephem_Algorithm_C is
           Convention   => C,
           External_Name => "SunlineEphemAlgorithm_destroy";
 
-   --* @brief Compute ephemeris-based sunline heading in body frame.
+   --* @brief Compute the ephemeris-based Sun direction in the inertial and the body frame.
    --* @param Self     The algorithm instance.
    --* @param Sun_Pos  Sun inertial position r_SN_N [m] (Vector3d_c).
    --* @param Sc_Pos   Spacecraft inertial position r_BN_N [m] (Vector3d_c).
    --* @param Sigma_Bn Spacecraft attitude MRP, body relative to inertial (Vector3f_c).
-   --* @param Result   Out: sunline direction (unit vector) in body frame (Vector3f_c).
-   procedure Update
+   --* @return Unit Sun direction in the inertial and the body frame; zero vectors if the Sun
+   --*         and spacecraft are colocated.
+   function Update
      (Self     : Sunline_Ephem_Algorithm_Access;
       Sun_Pos  : access constant Packed_F64x3_Record.C.U_C;
       Sc_Pos   : access constant Packed_F64x3_Record.C.U_C;
-      Sigma_Bn : access constant Packed_F32x3_Record.C.U_C;
-      Result   : access Packed_F32x3_Record.C.U_C)
+      Sigma_Bn : access constant Packed_F32x3_Record.C.U_C)
+     return Sunline_Ephem_Output.C.U_C
      with Import       => True,
           Convention   => C,
           External_Name => "SunlineEphemAlgorithm_update";

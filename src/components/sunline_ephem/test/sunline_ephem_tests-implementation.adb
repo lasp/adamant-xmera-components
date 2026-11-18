@@ -42,21 +42,32 @@ package body Sunline_Ephem_Tests.Implementation is
    overriding procedure Test (Self : in out Instance) is
       T : Component.Sunline_Ephem.Implementation.Tester.Instance_Access renames Self.Tester;
 
-      -- Test data based on Python test:
-      -- Sun at origin, spacecraft at various positions, identity attitude
+      -- Test data based on the Python test: the sun at the origin, the spacecraft
+      -- a unit length away on each axis, and an attitude that makes the inertial and
+      -- body frame directions differ. The body frame truth is the inertial truth
+      -- rotated by [BN] for sigma_BN = [0.1, 0.2, -0.3].
       type Test_Vector is record
          Sc_Position : Packed_F64x3.T;  -- Spacecraft position
-         Expected_Sunline : Packed_F32x3.T;  -- Expected sunline direction (float)
+         Expected_Sunline_N : Packed_F32x3.T;  -- Expected sunline direction, inertial frame
+         Expected_Sunline_B : Packed_F32x3.T;  -- Expected sunline direction, body frame
       end record;
 
+      Bn_X : constant Packed_F32x3.T := [0.1997538, 0.9172053, 0.3447215];
+      Bn_Y : constant Packed_F32x3.T := [-0.6709757, 0.3844260, -0.6340412];
+      Bn_Z : constant Packed_F32x3.T := [-0.7140659, -0.1046476, 0.6922130];
+
       Test_Cases : constant array (1 .. 7) of Test_Vector := [
-         (Sc_Position => [-1.0, 0.0, 0.0], Expected_Sunline => [1.0, 0.0, 0.0]),
-         (Sc_Position => [0.0, -1.0, 0.0], Expected_Sunline => [0.0, 1.0, 0.0]),
-         (Sc_Position => [0.0, 0.0, -1.0], Expected_Sunline => [0.0, 0.0, 1.0]),
-         (Sc_Position => [1.0, 0.0, 0.0], Expected_Sunline => [-1.0, 0.0, 0.0]),
-         (Sc_Position => [0.0, 1.0, 0.0], Expected_Sunline => [0.0, -1.0, 0.0]),
-         (Sc_Position => [0.0, 0.0, 1.0], Expected_Sunline => [0.0, 0.0, -1.0]),
-         (Sc_Position => [0.0, 0.0, 0.0], Expected_Sunline => [0.0, 0.0, 0.0])  -- Degenerate case
+         (Sc_Position => [-1.0, 0.0, 0.0], Expected_Sunline_N => [1.0, 0.0, 0.0], Expected_Sunline_B => Bn_X),
+         (Sc_Position => [0.0, -1.0, 0.0], Expected_Sunline_N => [0.0, 1.0, 0.0], Expected_Sunline_B => Bn_Y),
+         (Sc_Position => [0.0, 0.0, -1.0], Expected_Sunline_N => [0.0, 0.0, 1.0], Expected_Sunline_B => Bn_Z),
+         (Sc_Position => [1.0, 0.0, 0.0], Expected_Sunline_N => [-1.0, 0.0, 0.0],
+          Expected_Sunline_B => [-Bn_X (0), -Bn_X (1), -Bn_X (2)]),
+         (Sc_Position => [0.0, 1.0, 0.0], Expected_Sunline_N => [0.0, -1.0, 0.0],
+          Expected_Sunline_B => [-Bn_Y (0), -Bn_Y (1), -Bn_Y (2)]),
+         (Sc_Position => [0.0, 0.0, 1.0], Expected_Sunline_N => [0.0, 0.0, -1.0],
+          Expected_Sunline_B => [-Bn_Z (0), -Bn_Z (1), -Bn_Z (2)]),
+         -- Degenerate case:
+         (Sc_Position => [0.0, 0.0, 0.0], Expected_Sunline_N => [0.0, 0.0, 0.0], Expected_Sunline_B => [0.0, 0.0, 0.0])
       ];
    begin
       -- Run each test case
@@ -69,18 +80,16 @@ package body Sunline_Ephem_Tests.Implementation is
             Velocity => [0.0, 0.0, 0.0]
          );
 
-         -- Set spacecraft position to test vector. Cartesian_State carries
-         -- only Position/Velocity; the wrapper supplies Time_Tag from the
-         -- tick time when constructing Nav_Trans for the C algorithm.
+         -- Set spacecraft position to test vector.
          T.Spacecraft_Position := (
             Position => Test_Cases (I).Sc_Position,
             Velocity => [0.0, 0.0, 0.0]
          );
 
-         -- Set spacecraft attitude to identity (no rotation)
+         -- Set the spacecraft attitude. Only sigma_BN is used by the algorithm.
          T.Spacecraft_Attitude := (
             Time_Tag => 0.0,
-            Sigma_Bn => [0.0, 0.0, 0.0],
+            Sigma_Bn => [0.1, 0.2, -0.3],
             Omega_Bn_B => [0.0, 0.0, 0.0],
             Veh_Sun_Pnt_Bdy => [0.0, 0.0, 0.0]
          );
@@ -88,20 +97,22 @@ package body Sunline_Ephem_Tests.Implementation is
          -- Call algorithm:
          T.Tick_T_Send ((Time => T.System_Time, Count => 0));
 
-         -- Make sure data product produced:
-         Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, I);
+         -- Make sure both data products are produced:
+         Natural_Assert.Eq (T.Data_Product_T_Recv_Sync_History.Get_Count, 2 * I);
+         Natural_Assert.Eq (T.Sunline_Inertial_Frame_History.Get_Count, I);
          Natural_Assert.Eq (T.Sunline_Body_Frame_History.Get_Count, I);
 
-         -- Check the sunline output (the body-frame sun heading vector).
-         declare
-            Output : constant Packed_F32x3.T := T.Sunline_Body_Frame_History.Get (I);
-         begin
-            Packed_F32x3_Assert.Eq (
-               Output,
-               Test_Cases (I).Expected_Sunline,
-               Epsilon => 0.0001
-            );
-         end;
+         -- Check the sunline outputs in both frames.
+         Packed_F32x3_Assert.Eq (
+            T.Sunline_Inertial_Frame_History.Get (I),
+            Test_Cases (I).Expected_Sunline_N,
+            Epsilon => 0.0001
+         );
+         Packed_F32x3_Assert.Eq (
+            T.Sunline_Body_Frame_History.Get (I),
+            Test_Cases (I).Expected_Sunline_B,
+            Epsilon => 0.0001
+         );
       end loop;
    end Test;
 

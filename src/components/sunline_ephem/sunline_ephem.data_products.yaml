@@ -1,6 +1,9 @@
 ---
 description: Data products for the Sunline Ephem component.
 data_products:
+  - name: Sunline_Inertial_Frame
+    type: Packed_F32x3.T
+    description: Sunline direction (unit vector) in the inertial frame.
   - name: Sunline_Body_Frame
     type: Packed_F32x3.T
     description: Sunline direction (unit vector) in the spacecraft body frame.

@@ -6,8 +6,8 @@
 with Tick;
 with Sunline_Ephem_Algorithm_C; use Sunline_Ephem_Algorithm_C;
 
--- Sunline ephemeris algorithm computes the direction to the sun in the spacecraft
--- body frame.
+-- Sunline ephemeris algorithm computes the direction to the sun in the inertial
+-- and the spacecraft body frame.
 package Component.Sunline_Ephem.Implementation is
 
    -- The component class instance record:
