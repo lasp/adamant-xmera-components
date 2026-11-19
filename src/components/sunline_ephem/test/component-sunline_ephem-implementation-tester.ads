@@ -13,8 +13,8 @@ with Packed_F32x3.Representation;
 with Cartesian_State;
 with Nav_Att_Output;
 
--- Sunline ephemeris algorithm computes the direction to the sun in the spacecraft
--- body frame.
+-- Sunline ephemeris algorithm computes the direction to the sun in the inertial
+-- and the spacecraft body frame.
 package Component.Sunline_Ephem.Implementation.Tester is
 
    use Component.Sunline_Ephem_Reciprocal;
@@ -24,6 +24,7 @@ package Component.Sunline_Ephem.Implementation.Tester is
    package Data_Product_T_Recv_Sync_History_Package is new Printable_History (Data_Product.T, Data_Product.Representation.Image);
 
    -- Data product history packages:
+   package Sunline_Inertial_Frame_History_Package is new Printable_History (Packed_F32x3.T, Packed_F32x3.Representation.Image);
    package Sunline_Body_Frame_History_Package is new Printable_History (Packed_F32x3.T, Packed_F32x3.Representation.Image);
 
    -- Component class instance:
@@ -34,6 +35,7 @@ package Component.Sunline_Ephem.Implementation.Tester is
       Data_Product_Fetch_T_Service_History : Data_Product_Fetch_T_Service_History_Package.Instance;
       Data_Product_T_Recv_Sync_History : Data_Product_T_Recv_Sync_History_Package.Instance;
       -- Data product histories:
+      Sunline_Inertial_Frame_History : Sunline_Inertial_Frame_History_Package.Instance;
       Sunline_Body_Frame_History : Sunline_Body_Frame_History_Package.Instance;
       -- Data dependency return values. These can be set during unit test
       -- and will be returned to the component when a data dependency call
@@ -82,8 +84,9 @@ package Component.Sunline_Ephem.Implementation.Tester is
    -----------------------------------------------
    -- Description:
    --    Data products for the Sunline Ephem component.
-   -- Sunline direction vector in spacecraft body frame (stored in vehSunPntBdy
-   -- field).
+   -- Sunline direction (unit vector) in the inertial frame.
+   overriding procedure Sunline_Inertial_Frame (Self : in out Instance; Arg : in Packed_F32x3.T);
+   -- Sunline direction (unit vector) in the spacecraft body frame.
    overriding procedure Sunline_Body_Frame (Self : in out Instance; Arg : in Packed_F32x3.T);
 
 end Component.Sunline_Ephem.Implementation.Tester;

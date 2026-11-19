@@ -91,7 +91,7 @@ package body Component.Css_Weighted_Least_Squares.Implementation is
          Output : constant Css_Weighted_Least_Squares_Output.C.U_C :=
             Css_Weighted_Least_Squares_Algorithm_C.Update (Self.Alg, Cos_Values => Readings_C'Access);
       begin
-         Self.Data_Product_T_Send (Self.Data_Products.Sun_Heading_B (Arg.Time, Packed_F32x3.C.Pack (Output.Sun_Heading_B)));
+         Self.Data_Product_T_Send (Self.Data_Products.Sun_Heading_B (Arg.Time, Packed_F32x3.C.Pack (Output.R_Hat_Sb_B)));
          Self.Data_Product_T_Send (Self.Data_Products.Omega_Bn_B (Arg.Time, Packed_F32x3.C.Pack (Output.Omega_Bn_B)));
          Self.Data_Product_T_Send (Self.Data_Products.Post_Fit_Residuals (Arg.Time, Packed_F32x8.C.Pack (Output.Post_Fit_Residuals)));
          Self.Data_Product_T_Send (Self.Data_Products.Num_Css_Viewing_Sun (Arg.Time, (Value => Output.Num_Css_Viewing_Sun)));

@@ -14,6 +14,7 @@ package body Component.Sunline_Ephem.Implementation.Tester is
       Self.Data_Product_Fetch_T_Service_History.Init (Depth => 100);
       Self.Data_Product_T_Recv_Sync_History.Init (Depth => 100);
       -- Data product histories:
+      Self.Sunline_Inertial_Frame_History.Init (Depth => 100);
       Self.Sunline_Body_Frame_History.Init (Depth => 100);
    end Init_Base;
 
@@ -24,6 +25,7 @@ package body Component.Sunline_Ephem.Implementation.Tester is
       Self.Data_Product_Fetch_T_Service_History.Destroy;
       Self.Data_Product_T_Recv_Sync_History.Destroy;
       -- Data product histories:
+      Self.Sunline_Inertial_Frame_History.Destroy;
       Self.Sunline_Body_Frame_History.Destroy;
    end Final_Base;
 
@@ -150,8 +152,14 @@ package body Component.Sunline_Ephem.Implementation.Tester is
    -----------------------------------------------
    -- Description:
    --    Data products for the Sunline Ephem component.
-   -- Sunline direction vector in spacecraft body frame (stored in vehSunPntBdy
-   -- field).
+   -- Sunline direction (unit vector) in the inertial frame.
+   overriding procedure Sunline_Inertial_Frame (Self : in out Instance; Arg : in Packed_F32x3.T) is
+   begin
+      -- Push the argument onto the test history for looking at later:
+      Self.Sunline_Inertial_Frame_History.Push (Arg);
+   end Sunline_Inertial_Frame;
+
+   -- Sunline direction (unit vector) in the spacecraft body frame.
    overriding procedure Sunline_Body_Frame (Self : in out Instance; Arg : in Packed_F32x3.T) is
    begin
       -- Push the argument onto the test history for looking at later:

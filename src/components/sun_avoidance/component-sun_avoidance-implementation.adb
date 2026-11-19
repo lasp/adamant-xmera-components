@@ -74,10 +74,10 @@ package body Component.Sun_Avoidance.Implementation is
       -- also declares one.
       return Att_Ref.C.Pack (Sun_Avoidance_Algorithm_C.Update (
          Self.Alg,
-         Sigma_Bn  => Sigma_Bn_C'Access,
-         Ref       => Reference_C'Access,
-         S_Hat_B   => Sun_Direction_C'Access,
-         Call_Time => Arg.Call_Time));
+         Sigma_Bn   => Sigma_Bn_C'Access,
+         Ref        => Reference_C'Access,
+         R_Hat_Sb_B => Sun_Direction_C'Access,
+         Call_Time  => Arg.Call_Time));
    end Att_Ref_Tick_T_Service;
 
    -- Discard the planned slew so the next tick plans a new one from the current

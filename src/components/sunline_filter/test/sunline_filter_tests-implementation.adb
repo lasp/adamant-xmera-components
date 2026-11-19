@@ -176,7 +176,7 @@ package body Sunline_Filter_Tests.Implementation is
       Sun : constant Packed_F32x3.T := Truth_Sun (Step);
    begin
       for I in 0 .. 2 loop
-         Short_Float_Assert.Eq (Estimate.Veh_Sun_Pnt_Bdy (I), Sun (I), Epsilon => Sun_Epsilon);
+         Short_Float_Assert.Eq (Estimate.R_Hat_Sb_B (I), Sun (I), Epsilon => Sun_Epsilon);
          Short_Float_Assert.Eq (Estimate.Omega_Bn_B (I), Truth_Rate (I), Epsilon => Rate_Epsilon);
          Short_Float_Assert.Eq (Estimate.Sigma_Bn (I), 0.0);
       end loop;
@@ -318,7 +318,7 @@ package body Sunline_Filter_Tests.Implementation is
             Sun : constant Packed_F32x3.T := Truth_Sun (Steps + 1);
          begin
             for I in 0 .. 2 loop
-               Short_Float_Assert.Eq (Estimate.Veh_Sun_Pnt_Bdy (I), Sun (I), Epsilon => 1.0E-5);
+               Short_Float_Assert.Eq (Estimate.R_Hat_Sb_B (I), Sun (I), Epsilon => 1.0E-5);
                Short_Float_Assert.Eq (Estimate.Omega_Bn_B (I), Truth_Rate (I), Epsilon => 1.0E-5);
             end loop;
          end;
@@ -451,7 +451,7 @@ package body Sunline_Filter_Tests.Implementation is
       T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
       Send_Tick (Self, Steps + 1, Fresh => False);
       for I in 0 .. 2 loop
-         Short_Float_Assert.Eq (Last_Estimate (Self).Veh_Sun_Pnt_Bdy (I), Short_Float (Wrong_Seed (I)), Epsilon => 1.0E-6);
+         Short_Float_Assert.Eq (Last_Estimate (Self).R_Hat_Sb_B (I), Short_Float (Wrong_Seed (I)), Epsilon => 1.0E-6);
          Long_Float_Assert.Eq (Variance (Filter_State (Self), I), Initial_Covariance (I), Epsilon => 1.0E-5);
       end loop;
    end Test_Reset;
@@ -674,7 +674,7 @@ package body Sunline_Filter_Tests.Implementation is
       T.Reset_Tick_T_Send ((Time => T.System_Time, Count => 0));
       Send_Tick (Self, 26, Fresh => False);
       for I in 0 .. 2 loop
-         Short_Float_Assert.Eq (Last_Estimate (Self).Veh_Sun_Pnt_Bdy (I), Short_Float (Wrong_Seed (I)), Epsilon => 1.0E-6);
+         Short_Float_Assert.Eq (Last_Estimate (Self).R_Hat_Sb_B (I), Short_Float (Wrong_Seed (I)), Epsilon => 1.0E-6);
       end loop;
    end Test_Reset_Applies_Pending_Parameters;
 

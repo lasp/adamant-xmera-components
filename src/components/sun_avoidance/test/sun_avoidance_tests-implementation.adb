@@ -71,7 +71,7 @@ package body Sun_Avoidance_Tests.Implementation is
       T : Component.Sun_Avoidance.Implementation.Tester.Instance_Access renames Self.Tester;
    begin
       T.System_Time := (Seconds => 10_000 + Unsigned_32 (Seconds_After_Start), Subseconds => 0);
-      T.Spacecraft_Attitude := (Time_Tag => 0.0, Sigma_Bn => Body_Attitude, Omega_Bn_B => [0.0, 0.0, 0.0], Veh_Sun_Pnt_Bdy => [0.0, 0.0, 0.0]);
+      T.Spacecraft_Attitude := (Time_Tag => 0.0, Sigma_Bn => Body_Attitude, Omega_Bn_B => [0.0, 0.0, 0.0], R_Hat_Sb_B => [0.0, 0.0, 0.0]);
       T.Sun_Direction := Sun_Direction;
       return T.Att_Ref_Tick_T_Request ((
          Current_Tick => (Time => T.System_Time, Count => 0),

@@ -1,5 +1,5 @@
 ---
-description: Sunline ephemeris algorithm computes the direction to the sun in the spacecraft body frame.
+description: Sunline ephemeris algorithm computes the direction to the sun in the inertial and the spacecraft body frame.
 execution: passive
 init:
   description: Initializes the sunline ephemeris algorithm.

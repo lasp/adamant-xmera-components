@@ -3,7 +3,6 @@
 --------------------------------------------------------------------------------
 
 with Att_Ref;
-with Nav_Att_Output;
 with Packed_F32x3.C;
 with Packed_F32x3_Record.C;
 with Solar_Array_Reference_Enums;
@@ -61,34 +60,27 @@ package body Component.Solar_Array_Reference.Implementation is
       use Data_Product_Enums.Data_Dependency_Status;
       use Solar_Array_Reference_Enums;
       use type Solar_Array_Reference_Enums.Tracking_Mode.E;
-      -- The attitudes and the sun direction the algorithm is called with. They are
-      -- only fetched in the sun tracking mode. In the specified angle mode the
-      -- algorithm reads none of them, so they are left at zero.
-      Sigma_Bn : Packed_F32x3.T := [0.0, 0.0, 0.0];
+      -- The reference attitude and the sun direction the algorithm is called with.
+      -- They are only fetched in the sun tracking mode. In the specified angle mode
+      -- the algorithm reads neither of them, so they are left at zero.
       Sigma_Rn : Packed_F32x3.T := [0.0, 0.0, 0.0];
       Sun_Direction : Packed_F32x3.T := [0.0, 0.0, 0.0];
    begin
-      -- In the sun tracking mode, grab the attitude, the reference, and the sun
-      -- direction. They are produced earlier in the same tick, so any status other
-      -- than Success indicates that this component is not wired up correctly in the
-      -- algorithm execution order. That should never happen, so we assert. Only the
-      -- attitudes are taken from the navigation and reference records, straight from
-      -- the packed fields the shim needs.
+      -- In the sun tracking mode, grab the reference and the sun direction. They are
+      -- produced earlier in the same tick, so any status other than Success indicates
+      -- that this component is not wired up correctly in the algorithm execution
+      -- order. That should never happen, so we assert. Only the attitude is taken
+      -- from the reference record, straight from the packed field the shim needs.
       if Self.Mode.Value = Tracking_Mode.Auto_Track then
          declare
-            Attitude : Nav_Att_Output.T;
-            Attitude_Status : constant Data_Dependency_Status.E :=
-               Self.Get_Navigation_Attitude (Value => Attitude, Stale_Reference => Arg.Time);
-            pragma Assert (Attitude_Status = Success);
             Reference : Att_Ref.T;
             Reference_Status : constant Data_Dependency_Status.E :=
                Self.Get_Attitude_Reference (Value => Reference, Stale_Reference => Arg.Time);
             pragma Assert (Reference_Status = Success);
             Sun_Direction_Status : constant Data_Dependency_Status.E :=
-               Self.Get_Sun_Direction_Body (Value => Sun_Direction, Stale_Reference => Arg.Time);
+               Self.Get_Sun_Direction_Inertial (Value => Sun_Direction, Stale_Reference => Arg.Time);
             pragma Assert (Sun_Direction_Status = Success);
          begin
-            Sigma_Bn := Attitude.Sigma_Bn;
             Sigma_Rn := Reference.Sigma_Rn;
          end;
       end if;
@@ -100,9 +92,8 @@ package body Component.Solar_Array_Reference.Implementation is
          Arg.Time,
          (Value => Solar_Array_Reference_Algorithm_C.Update (
             Self.Alg,
-            Sigma_Bn      => (Value => Packed_F32x3.C.Unpack (Sigma_Bn)),
-            Sigma_Rn      => (Value => Packed_F32x3.C.Unpack (Sigma_Rn)),
-            R_Hat_In_Sb_B => (Value => Packed_F32x3.C.Unpack (Sun_Direction))))
+            Sigma_Rn   => (Value => Packed_F32x3.C.Unpack (Sigma_Rn)),
+            R_Hat_Sb_N => (Value => Packed_F32x3.C.Unpack (Sun_Direction))))
       ));
    end Tick_T_Recv_Sync;
 

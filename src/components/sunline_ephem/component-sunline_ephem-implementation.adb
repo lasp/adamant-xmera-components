@@ -6,9 +6,10 @@ with Nav_Att_Output;
 with Nav_Att_Output.C;
 with Cartesian_State;
 with Cartesian_State.C;
-with Packed_F32x3.C;
 with Packed_F32x3_Record.C;
 with Packed_F64x3_Record.C;
+with Sunline_Ephem_Output;
+with Sunline_Ephem_Output.C;
 
 package body Component.Sunline_Ephem.Implementation is
 
@@ -61,22 +62,19 @@ package body Component.Sunline_Ephem.Implementation is
       Sun_R    : aliased Packed_F64x3_Record.C.U_C := (Value => Cartesian_State.C.Unpack (Sun_State).Position);
       Sc_R     : aliased Packed_F64x3_Record.C.U_C := (Value => Cartesian_State.C.Unpack (Sc_Pos).Position);
       Sigma_C  : aliased Packed_F32x3_Record.C.U_C := (Value => Nav_Att_Output.C.Unpack (Sc_Att).Sigma_Bn);
-      Sunline  : aliased Packed_F32x3_Record.C.U_C;
-   begin
-      -- Call algorithm update: all vectors passed by reference, result written
-      -- into Sunline (avoids by-value struct passing across the C boundary).
-      Update (
+
+      -- Call algorithm update: the inputs are passed by reference, and the Sun direction
+      -- comes back in both frames.
+      Sunline : constant Sunline_Ephem_Output.T := Sunline_Ephem_Output.C.Pack (Update (
          Self.Alg,
          Sun_Pos  => Sun_R'Access,
          Sc_Pos   => Sc_R'Access,
-         Sigma_Bn => Sigma_C'Access,
-         Result   => Sunline'Access
-      );
-      -- Send out data product:
-      Self.Data_Product_T_Send (Self.Data_Products.Sunline_Body_Frame (
-         Arg.Time,
-         Packed_F32x3.C.Pack (Sunline.Value)
+         Sigma_Bn => Sigma_C'Access
       ));
+   begin
+      -- Send out data products:
+      Self.Data_Product_T_Send (Self.Data_Products.Sunline_Inertial_Frame (Arg.Time, Sunline.R_Hat_Sb_N));
+      Self.Data_Product_T_Send (Self.Data_Products.Sunline_Body_Frame (Arg.Time, Sunline.R_Hat_Sb_B));
    end Tick_T_Recv_Sync;
 
    -----------------------------------------------

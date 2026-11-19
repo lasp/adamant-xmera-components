@@ -1,0 +1,13 @@
+---
+#  typedef struct {
+#      float rHat_SB_N[3]; /*!< [-] unit Sun direction, inertial frame */
+#      float rHat_SB_B[3]; /*!< [-] unit Sun direction, body frame */
+#  } SunlineEphemOutput_c;
+description: The Sun direction relative to the spacecraft, in the inertial and the body frame.
+fields:
+  - name: R_Hat_Sb_N
+    type: Packed_F32x3.T
+    description: "[-] Unit Sun direction, inertial frame components. Zero if the Sun and spacecraft are colocated."
+  - name: R_Hat_Sb_B
+    type: Packed_F32x3.T
+    description: "[-] Unit Sun direction, body frame components. Zero if the Sun and spacecraft are colocated."

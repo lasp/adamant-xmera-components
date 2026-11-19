@@ -51,7 +51,7 @@ package body Attitude_Tracking_Error_Tests.Implementation is
          Time_Tag => 0.0,
          Sigma_Bn => [0.25, -0.45, 0.75],
          Omega_Bn_B => [-0.015, -0.012, 0.005],
-         Veh_Sun_Pnt_Bdy => [0.0, 0.0, 0.0]
+         R_Hat_Sb_B => [0.0, 0.0, 0.0]
       );
 
       -- Call Algo:
